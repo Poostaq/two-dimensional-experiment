@@ -49,60 +49,60 @@ vertical_alignment = 1
 
 [node name="KeyNW" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=776274886]
 layout_mode = 0
-offset_left = 34.0
-offset_top = 30.0
-offset_right = 70.0
-offset_bottom = 58.0
+offset_left = 67.0
+offset_top = 27.0
+offset_right = 103.0
+offset_bottom = 55.0
 text = "Q"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="KeyNE" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1558778215]
 layout_mode = 0
-offset_left = 78.0
-offset_top = 10.0
-offset_right = 114.0
-offset_bottom = 38.0
+offset_left = 122.0
+offset_top = 28.0
+offset_right = 158.0
+offset_bottom = 56.0
 text = "W"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="KeyE" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=885244395]
 layout_mode = 0
-offset_left = 154.0
-offset_top = 64.0
-offset_right = 190.0
-offset_bottom = 92.0
+offset_left = 150.0
+offset_top = 68.0
+offset_right = 186.0
+offset_bottom = 96.0
 text = "E"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="KeyW" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1917487865]
 layout_mode = 0
-offset_left = 30.0
-offset_top = 84.0
-offset_right = 66.0
-offset_bottom = 112.0
+offset_left = 39.0
+offset_top = 68.0
+offset_right = 75.0
+offset_bottom = 96.0
 text = "A"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="KeySW" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1664160212]
 layout_mode = 0
-offset_left = 78.0
-offset_top = 126.0
-offset_right = 114.0
-offset_bottom = 154.0
+offset_left = 67.0
+offset_top = 108.0
+offset_right = 103.0
+offset_bottom = 136.0
 text = "S"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="KeySE" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1542115917]
 layout_mode = 0
-offset_left = 122.0
-offset_top = 106.0
-offset_right = 158.0
-offset_bottom = 134.0
+offset_left = 121.0
+offset_top = 108.0
+offset_right = 157.0
+offset_bottom = 136.0
 text = "D"
 horizontal_alignment = 1
 vertical_alignment = 1
