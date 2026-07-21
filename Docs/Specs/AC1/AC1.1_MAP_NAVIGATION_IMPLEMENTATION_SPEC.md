@@ -3,6 +3,8 @@
 **Project:** Two-Dimension Exploration  
 **Source Spec:** `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`  
 **Acceptance Criterion:** AC1.1 - Player can move on a 25-hex (5x5) map from starting corner toward opposite-corner boss objective  
+**Owner:** Project Lead
+**Prepared by:** Codex with `godot-implementation` planning input
 **Date:** 2026-07-21  
 **Status:** Ready for implementation  
 
@@ -20,11 +22,11 @@ This spec covers AC1.1 only. It deliberately excludes seeded encounter assignmen
 
 - Godot project: Godot 4.7 configuration, mobile feature enabled.
 - Current scene: `res://Scenes/game_world.tscn`.
-- Current scene structure: one `Node2D` root, no scripts.
+- Current scene structure from GodotIQ file-context inspection: one `Node2D` root, no scripts. Live editor/runtime state was not available during planning.
 - Current script count: zero.
 - Current autoload count: zero.
 - GodotIQ editor bridge status during planning: addon not connected, so live editor state and runtime verification were unavailable.
-- Repository status during planning: no `.git` repository was available from `D:\Projects\two-dimension-exploration`, so no commit workflow is assumed by this spec.
+- Repository status note: the initial planning pass could not detect a `.git` repository. That is historical only; the current environment has a git repository at `D:\Projects\two-dimension-exploration` with `origin` configured. Implementation workers must use current `git status`, branch, and project workflow state rather than relying on the initial planning note.
 
 Decision: implement AC1.1 as a 2D map feature in the existing `Node2D` scene. Do not introduce autoloads yet; AC1.1 state is local to the world-map scene.
 
@@ -121,7 +123,7 @@ Each input action maps to one axial neighbor offset.
 
 - `project.godot`
   - Add AC1.1 input actions.
-  - Set `run/main_scene` to `res://Scenes/game_world.tscn` if the project still has no runnable main scene.
+  - Set `run/main_scene` to `res://Scenes/game_world.tscn`.
 
 ---
 
@@ -188,7 +190,14 @@ Acceptance for this task:
 
 ### Task 4: Wire Input Actions
 
-Modify `project.godot` to define the six directional map movement actions.
+Modify `project.godot` to define the six directional map movement actions and make `res://Scenes/game_world.tscn` the runnable main scene.
+
+Required application setup:
+
+```ini
+[application]
+run/main_scene="res://Scenes/game_world.tscn"
+```
 
 Recommended keyboard defaults:
 
@@ -201,6 +210,8 @@ Recommended keyboard defaults:
 
 Acceptance for this task:
 
+- The project has an explicit `run/main_scene` entry pointing to `res://Scenes/game_world.tscn`.
+- The project input map contains all six `map_move_*` actions.
 - Each movement action attempts exactly one corresponding axial neighbor move.
 - Invalid edge inputs do not move the player.
 - Movement remains deterministic and independent of frame rate.
@@ -231,23 +242,74 @@ Manual runtime check:
 
 ---
 
-## 6. Traceability Matrix
+## 6. Evidence Capture Requirements
 
-| Source | Requirement | Verification Type | Evidence Target |
-|---|---|---|---|
-| AC1.1 | Player can move on a 25-hex map | Automated logic and manual runtime | `test_map_has_25_cells`; runtime count of 25 visible tiles |
-| AC1.1 | Map is 5x5 | Automated logic | `test_map_has_25_cells`; coordinate bounds `0..4` for `q` and `r` |
-| AC1.1 | Player starts in a corner | Automated logic and manual runtime | `test_start_and_boss_corners`; visual player marker on `Vector2i(0, 0)` |
-| AC1.1 | Boss objective is opposite corner | Automated logic and manual runtime | `test_start_and_boss_corners`; visual boss marker on `Vector2i(4, 4)` |
-| AC1.1 | Player moves through valid adjacent hexes | Automated logic and manual runtime | `test_adjacent_move_updates_player_coord`; input-based runtime movement |
-| AC1.1 | Player cannot move through invalid hexes | Automated logic and manual runtime | `test_out_of_bounds_move_is_rejected`; `test_non_adjacent_move_is_rejected`; invalid edge movement check |
-| AC1.1 | Player can move toward boss objective | Automated logic and manual runtime | `test_path_to_boss_exists`; manual route toward boss |
+Completion evidence must be stored before AC1.1 is marked complete. The evidence package belongs under:
+
+```text
+Docs/Specs/AC1/Evidence/AC1.1/YYYY-MM-DD/
+```
+
+Required files:
+
+- `automated-test.log`
+  - Command:
+
+    ```powershell
+    godot --headless --path . --script res://Tests/Map/test_hex_map_model.gd
+    ```
+
+  - Expected pass output format:
+
+    ```text
+    AC1.1 map logic tests: PASS (7/7)
+    ```
+
+  - Expected failure output format:
+
+    ```text
+    AC1.1 map logic tests: FAIL (<passed>/7)
+    FAILED: <test_name> - <reason>
+    ```
+
+- `manual-runtime-check.md`
+  - Must include the exact date, Godot version, scene run path, tester role/name, each manual step from Task 5, observed result for each step, and overall PASS or FAIL.
+
+- `runtime-screenshot.png`
+  - Must show the 25-hex map with the player marker at or after a valid movement step and the boss objective visible.
+
+- `implementation-link.txt`
+  - Must include one implementation reference in this format:
+
+    ```text
+    Commit: <full_commit_sha>
+    Branch: <branch_name>
+    Remote: <origin_url>
+    Pull Request: <url or "not opened">
+    Spec: Docs/Specs/AC1/AC1.1_MAP_NAVIGATION_IMPLEMENTATION_SPEC.md
+    ```
+
+Governance rule: do not claim AC1.1 completion without the spec reference, current test result log, and implementation link.
+
+---
+
+## 7. Traceability Matrix
+
+| Source | Requirement | Verification Type | Evidence Target | Evidence Artifact |
+|---|---|---|---|---|
+| AC1.1 | Player can move on a 25-hex map | Automated logic and manual runtime | `test_map_has_25_cells`; runtime count of 25 visible tiles | `automated-test.log`; `manual-runtime-check.md`; `runtime-screenshot.png` |
+| AC1.1 | Map is 5x5 | Automated logic | `test_map_has_25_cells`; coordinate bounds `0..4` for `q` and `r` | `automated-test.log` |
+| AC1.1 | Player starts in a corner | Automated logic and manual runtime | `test_start_and_boss_corners`; visual player marker on `Vector2i(0, 0)` | `automated-test.log`; `manual-runtime-check.md`; `runtime-screenshot.png` |
+| AC1.1 | Boss objective is opposite corner | Automated logic and manual runtime | `test_start_and_boss_corners`; visual boss marker on `Vector2i(4, 4)` | `automated-test.log`; `manual-runtime-check.md`; `runtime-screenshot.png` |
+| AC1.1 | Player moves through valid adjacent hexes | Automated logic and manual runtime | `test_adjacent_move_updates_player_coord`; input-based runtime movement | `automated-test.log`; `manual-runtime-check.md` |
+| AC1.1 | Player cannot move through invalid hexes | Automated logic and manual runtime | `test_out_of_bounds_move_is_rejected`; `test_non_adjacent_move_is_rejected`; invalid edge movement check | `automated-test.log`; `manual-runtime-check.md` |
+| AC1.1 | Player can move toward boss objective | Automated logic and manual runtime | `test_path_to_boss_exists`; manual route toward boss | `automated-test.log`; `manual-runtime-check.md` |
 
 Coverage status: planned coverage only. No implementation or runtime evidence exists yet.
 
 ---
 
-## 7. Out of Scope
+## 8. Out of Scope
 
 - Seeded Safe/Combat/Boss encounter types.
 - Run ID determinism.
@@ -260,7 +322,7 @@ Coverage status: planned coverage only. No implementation or runtime evidence ex
 
 ---
 
-## 8. Risks and Mitigations
+## 9. Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |---|---|---|
@@ -272,11 +334,13 @@ Coverage status: planned coverage only. No implementation or runtime evidence ex
 
 ---
 
-## 9. Definition of Done
+## 10. Definition of Done
 
 AC1.1 is complete when:
 
 - `Scenes/game_world.tscn` runs as the main scene.
+- `project.godot` contains `run/main_scene="res://Scenes/game_world.tscn"`.
+- `project.godot` contains all six `map_move_*` input actions.
 - The map displays exactly 25 hexes.
 - The player marker starts at `Vector2i(0, 0)`.
 - The boss objective marker displays at `Vector2i(4, 4)`.
@@ -285,4 +349,5 @@ AC1.1 is complete when:
 - A valid adjacent route from start to boss objective exists.
 - Automated map-logic checks pass.
 - Manual runtime verification is recorded with the exact date, command or editor run path, and observed result.
-
+- Evidence files exist under `Docs/Specs/AC1/Evidence/AC1.1/YYYY-MM-DD/`.
+- `implementation-link.txt` identifies the commit, branch, remote, pull request status, and this spec path.

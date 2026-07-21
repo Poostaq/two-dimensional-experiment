@@ -1,0 +1,25 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Scripts/Map/hex_tile_view.gd" id="1_tile_view"]
+
+[node name="MapHexTile" type="Node2D"]
+script = ExtResource("1_tile_view")
+
+[node name="Fill" type="Polygon2D" parent="."]
+color = Color(0.24, 0.28, 0.34, 1)
+polygon = PackedVector2Array(0, -36, 31.1769, -18, 31.1769, 18, 0, 36, -31.1769, 18, -31.1769, -18)
+
+[node name="Outline" type="Line2D" parent="."]
+width = 3.0
+default_color = Color(0.56, 0.63, 0.72, 1)
+points = PackedVector2Array(0, -36, 31.1769, -18, 31.1769, 18, 0, 36, -31.1769, 18, -31.1769, -18, 0, -36)
+
+[node name="CoordLabel" type="Label" parent="."]
+visible = false
+offset_left = -24.0
+offset_top = -10.0
+offset_right = 24.0
+offset_bottom = 10.0
+theme_override_font_sizes/font_size = 12
+horizontal_alignment = 1
+vertical_alignment = 1

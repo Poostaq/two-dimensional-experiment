@@ -1,3 +1,19 @@
-[gd_scene format=3 uid="uid://cpetx7r6gw4v7"]
+[gd_scene format=3 uid="uid://jj35sqrnlbn3"]
 
-[node name="GameWorld" type="Node2D" unique_id=731063755]
+[ext_resource type="Script" uid="uid://hk6o4rgdw4bf" path="res://Scripts/Map/map_controller.gd" id="1_map_controller"]
+
+[node name="GameWorld" type="Node2D" unique_id=1502010082]
+script = ExtResource("1_map_controller")
+
+[node name="MapRoot" type="Node2D" parent="." unique_id=1428452718]
+position = Vector2(360, 140)
+
+[node name="BossMarker" type="Polygon2D" parent="MapRoot" unique_id=1066823148]
+z_index = 10
+color = Color(1, 0.78, 0.18, 1)
+polygon = PackedVector2Array(0, -18, 18, 0, 0, 18, -18, 0)
+
+[node name="PlayerMarker" type="Polygon2D" parent="MapRoot" unique_id=74419517]
+z_index = 20
+color = Color(0.88, 0.98, 1, 1)
+polygon = PackedVector2Array(0, -22, 18, 14, 0, 6, -18, 14)
