@@ -1,0 +1,13 @@
+{
+    "servers": {
+      "godotiq": {
+        "command": "uvx",
+        "args": ["godotiq"],
+        "env": {
+          "GODOTIQ_PROJECT_ROOT": "D:/Projects/two-dimension-exploration/",
+          "GODOTIQ_LICENSE_KEY": "GODOTIQ-FA892B0E-F6C9-4833-87AC-C7B07081271A"
+        }
+      }
+    },
+    "inputs": []
+}

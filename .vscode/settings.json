@@ -1,0 +1,23 @@
+{
+    "godotTools.editorPath.godot4": "D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe",
+    "mcp": {
+        "servers": {
+            "godotiq": {
+                "command": "uvx",
+                "args": ["godotiq"],
+                "env": {
+                    "GODOTIQ_PROJECT_ROOT": "D:/Projects/two-dimension-exploration/"
+                }
+            }
+        }
+    },
+    "chat.mcp.serverSampling": {
+        "two-dimension-exploration/.vscode/mcp.json: godotiq": {
+            "allowedModels": [
+                "copilot/auto",
+                "copilotcli/claude-sonnet-4.6"
+            ]
+        }
+    },
+    "git.ignoreLimitWarning": true
+}

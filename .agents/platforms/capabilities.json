@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "capabilities": {
+    "godot.input": { "copilot_tools": ["godot/*"] },
+    "godot.inspect": { "copilot_tools": ["godot/*"] },
+    "godot.runtime": { "copilot_tools": ["godot/*"] },
+    "godot.scene_edit": { "copilot_tools": ["godot/*"] },
+    "godot.validate": { "copilot_tools": ["godot/*"] },
+    "planning.track": { "copilot_tools": ["todo"] },
+    "repo.edit": { "copilot_tools": ["edit"] },
+    "repo.execute": { "copilot_tools": ["execute"] },
+    "repo.read": { "copilot_tools": ["read"] },
+    "repo.search": { "copilot_tools": ["search"] }
+  }
+}

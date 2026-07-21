@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "godot-mcp-investigator",
+  "display_name": "Godot MCP Investigator",
+  "description": "Diagnoses Godot runtime, scene wiring, and streaming regressions with evidence-first minimal remediation.",
+  "write_policy": "workspace_write",
+  "capabilities": ["repo.read", "repo.search", "repo.edit", "repo.execute", "godot.inspect", "godot.runtime", "godot.input", "godot.validate", "godot.scene_edit"],
+  "skills": ["godot-smoke-check", "runtime-performance-profile", "worldgen-determinism-audit"]
+}

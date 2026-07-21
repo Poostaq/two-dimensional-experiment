@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "godot-architecture-reviewer",
+  "display_name": "Godot Architecture Reviewer",
+  "description": "Reviews Godot manager ownership, scene composition, Resources, signals, determinism, and architectural regressions.",
+  "write_policy": "read_only",
+  "capabilities": ["repo.read", "repo.search", "godot.inspect", "godot.validate"],
+  "skills": ["godot-architecture-audit", "reverse-document-system"]
+}

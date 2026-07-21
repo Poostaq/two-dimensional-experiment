@@ -1,0 +1,17 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Godot export/build outputs
+/.export/
+/export/
+
+# Local environment and editor files
+.venv/
+.vscode/*.code-workspace
+.codex/
+.godotiq/
+
+# OS files
+.DS_Store
+Thumbs.db

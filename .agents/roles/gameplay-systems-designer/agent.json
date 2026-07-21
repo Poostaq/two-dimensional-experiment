@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "gameplay-systems-designer",
+  "display_name": "Gameplay Systems Designer",
+  "description": "Formalizes gameplay mechanics, formulas, dependencies, edge cases, feedback loops, and tuning ranges.",
+  "write_policy": "read_only",
+  "capabilities": ["repo.read", "repo.search", "godot.inspect"],
+  "skills": ["project-stage-audit", "reverse-document-system", "spec-to-test-traceability"]
+}
