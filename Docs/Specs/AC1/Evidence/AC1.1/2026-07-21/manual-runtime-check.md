@@ -1,9 +1,9 @@
 # AC1.1 Manual Runtime Check
 
-**Date:** 2026-07-21  
-**Tester:** Codex  
-**Godot Version:** 4.7.1.stable.steam.a13da4feb  
-**Scene Run Path:** `res://Scenes/game_world.tscn` through GodotIQ `run(action="play", scene="main")`  
+**Date:** 2026-07-21
+**Tester:** Codex
+**Godot Version:** 4.7.1.stable.steam.a13da4feb
+**Scene Run Path:** `res://Scenes/game_world.tscn` through GodotIQ `run(action="play", scene="main")`
 **Spec:** `Docs/Specs/AC1/AC1.1_MAP_NAVIGATION_IMPLEMENTATION_SPEC.md`
 
 ## Results
@@ -25,4 +25,3 @@
 - Implementation link: `Docs/Specs/AC1/Evidence/AC1.1/2026-07-21/implementation-link.txt`
 
 **Overall Result:** PASS
-
