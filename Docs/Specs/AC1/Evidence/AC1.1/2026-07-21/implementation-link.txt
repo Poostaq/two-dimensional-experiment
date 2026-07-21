@@ -1,0 +1,6 @@
+Commit: c18b87266d9b30b7ccb205320fb909e917d0afbe
+Branch: ac1-1-map-navigation
+Remote: https://github.com/Poostaq/two-dimensional-experiment.git
+Pull Request: not opened
+Working Tree: AC1.1 implementation changes are committed on branch ac1-1-map-navigation.
+Spec: Docs/Specs/AC1/AC1.1_MAP_NAVIGATION_IMPLEMENTATION_SPEC.md
