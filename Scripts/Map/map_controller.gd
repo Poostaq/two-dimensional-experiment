@@ -27,10 +27,10 @@ const ACTION_OFFSETS := {
 @onready var _player_marker: Node2D = $MapRoot/PlayerMarker
 @onready var _boss_marker: Node2D = $MapRoot/BossMarker
 
-var player_coord := Vector2i.ZERO
-var boss_coord := Vector2i.ZERO
-var move_count := 0
-var run_id := DEFAULT_RUN_ID
+var player_coord: Vector2i = Vector2i.ZERO
+var boss_coord: Vector2i = Vector2i.ZERO
+var move_count: int = 0
+var run_id: String = DEFAULT_RUN_ID
 var encounter_types: Dictionary = {}
 
 var _model: HexMapModel

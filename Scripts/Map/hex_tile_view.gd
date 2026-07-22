@@ -12,7 +12,7 @@ const STATE_BOSS := "boss"
 @onready var _outline: Line2D = $Outline
 @onready var _coord_label: Label = $CoordLabel
 
-var coordinate := Vector2i.ZERO
+var coordinate: Vector2i = Vector2i.ZERO
 
 
 func configure(coord: Vector2i, show_debug_label: bool = false) -> void:
