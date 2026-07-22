@@ -1,8 +1,6 @@
 class_name MapController
 extends Node2D
 
-signal player_moved(coord: Vector2i, move_count: int)
-
 const HEX_MAP_MODEL_PATH := "res://Scripts/Map/hex_map_model.gd"
 const TILE_SCENE_PATH := "res://Scenes/map_hex_tile.tscn"
 const TILE_RADIUS := 38.0
@@ -94,7 +92,6 @@ func request_move(destination: Vector2i) -> bool:
 	player_coord = destination
 	move_count += 1
 	_refresh_visual_state()
-	player_moved.emit(player_coord, move_count)
 	return true
 
 
