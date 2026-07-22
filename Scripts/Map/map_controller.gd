@@ -1,8 +1,6 @@
 class_name MapController
 extends Node2D
 
-signal player_moved(coord: Vector2i, move_count: int)
-
 const HEX_MAP_MODEL_PATH := "res://Scripts/Map/hex_map_model.gd"
 const TILE_SCENE_PATH := "res://Scenes/map_hex_tile.tscn"
 const TILE_RADIUS := 38.0
@@ -27,10 +25,10 @@ const ACTION_OFFSETS := {
 @onready var _player_marker: Node2D = $MapRoot/PlayerMarker
 @onready var _boss_marker: Node2D = $MapRoot/BossMarker
 
-var player_coord := Vector2i.ZERO
-var boss_coord := Vector2i.ZERO
-var move_count := 0
-var run_id := DEFAULT_RUN_ID
+var player_coord: Vector2i = Vector2i.ZERO
+var boss_coord: Vector2i = Vector2i.ZERO
+var move_count: int = 0
+var run_id: String = DEFAULT_RUN_ID
 var encounter_types: Dictionary = {}
 
 var _model: HexMapModel
@@ -94,7 +92,6 @@ func request_move(destination: Vector2i) -> bool:
 	player_coord = destination
 	move_count += 1
 	_refresh_visual_state()
-	player_moved.emit(player_coord, move_count)
 	return true
 
 
@@ -150,3 +147,4 @@ func _get_tile_state_for_encounter(coord: Vector2i) -> String:
 			return TILE_STATE_BOSS
 		_:
 			return TILE_STATE_DEFAULT
+

@@ -1,3 +1,4 @@
+class_name TestNavigationHelpUi
 extends SceneTree
 
 const GAME_WORLD_PATH := "res://Scenes/game_world.tscn"
