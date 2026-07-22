@@ -1,0 +1,10 @@
+﻿Commit: 7f87f56589f9fba65c9f818fce87037ee30103e2
+Branch: ac1-2-seeded-encounters
+Remote: https://github.com/Poostaq/two-dimensional-experiment.git
+Pull Request: not opened
+Source Spec: Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+Implementation Spec: Docs/Specs/AC1/AC1.2_SEEDED_ENCOUNTERS_IMPLEMENTATION_SPEC.md
+Plan: Docs/superpowers/plans/2026-07-22-ac1-2-seeded-encounters.md
+
+
+
