@@ -1,3 +1,4 @@
+class_name TestHexMapModel
 extends SceneTree
 
 const MODEL_PATH := "res://Scripts/Map/hex_map_model.gd"
