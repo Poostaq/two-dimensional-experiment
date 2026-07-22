@@ -10,7 +10,10 @@ const TILE_SPACING := 1.08
 const TILE_STATE_DEFAULT := "default"
 const TILE_STATE_VALID_MOVE := "valid_move"
 const TILE_STATE_PLAYER := "player"
+const TILE_STATE_SAFE := "safe"
+const TILE_STATE_COMBAT := "combat"
 const TILE_STATE_BOSS := "boss"
+const DEFAULT_RUN_ID := "default-run"
 const ACTION_OFFSETS := {
 	"map_move_e": Vector2i(1, 0),
 	"map_move_ne": Vector2i(1, -1),
@@ -27,6 +30,8 @@ const ACTION_OFFSETS := {
 var player_coord := Vector2i.ZERO
 var boss_coord := Vector2i.ZERO
 var move_count := 0
+var run_id := DEFAULT_RUN_ID
+var encounter_types: Dictionary = {}
 
 var _model: HexMapModel
 var _tile_scene: PackedScene
@@ -40,6 +45,7 @@ func _ready() -> void:
 
 	player_coord = _model.get_start_coord()
 	boss_coord = _model.get_boss_coord()
+	encounter_types = _model.get_encounter_types_for_run(run_id)
 
 	_build_tiles()
 	_refresh_visual_state()
@@ -54,6 +60,25 @@ func _unhandled_input(event: InputEvent) -> void:
 			try_move_by_offset(ACTION_OFFSETS[action])
 			get_viewport().set_input_as_handled()
 			return
+
+
+func set_run_id(value: String) -> void:
+	run_id = DEFAULT_RUN_ID if value.is_empty() else value
+	if _model == null:
+		return
+
+	encounter_types = _model.get_encounter_types_for_run(run_id)
+	_refresh_visual_state()
+
+
+func get_encounter_layout() -> Dictionary:
+	return encounter_types.duplicate()
+
+
+func get_encounter_type_at(coord: Vector2i) -> String:
+	if not encounter_types.has(coord):
+		return HexMapModel.ENCOUNTER_NONE
+	return encounter_types[coord]
 
 
 func try_move_by_offset(offset: Vector2i) -> bool:
@@ -109,7 +134,19 @@ func _refresh_visual_state() -> void:
 		elif valid_destinations.has(coord):
 			tile.set_display_state(TILE_STATE_VALID_MOVE)
 		else:
-			tile.set_display_state(TILE_STATE_DEFAULT)
+			tile.set_display_state(_get_tile_state_for_encounter(coord))
 
 	_player_marker.position = axial_to_world(player_coord)
 	_boss_marker.position = axial_to_world(boss_coord)
+
+
+func _get_tile_state_for_encounter(coord: Vector2i) -> String:
+	match get_encounter_type_at(coord):
+		HexMapModel.ENCOUNTER_SAFE:
+			return TILE_STATE_SAFE
+		HexMapModel.ENCOUNTER_COMBAT:
+			return TILE_STATE_COMBAT
+		HexMapModel.ENCOUNTER_BOSS:
+			return TILE_STATE_BOSS
+		_:
+			return TILE_STATE_DEFAULT
