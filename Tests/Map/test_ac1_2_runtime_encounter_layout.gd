@@ -1,3 +1,4 @@
+class_name TestAc12RuntimeEncounterLayout
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/game_world.tscn"

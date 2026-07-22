@@ -1,3 +1,4 @@
+class_name TestAc12HexTileViewStates
 extends SceneTree
 
 const TILE_SCENE_PATH := "res://Scenes/map_hex_tile.tscn"

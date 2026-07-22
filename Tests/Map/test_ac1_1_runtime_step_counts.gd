@@ -1,5 +1,5 @@
+class_name TestAc11RuntimeStepCounts
 extends SceneTree
-class_name Ac11RuntimeStepCountsTest
 
 const GAME_WORLD_PATH := "res://Scenes/game_world.tscn"
 const EXPECTED_TEST_COUNT := 8
