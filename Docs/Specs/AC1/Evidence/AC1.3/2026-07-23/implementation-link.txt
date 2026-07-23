@@ -5,4 +5,3 @@ Pull Request: not opened
 Source Spec: Docs/Specs/GAME_DESIGN_SPEC_MVP.md
 Implementation Spec: Docs/Specs/AC1/AC1.3_MOUSE_MAP_CONTROL_IMPLEMENTATION_SPEC.md
 Plan: Docs/superpowers/plans/2026-07-23-ac1-3-mouse-map-control.md
-

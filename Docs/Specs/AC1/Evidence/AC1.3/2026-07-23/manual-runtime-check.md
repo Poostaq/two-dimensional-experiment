@@ -1,10 +1,10 @@
 # AC1.3 Runtime Check
 
-**Date:** 2026-07-23  
-**Spec:** `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`  
-**Implementation Spec:** `Docs/Specs/AC1/AC1.3_MOUSE_MAP_CONTROL_IMPLEMENTATION_SPEC.md`  
-**Scene:** `res://Scenes/game_world.tscn`  
-**Godot:** 4.7.1 stable Steam  
+**Date:** 2026-07-23
+**Spec:** `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`
+**Implementation Spec:** `Docs/Specs/AC1/AC1.3_MOUSE_MAP_CONTROL_IMPLEMENTATION_SPEC.md`
+**Scene:** `res://Scenes/game_world.tscn`
+**Godot:** 4.7.1 stable Steam
 **Execution:** Headless runtime scene with real `InputEventMouseButton` and `InputEventMouseMotion` events
 
 | Check | Expected | Observed | Result |
@@ -19,4 +19,3 @@
 | Continue with three adjacent clicks to boss coordinate. | Counting remains valid through eight moves. | Player reached `(4,4)` with `move_count == 8`. | PASS |
 
 **Overall Result:** PASS
-
