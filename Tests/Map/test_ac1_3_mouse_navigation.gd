@@ -81,12 +81,11 @@ func _test_right_click_is_ignored(controller: MapController) -> void:
 func _test_off_map_left_click_is_ignored(controller: MapController) -> void:
 	var before_coord := controller.player_coord
 	var before_count := controller.move_count
-	var tiles: Dictionary = controller.get("_tiles")
 	var event := InputEventMouseButton.new()
 	event.position = Vector2(-1000.0, -1000.0)
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = true
-	for tile: HexTileView in tiles.values():
+	for tile: HexTileView in controller.get("_tiles").values():
 		tile._unhandled_input(event)
 
 	_assert(
