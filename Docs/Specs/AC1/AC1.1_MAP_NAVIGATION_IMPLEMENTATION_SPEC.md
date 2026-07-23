@@ -6,7 +6,7 @@
 **Owner:** Project Lead
 **Prepared by:** Codex with `godot-implementation` planning input
 **Date:** 2026-07-21  
-**Status:** Ready for implementation  
+**Status:** Implemented; evidence recorded  
 
 ---
 
@@ -68,7 +68,7 @@ Rationale: axial coordinates make adjacency rules explicit and deterministic. A 
 - Valid moves update `player_coord`.
 - Invalid moves leave `player_coord` unchanged.
 - Each accepted move increments `move_count`, but no move limit is enforced for AC1.1.
-- Moving onto the boss coordinate does not start combat in AC1.1; AC1.3 owns boss-battle triggering.
+- Moving onto the boss coordinate does not start combat in AC1.1; AC1.4 owns boss-battle triggering.
 
 ### 3.3 Visual Behavior
 
@@ -80,9 +80,9 @@ Rationale: axial coordinates make adjacency rules explicit and deterministic. A 
 
 ### 3.4 Input Behavior
 
-Implement keyboard movement first because it is reliable for early verification. Mouse or touch selection can be added in the same architecture, but it is not required to satisfy AC1.1.
+AC1.1 is input-modality agnostic. The map controller should accept movement requests from whichever input layer is active in the current milestone.
 
-Recommended input actions:
+Recommended movement actions:
 
 - `map_move_e`
 - `map_move_ne`
@@ -103,7 +103,7 @@ Each input action maps to one axial neighbor offset.
   - Owns map constants, valid coordinate generation, bounds checks, neighbor lookup, and adjacency checks.
 
 - `Scripts/Map/map_controller.gd`
-  - Owns scene-level map state, player coordinate, move count, input handling, movement requests, and visual refresh calls.
+  - Owns scene-level map state, player coordinate, move count, movement request handling, and visual refresh calls.
 
 - `Scripts/Map/hex_tile_view.gd`
   - Owns one visible hex tile's coordinate, display state, and selected/hover visual state if click support is added.
@@ -158,7 +158,7 @@ Controller responsibilities:
 - Store `player_coord`.
 - Store `boss_coord`.
 - Store `move_count`.
-- Convert directional input to movement requests.
+- Convert active input events into movement requests.
 - Reject invalid movement without changing state.
 - Emit a clear signal or call a refresh method after accepted movement.
 
@@ -190,7 +190,7 @@ Acceptance for this task:
 
 ### Task 4: Wire Input Actions
 
-Modify `project.godot` to define the six directional map movement actions and make `res://Scenes/game_world.tscn` the runnable main scene.
+Modify `project.godot` to define map movement actions and make `res://Scenes/game_world.tscn` the runnable main scene.
 
 Required application setup:
 
@@ -198,15 +198,6 @@ Required application setup:
 [application]
 run/main_scene="res://Scenes/game_world.tscn"
 ```
-
-Recommended keyboard defaults:
-
-- `map_move_e`: `E` or right-arrow equivalent.
-- `map_move_ne`: `W`.
-- `map_move_nw`: `Q`.
-- `map_move_w`: `A` or left-arrow equivalent.
-- `map_move_sw`: `S`.
-- `map_move_se`: `D`.
 
 Acceptance for this task:
 
@@ -305,7 +296,7 @@ Governance rule: do not claim AC1.1 completion without the spec reference, curre
 | AC1.1 | Player cannot move through invalid hexes | Automated logic and manual runtime | `test_out_of_bounds_move_is_rejected`; `test_non_adjacent_move_is_rejected`; invalid edge movement check | `automated-test.log`; `manual-runtime-check.md` |
 | AC1.1 | Player can move toward boss objective | Automated logic and manual runtime | `test_path_to_boss_exists`; manual route toward boss | `automated-test.log`; `manual-runtime-check.md` |
 
-Coverage status: planned coverage only. No implementation or runtime evidence exists yet.
+Coverage status: implemented coverage with recorded automated and manual runtime evidence under `Docs/Specs/AC1/Evidence/AC1.1/2026-07-21/`.
 
 ---
 
@@ -327,7 +318,7 @@ Coverage status: planned coverage only. No implementation or runtime evidence ex
 | Risk | Impact | Mitigation |
 |---|---|---|
 | The MVP phrase "5x5 hex map" can imply either an offset-row rectangle or axial parallelogram. | Later systems could assume a different layout shape. | This spec explicitly selects a bounded axial 5x5 parallelogram for AC1.1. If design wants offset rows later, change the map model before AC1.2 builds seeded content. |
-| AC1.1 may accidentally absorb AC1.2-AC1.4 behavior. | Scope expands before the map is proven. | Keep encounter types, boss battle triggers, and Sudden Death out of this implementation. |
+| AC1.1 may accidentally absorb AC1.2-AC1.5 behavior. | Scope expands before the map is proven. | Keep encounter types, mouse-input ownership, boss battle triggers, and Sudden Death out of this implementation. |
 | The project has no existing script architecture. | Early file choices can set a messy precedent. | Keep map logic pure and separate from scene/controller code. Avoid autoloads until cross-scene state exists. |
 | GodotIQ editor bridge was unavailable during planning. | Live scene state and unsaved editor changes were not visible. | Before implementation, call `godotiq_project_summary`, `godotiq_file_context`, and editor-aware write tools. Verify with GodotIQ once the addon is connected. |
 | No test framework is present. | Automated verification could become ad hoc. | Start with a lightweight headless GDScript test script for pure map logic; introduce a formal Godot test framework only if broader coverage needs justify it. |

@@ -32,41 +32,39 @@ func _run_checks() -> void:
 	_expect_state(world, "boss objective", Vector2i(0, 0), 0)
 	_assert_equal(world.boss_coord, Vector2i(4, 4), "boss objective should be opposite corner")
 
-	var valid_moves: Array[Dictionary] = [
-		{"action": "map_move_se", "coord": Vector2i(0, 1)},
-		{"action": "map_move_se", "coord": Vector2i(0, 2)},
-		{"action": "map_move_se", "coord": Vector2i(0, 3)},
-		{"action": "map_move_se", "coord": Vector2i(0, 4)},
-		{"action": "map_move_e", "coord": Vector2i(1, 4)},
+	var valid_moves: Array[Vector2i] = [
+		Vector2i(0, 1),
+		Vector2i(0, 2),
+		Vector2i(0, 3),
+		Vector2i(0, 4),
+		Vector2i(1, 4),
 	]
 	for index in valid_moves.size():
-		var move: Dictionary = valid_moves[index]
-		_send_action(String(move["action"]))
+		var destination: Vector2i = valid_moves[index]
+		_click_tile(world, destination)
 		await process_frame
-		var destination: Vector2i = move["coord"]
 		_expect_state(world, "valid move %d" % (index + 1), destination, index + 1)
 
-	var invalid_moves: Array[String] = [
-		"map_move_se",
-		"map_move_sw",
+	var invalid_moves: Array[Vector2i] = [
+		Vector2i(4, 0),
+		Vector2i(4, 4),
 	]
 	for index in invalid_moves.size():
 		var before_coord: Vector2i = world.player_coord
 		var before_count: int = world.move_count
-		_send_action(invalid_moves[index])
+		_click_tile(world, invalid_moves[index])
 		await process_frame
-		_expect_state(world, "invalid edge move %d" % (index + 1), before_coord, before_count)
+		_expect_state(world, "invalid non-adjacent move %d" % (index + 1), before_coord, before_count)
 
-	var final_moves: Array[Dictionary] = [
-		{"action": "map_move_e", "coord": Vector2i(2, 4)},
-		{"action": "map_move_e", "coord": Vector2i(3, 4)},
-		{"action": "map_move_e", "coord": Vector2i(4, 4)},
+	var final_moves: Array[Vector2i] = [
+		Vector2i(2, 4),
+		Vector2i(3, 4),
+		Vector2i(4, 4),
 	]
 	for index in final_moves.size():
-		var move: Dictionary = final_moves[index]
-		_send_action(String(move["action"]))
+		var destination: Vector2i = final_moves[index]
+		_click_tile(world, destination)
 		await process_frame
-		var destination: Vector2i = move["coord"]
 		_expect_state(world, "continued move %d" % (index + 1), destination, 6 + index)
 
 	world.queue_free()
@@ -79,16 +77,18 @@ func _expect_state(world: MapController, label: String, expected_coord: Vector2i
 	_observations.append("%s: player_coord=%s move_count=%d" % [label, world.player_coord, world.move_count])
 
 
-func _send_action(action_name: String) -> void:
-	var press := InputEventAction.new()
-	press.action = action_name
-	press.pressed = true
-	Input.parse_input_event(press)
+func _click_tile(world: MapController, destination: Vector2i) -> void:
+	var tiles: Dictionary = world.get("_tiles")
+	var tile: HexTileView = tiles.get(destination) as HexTileView
+	if tile == null:
+		_failures.append("Could not find tile %s" % destination)
+		return
 
-	var release := InputEventAction.new()
-	release.action = action_name
-	release.pressed = false
-	Input.parse_input_event(release)
+	var event := InputEventMouseButton.new()
+	event.position = tile.get_global_transform_with_canvas() * Vector2.ZERO
+	event.button_index = MOUSE_BUTTON_LEFT
+	event.pressed = true
+	tile._unhandled_input(event)
 
 
 func _assert_equal(actual: Variant, expected: Variant, message: String) -> void:
