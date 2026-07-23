@@ -162,10 +162,11 @@
 ## 10. ACCEPTANCE CRITERIA (MVP Scope)
 
 ### Map & Navigation
-- [ ] AC1.1 — Player can move on a 25-hex (5x5) map from starting corner toward opposite-corner boss objective
+- [x] AC1.1 — Player can move on a 25-hex (5x5) map from starting corner toward opposite-corner boss objective
 - [x] AC1.2 — Hex encounter types (Safe/Combat/Boss) are seeded and deterministic per run ID
-- [ ] AC1.3 — Entering the boss hex automatically triggers final battle
-- [ ] AC1.4 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
+- [ ] AC1.3 — World-map navigation is controlled by mouse selection of adjacent hexes (no Q/W/E/A/S/D movement requirement)
+- [ ] AC1.4 — Entering the boss hex automatically triggers final battle
+- [ ] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
 
 ### Combat System
 - [ ] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
@@ -202,8 +203,9 @@
 |------|-------------------|-------------------|
 | `AC1.1` | Manual runtime check | Start a run on a 25-hex map, move from the starting corner, and confirm the player can traverse valid adjacent hexes toward the opposite-corner boss objective. |
 | `AC1.2` | Determinism check | Start two runs with the same Run ID and confirm the Safe/Combat/Boss hex layout is identical; start a run with a different Run ID and confirm the layout can differ. The AC1.2 fixture pair `AC1.2-A` and `AC1.2-B` is expected to differ by at least one non-boss tile under the documented hash algorithm. |
-| `AC1.3` | Manual runtime check | Move onto the boss hex and verify the final battle starts immediately without requiring a separate confirm step. |
-| `AC1.4` | Manual runtime check | Avoid the boss for 15 player moves, then confirm Sudden Death activates and the boss moves immediately after each subsequent player move until engagement. |
+| `AC1.3` | Manual runtime check | Use mouse clicks on adjacent hexes to move the player marker. Confirm valid adjacent clicks move exactly one hex and invalid or non-adjacent clicks do not move the player. |
+| `AC1.4` | Manual runtime check | Move onto the boss hex and verify the final battle starts immediately without requiring a separate confirm step. |
+| `AC1.5` | Manual runtime check | Avoid the boss for 15 player moves, then confirm Sudden Death activates and the boss moves immediately after each subsequent player move until engagement. |
 | `AC2.1` | Manual runtime check | Enter battle and verify the battlefield shows exactly 6 player slots and 6 enemy slots. |
 | `AC2.2` | Manual runtime check | Start a battle with at least two units of different speed values and confirm action order follows descending speed. |
 | `AC2.3` | Manual runtime check | Apply damage to a unit until HP reaches 0 and verify it is removed from active battle participation. |
