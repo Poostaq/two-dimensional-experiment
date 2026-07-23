@@ -1,0 +1,7 @@
+Implementation Commit: 880fd007ff5ca589a9c1855f19ac28f9014c2893
+Branch: ac1-3-mouse-map-control
+Remote: https://github.com/Poostaq/two-dimensional-experiment.git
+Pull Request: not opened
+Source Spec: Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+Implementation Spec: Docs/Specs/AC1/AC1.3_MOUSE_MAP_CONTROL_IMPLEMENTATION_SPEC.md
+Plan: Docs/superpowers/plans/2026-07-23-ac1-3-mouse-map-control.md

@@ -164,7 +164,7 @@
 ### Map & Navigation
 - [x] AC1.1 — Player can move on a 25-hex (5x5) map from starting corner toward opposite-corner boss objective
 - [x] AC1.2 — Hex encounter types (Safe/Combat/Boss) are seeded and deterministic per run ID
-- [ ] AC1.3 — World-map navigation is controlled by mouse selection of adjacent hexes (no Q/W/E/A/S/D movement requirement)
+- [x] AC1.3 — World-map navigation is controlled by mouse selection of adjacent hexes (no Q/W/E/A/S/D movement requirement)
 - [ ] AC1.4 — Entering the boss hex automatically triggers final battle
 - [ ] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
 

@@ -12,14 +12,6 @@ const TILE_STATE_SAFE := "safe"
 const TILE_STATE_COMBAT := "combat"
 const TILE_STATE_BOSS := "boss"
 const DEFAULT_RUN_ID := "default-run"
-const ACTION_OFFSETS := {
-	"map_move_e": Vector2i(1, 0),
-	"map_move_ne": Vector2i(1, -1),
-	"map_move_nw": Vector2i(0, -1),
-	"map_move_w": Vector2i(-1, 0),
-	"map_move_sw": Vector2i(-1, 1),
-	"map_move_se": Vector2i(0, 1),
-}
 
 @onready var _map_root: Node2D = $MapRoot
 @onready var _player_marker: Node2D = $MapRoot/PlayerMarker
@@ -47,17 +39,6 @@ func _ready() -> void:
 
 	_build_tiles()
 	_refresh_visual_state()
-
-
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.echo:
-		return
-
-	for action: String in ACTION_OFFSETS.keys():
-		if event.is_action_pressed(action):
-			try_move_by_offset(ACTION_OFFSETS[action])
-			get_viewport().set_input_as_handled()
-			return
 
 
 func set_run_id(value: String) -> void:
@@ -109,11 +90,12 @@ func _build_tiles() -> void:
 	_tiles.clear()
 
 	for coord: Vector2i in _model.get_all_coords():
-		var tile := _tile_scene.instantiate()
+		var tile: HexTileView = _tile_scene.instantiate() as HexTileView
 		_map_root.add_child(tile)
 		_map_root.move_child(tile, 0)
 		tile.position = axial_to_world(coord)
 		tile.configure(coord)
+		tile.tile_selected.connect(_on_tile_selected)
 		_tiles[coord] = tile
 
 
@@ -135,6 +117,10 @@ func _refresh_visual_state() -> void:
 
 	_player_marker.position = axial_to_world(player_coord)
 	_boss_marker.position = axial_to_world(boss_coord)
+
+
+func _on_tile_selected(destination: Vector2i) -> void:
+	request_move(destination)
 
 
 func _get_tile_state_for_encounter(coord: Vector2i) -> String:
