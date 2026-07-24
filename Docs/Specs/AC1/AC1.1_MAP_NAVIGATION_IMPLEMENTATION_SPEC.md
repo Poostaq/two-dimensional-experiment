@@ -68,7 +68,7 @@ Rationale: axial coordinates make adjacency rules explicit and deterministic. A 
 - Valid moves update `player_coord`.
 - Invalid moves leave `player_coord` unchanged.
 - Each accepted move increments `move_count`, but no move limit is enforced for AC1.1.
-- Moving onto the boss coordinate does not start combat in AC1.1; AC1.4 owns boss-battle triggering.
+- Moving onto a destination does not open encounter presentation in AC1.1; AC1.4 owns the post-move Encounter overlay.
 
 ### 3.3 Visual Behavior
 
@@ -304,7 +304,7 @@ Coverage status: implemented coverage with recorded automated and manual runtime
 
 - Seeded Safe/Combat/Boss encounter types.
 - Run ID determinism.
-- Entering the boss hex triggering combat.
+- Opening an Encounter overlay after entering a hex.
 - Sudden Death and boss pursuit.
 - Combat scene creation.
 - Roster, recruitment, rewards, equipment, or meta-progression.

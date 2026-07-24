@@ -194,7 +194,7 @@ Do not claim AC1.2 complete without:
 
 ## 9. Out Of Scope
 
-- Entering the boss hex triggering combat.
+- Opening or resolving an Encounter overlay after entering a hex.
 - Combat scene creation.
 - Encounter content payloads such as enemy groups, tavern choices, loot, or reward tables.
 - Sudden Death and boss pursuit.

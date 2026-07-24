@@ -150,7 +150,7 @@ Governance rule: do not claim AC1.3 completion without spec reference, current t
 
 ## 8. Out of Scope
 
-- AC1.4 boss hex auto-battle trigger.
+- AC1.4 post-move Encounter overlay.
 - AC1.5 Sudden Death boss pursuit behavior.
 - Encounter generation changes from AC1.2.
 - Combat scene transitions.
