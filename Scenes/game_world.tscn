@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://jj35sqrnlbn3"]
 
 [ext_resource type="Script" uid="uid://hk6o4rgdw4bf" path="res://Scripts/Map/map_controller.gd" id="1_map_controller"]
-[ext_resource type="Script" uid="uid://2clmpwfy3mak" path="res://Scripts/UI/navigation_help.gd" id="2_qvgq0"]
 
 [node name="GameWorld" type="Node2D" unique_id=1502010082]
 script = ExtResource("1_map_controller")
@@ -20,89 +19,3 @@ color = Color(0.88, 0.98, 1, 1)
 polygon = PackedVector2Array(0, -22, 18, 14, 0, 6, -18, 14)
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1992656574]
-
-[node name="NavigationHelp" type="Control" parent="UI" unique_id=1920882097]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 24.0
-offset_top = 24.0
-offset_right = 244.0
-offset_bottom = 188.0
-mouse_filter = 2
-script = ExtResource("2_qvgq0")
-
-[node name="HexDiagram" type="Control" parent="UI/NavigationHelp" unique_id=1748458162]
-anchors_preset = 0
-offset_right = 220.0
-offset_bottom = 164.0
-mouse_filter = 2
-
-[node name="CenterHex" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1534181187]
-layout_mode = 0
-offset_left = 80.0
-offset_top = 64.0
-offset_right = 140.0
-offset_bottom = 100.0
-text = "HEX"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeyNW" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=776274886]
-layout_mode = 0
-offset_left = 67.0
-offset_top = 27.0
-offset_right = 103.0
-offset_bottom = 55.0
-text = "Q"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeyNE" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1558778215]
-layout_mode = 0
-offset_left = 122.0
-offset_top = 28.0
-offset_right = 158.0
-offset_bottom = 56.0
-text = "W"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeyE" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=885244395]
-layout_mode = 0
-offset_left = 150.0
-offset_top = 68.0
-offset_right = 186.0
-offset_bottom = 96.0
-text = "E"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeyW" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1917487865]
-layout_mode = 0
-offset_left = 39.0
-offset_top = 68.0
-offset_right = 75.0
-offset_bottom = 96.0
-text = "A"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeySW" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1664160212]
-layout_mode = 0
-offset_left = 67.0
-offset_top = 108.0
-offset_right = 103.0
-offset_bottom = 136.0
-text = "S"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="KeySE" type="Label" parent="UI/NavigationHelp/HexDiagram" unique_id=1542115917]
-layout_mode = 0
-offset_left = 121.0
-offset_top = 108.0
-offset_right = 157.0
-offset_bottom = 136.0
-text = "D"
-horizontal_alignment = 1
-vertical_alignment = 1

@@ -2,7 +2,15 @@ class_name Ac1_3MouseNavigationTests
 extends SceneTree
 
 const GAME_WORLD_PATH := "res://Scenes/game_world.tscn"
-const EXPECTED_TEST_COUNT := 6
+const REMOVED_MAP_ACTIONS: Array[StringName] = [
+	&"map_move_e",
+	&"map_move_ne",
+	&"map_move_nw",
+	&"map_move_w",
+	&"map_move_sw",
+	&"map_move_se",
+]
+const EXPECTED_TEST_COUNT := 7
 
 var _failures: Array[String] = []
 
@@ -22,7 +30,8 @@ func _run() -> void:
 		_test_non_adjacent_left_click_is_rejected(controller)
 		_test_off_map_left_click_is_ignored(controller)
 		_test_right_click_is_ignored(controller)
-		_test_keyboard_action_is_ignored(controller)
+		_test_navigation_help_is_absent(controller)
+		_test_keyboard_map_actions_are_absent()
 		_test_hover_feedback_transitions(controller)
 		controller.queue_free()
 
@@ -95,19 +104,24 @@ func _test_off_map_left_click_is_ignored(controller: MapController) -> void:
 	)
 
 
-func _test_keyboard_action_is_ignored(controller: MapController) -> void:
-	var before_coord := controller.player_coord
-	var before_count := controller.move_count
-	var event := InputEventAction.new()
-	event.action = "map_move_se"
-	event.pressed = true
-	if controller.has_method("_unhandled_input"):
-		controller._unhandled_input(event)
+func _test_navigation_help_is_absent(controller: MapController) -> void:
+	_assert(
+		not controller.has_node("UI/NavigationHelp"),
+		"test_navigation_help_is_absent",
+		"UI/NavigationHelp remains in game_world.tscn"
+	)
+
+
+func _test_keyboard_map_actions_are_absent() -> void:
+	var remaining_actions: Array[StringName] = []
+	for action: StringName in REMOVED_MAP_ACTIONS:
+		if InputMap.has_action(action):
+			remaining_actions.append(action)
 
 	_assert(
-		controller.player_coord == before_coord and controller.move_count == before_count,
-		"test_keyboard_action_is_ignored",
-		"map_move_se remains an active movement path"
+		remaining_actions.is_empty(),
+		"test_keyboard_map_actions_are_absent",
+		"obsolete actions remain: %s" % [remaining_actions]
 	)
 
 
