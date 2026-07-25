@@ -24,6 +24,40 @@
 - Create: `Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/manual-runtime-check.md`
 - Create: `Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/implementation-link.txt`
 
+## Planning Authority and Dependency Chain
+
+The repository has no roadmap or migration-matrix artifact. Project governance does not require one, so this plan does not introduce a second planning authority solely for AC1.5. Implementation and review use this explicit chain:
+
+1. `.agents/policies/project-governance.md` defines the Concept → Design → Implementation → QA gate and completion-evidence requirements.
+2. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` is the product authority for AC1.5 and its automated/manual verification classification.
+3. `Docs/superpowers/specs/2026-07-25-ac1-5-sudden-death-design.md` is the approved behavioral and architectural authority.
+4. `Docs/superpowers/plans/2026-07-25-ac1-5-sudden-death.md` is the execution sequence and handoff authority.
+5. `Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/` is the completion authority; AC1.5 remains unchecked until its automated log, manual record, and implementation link exist.
+
+AC1.5 depends on these already implemented criteria:
+
+| Dependency | Required contract | Regression authority |
+|---|---|---|
+| AC1.1 | Valid adjacent movement, player coordinate, and accepted-move count | `Tests/Map/test_ac1_1_runtime_step_counts.gd`; `Tests/Map/test_map_controller_runtime.gd` |
+| AC1.2 | Deterministic seeded encounter layout and fixed opposite-corner boss origin | `Tests/Map/test_ac1_2_encounter_determinism.gd`; `Tests/Map/test_ac1_2_runtime_encounter_layout.gd`; `Tests/Map/test_ac1_2_hex_tile_view_states.gd` |
+| AC1.3 | Mouse selection delegates to the same accepted movement transaction | `Tests/Map/test_ac1_3_mouse_navigation.gd` |
+| AC1.4 | One active Encounter overlay blocks later map movement until closed | `Tests/Map/test_ac1_4_encounter_overlay.gd` |
+
+If a future repository-wide roadmap or migration matrix is adopted, it must reference AC1.5 and this authority chain; it does not silently supersede the approved MVP criterion or design.
+
+## Implementation Risks and Mitigations
+
+| Risk | Trigger or failure mode | Mitigation | Verification owner |
+|---|---|---|---|
+| Off-by-one activation | Boss moves on accepted move 15 or remains idle on move 16. | Keep activation and pursuit in separate `move_count == 15` and `move_count > 15` branches. | `test_moves_before_threshold_keep_boss_idle`, `test_move_fifteen_activates_without_pursuit`, `test_move_sixteen_starts_one_step_pursuit` |
+| Nondeterministic tie-breaking | Pursuit uses dictionary iteration, RNG, or replaces an equal-distance candidate. | Iterate `get_neighbors()` in `NEIGHBOR_OFFSETS` order and replace only for a strictly smaller distance. | `test_pursuit_tie_break_uses_neighbor_order`, `test_pursuit_step_is_deterministic` |
+| Duplicate Boss identity | Original seeded corner remains Boss after the runtime boss moves. | Preserve seeded lookup for AC1.2, but route tiles and overlays through runtime lookup that prioritizes `boss_coord` and makes the vacated origin Safe. | `test_runtime_boss_identity_moves_and_vacated_origin_is_safe` |
+| Double advancement | Closing an overlay, rejecting a click, or processing blocked input moves the boss. | Invoke pursuit only inside the successful `request_move()` transaction after player mutation. | `test_each_later_accepted_move_advances_once`, `test_rejected_and_blocked_moves_do_not_advance_pursuit` |
+| Duplicate or missed engagement | Both normal and Boss overlays open, or collision fails to open Boss. | Check player-to-boss engagement before pursuit and boss-to-player engagement immediately afterward; return after opening Boss. | `test_player_entering_boss_coord_triggers_boss_encounter`, `test_boss_reaching_player_triggers_boss_encounter` |
+| Partial run reset | New Run ID inherits position, counter, pursuit flag, or overlay state. | Make `set_run_id()` close the overlay and reset all mutable run fields before refreshing visuals. | `test_set_run_id_resets_sudden_death` |
+| AC1.1–AC1.4 regression | New runtime lookup or reset semantics alter existing navigation, determinism, mouse input, or overlay behavior. | Run every `Tests/Map/*.gd` asset independently plus GodotIQ project checks before evidence capture. | Task 5 full regression gate |
+| Authority drift | Implementation follows this plan while the MVP criterion or approved design changes. | Treat the authority chain above as ordered; update the design and plan together before implementation continues. | Planning review and `implementation-link.txt` |
+
 ### Task 1: Establish the Implementation Branch
 
 - [ ] **Step 1: Confirm the approved planning baseline**
