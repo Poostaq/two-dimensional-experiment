@@ -166,7 +166,7 @@
 - [x] AC1.2 — Hex encounter types (Safe/Combat/Boss) are seeded and deterministic per run ID
 - [x] AC1.3 — World-map navigation is controlled by mouse selection of adjacent hexes (no Q/W/E/A/S/D movement requirement)
 - [x] AC1.4 — Entering any map hex automatically opens an Encounter overlay for that hex's seeded encounter type
-- [ ] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
+- [x] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
 
 ### Combat System
 - [ ] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
@@ -205,7 +205,7 @@
 | `AC1.2` | Determinism check | Start two runs with the same Run ID and confirm the Safe/Combat/Boss hex layout is identical; start a run with a different Run ID and confirm the layout can differ. The AC1.2 fixture pair `AC1.2-A` and `AC1.2-B` is expected to differ by at least one non-boss tile under the documented hash algorithm. |
 | `AC1.3` | Manual runtime check | Use mouse clicks on adjacent hexes to move the player marker. Confirm valid adjacent clicks move exactly one hex and invalid or non-adjacent clicks do not move the player. |
 | `AC1.4` | Automated and manual runtime check | Enter Safe, Combat, and Boss hexes and verify each accepted move immediately opens one input-blocking Encounter overlay with the matching seeded type. Close it with `Close (Debug)` and verify the player remains on the entered hex with navigation restored. |
-| `AC1.5` | Manual runtime check | Avoid the boss for 15 player moves, then confirm Sudden Death activates and the boss moves immediately after each subsequent player move until engagement. |
+| `AC1.5` | Automated and manual runtime check | Run `Tests/Map/test_ac1_5_sudden_death.gd` to verify the move-15 activation boundary, deterministic shortest-path tie-breaking, one-step pursuit from move 16 onward, both engagement directions, runtime Boss identity, and reset behavior. Then avoid the boss for 15 player moves in the running game and confirm Sudden Death activates before one boss step follows each subsequent accepted player move until engagement. |
 | `AC2.1` | Manual runtime check | Enter battle and verify the battlefield shows exactly 6 player slots and 6 enemy slots. |
 | `AC2.2` | Manual runtime check | Start a battle with at least two units of different speed values and confirm action order follows descending speed. |
 | `AC2.3` | Manual runtime check | Apply damage to a unit until HP reaches 0 and verify it is removed from active battle participation. |

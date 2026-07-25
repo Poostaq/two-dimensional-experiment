@@ -1,0 +1,13 @@
+AC1.5 Implementation Link
+
+Branch: feature/ac1-5-sudden-death
+Test contract commit: ddae901
+Model implementation commit: c87c660
+Controller implementation commit: 9cc44ec
+PR: not opened
+
+Source spec: Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+Design spec: Docs/superpowers/specs/2026-07-25-ac1-5-sudden-death-design.md
+Implementation plan: Docs/superpowers/plans/2026-07-25-ac1-5-sudden-death.md
+Automated evidence: Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/automated-test.log
+Manual evidence: Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/manual-runtime-check.md
