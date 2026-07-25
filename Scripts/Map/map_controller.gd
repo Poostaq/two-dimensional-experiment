@@ -13,6 +13,7 @@ const TILE_STATE_SAFE := "safe"
 const TILE_STATE_COMBAT := "combat"
 const TILE_STATE_BOSS := "boss"
 const DEFAULT_RUN_ID := "default-run"
+const SUDDEN_DEATH_MOVE_THRESHOLD := 15
 
 @onready var _map_root: Node2D = $MapRoot
 @onready var _player_marker: Node2D = $MapRoot/PlayerMarker
@@ -29,6 +30,7 @@ var _model: HexMapModel
 var _tile_scene: PackedScene
 var _encounter_overlay_scene: PackedScene
 var _active_encounter_overlay: EncounterOverlay
+var _sudden_death_active: bool = false
 var _tiles: Dictionary = {}
 
 
@@ -51,6 +53,11 @@ func set_run_id(value: String) -> void:
 	if _model == null:
 		return
 
+	close_active_encounter()
+	player_coord = _model.get_start_coord()
+	boss_coord = _model.get_boss_coord()
+	move_count = 0
+	_sudden_death_active = false
 	encounter_types = _model.get_encounter_types_for_run(run_id)
 	_refresh_visual_state()
 
@@ -63,6 +70,20 @@ func get_encounter_type_at(coord: Vector2i) -> String:
 	if not encounter_types.has(coord):
 		return HexMapModel.ENCOUNTER_NONE
 	return encounter_types[coord]
+
+
+func is_sudden_death_active() -> bool:
+	return _sudden_death_active
+
+
+func get_runtime_encounter_type_at(coord: Vector2i) -> String:
+	if not _model.is_valid_coord(coord):
+		return HexMapModel.ENCOUNTER_NONE
+	if coord == boss_coord:
+		return HexMapModel.ENCOUNTER_BOSS
+	if coord == _model.get_boss_coord():
+		return HexMapModel.ENCOUNTER_SAFE
+	return get_encounter_type_at(coord)
 
 
 func has_active_encounter() -> bool:
@@ -100,7 +121,21 @@ func request_move(destination: Vector2i) -> bool:
 	player_coord = destination
 	move_count += 1
 	_refresh_visual_state()
-	_open_encounter(destination)
+
+	if player_coord == boss_coord:
+		_open_encounter(destination, HexMapModel.ENCOUNTER_BOSS)
+		return true
+
+	if move_count == SUDDEN_DEATH_MOVE_THRESHOLD:
+		_sudden_death_active = true
+	elif _sudden_death_active and move_count > SUDDEN_DEATH_MOVE_THRESHOLD:
+		boss_coord = _model.get_pursuit_step(boss_coord, player_coord)
+		_refresh_visual_state()
+		if boss_coord == player_coord:
+			_open_encounter(destination, HexMapModel.ENCOUNTER_BOSS)
+			return true
+
+	_open_encounter(destination, get_runtime_encounter_type_at(destination))
 	return true
 
 
@@ -151,7 +186,7 @@ func _on_tile_selected(destination: Vector2i) -> void:
 	request_move(destination)
 
 
-func _open_encounter(destination: Vector2i) -> void:
+func _open_encounter(destination: Vector2i, encounter_type: String) -> void:
 	if has_active_encounter():
 		return
 	if _encounter_overlay_scene == null:
@@ -167,13 +202,13 @@ func _open_encounter(destination: Vector2i) -> void:
 		return
 
 	_active_encounter_overlay = overlay
-	overlay.configure(destination, get_encounter_type_at(destination))
+	overlay.configure(destination, encounter_type)
 	overlay.close_requested.connect(Callable(self, "close_active_encounter"), CONNECT_ONE_SHOT)
 	_ui_layer.add_child(overlay)
 
 
 func _get_tile_state_for_encounter(coord: Vector2i) -> String:
-	match get_encounter_type_at(coord):
+	match get_runtime_encounter_type_at(coord):
 		HexMapModel.ENCOUNTER_SAFE:
 			return TILE_STATE_SAFE
 		HexMapModel.ENCOUNTER_COMBAT:
