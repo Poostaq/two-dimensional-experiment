@@ -50,6 +50,29 @@ func are_adjacent(from_coord: Vector2i, to_coord: Vector2i) -> bool:
 	return NEIGHBOR_OFFSETS.has(to_coord - from_coord)
 
 
+func get_hex_distance(from_coord: Vector2i, to_coord: Vector2i) -> int:
+	if not is_valid_coord(from_coord) or not is_valid_coord(to_coord):
+		return -1
+	var delta := to_coord - from_coord
+	return int((abs(delta.x) + abs(delta.y) + abs(delta.x + delta.y)) / 2)
+
+
+func get_pursuit_step(from_coord: Vector2i, to_coord: Vector2i) -> Vector2i:
+	if not is_valid_coord(from_coord) or not is_valid_coord(to_coord):
+		return from_coord
+	if from_coord == to_coord:
+		return from_coord
+
+	var best_coord := from_coord
+	var best_distance := get_hex_distance(from_coord, to_coord)
+	for neighbor: Vector2i in get_neighbors(from_coord):
+		var neighbor_distance := get_hex_distance(neighbor, to_coord)
+		if neighbor_distance < best_distance:
+			best_coord = neighbor
+			best_distance = neighbor_distance
+	return best_coord
+
+
 func get_start_coord() -> Vector2i:
 	return Vector2i(0, 0)
 
