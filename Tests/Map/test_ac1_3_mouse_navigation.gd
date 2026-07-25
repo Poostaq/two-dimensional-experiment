@@ -59,6 +59,7 @@ func _test_adjacent_left_click_moves_once(controller: MapController) -> void:
 		"test_adjacent_left_click_moves_once",
 		"expected one move to %s, got coord=%s count=%d" % [destination, controller.player_coord, controller.move_count]
 	)
+	_close_expected_encounter(controller, "test_adjacent_left_click_moves_once")
 
 
 func _test_non_adjacent_left_click_is_rejected(controller: MapController) -> void:
@@ -150,6 +151,13 @@ func _test_hover_feedback_transitions(controller: MapController) -> void:
 		"test_hover_feedback_transitions",
 		"expected enter/exit signals and temporary outline widening"
 	)
+
+
+func _close_expected_encounter(controller: MapController, test_name: String) -> void:
+	if not controller.has_active_encounter():
+		_failures.append("%s - expected active encounter after accepted move" % test_name)
+		return
+	controller.close_active_encounter()
 
 
 func _send_mouse_button_to_tile(controller: MapController, coord: Vector2i, button_index: MouseButton) -> bool:

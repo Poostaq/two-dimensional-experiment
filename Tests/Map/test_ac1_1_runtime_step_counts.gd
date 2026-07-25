@@ -44,6 +44,7 @@ func _run_checks() -> void:
 		_click_tile(world, destination)
 		await process_frame
 		_expect_state(world, "valid move %d" % (index + 1), destination, index + 1)
+		_close_expected_encounter(world, "valid move %d" % (index + 1))
 
 	var invalid_moves: Array[Vector2i] = [
 		Vector2i(4, 0),
@@ -66,6 +67,7 @@ func _run_checks() -> void:
 		_click_tile(world, destination)
 		await process_frame
 		_expect_state(world, "continued move %d" % (index + 1), destination, 6 + index)
+		_close_expected_encounter(world, "continued move %d" % (index + 1))
 
 	world.queue_free()
 	_finish()
@@ -89,6 +91,13 @@ func _click_tile(world: MapController, destination: Vector2i) -> void:
 	event.button_index = MOUSE_BUTTON_LEFT
 	event.pressed = true
 	tile._unhandled_input(event)
+
+
+func _close_expected_encounter(world: MapController, label: String) -> void:
+	if not world.has_active_encounter():
+		_failures.append("%s expected active encounter after accepted move" % label)
+		return
+	world.close_active_encounter()
 
 
 func _assert_equal(actual: Variant, expected: Variant, message: String) -> void:
