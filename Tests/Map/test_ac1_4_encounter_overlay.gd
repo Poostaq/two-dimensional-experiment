@@ -120,7 +120,7 @@ func _test_debug_close_preserves_state_and_restores_navigation(controller: MapCo
 	var before_count := controller.move_count
 	var before_run_id := controller.run_id
 	var before_layout := controller.get_encounter_layout()
-	_press_debug_close_button(controller, test_name)
+	await _press_debug_close_button(controller, test_name)
 	_assert(controller.player_coord == before_coord, test_name, "Close should preserve player_coord")
 	_assert(controller.move_count == before_count, test_name, "Close should preserve move_count")
 	_assert(controller.run_id == before_run_id, test_name, "Close should preserve run_id")
@@ -196,7 +196,9 @@ func _press_debug_close_button(controller: MapController, test_name: String) -> 
 		return
 	_assert(_button_has_close_connection(close_button, overlay), test_name, "CloseDebugButton should be wired to the overlay close handler")
 	overlay.call("_on_close_debug_pressed")
-	_assert(not _has_active_encounter(controller, test_name), test_name, "Close (Debug) button handler should clear active encounter")
+	_assert(_has_active_encounter(controller, test_name), test_name, "Close (Debug) should defer closure until the current input frame ends")
+	await process_frame
+	_assert(not _has_active_encounter(controller, test_name), test_name, "Close (Debug) button handler should clear active encounter on the next frame")
 	_assert(_active_overlay_count(controller) == 0, test_name, "Close (Debug) button should remove EncounterOverlay children from UI")
 
 

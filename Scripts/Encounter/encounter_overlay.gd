@@ -29,4 +29,9 @@ func _refresh_text() -> void:
 
 
 func _on_close_debug_pressed() -> void:
+	get_viewport().set_input_as_handled()
+	call_deferred("_emit_close_requested")
+
+
+func _emit_close_requested() -> void:
 	close_requested.emit()
