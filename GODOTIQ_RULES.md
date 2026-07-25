@@ -150,11 +150,11 @@ Use `nodes` mode to create container nodes, camera, and lights:
 
 ```
 godotiq_build_scene(nodes=[
-    {type: "Node3D", name: "Terrain"},
-    {type: "Node3D", name: "Decorations"},
-    {type: "Node3D", name: "Enemies"},
-    {type: "Camera3D", name: "MainCamera", position: [0, 10, 10], rotation: [-45, 0, 0]},
-    {type: "DirectionalLight3D", name: "Sun", rotation: [-60, 30, 0]}
+	{type: "Node3D", name: "Terrain"},
+	{type: "Node3D", name: "Decorations"},
+	{type: "Node3D", name: "Enemies"},
+	{type: "Camera3D", name: "MainCamera", position: [0, 10, 10], rotation: [-45, 0, 0]},
+	{type: "DirectionalLight3D", name: "Sun", rotation: [-60, 30, 0]}
 ])
 godotiq_save_scene()
 → Self-verify with explore/spatial_audit
@@ -166,13 +166,13 @@ Use `grid` mode for tile-based ground. Use `overrides` for special tiles:
 
 ```
 godotiq_build_scene(parent="Terrain", grid={
-    scene: "res://tiles/grass.tscn",
-    prefix: "Tile",
+	scene: "res://tiles/grass.tscn",
+	prefix: "Tile",
     rows: 8, cols: 8,
     spacing: 2.0,
     overrides: {
-        "3,0": {scene: "res://tiles/road.tscn"},
-        "3,1": {scene: "res://tiles/road.tscn"}
+		"3,0": {scene: "res://tiles/road.tscn"},
+		"3,1": {scene: "res://tiles/road.tscn"}
     }
 })
 godotiq_save_scene()
@@ -193,8 +193,8 @@ Use `scatter` mode for handpicked placements:
 
 ```
 godotiq_build_scene(parent="Decorations", scatter={items: [
-    {scene: "res://props/tree.tscn", name: "Tree1", position: [5, 0, 3]},
-    {scene: "res://props/rock.tscn", name: "Rock1", position: [8, 0, 1]}
+	{scene: "res://props/tree.tscn", name: "Tree1", position: [5, 0, 3]},
+	{scene: "res://props/rock.tscn", name: "Rock1", position: [8, 0, 1]}
 ]})
 godotiq_save_scene()
 → Self-verify with explore/spatial_audit
@@ -432,26 +432,26 @@ When a Pro tool returns a Community response, use these alternatives:
 1. Call godotiq_project_summary(detail="brief")
    → Community response: "5 scripts, 2 scenes, 2 autoloads"
    → Tell user: "I see 5 scripts and 2 scenes with GameManager and Events autoloads.
-     Full architecture analysis is available with Pro. I'll explore the files directly."
+	 Full architecture analysis is available with Pro. I'll explore the files directly."
    → Fallback: file_ops(op="tree") to see structure
 
 2. Call godotiq_file_context(path="res://scripts/player.gd")
    → Community response: "12 functions, 3 signals, depended by 4 scripts"
    → Tell user: "player.gd has 12 functions and 3 signals, used by 4 other scripts.
-     I can't see which scripts depend on it without Pro, so I'll check manually."
+	 I can't see which scripts depend on it without Pro, so I'll check manually."
    → Fallback: script_ops(op="read") to read the file
 
 3. User asks "put a shelf near the printer"
    → Call godotiq_scene_map first (workflow says to)
    → Community response with 3 nodes preview
    → Tell user: "I mapped the scene — 267 nodes. I can see the Printer at (3,0,1.5).
-     Full spatial layout with all positions needs Pro. I'll estimate a position."
+	 Full spatial layout with all positions needs Pro. I'll estimate a position."
    → Fallback: estimate (4,0,1.5), use node_ops(validate=true) to check collisions
 
 4. Call godotiq_validate after code changes
    → Community response: "8 issues: 6 warnings, 2 info"
    → Tell user: "Found 8 convention issues but I need Pro to see the details.
-     I'll still check compilation with check_errors."
+	 I'll still check compilation with check_errors."
    → Fallback: check_errors(scope="scene")
 ~~~
 
@@ -602,8 +602,8 @@ For close-up inspection of specific areas:
 
 ```
 godotiq_explore(mode="inspect", positions=[
-    {"position": [5, 2, 3], "look_at": [5, 0, 0], "direction": "tower_base"},
-    {"position": [10, 5, 10], "look_at": [0, 0, 0], "direction": "overview"}
+	{"position": [5, 2, 3], "look_at": [5, 0, 0], "direction": "tower_base"},
+	{"position": [10, 5, 10], "look_at": [0, 0, 0], "direction": "overview"}
 ])
 ```
 

@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://cun2yv8iyvjer"]
+
+[ext_resource type="Script" uid="uid://c2yo60dek8vhv" path="res://Scripts/Encounter/encounter_overlay.gd" id="1_0ixfd"]
+
+[node name="EncounterOverlay" type="CanvasLayer" unique_id=1701600214]
+script = ExtResource("1_0ixfd")
+
+[node name="InputBlocker" type="ColorRect" parent="." unique_id=75676714]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.48)
+
+[node name="CenterContainer" type="CenterContainer" parent="InputBlocker" unique_id=1684410672]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="PanelContainer" type="PanelContainer" parent="InputBlocker/CenterContainer" unique_id=1563728538]
+custom_minimum_size = Vector2(260, 150)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="InputBlocker/CenterContainer/PanelContainer" unique_id=281867980]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="VBoxContainer" type="VBoxContainer" parent="InputBlocker/CenterContainer/PanelContainer/MarginContainer" unique_id=347130295]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="InputBlocker/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1866926150]
+layout_mode = 2
+text = "Encounter"
+horizontal_alignment = 1
+
+[node name="EncounterTypeLabel" type="Label" parent="InputBlocker/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=1059976173]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Unknown"
+horizontal_alignment = 1
+
+[node name="CloseDebugButton" type="Button" parent="InputBlocker/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=78263737]
+layout_mode = 2
+text = "Close (Debug)"

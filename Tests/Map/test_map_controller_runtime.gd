@@ -75,6 +75,7 @@ func _test_valid_adjacent_move_updates_state(world: Node) -> void:
 	_assert(moved, "test_valid_adjacent_move_updates_state", "adjacent move should return true")
 	_assert(world.player_coord == Vector2i(1, 0), "test_valid_adjacent_move_updates_state", "expected player at (1, 0), got %s" % world.player_coord)
 	_assert(world.move_count == 1, "test_valid_adjacent_move_updates_state", "expected move_count 1, got %d" % world.move_count)
+	_close_expected_encounter(world, "test_valid_adjacent_move_updates_state")
 
 
 func _test_invalid_edge_move_is_rejected(world: Node) -> void:
@@ -113,9 +114,17 @@ func _test_valid_path_toward_boss_exists(world: Node) -> void:
 		if not world.request_move(destination):
 			_failures.append("test_valid_path_toward_boss_exists - failed moving to %s" % destination)
 			return
+		_close_expected_encounter(world, "test_valid_path_toward_boss_exists")
 
 	_assert(world.player_coord == Vector2i(4, 4), "test_valid_path_toward_boss_exists", "expected player to reach boss coord, got %s" % world.player_coord)
 	_assert(world.move_count == path.size(), "test_valid_path_toward_boss_exists", "expected move_count %d, got %d" % [path.size(), world.move_count])
+
+
+func _close_expected_encounter(world: MapController, test_name: String) -> void:
+	if not world.has_active_encounter():
+		_failures.append("%s - expected active encounter after accepted move" % test_name)
+		return
+	world.close_active_encounter()
 
 
 func _assert(condition: bool, test_name: String, reason: String) -> void:

@@ -3,6 +3,7 @@ extends Node2D
 
 const HEX_MAP_MODEL_PATH := "res://Scripts/Map/hex_map_model.gd"
 const TILE_SCENE_PATH := "res://Scenes/map_hex_tile.tscn"
+const ENCOUNTER_OVERLAY_SCENE_PATH := "res://Scenes/encounter_overlay.tscn"
 const TILE_RADIUS := 38.0
 const TILE_SPACING := 1.08
 const TILE_STATE_DEFAULT := "default"
@@ -16,6 +17,7 @@ const DEFAULT_RUN_ID := "default-run"
 @onready var _map_root: Node2D = $MapRoot
 @onready var _player_marker: Node2D = $MapRoot/PlayerMarker
 @onready var _boss_marker: Node2D = $MapRoot/BossMarker
+@onready var _ui_layer: CanvasLayer = $UI
 
 var player_coord: Vector2i = Vector2i.ZERO
 var boss_coord: Vector2i = Vector2i.ZERO
@@ -25,6 +27,8 @@ var encounter_types: Dictionary = {}
 
 var _model: HexMapModel
 var _tile_scene: PackedScene
+var _encounter_overlay_scene: PackedScene
+var _active_encounter_overlay: EncounterOverlay
 var _tiles: Dictionary = {}
 
 
@@ -32,6 +36,7 @@ func _ready() -> void:
 	var model_script := load(HEX_MAP_MODEL_PATH) as Script
 	_model = model_script.new() as HexMapModel
 	_tile_scene = load(TILE_SCENE_PATH) as PackedScene
+	_encounter_overlay_scene = load(ENCOUNTER_OVERLAY_SCENE_PATH) as PackedScene
 
 	player_coord = _model.get_start_coord()
 	boss_coord = _model.get_boss_coord()
@@ -60,11 +65,33 @@ func get_encounter_type_at(coord: Vector2i) -> String:
 	return encounter_types[coord]
 
 
+func has_active_encounter() -> bool:
+	return is_instance_valid(_active_encounter_overlay)
+
+
+func get_active_encounter() -> EncounterOverlay:
+	return _active_encounter_overlay if has_active_encounter() else null
+
+
+func close_active_encounter() -> void:
+	if not has_active_encounter():
+		_active_encounter_overlay = null
+		return
+
+	var overlay := _active_encounter_overlay
+	_active_encounter_overlay = null
+	if overlay.get_parent() != null:
+		overlay.get_parent().remove_child(overlay)
+	overlay.queue_free()
+
+
 func try_move_by_offset(offset: Vector2i) -> bool:
 	return request_move(player_coord + offset)
 
 
 func request_move(destination: Vector2i) -> bool:
+	if has_active_encounter():
+		return false
 	if not _model.is_valid_coord(destination):
 		return false
 	if not _model.are_adjacent(player_coord, destination):
@@ -73,6 +100,7 @@ func request_move(destination: Vector2i) -> bool:
 	player_coord = destination
 	move_count += 1
 	_refresh_visual_state()
+	_open_encounter(destination)
 	return true
 
 
@@ -121,6 +149,27 @@ func _refresh_visual_state() -> void:
 
 func _on_tile_selected(destination: Vector2i) -> void:
 	request_move(destination)
+
+
+func _open_encounter(destination: Vector2i) -> void:
+	if has_active_encounter():
+		return
+	if _encounter_overlay_scene == null:
+		push_error("Encounter overlay scene is missing: %s" % ENCOUNTER_OVERLAY_SCENE_PATH)
+		return
+	if _ui_layer == null:
+		push_error("GameWorld is missing UI CanvasLayer for encounter overlay")
+		return
+
+	var overlay := _encounter_overlay_scene.instantiate() as EncounterOverlay
+	if overlay == null:
+		push_error("Encounter overlay scene root must be an EncounterOverlay")
+		return
+
+	_active_encounter_overlay = overlay
+	overlay.configure(destination, get_encounter_type_at(destination))
+	overlay.close_requested.connect(Callable(self, "close_active_encounter"), CONNECT_ONE_SHOT)
+	_ui_layer.add_child(overlay)
 
 
 func _get_tile_state_for_encounter(coord: Vector2i) -> String:

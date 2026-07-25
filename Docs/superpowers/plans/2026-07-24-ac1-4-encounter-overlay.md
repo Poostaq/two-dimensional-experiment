@@ -4,7 +4,7 @@
 
 **Goal:** Open one input-blocking Encounter overlay with the correct seeded type after every accepted map move, then let `Close (Debug)` restore navigation without changing map state.
 
-**Architecture:** A dedicated `EncounterOverlay` CanvasLayer owns presentation and emits a close request. `MapController` remains authoritative for movement, stores the sole active overlay reference, rejects movement while that reference is valid, and opens the overlay only after a move commits.
+**Architecture:** A dedicated `EncounterOverlay` CanvasLayer owns presentation and emits a close request. `MapController` remains authoritative for movement, stores the sole active overlay reference, rejects movement while that reference is valid, and opens the overlay only after a move commits. The overlay is attached under the existing `UI` CanvasLayer in `game_world.tscn` so draw order and input ownership stay unambiguous.
 
 **Tech Stack:** Godot 4.7, typed GDScript, GodotIQ structured scene/script tooling, existing headless `SceneTree` tests.
 
@@ -139,7 +139,7 @@ overlay.encounter_coordinate
 overlay.encounter_type
 ```
 
-For the three-type test, call `controller.set_run_id()` with deterministic fixture IDs until the existing layout supplies reachable Safe and Combat destinations; walk toward Boss while closing each expected overlay. Assert the active overlay's coordinate and type after every accepted move.
+For the three-type test, call `controller.set_run_id()` with deterministic fixture IDs until the existing layout supplies reachable Safe and Combat destinations. Select Safe and Combat by inspecting valid adjacent destinations through `controller.get_encounter_type_at()`; do not rely on hard-coded screen positions or random timing. Walk toward Boss while closing each expected overlay. Assert the active overlay's coordinate and type after every accepted move.
 
 - [ ] **Step 3: Run the new test to prove it fails**
 
@@ -273,6 +273,7 @@ const ENCOUNTER_OVERLAY_SCENE_PATH := "res://Scenes/encounter_overlay.tscn"
 
 var _encounter_overlay_scene: PackedScene
 var _active_encounter_overlay: EncounterOverlay
+var _ui_layer: CanvasLayer
 ```
 
 Load it in `_ready()` with `load()`, then add:
@@ -327,10 +328,10 @@ func _open_encounter(destination: Vector2i) -> void:
 	_active_encounter_overlay = overlay
 	overlay.configure(destination, get_encounter_type_at(destination))
 	overlay.close_requested.connect(close_active_encounter, CONNECT_ONE_SHOT)
-	add_child(overlay)
+	_ui_layer.add_child(overlay)
 ```
 
-The reference assignment precedes `add_child()`, so the movement guard is active before the overlay becomes interactive.
+The reference assignment precedes `add_child()`, so the movement guard is active before the overlay becomes interactive. Resolve `_ui_layer` from the `UI` CanvasLayer in `game_world.tscn`; create or fail loudly during setup if the scene no longer provides that ownership node.
 
 - [ ] **Step 5: Validate and run the focused test**
 
