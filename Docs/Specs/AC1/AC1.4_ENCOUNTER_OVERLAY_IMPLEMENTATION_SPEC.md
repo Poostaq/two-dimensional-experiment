@@ -19,7 +19,7 @@ Open one input-blocking Encounter overlay immediately after every accepted post-
 - AC1.1 supplies bounded adjacent movement and move counting in `res://Scripts/Map/map_controller.gd`.
 - AC1.2 supplies deterministic Safe, Combat, and Boss encounter types through `MapController.get_encounter_type_at()`.
 - AC1.3 supplies mouse selection through `HexTileView.tile_selected`.
-- `res://Scenes/game_world.tscn` is the single world scene and currently contains no encounter UI.
+- `res://Scenes/game_world.tscn` is the single world scene. Its UI ownership point for AC1.4 is an existing `UI` `CanvasLayer`; the Encounter overlay must be attached under that layer so draw order and input ownership remain unambiguous.
 - `MapController.request_move()` currently accepts valid adjacent moves without an active-overlay guard.
 
 ## 3. Behavioral Contract
@@ -29,6 +29,7 @@ Open one input-blocking Encounter overlay immediately after every accepted post-
 - Initial map setup is not an entry and opens no overlay.
 - Every accepted move opens exactly one overlay after coordinate, count, and visuals update.
 - The overlay receives the entered `Vector2i` coordinate and the existing encounter type.
+- The overlay is parented under `game_world.tscn`'s `UI` `CanvasLayer`, not directly under map tiles or model nodes.
 - Invalid, off-map, and non-adjacent selections open no overlay.
 
 ### 3.2 Active State
@@ -63,7 +64,7 @@ Open one input-blocking Encounter overlay immediately after every accepted post-
 ### Modify
 
 - `Scripts/Map/map_controller.gd`
-  - Load the overlay scene, guard movement, open after accepted movement, and handle closure.
+  - Load the overlay scene, guard movement, attach it under the `UI` `CanvasLayer`, open after accepted movement, and handle closure.
 - `Tests/Map/test_ac1_1_runtime_step_counts.gd`
   - Close each expected overlay before the next valid test move.
 - `Tests/Map/test_map_controller_runtime.gd`
@@ -86,6 +87,8 @@ Automated verification must prove:
 - Close does not reopen the overlay;
 - a later accepted move, including re-entry, opens exactly one new overlay;
 - all AC1.1–AC1.3 map tests remain green after their fixture lifecycle is updated.
+
+Safe and Combat automated fixtures must be selected deterministically through the existing encounter lookup contract. Tests may iterate `set_run_id()` over a bounded list of fixture IDs, inspect valid adjacent destinations with `get_encounter_type_at()`, and choose the first reachable Safe and Combat destinations for the current run. Boss verification may follow the existing deterministic boss path, closing each expected overlay between accepted moves. Fixture selection must not depend on hard-coded visual positions or random timing.
 
 Manual runtime verification must use real mouse input to:
 
