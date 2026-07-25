@@ -109,27 +109,29 @@ An active Encounter overlay must follow the existing lifecycle rules during rese
 
 Focused `HexMapModel` tests verify:
 
-- the selected pursuit coordinate is valid and adjacent to the boss;
-- the selected coordinate reduces shortest hex distance by one;
-- equal-distance alternatives use `NEIGHBOR_OFFSETS` ordering;
-- repeated identical inputs return identical results;
-- equal and invalid endpoints safely return the source coordinate.
+- `test_pursuit_step_is_adjacent_and_reduces_distance` verifies that the selected coordinate is valid, adjacent, and one hex closer to the player;
+- `test_pursuit_tie_break_uses_neighbor_order` verifies that equal-distance alternatives use `NEIGHBOR_OFFSETS` ordering;
+- `test_pursuit_step_is_deterministic` verifies that repeated identical inputs return identical results;
+- `test_invalid_or_equal_endpoints_stay_put` verifies that equal and invalid endpoints safely return the source coordinate.
+
+These cases live in `Tests/Map/test_ac1_5_sudden_death.gd`.
 
 ### Automated Controller Checks
 
 AC1.5 integration tests verify:
 
-- moves 1–14 do not activate Sudden Death or move the boss;
-- move 15 activates Sudden Death without moving the boss;
-- move 16 produces the first boss pursuit step;
-- every later accepted move produces exactly one boss step;
-- blocked and rejected movement does not activate or move the boss;
-- the player entering `boss_coord` opens one Boss overlay before pursuit;
-- the boss reaching `player_coord` opens one Boss overlay after pursuit;
-- the boss's current coordinate resolves as Boss;
-- the vacated original boss coordinate resolves as Safe;
-- resetting/changing the Run ID restores the boss and clears Sudden Death;
+- `test_moves_before_threshold_keep_boss_idle` covers accepted moves 1–14;
+- `test_move_fifteen_activates_without_pursuit` covers the activation boundary;
+- `test_move_sixteen_starts_one_step_pursuit` covers the first pursuit turn;
+- `test_each_later_accepted_move_advances_once` covers one boss step per later accepted move;
+- `test_rejected_and_blocked_moves_do_not_advance_pursuit` covers invalid and overlay-blocked requests;
+- `test_player_entering_boss_coord_triggers_boss_encounter` covers engagement before pursuit;
+- `test_boss_reaching_player_triggers_boss_encounter` covers engagement after pursuit;
+- `test_runtime_boss_identity_moves_and_vacated_origin_is_safe` covers dynamic Boss identity and the vacated corner;
+- `test_set_run_id_resets_sudden_death` covers run reset behavior;
 - all existing AC1.1–AC1.4 map and overlay tests remain green.
+
+These cases live in `Tests/Map/test_ac1_5_sudden_death.gd`.
 
 ### Manual Runtime Check
 
@@ -147,22 +149,34 @@ Using real mouse navigation:
 
 | Requirement | Automated verification | Manual verification | Evidence |
 |---|---|---|---|
-| Activate after 15 unengaged player moves | Threshold boundary tests for moves 14, 15, and 16 | Observe activation on move 15 | `automated-test.log`, `manual-runtime-check.md` |
-| Move immediately after each subsequent player move | One-step-per-accepted-move controller test | Observe pursuit after moves 16+ | `automated-test.log`, `manual-runtime-check.md` |
-| Deterministic shortest-path pursuit | Model distance and tie-break tests | Repeat the same player route | `automated-test.log`, `manual-runtime-check.md` |
-| Pursue until battle is triggered | Player-to-boss and boss-to-player engagement tests | Allow either engagement direction | `automated-test.log`, `manual-runtime-check.md` |
+| Activate after 15 unengaged player moves | `test_moves_before_threshold_keep_boss_idle`; `test_move_fifteen_activates_without_pursuit`; `test_move_sixteen_starts_one_step_pursuit` | Observe activation on move 15 | `automated-test.log`, `manual-runtime-check.md` |
+| Move immediately after each subsequent player move | `test_move_sixteen_starts_one_step_pursuit`; `test_each_later_accepted_move_advances_once`; `test_rejected_and_blocked_moves_do_not_advance_pursuit` | Observe pursuit after moves 16+ | `automated-test.log`, `manual-runtime-check.md` |
+| Deterministic shortest-path pursuit | `test_pursuit_step_is_adjacent_and_reduces_distance`; `test_pursuit_tie_break_uses_neighbor_order`; `test_pursuit_step_is_deterministic`; `test_invalid_or_equal_endpoints_stay_put` | Repeat the same player route | `automated-test.log`, `manual-runtime-check.md` |
+| Pursue until battle is triggered | `test_player_entering_boss_coord_triggers_boss_encounter`; `test_boss_reaching_player_triggers_boss_encounter` | Allow either engagement direction | `automated-test.log`, `manual-runtime-check.md` |
+| Move Boss identity and make the vacated origin Safe | `test_runtime_boss_identity_moves_and_vacated_origin_is_safe` | Inspect the current boss hex and vacated corner | `automated-test.log`, `manual-runtime-check.md` |
 | Preserve existing map behavior | Complete `Tests/Map/*.gd` suite | Exercise overlays and rejected clicks | `automated-test.log`, `manual-runtime-check.md` |
-| Reset pursuit with a new run | Controller reset test | Change Run ID and inspect state | `automated-test.log`, `manual-runtime-check.md` |
+| Reset pursuit with a new run | `test_set_run_id_resets_sudden_death` | Change Run ID and inspect state | `automated-test.log`, `manual-runtime-check.md` |
 
 AC1.5 completion evidence must be stored under:
 
 ```text
-Docs/Specs/AC1/Evidence/AC1.5/YYYY-MM-DD/automated-test.log
-Docs/Specs/AC1/Evidence/AC1.5/YYYY-MM-DD/manual-runtime-check.md
-Docs/Specs/AC1/Evidence/AC1.5/YYYY-MM-DD/implementation-link.txt
+Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/automated-test.log
+Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/manual-runtime-check.md
+Docs/Specs/AC1/Evidence/AC1.5/2026-07-25/implementation-link.txt
 ```
 
 AC1.5 remains unchecked until all three current artifacts exist.
+
+## Risks and Mitigations
+
+| Risk | Impact | Mitigation and verification owner |
+|---|---|---|
+| Threshold ordering moves the boss on move 15 instead of move 16. | Sudden Death violates the approved timing contract. | `MapController` uses explicit `move_count == 15` activation and `move_count > 15` pursuit branches; the three named threshold tests own the boundary proof. |
+| The seeded corner and moving boss both resolve as Boss. | The map exposes two boss engagements. | Runtime encounter lookup prioritizes `boss_coord` and converts the vacated model boss coordinate to Safe; `test_runtime_boss_identity_moves_and_vacated_origin_is_safe` owns coverage. |
+| Equal-distance routes depend on dictionary order or RNG. | Identical player routes can produce different boss routes. | `HexMapModel` iterates `NEIGHBOR_OFFSETS` directly; the tie-break and repeatability tests own determinism coverage. |
+| Encounter-overlay timing advances pursuit more than once. | Closing an overlay or rejected input creates extra boss movement. | Pursuit occurs only inside an accepted `request_move()` transaction; `test_rejected_and_blocked_moves_do_not_advance_pursuit` and the full map suite own regression coverage. |
+| Run reset leaves a stale boss position, Sudden Death flag, or overlay. | A new Run ID inherits state from the previous run. | `set_run_id()` resets all runtime map state and closes any active overlay; `test_set_run_id_resets_sudden_death` owns coverage. |
+| Pursuit changes AC1.1–AC1.4 navigation or overlay behavior. | Previously accepted criteria regress. | Run every `Tests/Map/*.gd` script and repeat the AC1.5 manual path before completion evidence is accepted. |
 
 ## Out of Scope
 
