@@ -166,7 +166,7 @@
 - [x] AC1.2 — Hex encounter types (Safe/Combat/Boss) are seeded and deterministic per run ID
 - [x] AC1.3 — World-map navigation is controlled by mouse selection of adjacent hexes (no Q/W/E/A/S/D movement requirement)
 - [x] AC1.4 — Entering any map hex automatically opens an Encounter overlay for that hex's seeded encounter type
-- [ ] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
+- [x] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
 
 ### Combat System
 - [ ] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
