@@ -1,0 +1,21 @@
+Branch: ac1.4-encounter-overlay
+Commit: 6729a9d2a53339b1497b87aa14278dcea750680f
+PR: not opened unless remote review is requested
+
+Source spec: Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+Implementation spec: Docs/Specs/AC1/AC1.4_ENCOUNTER_OVERLAY_IMPLEMENTATION_SPEC.md
+Plan: Docs/superpowers/plans/2026-07-24-ac1-4-encounter-overlay.md
+Design: Docs/superpowers/specs/2026-07-24-ac1-4-encounter-overlay-design.md
+
+Implementation files:
+- Scenes/encounter_overlay.tscn
+- Scripts/Encounter/encounter_overlay.gd
+- Scripts/Map/map_controller.gd
+- Tests/Map/test_ac1_4_encounter_overlay.gd
+- Tests/Map/test_ac1_1_runtime_step_counts.gd
+- Tests/Map/test_map_controller_runtime.gd
+- Tests/Map/test_ac1_3_mouse_navigation.gd
+
+Evidence:
+- Docs/Specs/AC1/Evidence/AC1.4/2026-07-25/automated-test.log
+- Docs/Specs/AC1/Evidence/AC1.4/2026-07-25/manual-runtime-check.md
