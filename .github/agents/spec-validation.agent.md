@@ -6,6 +6,7 @@ tools:
   - read
   - search
   - edit
+  - godotiq/*
 ---
 
 # Spec Validation

@@ -236,11 +236,13 @@
 
 | Phase | Features | Effort |
 |-------|----------|--------|
-| **Phase 1: Core Loop** | 25-hex map traversal, seeded encounters, movement rules, recruitment flow, roster management | 2–3 weeks |
+| **Phase 1: Core Loop** | 25-hex map traversal, seeded encounters, movement rules, and encounter overlay flow | 2–3 weeks |
 | **Phase 2: Combat** | Turn-based combat engine, 6v6 slot arena, turn order, player actions, power scaling, cooldowns, combos, default actions, positional logic | 4–6 weeks |
 | **Phase 3: Progression** | Character progression models, equipment system, stat scaling, battle recovery rules, reward integration | 2–4 weeks |
 | **Phase 4: Meta-Loop** | Run completion unlocks, special event unlocks, persistence, save/load, unlock tracking | 2–3 weeks |
 | **Phase 5: Polish & QA** | Party-management UI, combat UX, balancing, bug fixing, determinism validation, content tuning | 2–4 weeks |
+
+Recruitment flow and roster management are not part of Phase 1 completion criteria and remain deferred to later phases.
 
 **Total Estimate:** 12–20 weeks solo development
 
