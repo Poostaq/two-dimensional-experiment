@@ -65,6 +65,10 @@ func _test_player_side_has_six_slots() -> void:
 	if arena != null:
 		var slots: Array = arena.call("get_player_slots")
 		_assert(slots.size() == 6, "player side has six slots", "expected 6, got %d" % slots.size())
+		var background := arena.get_node("Background") as Control
+		var margin := arena.get_node("Margin") as Control
+		_assert(background.anchor_right == 1.0 and background.anchor_bottom == 1.0 and background.offset_right == 0.0 and background.offset_bottom == 0.0, "player side has six slots", "background must fill the viewport")
+		_assert(margin.anchor_right == 1.0 and margin.anchor_bottom == 1.0 and margin.offset_right == 0.0 and margin.offset_bottom == 0.0, "player side has six slots", "arena content must fill the viewport")
 		arena.queue_free()
 
 
