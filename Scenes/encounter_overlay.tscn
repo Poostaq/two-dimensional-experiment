@@ -46,3 +46,10 @@ horizontal_alignment = 1
 [node name="CloseDebugButton" type="Button" parent="InputBlocker/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=78263737]
 layout_mode = 2
 text = "Close (Debug)"
+
+[node name="EnterBattleButton" type="Button" parent="InputBlocker/CenterContainer/PanelContainer/MarginContainer/VBoxContainer" unique_id=9738987]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+disabled = true
+text = "Enter Battle"
