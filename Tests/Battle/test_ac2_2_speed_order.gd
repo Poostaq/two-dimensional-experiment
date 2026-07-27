@@ -7,8 +7,6 @@ const ARENA_PATH := "res://Scenes/battle_arena.tscn"
 const EXPECTED_TEST_COUNT := 12
 
 var _failures: Array[String] = []
-var _unit_script: GDScript
-var _queue_script: GDScript
 
 
 func _initialize() -> void:
@@ -16,8 +14,6 @@ func _initialize() -> void:
 
 
 func _run() -> void:
-	_unit_script = load(UNIT_SCRIPT_PATH) as GDScript
-	_queue_script = load(QUEUE_SCRIPT_PATH) as GDScript
 	_test_higher_speed_first()
 	_test_player_tie_order()
 	_test_enemy_tie_order()
@@ -34,21 +30,17 @@ func _run() -> void:
 	quit(1 if not _failures.is_empty() else 0)
 
 
-func _unit(id: StringName, side: int, slot_index: int, speed: int) -> RefCounted:
-	if _unit_script == null:
-		return null
-	return _unit_script.new(id, str(id), side, slot_index, speed) as RefCounted
+func _unit(id: StringName, side: int, slot_index: int, speed: int) -> BattleUnitState:
+	return BattleUnitState.new(id, str(id), side, slot_index, speed)
 
 
-func _build(units: Array) -> Array:
-	if _queue_script == null:
-		return []
-	return _queue_script.call("build", units) as Array
+func _build(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
+	return BattleTurnQueue.build(units)
 
 
-func _ids(units: Array) -> Array[StringName]:
+func _ids(units: Array[BattleUnitState]) -> Array[StringName]:
 	var result: Array[StringName] = []
-	for unit: RefCounted in units:
+	for unit: BattleUnitState in units:
 		result.append(unit.get("unit_id") as StringName)
 	return result
 
@@ -65,26 +57,27 @@ func _instantiate_arena() -> Control:
 
 
 func _test_higher_speed_first() -> void:
-	var ordered: Array = _build([_unit(&"slow", 0, 0, 2), _unit(&"fast", 1, 0, 9)])
+	var ordered: Array = _build([_unit(&"slow", BattleUnitState.Side.PLAYER, 0, 2), _unit(&"fast", BattleUnitState.Side.ENEMY, 0, 9)])
 	_assert(_ids(ordered) == [&"fast", &"slow"], "higher speed first", "expected fast then slow")
 
 
 func _test_player_tie_order() -> void:
-	var units: Array = []
+	var units: Array[BattleUnitState] = []
 	for slot_index: int in range(5, -1, -1):
-		units.append(_unit(StringName("p%d" % slot_index), 0, slot_index, 5))
+		units.append(_unit(StringName("p%d" % slot_index), BattleUnitState.Side.PLAYER, slot_index, 5))
 	_assert(_ids(_build(units)) == [&"p0", &"p1", &"p2", &"p3", &"p4", &"p5"], "player tie order", "player slots must order 0 through 5")
 
 
 func _test_enemy_tie_order() -> void:
-	var units: Array = []
+	var units: Array[BattleUnitState] = []
 	for slot_index: int in range(5, -1, -1):
-		units.append(_unit(StringName("e%d" % slot_index), 1, slot_index, 5))
+		units.append(_unit(StringName("e%d" % slot_index), BattleUnitState.Side.ENEMY, slot_index, 5))
 	_assert(_ids(_build(units)) == [&"e0", &"e1", &"e2", &"e3", &"e4", &"e5"], "enemy tie order", "enemy slots must order 0 through 5")
 
 
 func _test_player_precedes_enemy_on_tie() -> void:
-	var ordered: Array = _build([_unit(&"enemy", 1, 0, 5), _unit(&"player", 0, 5, 5)])
+	var units: Array[BattleUnitState] = [_unit(&"enemy", BattleUnitState.Side.ENEMY, 0, 5), _unit(&"player", BattleUnitState.Side.PLAYER, 5, 5)]
+	var ordered: Array[BattleUnitState] = _build(units)
 	_assert(_ids(ordered) == [&"player", &"enemy"], "player precedes enemy on tie", "player side must win equal-speed side tie")
 
 
@@ -100,15 +93,15 @@ func _test_mixed_fixture_order() -> void:
 
 
 func _test_rebuild_is_stable() -> void:
-	var units: Array = [_unit(&"b", 1, 3, 4), _unit(&"a", 0, 3, 4), _unit(&"c", 0, 0, 8)]
-	var original: Array = units.duplicate()
+	var units: Array[BattleUnitState] = [_unit(&"b", BattleUnitState.Side.ENEMY, 3, 4), _unit(&"a", BattleUnitState.Side.PLAYER, 3, 4), _unit(&"c", BattleUnitState.Side.PLAYER, 0, 8)]
+	var original: Array[BattleUnitState] = units.duplicate()
 	var first: Array[StringName] = _ids(_build(units))
 	var second: Array[StringName] = _ids(_build(units))
 	_assert(first == second and units == original, "rebuild is stable", "rebuild changed order or mutated input")
 
 
 func _test_invalid_speed_empty_state() -> void:
-	var invalid_units: Array = [_unit(&"invalid", 0, 0, 11)]
+	var invalid_units: Array[BattleUnitState] = [_unit(&"invalid", BattleUnitState.Side.PLAYER, 0, 11)]
 	_assert(_build(invalid_units).is_empty(), "invalid speed rejected", "speed 11 must return an empty queue")
 	var arena: Control = await _instantiate_arena()
 	if arena != null and arena.has_method("configure_units"):
@@ -119,7 +112,7 @@ func _test_invalid_speed_empty_state() -> void:
 
 
 func _test_duplicate_slot_empty_state() -> void:
-	var duplicates: Array = [_unit(&"first", 0, 0, 4), _unit(&"second", 0, 0, 5)]
+	var duplicates: Array[BattleUnitState] = [_unit(&"first", BattleUnitState.Side.PLAYER, 0, 4), _unit(&"second", BattleUnitState.Side.PLAYER, 0, 5)]
 	_assert(_build(duplicates).is_empty(), "duplicate slot rejected", "duplicate side and slot must return an empty queue")
 	var arena: Control = await _instantiate_arena()
 	if arena != null and arena.has_method("configure_units"):
