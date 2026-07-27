@@ -1,0 +1,26 @@
+AC2.2 IMPLEMENTATION LINK
+
+Branch: feature/ac2-2-speed-order
+Implementation commit: ec2e00e
+PR: not created or pushed (local handoff)
+
+Source spec:
+Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+
+Approved design:
+Docs/superpowers/specs/2026-07-27-ac2-2-speed-order-design.md
+
+Implementation plan:
+Docs/superpowers/plans/2026-07-27-ac2-2-speed-order.md
+
+Implemented files:
+Scripts/Battle/battle_unit_state.gd
+Scripts/Battle/battle_turn_queue.gd
+Scripts/Battle/battle_arena.gd
+Scenes/battle_arena.tscn
+Tests/Battle/test_ac2_2_speed_order.gd
+
+Evidence:
+Docs/Specs/AC2/Evidence/AC2.2/2026-07-27/automated-test.log
+Docs/Specs/AC2/Evidence/AC2.2/2026-07-27/manual-runtime-check.md
+Docs/Specs/AC2/Evidence/AC2.2/2026-07-27/implementation-link.txt

@@ -170,7 +170,7 @@
 
 ### Combat System
 - [x] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
-- [ ] AC2.2 — Faster units act earlier according to speed order
+- [x] AC2.2 — Faster units act earlier according to speed order
 - [ ] AC2.3 — Unit takes damage; at 0 HP, removed from battle
 - [ ] AC2.4 — Player wins if all enemies defeated; loses if all units defeated
 - [ ] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
