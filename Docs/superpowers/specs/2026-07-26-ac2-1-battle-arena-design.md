@@ -55,11 +55,13 @@ These are intentional implementation targets, not missing prerequisites.
 
 | Constant | Canonical string | AC2.1 behavior |
 |---|---|---|
-| `HexMapModel.ENCOUNTER_SAFE` | `"Safe"` | Preserve the existing overlay; do not expose or accept battle entry. |
-| `HexMapModel.ENCOUNTER_COMBAT` | `"Combat"` | Expose battle entry and configure the arena as Combat. |
-| `HexMapModel.ENCOUNTER_BOSS` | `"Boss"` | Expose battle entry and configure the arena as Boss. |
+| `HexMapModel.ENCOUNTER_SAFE` | `"safe"` | Preserve the existing overlay; do not expose or accept battle entry. |
+| `HexMapModel.ENCOUNTER_COMBAT` | `"combat"` | Expose battle entry and configure the arena as Combat. |
+| `HexMapModel.ENCOUNTER_BOSS` | `"boss"` | Expose battle entry and configure the arena as Boss. |
 
 AC2.1 performs no trimming, case folding, aliasing, or fallback normalization. Callers must pass a canonical constant. Any other value, including `HexMapModel.ENCOUNTER_NONE`, is ineligible for battle entry and must not create an arena. Tests compare behavior against the `HexMapModel` constants rather than duplicating free-form literals.
+
+Presentation text may capitalize the canonical value for display, but displayed labels never flow back into transition validation or arena configuration.
 
 ## 5. Authority and Dependency Chain
 
@@ -68,7 +70,7 @@ Implementation and review use this ordered authority chain:
 1. `.agents/policies/project-governance.md` defines the Concept → Design → Implementation → QA gate and current-evidence requirement.
 2. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` is the product authority for AC2.1 and its manual runtime verification path.
 3. This document is the approved behavioral, architectural, interface, and verification authority for AC2.1.
-4. `Docs/superpowers/plans/2026-07-27-ac2-1-battle-arena.md` will define the implementation sequence after this design is approved.
+4. After creation, `Docs/superpowers/plans/2026-07-27-ac2-1-battle-arena.md` will become the implementation-sequence authority. It is not a prerequisite of this design and has no authority until it exists and passes planning review.
 5. `Docs/Specs/AC2/Evidence/AC2.1/2026-07-26/` is the completion authority; AC2.1 remains unchecked until every required artifact exists and records passing current evidence.
 
 AC2.1 depends on the existing AC1.2 encounter-type constants, AC1.3 map input path, AC1.4 encounter lifecycle/input blocking, and AC1.5 runtime Boss identity. Existing `Tests/Map/*.gd` assets remain regression authority for those contracts.
