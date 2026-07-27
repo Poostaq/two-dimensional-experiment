@@ -11,20 +11,20 @@ static func build(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
 	var occupied: Dictionary = {}
 	for unit: BattleUnitState in units:
 		if not is_instance_valid(unit):
-			push_error("Battle turn queue contains a null unit")
+			print("BattleTurnQueue rejected: null unit")
 			return []
 		if unit.side != BattleUnitState.Side.PLAYER and unit.side != BattleUnitState.Side.ENEMY:
-			push_error("Battle unit %s has invalid side %d" % [unit.unit_id, unit.side])
+			print("BattleTurnQueue rejected: unit %s has invalid side %d" % [unit.unit_id, unit.side])
 			return []
 		if unit.speed < MIN_SPEED or unit.speed > MAX_SPEED:
-			push_error("Battle unit %s has speed %d outside %d..%d" % [unit.unit_id, unit.speed, MIN_SPEED, MAX_SPEED])
+			print("BattleTurnQueue rejected: unit %s has speed %d outside %d..%d" % [unit.unit_id, unit.speed, MIN_SPEED, MAX_SPEED])
 			return []
 		if unit.slot_index < 0 or unit.slot_index >= SIDE_SLOT_COUNT:
-			push_error("Battle unit %s has invalid slot %d" % [unit.unit_id, unit.slot_index])
+			print("BattleTurnQueue rejected: unit %s has invalid slot %d" % [unit.unit_id, unit.slot_index])
 			return []
 		var occupancy_key := Vector2i(unit.side, unit.slot_index)
 		if occupied.has(occupancy_key):
-			push_error("Battle turn queue has duplicate side/slot %s" % occupancy_key)
+			print("BattleTurnQueue rejected: duplicate side/slot %s" % occupancy_key)
 			return []
 		occupied[occupancy_key] = true
 		ordered.append(unit)
