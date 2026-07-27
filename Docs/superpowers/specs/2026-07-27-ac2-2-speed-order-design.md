@@ -8,7 +8,7 @@
 | Owner | Project Lead |
 | Prepared by | Codex |
 | Date | 2026-07-27 |
-| Status | Approved for implementation planning |
+| Status | Review revisions incorporated; pending written-spec approval |
 
 ---
 
@@ -38,7 +38,30 @@ AC2.2 excludes:
 - Runtime speed changes, status effects, extra actions, and initiative randomness.
 - Production turn controls, final combat presentation, animation, and audio.
 
-## 3. Formation and Tie-Break Contract
+## 3. Current Repository Baseline
+
+AC2.2 starts from the completed AC2.1 implementation:
+
+- `res://Scripts/Battle/battle_arena.gd` owns arena context, the two six-slot queries, and the existing debug-exit signal.
+- `res://Scenes/battle_arena.tscn` contains the twelve scene-authored slots and `Exit Battle (Debug)`, but no combatant labels, round label, current-unit label, turn highlight, or advance-turn control.
+- `res://Tests/Map/test_ac2_1_battle_arena.gd` verifies the map-to-battle transition and arena structure.
+- `res://Scripts/Battle/battle_unit_state.gd`, `res://Scripts/Battle/battle_turn_queue.gd`, `res://Tests/Battle/test_ac2_2_speed_order.gd`, and the AC2.2 evidence hierarchy do not exist yet.
+
+Those absences are planned implementation work, not prerequisites or current completion evidence. AC2.2 is not implemented and must remain unchecked until every completion gate in Section 12 passes.
+
+## 4. Implementation Checklist
+
+| Order | Current target | Planned change | Completion signal |
+|---|---|---|---|
+| 1 | `Scripts/Battle/` | Add typed `BattleUnitState` | Unit identity, side, semantic slot, and speed can be constructed independently of scene nodes. |
+| 2 | `Scripts/Battle/` | Add pure `BattleTurnQueue` | Valid units sort by the total deterministic key; invalid collections return an empty queue with diagnostics. |
+| 3 | `Scripts/Battle/battle_arena.gd` | Add debug fixtures, queue ownership, current-unit access, advancement, wrap, and UI synchronization | Arena state advances exactly once per request and exposes the current unit. |
+| 4 | `Scenes/battle_arena.tscn` | Add unit/speed labels, round/current-unit display, acting-slot highlight support, and `Advance Turn (Debug)` | Runtime UI makes the entire order observable. |
+| 5 | `Tests/Battle/` | Add the focused 12-case AC2.2 contract | Focused runner prints the exact PASS signature and exits `0`. |
+| 6 | Existing tests and runtime | Run regression, GodotIQ, pointer-input, and manual checks | AC2.1 structure/transition/debug exit still pass and AC2.2 runtime behavior matches this design. |
+| 7 | `Docs/Specs/AC2/Evidence/AC2.2/2026-07-27/` | Add current automated, manual, and implementation-link artifacts | All required evidence exists and records passing results before the source criterion is checked. |
+
+## 5. Formation and Tie-Break Contract
 
 Each side has a front column nearest its opponent and a back column farther from its opponent. Slot indices encode formation priority independently of screen direction:
 
@@ -67,7 +90,7 @@ Player 0, 1, 2, 3, 4, 5, Enemy 0, 1, 2, 3, 4, 5
 
 The ordering is deterministic and contains no random tie-break.
 
-## 4. Authority and Dependencies
+## 6. Authority and Dependencies
 
 Implementation and review use this authority chain:
 
@@ -79,7 +102,7 @@ Implementation and review use this authority chain:
 
 AC2.2 extends AC2.1's `BattleArena`, twelve stable scene-authored slots, Combat/Boss entry flow, navigation blocking, and debug exit. Existing map and AC2.1 tests remain regression authority.
 
-## 5. Architecture
+## 7. Architecture
 
 Combat rules remain separate from UI presentation:
 
@@ -89,9 +112,9 @@ Combat rules remain separate from UI presentation:
 
 This boundary lets AC2.3 extend unit state with HP and active participation without moving sorting rules into scene nodes. It also lets future roster integration replace debug fixtures while preserving the queue interface.
 
-## 6. Components and Interfaces
+## 8. Components and Interfaces
 
-### 6.1 Battle Unit State
+### 8.1 Battle Unit State
 
 `Scripts/Battle/battle_unit_state.gd` defines `class_name BattleUnitState` and:
 
@@ -118,7 +141,7 @@ func _init(
 
 The unit model has no scene-node reference. `unit_id` is stable queue/test identity; `display_name` is presentation only.
 
-### 6.2 Turn Queue
+### 8.2 Turn Queue
 
 `Scripts/Battle/battle_turn_queue.gd` defines `class_name BattleTurnQueue` and:
 
@@ -142,7 +165,7 @@ static func build(units: Array[BattleUnitState]) -> Array[BattleUnitState]
 
 Invalid input is a programmer/configuration error. The method reports a clear error and returns an empty typed array so the arena can enter a safe no-active-unit state.
 
-### 6.3 Battle Arena
+### 8.3 Battle Arena
 
 `BattleArena` gains:
 
@@ -151,16 +174,19 @@ var round_number: int = 1
 
 func get_current_unit() -> BattleUnitState
 func get_turn_queue() -> Array[BattleUnitState]
+func configure_units(units: Array[BattleUnitState]) -> void
 func advance_turn() -> void
 ```
 
-On initialization, the arena creates twelve explicit deterministic debug fixtures. They occupy every player and enemy slot, use speeds within `1–10`, and include ties across front/back and both sides. The exact fixture table is part of the implementation plan and automated expected order.
+On initialization, the arena creates twelve explicit deterministic debug fixtures and passes them through `configure_units()`. They occupy every player and enemy slot, use speeds within `1–10`, and include ties across front/back and both sides. The exact fixture table is part of the implementation plan and automated expected order.
+
+`configure_units()` replaces the arena-owned unit collection with a typed copy, rebuilds the queue, resets the queue index, and synchronizes the UI. It is the future roster/enemy-composition integration seam and lets focused tests exercise empty and invalid collections without manipulating scene internals.
 
 The arena builds its first queue, selects index `0`, and synchronizes all unit and turn UI. `advance_turn()` moves exactly one position. When called on the final position, it increments `round_number`, rebuilds the queue from the active unit collection, and selects the new first entry.
 
 Queue accessors return copies where needed so external callers and tests cannot silently reorder arena-owned state.
 
-## 7. UI and Interaction
+## 9. UI and Interaction
 
 Each occupied slot visibly shows:
 
@@ -177,16 +203,23 @@ The arena adds:
 
 Pressing the button advances exactly one unit and refreshes the labels and highlight. The existing `Exit Battle (Debug)` behavior remains unchanged.
 
-When no valid queue exists:
+The empty/no-active-unit UI contract is:
 
-- `get_current_unit()` returns `null`.
-- The current-unit label shows `No active units`.
-- The advance button is disabled.
-- No slot is highlighted.
+| Observable | Required state |
+|---|---|
+| `get_turn_queue()` | Empty typed array |
+| `get_current_unit()` | `null` |
+| Round label | Retains the current round number; it does not increment |
+| Current-unit label | Exact text `No active units` |
+| `Advance Turn (Debug)` | Disabled |
+| Slot highlights | Zero highlighted slots |
+| `advance_turn()` call | No state mutation and no error |
+
+Focused integration tests must assert every row rather than relying on visual inspection alone.
 
 The debug controls are temporary verification seams and are not production action-selection UX.
 
-## 8. State and Error Handling
+## 10. State and Error Handling
 
 - Queue construction never mutates the caller's unit array.
 - Rebuilding the same unchanged unit set returns the same identity order.
@@ -194,17 +227,20 @@ The debug controls are temporary verification seams and are not production actio
 - One accepted button press advances one position; deferred signal handling prevents duplicate advancement from one input event.
 - An empty unit collection is valid and produces the no-active-unit state.
 - Invalid speed, side, slot, null entry, or duplicate occupancy produces an empty queue and a clear diagnostic.
+- Invalid construction and an intentionally empty unit collection converge on the same testable no-active-unit UI state, while diagnostics distinguish invalid input from a valid empty battle.
 - A round changes only when advancing past the final queue entry.
 - Starting or exiting a battle does not mutate map/run state.
 - Combat and Boss arenas use the same AC2.2 ordering contract.
 
-## 9. Verification
+## 11. Verification
 
 ### Automated
 
 Create:
 
 `res://Tests/Battle/test_ac2_2_speed_order.gd`
+
+`Tests/Battle/` is an intentional new test boundary. Existing tests live under `Tests/Map/` because all completed criteria entered through map navigation and the AC2.1 focused test verifies the map-to-arena transition. AC2.2 introduces pure battle-domain models and arena-local turn behavior, so its focused test belongs beside that domain rather than extending the map test area. Cross-system transition coverage remains in `Tests/Map/test_ac2_1_battle_arena.gd`.
 
 Run from the repository root:
 
@@ -235,6 +271,8 @@ The twelve cases verify:
 
 The test runner prints failures as `FAILED: <name> - <reason>`, omits the PASS signature when any case fails, and exits `1`.
 
+Cases 7 and 8 must also assert the complete no-active-unit UI contract: exact label text, disabled advance button, no highlighted slots, unchanged round number, and no mutation after `advance_turn()`.
+
 All existing map and AC2.1 tests run independently as the regression gate. GodotIQ validation, parser checks, orphan-signal checks, runtime startup, debug-console health, and real pointer-input verification are also required.
 
 ### Manual Runtime Check
@@ -249,28 +287,22 @@ All existing map and AC2.1 tests run independently as the regression gate. Godot
 8. Confirm `Exit Battle (Debug)` preserves map state.
 9. Enter a Boss battle and confirm the same initialization and ordering behavior.
 
-## 10. Completion Evidence
+## 12. Completion Evidence
 
-AC2.2 remains unchecked until the repository contains current passing:
+AC2.2 remains unchecked until every gate below is satisfied by the same implementation commit:
 
-- Focused AC2.2 automated output.
-- Existing regression output.
-- GodotIQ project validation, parser, signal, runtime, and input evidence.
-- Manual runtime observations for Combat, all twelve turns, tie order, round wrap, debug exit, and Boss initialization.
-- An implementation link identifying the task branch and final implementation commit.
+1. `automated-test.log` exists and records the focused AC2.2 PASS signature, every existing regression test with exit `0`, GodotIQ validation/parser/orphan-signal results, Godot version, branch, and tested commit.
+2. `manual-runtime-check.md` exists and records PASS observations for Combat initialization, all twelve turns, descending speeds, every tie boundary, exactly one current highlight, round wrap, empty/no-active-unit UI behavior, debug exit with preserved map state, and Boss initialization.
+3. `implementation-link.txt` exists and identifies the source spec, this design, the implementation plan, task branch, final implementation commit, changed scripts/scenes/tests, and all evidence paths.
+4. The commit recorded in all three artifacts is identical to the implementation under test; stale or pre-change evidence does not qualify.
+5. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` is changed from `[ ]` to `[x]` only after gates 1–4 pass.
 
 Evidence belongs under:
 
 `Docs/Specs/AC2/Evidence/AC2.2/2026-07-27/`
 
-Required artifacts are:
+The absence of any artifact, any FAIL/INCONCLUSIVE result, a mismatched commit, or an incomplete manual observation keeps AC2.2 unchecked.
 
-- `automated-test.log`
-- `manual-runtime-check.md`
-- `implementation-link.txt`
-
-`Docs/Specs/GAME_DESIGN_SPEC_MVP.md` must keep AC2.2 unchecked until all required evidence exists and passes.
-
-## 11. Future Extension Points
+## 13. Future Extension Points
 
 AC2.3 may add health and active/defeated state to `BattleUnitState`; queue rebuilding can then exclude defeated units. Later criteria may replace debug fixtures with roster/enemy composition, replace the debug advance button with completed action resolution, and respond to speed/status changes at the documented round boundary. Those extensions should preserve the pure queue contract and semantic formation tie-break.
