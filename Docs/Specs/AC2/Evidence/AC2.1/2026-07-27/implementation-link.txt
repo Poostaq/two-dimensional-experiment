@@ -1,0 +1,20 @@
+Branch: feature/ac2-1-battle-arena
+Implementation commit: 6972028
+PR: not opened unless remote review is requested
+
+Source spec: Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+Design: Docs/superpowers/specs/2026-07-26-ac2-1-battle-arena-design.md
+Plan: Docs/superpowers/plans/2026-07-27-ac2-1-battle-arena.md
+
+Implementation:
+- Scenes/battle_arena.tscn
+- Scripts/Battle/battle_arena.gd
+- Scenes/encounter_overlay.tscn
+- Scripts/Encounter/encounter_overlay.gd
+- Scripts/Map/map_controller.gd
+- Tests/Map/test_ac2_1_battle_arena.gd
+
+Evidence:
+- Docs/Specs/AC2/Evidence/AC2.1/2026-07-27/automated-test.log
+- Docs/Specs/AC2/Evidence/AC2.1/2026-07-27/manual-runtime-check.md
+- Docs/Specs/AC2/Evidence/AC2.1/2026-07-27/implementation-link.txt

@@ -169,7 +169,7 @@
 - [x] AC1.5 — If boss is not engaged within 15 player moves, boss becomes empowered and moves immediately after each player move until battle is triggered
 
 ### Combat System
-- [ ] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
+- [x] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
 - [ ] AC2.2 — Faster units act earlier according to speed order
 - [ ] AC2.3 — Unit takes damage; at 0 HP, removed from battle
 - [ ] AC2.4 — Player wins if all enemies defeated; loses if all units defeated

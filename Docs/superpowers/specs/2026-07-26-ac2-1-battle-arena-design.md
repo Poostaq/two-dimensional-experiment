@@ -71,7 +71,7 @@ Implementation and review use this ordered authority chain:
 2. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` is the product authority for AC2.1 and its manual runtime verification path.
 3. This document is the approved behavioral, architectural, interface, and verification authority for AC2.1.
 4. After creation, `Docs/superpowers/plans/2026-07-27-ac2-1-battle-arena.md` will become the implementation-sequence authority. It is not a prerequisite of this design and has no authority until it exists and passes planning review.
-5. `Docs/Specs/AC2/Evidence/AC2.1/2026-07-26/` is the completion authority; AC2.1 remains unchecked until every required artifact exists and records passing current evidence.
+5. `Docs/Specs/AC2/Evidence/AC2.1/2026-07-27/` is the completion authority; AC2.1 remains unchecked until every required artifact exists and records passing current evidence.
 
 AC2.1 depends on the existing AC1.2 encounter-type constants, AC1.3 map input path, AC1.4 encounter lifecycle/input blocking, and AC1.5 runtime Boss identity. Existing `Tests/Map/*.gd` assets remain regression authority for those contracts.
 
@@ -236,7 +236,7 @@ AC2.1 remains unchecked until the repository contains:
 
 Evidence belongs under:
 
-`Docs/Specs/AC2/Evidence/AC2.1/2026-07-26/`
+`Docs/Specs/AC2/Evidence/AC2.1/2026-07-27/`
 
 Implementation must create the complete hierarchy and these artifacts:
 
