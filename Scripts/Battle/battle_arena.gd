@@ -110,11 +110,11 @@ func _get_control_children(formation: GridContainer) -> Array[Control]:
 
 
 func _assign_slot_metadata(formation: GridContainer, side: String) -> void:
-	var slots := _get_control_children(formation)
-	for index: int in slots.size():
-		slots[index].set_meta("side", side)
-		slots[index].set_meta("slot_index", index)
-		slots[index].set_meta("is_current_unit", false)
+	for slot: Control in _get_control_children(formation):
+		var slot_index := int(String(slot.name).trim_prefix("Slot"))
+		slot.set_meta("side", side)
+		slot.set_meta("slot_index", slot_index)
+		slot.set_meta("is_current_unit", false)
 
 
 func _refresh_context() -> void:
@@ -164,7 +164,10 @@ func _get_slot_for_unit(unit: BattleUnitState) -> Control:
 	if not is_instance_valid(unit) or unit.slot_index < 0 or unit.slot_index >= SIDE_SLOT_COUNT:
 		return null
 	var slots: Array[Control] = get_player_slots() if unit.side == BattleUnitState.Side.PLAYER else get_enemy_slots()
-	return slots[unit.slot_index]
+	for slot: Control in slots:
+		if int(slot.get_meta("slot_index", -1)) == unit.slot_index:
+			return slot
+	return null
 
 
 func _on_advance_debug_pressed() -> void:
