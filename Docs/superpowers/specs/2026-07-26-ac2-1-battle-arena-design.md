@@ -35,7 +35,47 @@ AC2.1 excludes:
 - Rewards, combat persistence, and production battle-exit rules.
 - Final visual art, animation, audio, and balance.
 
-## 3. Architecture
+## 3. Baseline Assumptions
+
+AC2.1 begins from the following verified pre-combat state:
+
+- `res://Scenes/game_world.tscn` contains the existing `UI` `CanvasLayer` that will host the arena.
+- `res://Scripts/Map/map_controller.gd` owns active encounter lifecycle and navigation blocking, but has no active-battle API.
+- `res://Scripts/Encounter/encounter_overlay.gd` exposes `close_requested` and `configure()`, but has no battle request signal.
+- `res://Scenes/battle_arena.tscn` does not exist and will be created by AC2.1.
+- `res://Scripts/Battle/battle_arena.gd` does not exist and will be created by AC2.1.
+- `res://Tests/Map/test_ac2_1_battle_arena.gd` does not exist and will be created as the focused structural and transition test.
+- `Docs/Specs/AC2/` does not exist and will be created with the AC2.1 evidence hierarchy.
+
+These are intentional implementation targets, not missing prerequisites.
+
+## 4. Encounter-Type Contract
+
+`HexMapModel` is the canonical encounter-type authority. AC2.1 accepts only these existing case-sensitive values:
+
+| Constant | Canonical string | AC2.1 behavior |
+|---|---|---|
+| `HexMapModel.ENCOUNTER_SAFE` | `"Safe"` | Preserve the existing overlay; do not expose or accept battle entry. |
+| `HexMapModel.ENCOUNTER_COMBAT` | `"Combat"` | Expose battle entry and configure the arena as Combat. |
+| `HexMapModel.ENCOUNTER_BOSS` | `"Boss"` | Expose battle entry and configure the arena as Boss. |
+
+AC2.1 performs no trimming, case folding, aliasing, or fallback normalization. Callers must pass a canonical constant. Any other value, including `HexMapModel.ENCOUNTER_NONE`, is ineligible for battle entry and must not create an arena. Tests compare behavior against the `HexMapModel` constants rather than duplicating free-form literals.
+
+## 5. Authority and Dependency Chain
+
+Implementation and review use this ordered authority chain:
+
+1. `.agents/policies/project-governance.md` defines the Concept → Design → Implementation → QA gate and current-evidence requirement.
+2. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` is the product authority for AC2.1 and its manual runtime verification path.
+3. This document is the approved behavioral, architectural, interface, and verification authority for AC2.1.
+4. `Docs/superpowers/plans/2026-07-27-ac2-1-battle-arena.md` will define the implementation sequence after this design is approved.
+5. `Docs/Specs/AC2/Evidence/AC2.1/2026-07-26/` is the completion authority; AC2.1 remains unchecked until every required artifact exists and records passing current evidence.
+
+AC2.1 depends on the existing AC1.2 encounter-type constants, AC1.3 map input path, AC1.4 encounter lifecycle/input blocking, and AC1.5 runtime Boss identity. Existing `Tests/Map/*.gd` assets remain regression authority for those contracts.
+
+No roadmap or migration-matrix artifact exists in the repository. This design does not create a competing planning authority solely for AC2.1.
+
+## 6. Architecture
 
 The battle arena is a packed full-screen `Control` scene instantiated as a child of the existing `UI` `CanvasLayer` in `game_world.tscn`. `MapController` remains the runtime flow owner because it already owns the encounter overlay, navigation guard, run state, and UI-layer reference.
 
@@ -51,9 +91,9 @@ The battle arena is a packed full-screen `Control` scene instantiated as a child
 
 `request_move()` rejects navigation whenever either an encounter overlay or battle arena is active. The arena's temporary `exit_requested` signal lets `MapController` free the arena and restore the existing map without resetting coordinates, move count, Run ID, boss position, encounter layout, or Sudden Death state.
 
-## 4. Components and Interfaces
+## 7. Components and Interfaces
 
-### 4.1 Encounter Overlay
+### 7.1 Encounter Overlay
 
 `Scripts/Encounter/encounter_overlay.gd` gains:
 
@@ -63,7 +103,7 @@ signal battle_requested(coordinate: Vector2i, encounter_type: String)
 
 The scene gains an `Enter Battle` button. `configure()` shows and enables it only for Combat and Boss. Its pressed handler emits the stored coordinate and type. The existing `close_requested` contract remains intact.
 
-### 4.2 Battle Arena
+### 7.2 Battle Arena
 
 `Scripts/Battle/battle_arena.gd` defines `class_name BattleArena` and owns:
 
@@ -91,7 +131,7 @@ func get_enemy_slots() -> Array[Control]
 
 Slots are scene-authored structural nodes, not generated combatants. Each slot exposes its side and index through node metadata or an equivalent stable scene-authored property so tests and later combat systems do not depend on screen coordinates or label text.
 
-### 4.3 Map Controller
+### 7.3 Map Controller
 
 `Scripts/Map/map_controller.gd` gains:
 
@@ -103,7 +143,7 @@ func exit_active_battle() -> void
 
 It preloads or loads the arena scene, connects `EncounterOverlay.battle_requested`, owns the active arena reference, and treats either active UI state as a navigation blocker. `set_run_id()` closes both active UI states before resetting the run.
 
-## 5. UI and Interaction
+## 8. UI and Interaction
 
 The arena fills the viewport and consumes mouse input so the map cannot receive clicks through it. The two formations face one another across the center of the screen, with player slots grouped consistently on one side and enemy slots on the other. Slot styling may use simple project-native panels, borders, and labels; final combat art is outside AC2.1.
 
@@ -111,7 +151,7 @@ Combat and Boss overlays expose the same transition action. The arena displays t
 
 The debug exit is deliberately temporary. It provides a complete verification loop until AC2.4 defines production battle completion and return behavior.
 
-## 6. State and Error Handling
+## 9. State and Error Handling
 
 - A battle request is accepted only from the currently active overlay.
 - Only Combat and Boss types may start a battle.
@@ -122,11 +162,29 @@ The debug exit is deliberately temporary. It provides a complete verification lo
 - Missing or invalid arena instantiation fails without leaving a stale active-battle reference.
 - Signal connections use typed handlers and one-shot scene ownership rather than global state.
 
-## 7. Verification
+## 10. Verification
 
 ### Automated
 
-A focused headless AC2.1 test will verify:
+Create the focused headless test asset:
+
+`res://Tests/Map/test_ac2_1_battle_arena.gd`
+
+Run it from the repository root with:
+
+```powershell
+godot --headless --path . --script Tests/Map/test_ac2_1_battle_arena.gd
+```
+
+The test must exit `0` and print this exact success signature:
+
+```text
+AC2.1 battle arena tests: PASS (11/11)
+```
+
+Any failed assertion must print one or more lines beginning with `FAILED:`, omit the success signature, and cause exit code `1`.
+
+The 11 cases verify:
 
 1. The arena exposes exactly six player slots.
 2. The arena exposes exactly six enemy slots.
@@ -140,7 +198,18 @@ A focused headless AC2.1 test will verify:
 10. Debug exit removes the arena and preserves map/run state.
 11. `set_run_id()` clears an active arena and performs the existing complete reset.
 
-All existing AC1 map and encounter tests remain regression gates.
+Encounter-type cases must use and assert the canonical `HexMapModel.ENCOUNTER_SAFE`, `HexMapModel.ENCOUNTER_COMBAT`, and `HexMapModel.ENCOUNTER_BOSS` constants, including rejection of noncanonical and unsupported values.
+
+Run all existing map tests independently as the regression gate:
+
+```powershell
+Get-ChildItem Tests/Map/*.gd | ForEach-Object {
+    & godot --headless --path . --script $_.FullName
+    if ($LASTEXITCODE -ne 0) { throw "Failed: $($_.Name)" }
+}
+```
+
+Expected: every test exits `0`, no output contains `FAILED:`, and the focused test prints `AC2.1 battle arena tests: PASS (11/11)`.
 
 ### Manual runtime check
 
@@ -153,7 +222,7 @@ Using a deterministic Run ID:
 5. Enter the Boss encounter and repeat the structural check with Boss context.
 6. Enter a Safe hex and confirm its existing overlay behavior is unchanged and no battle action appears.
 
-## 8. Completion Evidence
+## 11. Completion Evidence
 
 AC2.1 remains unchecked until the repository contains:
 
@@ -167,6 +236,39 @@ Evidence belongs under:
 
 `Docs/Specs/AC2/Evidence/AC2.1/2026-07-26/`
 
-## 9. Future Extension Points
+Implementation must create the complete hierarchy and these artifacts:
+
+### `automated-test.log`
+
+Record:
+
+- Date, Godot version, branch, and implementation commit under test.
+- Exact command base.
+- One `RUN <test path>` section per `Tests/Map/*.gd` asset.
+- Full relevant output, exact PASS signature, and `EXIT 0` for every test.
+- GodotIQ project validation, parser check, and orphan-signal results.
+
+### `manual-runtime-check.md`
+
+Record:
+
+- Date, Godot version, scene, branch, implementation commit, and deterministic Run ID.
+- Runtime startup and debug-console health.
+- A step table containing input/check, expected result, observed result, and PASS/FAIL for Combat entry, the 6+6 formation, input blocking, debug exit with preserved map state, Boss entry, and unchanged Safe behavior.
+- Overall PASS only when every required observation passes.
+
+### `implementation-link.txt`
+
+Record:
+
+- Branch and final implementation commit.
+- PR state or URL.
+- Source spec, this design, and implementation-plan paths.
+- Implemented scene, script, and test paths.
+- All evidence artifact paths.
+
+The evidence folder is the completion authority. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` must keep AC2.1 unchecked until all three files exist with passing current results.
+
+## 12. Future Extension Points
 
 Later AC2 criteria may populate the stable slot nodes with units, calculate speed order, resolve damage and defeat, and replace debug exit with battle results. Those additions should extend `BattleArena` or introduce focused battle-domain collaborators without moving run-state ownership out of `MapController` prematurely.
