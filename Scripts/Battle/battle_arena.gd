@@ -6,6 +6,9 @@ signal exit_requested
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
 const CURRENT_SLOT_COLOR := Color(1.0, 0.82, 0.32, 1.0)
+const ATTACKER_SLOT_COLOR := Color(0.35, 0.9, 0.5, 1.0)
+const RECEIVER_SLOT_COLOR := Color(1.0, 0.35, 0.4, 1.0)
+const FEEDBACK_DURATION_SECONDS := 0.8
 
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
 @onready var _player_formation: GridContainer = %PlayerFormation
@@ -14,6 +17,8 @@ const CURRENT_SLOT_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 @onready var _current_unit_label: Label = %CurrentUnitLabel
 @onready var _advance_debug_button: Button = %AdvanceTurnDebugButton
 @onready var _exit_debug_button: Button = %ExitBattleDebugButton
+@onready var _battle_log_scroll: ScrollContainer = %BattleLogScroll
+@onready var _battle_log_entries_container: VBoxContainer = %BattleLogEntries
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -22,6 +27,11 @@ var round_number: int = 1
 var _units: Array[BattleUnitState] = []
 var _turn_queue: Array[BattleUnitState] = []
 var _current_turn_index: int = 0
+var _battle_log_entries: Array[BattleLogEntry] = []
+var _hovered_log_index: int = -1
+var _feedback_generation: int = 0
+var _transient_log_entry: BattleLogEntry
+var _action_in_progress: bool = false
 
 
 func _ready() -> void:
@@ -47,6 +57,14 @@ func configure(coordinate: Vector2i, type: String) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	_feedback_generation += 1
+	_action_in_progress = false
+	_hovered_log_index = -1
+	_transient_log_entry = null
+	_battle_log_entries.clear()
+	if is_node_ready():
+		_clear_log_controls()
+		_clear_all_damage_feedback()
 	_units = units.duplicate()
 	_turn_queue = BattleTurnQueue.build(_units)
 	_current_turn_index = 0
@@ -63,6 +81,61 @@ func get_current_unit() -> BattleUnitState:
 	if _turn_queue.is_empty() or _current_turn_index < 0 or _current_turn_index >= _turn_queue.size():
 		return null
 	return _turn_queue[_current_turn_index]
+
+
+func get_battle_log_entries() -> Array[BattleLogEntry]:
+	return _battle_log_entries.duplicate()
+
+
+func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
+	for unit: BattleUnitState in _units:
+		if is_instance_valid(unit) and unit.unit_id == unit_id:
+			return unit
+	return null
+
+
+func perform_debug_damage() -> void:
+	if _action_in_progress:
+		return
+	var attacker: BattleUnitState = get_current_unit()
+	var receiver: BattleUnitState = BattleTargetSelector.find_closest_enemy(attacker, _units)
+	if not is_instance_valid(attacker) or not is_instance_valid(receiver):
+		_refresh_turn_ui()
+		return
+	_action_in_progress = true
+	var action_round: int = round_number
+	var result: BattleDamageResult = BattleDamageResolver.apply_damage(
+		attacker,
+		receiver,
+		BattleDamageResolver.DEBUG_DAMAGE
+	)
+	if not is_instance_valid(result):
+		_action_in_progress = false
+		_refresh_turn_ui()
+		return
+	var entry := BattleLogEntry.new(
+		_battle_log_entries.size() + 1,
+		action_round,
+		result
+	)
+	_battle_log_entries.append(entry)
+	_append_log_control(entry, _battle_log_entries.size() - 1)
+	_show_resolution_feedback(entry)
+	_advance_after_action(attacker.unit_id)
+	_action_in_progress = false
+	_refresh_turn_ui()
+
+
+func preview_log_entry(entry_index: int) -> void:
+	if entry_index < 0 or entry_index >= _battle_log_entries.size():
+		return
+	_hovered_log_index = entry_index
+	_refresh_highlights()
+
+
+func clear_log_entry_preview() -> void:
+	_hovered_log_index = -1
+	_refresh_highlights()
 
 
 func advance_turn() -> void:
@@ -101,6 +174,25 @@ func _create_debug_units() -> Array[BattleUnitState]:
 	]
 
 
+func _advance_after_action(attacker_id: StringName) -> void:
+	_turn_queue = BattleTurnQueue.build(_units)
+	if _turn_queue.is_empty():
+		_current_turn_index = 0
+		return
+	var attacker_index: int = -1
+	for index: int in _turn_queue.size():
+		if _turn_queue[index].unit_id == attacker_id:
+			attacker_index = index
+			break
+	if attacker_index < 0:
+		_current_turn_index = 0
+		return
+	_current_turn_index = attacker_index + 1
+	if _current_turn_index >= _turn_queue.size():
+		round_number += 1
+		_current_turn_index = 0
+
+
 func _get_control_children(formation: GridContainer) -> Array[Control]:
 	var slots: Array[Control] = []
 	for child: Node in formation.get_children():
@@ -115,6 +207,7 @@ func _assign_slot_metadata(formation: GridContainer, side: String) -> void:
 		slot.set_meta("side", side)
 		slot.set_meta("slot_index", slot_index)
 		slot.set_meta("is_current_unit", false)
+		slot.set_meta("highlight_role", &"neutral")
 
 
 func _refresh_context() -> void:
@@ -131,23 +224,27 @@ func _refresh_turn_ui() -> void:
 	if not is_instance_valid(current_unit):
 		_current_unit_label.text = "No active units"
 		_advance_debug_button.disabled = true
+		_refresh_highlights()
 		return
-	_current_unit_label.text = "%s | Speed %d" % [current_unit.display_name, current_unit.speed]
-	_advance_debug_button.disabled = false
-	var current_slot := _get_slot_for_unit(current_unit)
-	if is_instance_valid(current_slot):
-		current_slot.self_modulate = CURRENT_SLOT_COLOR
-		current_slot.set_meta("is_current_unit", true)
+	_current_unit_label.text = "%s | Speed %d | HP %d/%d" % [
+		current_unit.display_name,
+		current_unit.speed,
+		current_unit.current_hp,
+		current_unit.max_hp,
+	]
+	var target := BattleTargetSelector.find_closest_enemy(current_unit, _units)
+	_advance_debug_button.disabled = not is_instance_valid(target) or _action_in_progress
+	_refresh_highlights()
 
 
 func _render_units() -> void:
 	for slot: Control in get_player_slots() + get_enemy_slots():
-		slot.self_modulate = NEUTRAL_SLOT_COLOR
-		slot.set_meta("is_current_unit", false)
 		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
+		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
 		name_label.text = "Unoccupied"
 		speed_label.text = "Speed —"
+		health_label.text = "HP —"
 	for unit: BattleUnitState in _units:
 		if not is_instance_valid(unit):
 			continue
@@ -156,8 +253,105 @@ func _render_units() -> void:
 			continue
 		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
+		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
 		name_label.text = unit.display_name
 		speed_label.text = "Speed %d" % unit.speed
+		health_label.text = (
+			"HP %d/%d" % [unit.current_hp, unit.max_hp]
+			if unit.is_active()
+			else "Defeated — HP 0/%d" % unit.max_hp
+		)
+
+
+func _refresh_highlights() -> void:
+	_reset_slot_highlights()
+	if _hovered_log_index >= 0 and _hovered_log_index < _battle_log_entries.size():
+		_apply_entry_feedback(_battle_log_entries[_hovered_log_index])
+		return
+	if is_instance_valid(_transient_log_entry):
+		_apply_entry_feedback(_transient_log_entry)
+		return
+	var current_unit := get_current_unit()
+	var current_slot := _get_slot_for_unit(current_unit)
+	if is_instance_valid(current_slot):
+		current_slot.self_modulate = CURRENT_SLOT_COLOR
+		current_slot.set_meta("is_current_unit", true)
+		current_slot.set_meta("highlight_role", &"current")
+
+
+func _reset_slot_highlights() -> void:
+	for slot: Control in get_player_slots() + get_enemy_slots():
+		slot.self_modulate = NEUTRAL_SLOT_COLOR
+		slot.set_meta("is_current_unit", false)
+		slot.set_meta("highlight_role", &"neutral")
+		var damage_label := slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
+		damage_label.text = ""
+
+
+func _apply_entry_feedback(entry: BattleLogEntry) -> void:
+	var attacker := get_unit_by_id(entry.attacker_id)
+	var receiver := get_unit_by_id(entry.receiver_id)
+	var attacker_slot := _get_slot_for_unit(attacker)
+	var receiver_slot := _get_slot_for_unit(receiver)
+	if is_instance_valid(attacker_slot):
+		attacker_slot.self_modulate = ATTACKER_SLOT_COLOR
+		attacker_slot.set_meta("highlight_role", &"attacker")
+	if is_instance_valid(receiver_slot):
+		receiver_slot.self_modulate = RECEIVER_SLOT_COLOR
+		receiver_slot.set_meta("highlight_role", &"receiver")
+		var damage_label := receiver_slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
+		damage_label.text = "-%d" % entry.applied_damage
+
+
+func _show_resolution_feedback(entry: BattleLogEntry) -> void:
+	_feedback_generation += 1
+	_transient_log_entry = entry
+	var generation: int = _feedback_generation
+	_refresh_highlights()
+	_expire_feedback(generation)
+
+
+func _expire_feedback(generation: int) -> void:
+	await get_tree().create_timer(FEEDBACK_DURATION_SECONDS).timeout
+	if generation != _feedback_generation:
+		return
+	_transient_log_entry = null
+	_refresh_highlights()
+
+
+func _append_log_control(entry: BattleLogEntry, entry_index: int) -> void:
+	var attacker := get_unit_by_id(entry.attacker_id)
+	var receiver := get_unit_by_id(entry.receiver_id)
+	if not is_instance_valid(attacker) or not is_instance_valid(receiver):
+		return
+	var row := Label.new()
+	row.mouse_filter = Control.MOUSE_FILTER_STOP
+	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	row.text = "R%d · %s dealt %d damage to %s · %d/%d HP%s" % [
+		entry.round_number,
+		attacker.display_name,
+		entry.applied_damage,
+		receiver.display_name,
+		entry.receiver_hp_after,
+		receiver.max_hp,
+		" · Defeated" if entry.caused_defeat else "",
+	]
+	row.mouse_entered.connect(preview_log_entry.bind(entry_index))
+	row.mouse_exited.connect(clear_log_entry_preview)
+	_battle_log_entries_container.add_child(row)
+	await get_tree().process_frame
+	_battle_log_scroll.scroll_vertical = int(_battle_log_scroll.get_v_scroll_bar().max_value)
+
+
+func _clear_log_controls() -> void:
+	for child: Node in _battle_log_entries_container.get_children():
+		child.queue_free()
+
+
+func _clear_all_damage_feedback() -> void:
+	for slot: Control in get_player_slots() + get_enemy_slots():
+		var damage_label := slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
+		damage_label.text = ""
 
 
 func _get_slot_for_unit(unit: BattleUnitState) -> Control:
@@ -172,7 +366,7 @@ func _get_slot_for_unit(unit: BattleUnitState) -> Control:
 
 func _on_advance_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
-	advance_turn()
+	perform_debug_damage()
 
 
 func _on_exit_debug_pressed() -> void:

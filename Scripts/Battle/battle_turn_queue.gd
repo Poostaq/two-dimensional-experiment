@@ -22,12 +22,19 @@ static func build(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
 		if unit.slot_index < 0 or unit.slot_index >= SIDE_SLOT_COUNT:
 			print("BattleTurnQueue rejected: unit %s has invalid slot %d" % [unit.unit_id, unit.slot_index])
 			return []
+		if unit.max_hp <= 0:
+			print("BattleTurnQueue rejected: unit %s has invalid max HP %d" % [unit.unit_id, unit.max_hp])
+			return []
+		if unit.current_hp < 0 or unit.current_hp > unit.max_hp:
+			print("BattleTurnQueue rejected: unit %s has invalid current HP %d/%d" % [unit.unit_id, unit.current_hp, unit.max_hp])
+			return []
 		var occupancy_key := Vector2i(unit.side, unit.slot_index)
 		if occupied.has(occupancy_key):
 			print("BattleTurnQueue rejected: duplicate side/slot %s" % occupancy_key)
 			return []
 		occupied[occupancy_key] = true
-		ordered.append(unit)
+		if unit.is_active():
+			ordered.append(unit)
 	ordered.sort_custom(_comes_before)
 	return ordered
 
