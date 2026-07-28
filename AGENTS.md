@@ -15,7 +15,8 @@ You have GodotIQ MCP tools (`godotiq_*`). ALWAYS prefer them over raw file opera
 When starting code work, agents must first update the default integration branch from origin, then create a dedicated task branch for the change.
 
 - Use `main` in this repository; use `master` only in repositories where that is the default integration branch.
-- Do not carry unrelated local changes onto the task branch. Stash or use an isolated worktree when needed.
+- Never use Git worktrees for this repository. Always work on a dedicated branch in the primary workspace.
+- Do not carry unrelated local changes onto the task branch. Stash unrelated changes when needed, then restore them without staging them as part of the task.
 - Commit the completed code change on the task branch with only relevant files staged.
 - Push the branch when the user asks for remote handoff or review.
 
