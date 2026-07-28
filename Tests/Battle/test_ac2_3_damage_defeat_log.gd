@@ -112,7 +112,7 @@ func _test_damage_clamps_at_zero() -> void:
 
 
 func _select(attacker: RefCounted, units: Array) -> RefCounted:
-	return _target_script.call("find_closest_enemy", attacker, units) as RefCounted if _target_script != null else null
+	return _target_script.call("find_closest_enemy", attacker, _typed_units(units)) as RefCounted if _target_script != null else null
 
 
 func _test_same_row_targeting() -> void:
