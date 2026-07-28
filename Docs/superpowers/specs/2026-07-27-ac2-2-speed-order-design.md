@@ -305,4 +305,4 @@ The absence of any artifact, any FAIL/INCONCLUSIVE result, a mismatched commit, 
 
 ## 13. Future Extension Points
 
-AC2.3 may add health and active/defeated state to `BattleUnitState`; queue rebuilding can then exclude defeated units. Later criteria may replace debug fixtures with roster/enemy composition, replace the debug advance button with completed action resolution, and respond to speed/status changes at the documented round boundary. Those extensions should preserve the pure queue contract and semantic formation tie-break.
+AC2.3 extends `BattleUnitState` with HP and active participation. `BattleTurnQueue` excludes defeated units while preserving AC2.2's descending-speed and semantic formation tie-break contract for every active unit. Later criteria may replace debug fixtures with roster/enemy composition and respond to speed/status changes at the documented round boundary without changing that ordering contract.

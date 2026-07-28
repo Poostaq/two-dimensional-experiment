@@ -71,6 +71,17 @@
 - **Default Swap:** Every character can use a default swap action to exchange places with an adjacent allied character
 - **Turn Usage Limit:** A character can use only 1 active skill per turn
 
+### AC2.3 Debug Damage Slice
+
+- **Debug Health:** AC2.3 battle fixtures start at `20/20 HP`.
+- **Debug Damage:** The current unit's temporary debug action deals a fixed `7` damage, then advances the turn once.
+- **Closest Enemy:** Targets are selected deterministically by same-row distance, then front before back, then lowest semantic slot index.
+- **Defeat:** Units at `0 HP` remain visible as defeated but are removed immediately from targeting and turn order.
+- **Battle Log:** A full-width scrollable log records round, attacker, receiver, applied damage, remaining HP, and defeat.
+- **Damage Feedback:** Resolution highlights the attacker green and receiver red for `0.8` seconds while showing the receiver's negative applied damage.
+- **Log Inspection:** Hovering a historical entry reproduces its attacker/receiver highlights and damage value until pointer exit.
+- **Result Boundary:** An arena with no active opponent disables damage but does not announce victory or loss; AC2.4 owns battle results.
+
 ### Character Progression
 
 - **Base Stats:** Each character has a predefined stat line before equipment modifiers
@@ -171,7 +182,7 @@
 ### Combat System
 - [x] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
 - [x] AC2.2 — Faster units act earlier according to speed order
-- [ ] AC2.3 — Unit takes damage; at 0 HP, removed from battle
+- [x] AC2.3 — Unit takes damage; at 0 HP, removed from battle
 - [ ] AC2.4 — Player wins if all enemies defeated; loses if all units defeated
 - [ ] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
 - [ ] AC2.6 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
@@ -208,7 +219,7 @@
 | `AC1.5` | Automated and manual runtime check | Run `Tests/Map/test_ac1_5_sudden_death.gd` to verify the move-15 activation boundary, deterministic shortest-path tie-breaking, one-step pursuit from move 16 onward, both engagement directions, runtime Boss identity, and reset behavior. Then avoid the boss for 15 player moves in the running game and confirm Sudden Death activates before one boss step follows each subsequent accepted player move until engagement. |
 | `AC2.1` | Manual runtime check | Enter battle and verify the battlefield shows exactly 6 player slots and 6 enemy slots. |
 | `AC2.2` | Manual runtime check | Start a battle with at least two units of different speed values and confirm action order follows descending speed. |
-| `AC2.3` | Manual runtime check | Apply damage to a unit until HP reaches 0 and verify it is removed from active battle participation. |
+| `AC2.3` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_3_damage_defeat_log.gd`, then use the debug damage action in battle. Verify deterministic closest-enemy targeting, fixed `7` damage with zero clamping, immediate defeated-unit queue/target exclusion, one turn advance and log entry per action, transient negative damage feedback, scroll-to-newest history, and green-attacker/red-receiver hover inspection. |
 | `AC2.4` | Manual runtime check | Complete one battle by defeating all enemies and one battle by losing all player units, verifying the correct win/loss result in each case. |
 | `AC2.5` | Manual runtime check | Win battles from at least two different event types and verify the reward screen presents multiple selectable options appropriate to each event. |
 | `AC2.6` | Manual runtime check | Use skills with positional requirements, condition requirements, pre-use cooldowns, and post-use cooldowns, verifying invalid uses are blocked and valid uses resolve correctly. |

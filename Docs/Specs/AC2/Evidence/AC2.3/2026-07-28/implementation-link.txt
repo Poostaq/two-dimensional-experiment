@@ -1,0 +1,38 @@
+AC2.3 IMPLEMENTATION LINK
+
+Source spec:
+Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+
+Approved design:
+Docs/superpowers/specs/2026-07-28-ac2-3-damage-defeat-log-design.md
+
+Implementation plan:
+Docs/superpowers/plans/2026-07-28-ac2-3-damage-defeat-log.md
+
+Task branch:
+feature/ac2-3-damage-defeat-log
+
+Tested implementation commit:
+ba29ade
+
+Implementation commits:
+7ac6b5f test: specify AC2.3 damage and battle log
+3627a99 feat: add AC2.3 battle damage services
+8018890 feat: add AC2.3 damage battle UI and log
+ba29ade test: align AC2.3 verification conventions
+
+Changed implementation:
+Scripts/Battle/battle_unit_state.gd
+Scripts/Battle/battle_turn_queue.gd
+Scripts/Battle/battle_target_selector.gd
+Scripts/Battle/battle_damage_result.gd
+Scripts/Battle/battle_damage_resolver.gd
+Scripts/Battle/battle_log_entry.gd
+Scripts/Battle/battle_arena.gd
+Scenes/battle_arena.tscn
+Tests/Battle/test_ac2_3_damage_defeat_log.gd
+
+Evidence:
+Docs/Specs/AC2/Evidence/AC2.3/2026-07-28/automated-test.log
+Docs/Specs/AC2/Evidence/AC2.3/2026-07-28/manual-runtime-check.md
+Docs/Specs/AC2/Evidence/AC2.3/2026-07-28/implementation-link.txt
