@@ -70,7 +70,7 @@ func _set_hp(unit: RefCounted, hp: int) -> void:
 func _instantiate_arena() -> Control:
 	var packed := load(ARENA_PATH) as PackedScene
 	var arena := packed.instantiate() as Control if packed != null else null
-	if arena != null:
+	if is_instance_valid(arena):
 		root.add_child(arena)
 		await process_frame
 	return arena
@@ -301,7 +301,7 @@ func _slot_for(arena: Control, unit: Variant) -> Control:
 
 
 func _free_arena(arena: Control) -> void:
-	if arena != null:
+	if is_instance_valid(arena):
 		arena.queue_free()
 
 
