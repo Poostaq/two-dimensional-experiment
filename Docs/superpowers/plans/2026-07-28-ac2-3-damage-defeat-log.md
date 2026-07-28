@@ -27,6 +27,14 @@
 - Create: `Docs/Specs/AC2/Evidence/AC2.3/2026-07-28/manual-runtime-check.md`.
 - Create: `Docs/Specs/AC2/Evidence/AC2.3/2026-07-28/implementation-link.txt`.
 
+## Short Implementation Task Breakdown
+
+1. **Contract first:** create the 18-case AC2.3 test runner and prove it fails against the AC2.2 baseline.
+2. **Service classes:** extend unit/queue state, then add `BattleTargetSelector`, `BattleDamageResult`, `BattleDamageResolver`, and `BattleLogEntry`.
+3. **Arena UI:** add HP and damage-feedback labels, the bottom scrollable log, deterministic damage-turn orchestration, hover inspection, and exact queue-successor handling.
+4. **Verification:** run AC2.1/AC2.2 regressions, the focused AC2.3 runner, GodotIQ project gates, and real pointer-based Combat/Boss checks.
+5. **Evidence:** update design documentation, record same-commit automated/manual evidence, link the implementation, and only then mark AC2.3 complete.
+
 ## Fixed Contracts
 
 ```text
@@ -35,11 +43,38 @@ Debug requested damage: 7
 Target key: (abs(target.slot_index % 3 - attacker.slot_index % 3),
              0 if target.slot_index < 3 else 1,
              target.slot_index)
-Transient feedback duration: 0.8 seconds
+Resolution attacker/receiver highlights: 0.8 seconds
+Resolution receiver damage text: 0.8 seconds
+Hovered-entry highlights and damage text: remain visible until pointer exit
 Focused PASS signature: AC2.3 damage and battle log tests: PASS (18/18)
 ```
 
 Keep the scene identifier `%AdvanceTurnDebugButton` for AC2.2 test compatibility. Change only its visible text to `Damage Closest Enemy (Debug)` and its handler behavior.
+
+## Defeat and Queue-Rebuild Rule
+
+Damage resolution captures the current attacker's stable ID, applies damage, rebuilds the active queue, finds that same attacker in the rebuilt queue, and then selects the following active entry. This prevents a defeated receiver from causing the attacker to repeat or another unit to be skipped.
+
+Examples:
+
+```text
+Receiver after attacker:
+before: [A(current), B, R, C]
+R defeated → rebuilt: [A, B, C]
+next: B
+
+Receiver before attacker:
+before: [R, B, A(current), C]
+R defeated → rebuilt: [B, A, C]
+next: C
+
+Receiver is queue tail and attacker is last surviving entry before wrap:
+before: [B, A(current), R]
+R defeated → rebuilt: [B, A]
+next: B and round increments once
+```
+
+The current attacker cannot be removed by its own accepted action. If it cannot be found after rebuilding, the arena defensively selects index `0` without incrementing the round; the focused test treats this path as invalid configuration rather than normal combat behavior.
 
 ### Task 1: Commit the Approved Plan
 
