@@ -1,0 +1,350 @@
+[gd_scene format=3 uid="uid://c2xj0n81danj7"]
+
+[ext_resource type="Script" uid="uid://dc8oesxwyoqtj" path="res://Scripts/Battle/battle_arena.gd" id="1_j6q3v"]
+
+[node name="BattleArena" type="Control" unique_id=676541279]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_j6q3v")
+
+[node name="Background" type="ColorRect" parent="." unique_id=16721012]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.035, 0.055, 0.09, 1)
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=1066829792]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="VBox" type="VBoxContainer" parent="Margin" unique_id=1698614957]
+layout_mode = 2
+
+[node name="EncounterTypeLabel" type="Label" parent="Margin/VBox" unique_id=2058815592]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Battle"
+horizontal_alignment = 1
+
+[node name="Formations" type="HBoxContainer" parent="Margin/VBox" unique_id=1091763961]
+layout_mode = 2
+size_flags_vertical = 3
+alignment = 1
+
+[node name="PlayerSide" type="VBoxContainer" parent="Margin/VBox/Formations" unique_id=270987208]
+layout_mode = 2
+
+[node name="PlayerLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide" unique_id=506535176]
+layout_mode = 2
+text = "PLAYER FORMATION"
+horizontal_alignment = 1
+
+[node name="PlayerFormation" type="GridContainer" parent="Margin/VBox/Formations/PlayerSide" unique_id=1402906765]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 2
+
+[node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1803951279]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Player Slot 4"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3" unique_id=701319009]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1766508917]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1357581283]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1036836558]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Player Slot 1"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0" unique_id=1336176730]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=962174858]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=754939996]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1322027728]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Player Slot 5"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4" unique_id=2142926801]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=1856227809]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=307800924]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1949479684]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Player Slot 2"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1" unique_id=644477328]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=1953318080]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=1140856070]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1715924655]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Player Slot 6"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5" unique_id=1466590877]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=1986994091]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=1827802909]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1507983800]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Player Slot 3"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2" unique_id=1083569633]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=505473094]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=162289544]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="CenterDivider" type="VSeparator" parent="Margin/VBox/Formations" unique_id=869679255]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+
+[node name="EnemySide" type="VBoxContainer" parent="Margin/VBox/Formations" unique_id=930069705]
+layout_mode = 2
+
+[node name="EnemyLabel" type="Label" parent="Margin/VBox/Formations/EnemySide" unique_id=818193621]
+layout_mode = 2
+text = "ENEMY FORMATION"
+horizontal_alignment = 1
+
+[node name="EnemyFormation" type="GridContainer" parent="Margin/VBox/Formations/EnemySide" unique_id=94147206]
+unique_name_in_owner = true
+layout_mode = 2
+columns = 2
+
+[node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=289527322]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Enemy Slot 1"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0" unique_id=334592560]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=892941584]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=1773965998]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1444131745]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Enemy Slot 4"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3" unique_id=380301555]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=431740243]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=953065540]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1388062701]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Enemy Slot 2"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1" unique_id=1776391952]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=71340744]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=1109683471]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1898023519]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Enemy Slot 5"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4" unique_id=294158884]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=1907956622]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=383984490]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1830338772]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Enemy Slot 3"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2" unique_id=835427600]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=1170714062]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=608055118]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1678816950]
+custom_minimum_size = Vector2(140, 80)
+layout_mode = 2
+tooltip_text = "Enemy Slot 6"
+
+[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5" unique_id=351020783]
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=673312004]
+layout_mode = 2
+text = "Unoccupied"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=2136572351]
+layout_mode = 2
+text = "Speed —"
+horizontal_alignment = 1
+
+[node name="TurnStatus" type="HBoxContainer" parent="Margin/VBox" unique_id=891639891]
+layout_mode = 2
+alignment = 1
+
+[node name="RoundLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=1699269099]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Round 1"
+
+[node name="CurrentUnitLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=829834890]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No active units"
+horizontal_alignment = 1
+
+[node name="DebugControls" type="HBoxContainer" parent="Margin/VBox" unique_id=1793621972]
+layout_mode = 2
+alignment = 1
+
+[node name="AdvanceTurnDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=402375055]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Advance Turn (Debug)"
+
+[node name="ExitBattleDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=2055668868]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "Exit Battle (Debug)"
