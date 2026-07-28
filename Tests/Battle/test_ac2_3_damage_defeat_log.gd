@@ -249,6 +249,7 @@ func _test_hover_exit_restores_current() -> void:
 	if arena != null and arena.has_method("preview_log_entry"):
 		arena.call("preview_log_entry", 0)
 		arena.call("clear_log_entry_preview")
+	await create_timer(0.9).timeout
 	var current: Variant = arena.call("get_current_unit") if arena != null else null
 	var slot := _slot_for(arena, current)
 	_assert(slot != null and slot.get_meta("highlight_role", &"") == &"current", "hover exit restores current", "expected gold current-unit state")
@@ -279,7 +280,7 @@ func _arena_with_one_entry() -> Control:
 func _target_for_first_fixture(arena: Control) -> Variant:
 	if arena == null or not arena.has_method("get_unit_by_id"):
 		return null
-	return arena.call("get_unit_by_id", &"enemy_4")
+	return arena.call("get_unit_by_id", &"enemy_1")
 
 
 func _feedback_matches(arena: Control, attacker: Variant, receiver: Variant, damage_text: String) -> bool:

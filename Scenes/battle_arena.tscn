@@ -7,6 +7,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_j6q3v")
 
 [node name="Background" type="ColorRect" parent="." unique_id=16721012]
@@ -69,6 +71,16 @@ layout_mode = 2
 text = "Speed —"
 horizontal_alignment = 1
 
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1890354288]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1728167827]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1036836558]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -88,6 +100,16 @@ autowrap_mode = 2
 [node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=754939996]
 layout_mode = 2
 text = "Speed —"
+horizontal_alignment = 1
+
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=1593389282]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=534229818]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1322027728]
@@ -111,6 +133,16 @@ layout_mode = 2
 text = "Speed —"
 horizontal_alignment = 1
 
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=504795311]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=1448653195]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1949479684]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -130,6 +162,16 @@ autowrap_mode = 2
 [node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=1140856070]
 layout_mode = 2
 text = "Speed —"
+horizontal_alignment = 1
+
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=171660716]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=2092747014]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1715924655]
@@ -153,6 +195,16 @@ layout_mode = 2
 text = "Speed —"
 horizontal_alignment = 1
 
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=253754040]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=33617487]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1507983800]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -172,6 +224,16 @@ autowrap_mode = 2
 [node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=162289544]
 layout_mode = 2
 text = "Speed —"
+horizontal_alignment = 1
+
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=449514963]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=465003279]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="CenterDivider" type="VSeparator" parent="Margin/VBox/Formations" unique_id=869679255]
@@ -212,6 +274,16 @@ layout_mode = 2
 text = "Speed —"
 horizontal_alignment = 1
 
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=290702569]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=760743158]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1444131745]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -231,6 +303,16 @@ autowrap_mode = 2
 [node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=953065540]
 layout_mode = 2
 text = "Speed —"
+horizontal_alignment = 1
+
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=509962586]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=659585809]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1388062701]
@@ -254,6 +336,16 @@ layout_mode = 2
 text = "Speed —"
 horizontal_alignment = 1
 
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=2111810432]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=221493159]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1898023519]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -273,6 +365,16 @@ autowrap_mode = 2
 [node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=383984490]
 layout_mode = 2
 text = "Speed —"
+horizontal_alignment = 1
+
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=329295215]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=1116559830]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1830338772]
@@ -296,6 +398,16 @@ layout_mode = 2
 text = "Speed —"
 horizontal_alignment = 1
 
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=1051852427]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=280580102]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
+horizontal_alignment = 1
+
 [node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1678816950]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -315,6 +427,16 @@ autowrap_mode = 2
 [node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=2136572351]
 layout_mode = 2
 text = "Speed —"
+horizontal_alignment = 1
+
+[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=1684465999]
+layout_mode = 2
+text = "HP 20/20"
+horizontal_alignment = 1
+
+[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=1384857299]
+modulate = Color(1, 0.35, 0.35, 1)
+layout_mode = 2
 horizontal_alignment = 1
 
 [node name="TurnStatus" type="HBoxContainer" parent="Margin/VBox" unique_id=891639891]
@@ -341,10 +463,32 @@ alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-text = "Advance Turn (Debug)"
+text = "Damage Closest Enemy (Debug)"
 
 [node name="ExitBattleDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=2055668868]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "Exit Battle (Debug)"
+
+[node name="BattleLogPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1042687046]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="BattleLogVBox" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel" unique_id=358462316]
+layout_mode = 2
+
+[node name="BattleLogTitle" type="Label" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=1741101699]
+layout_mode = 2
+text = "Battle Log"
+
+[node name="BattleLogScroll" type="ScrollContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=903810453]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="BattleLogEntries" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/BattleLogScroll" unique_id=1766568312]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
