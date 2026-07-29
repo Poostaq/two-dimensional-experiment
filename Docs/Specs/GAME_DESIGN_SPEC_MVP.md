@@ -184,7 +184,7 @@
 - [x] AC2.2 — Faster units act earlier according to speed order
 - [x] AC2.3 — Unit takes damage; at 0 HP, removed from battle
 - [x] AC2.4 — Player wins if all enemies defeated; loses if all units defeated
-- [ ] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
+- [x] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
 - [ ] AC2.6 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
 - [ ] AC2.7 — Skills grant combo bonuses only when their specific combo conditions are met
 
