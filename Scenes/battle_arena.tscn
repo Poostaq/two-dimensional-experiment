@@ -455,6 +455,19 @@ size_flags_horizontal = 3
 text = "No active units"
 horizontal_alignment = 1
 
+[node name="BattleResultPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1316659299]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+
+[node name="BattleResultLabel" type="Label" parent="Margin/VBox/BattleResultPanel" unique_id=266677693]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+
 [node name="DebugControls" type="HBoxContainer" parent="Margin/VBox" unique_id=1793621972]
 layout_mode = 2
 alignment = 1

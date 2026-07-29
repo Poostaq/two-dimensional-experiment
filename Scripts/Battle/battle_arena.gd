@@ -2,6 +2,7 @@ class_name BattleArena
 extends Control
 
 signal exit_requested
+signal battle_completed(outcome: BattleOutcome.Type)
 
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
@@ -19,6 +20,8 @@ const FEEDBACK_DURATION_SECONDS := 0.8
 @onready var _exit_debug_button: Button = %ExitBattleDebugButton
 @onready var _battle_log_scroll: ScrollContainer = %BattleLogScroll
 @onready var _battle_log_entries_container: VBoxContainer = %BattleLogEntries
+@onready var _battle_result_panel: PanelContainer = %BattleResultPanel
+@onready var _battle_result_label: Label = %BattleResultLabel
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -32,6 +35,7 @@ var _hovered_log_index: int = -1
 var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
 var _action_in_progress: bool = false
+var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
 
 
 func _ready() -> void:
@@ -65,6 +69,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	if is_node_ready():
 		_clear_log_controls()
 		_clear_all_damage_feedback()
+	_battle_outcome = BattleOutcome.Type.IN_PROGRESS
 	_units = units.duplicate()
 	_turn_queue = BattleTurnQueue.build(_units)
 	_current_turn_index = 0
@@ -87,6 +92,14 @@ func get_battle_log_entries() -> Array[BattleLogEntry]:
 	return _battle_log_entries.duplicate()
 
 
+func get_battle_outcome() -> BattleOutcome.Type:
+	return _battle_outcome
+
+
+func is_battle_complete() -> bool:
+	return _battle_outcome != BattleOutcome.Type.IN_PROGRESS
+
+
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
 	for unit: BattleUnitState in _units:
 		if is_instance_valid(unit) and unit.unit_id == unit_id:
@@ -95,7 +108,7 @@ func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
 
 
 func perform_debug_damage() -> void:
-	if _action_in_progress:
+	if is_battle_complete() or _action_in_progress:
 		return
 	var attacker: BattleUnitState = get_current_unit()
 	var receiver: BattleUnitState = BattleTargetSelector.find_closest_enemy(attacker, _units)
@@ -121,7 +134,11 @@ func perform_debug_damage() -> void:
 	_battle_log_entries.append(entry)
 	_append_log_control(entry, _battle_log_entries.size() - 1)
 	_show_resolution_feedback(entry)
-	_advance_after_action(attacker.unit_id)
+	var resolved_outcome := BattleOutcome.evaluate(_units)
+	if resolved_outcome == BattleOutcome.Type.IN_PROGRESS:
+		_advance_after_action(attacker.unit_id)
+	else:
+		_complete_battle(resolved_outcome)
 	_action_in_progress = false
 	_refresh_turn_ui()
 
@@ -139,7 +156,7 @@ func clear_log_entry_preview() -> void:
 
 
 func advance_turn() -> void:
-	if _turn_queue.is_empty():
+	if is_battle_complete() or _turn_queue.is_empty():
 		return
 	_current_turn_index += 1
 	if _current_turn_index >= _turn_queue.size():
@@ -172,6 +189,15 @@ func _create_debug_units() -> Array[BattleUnitState]:
 		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9),
 		BattleUnitState.new(&"enemy_5", "Enemy Back 3", BattleUnitState.Side.ENEMY, 5, 2),
 	]
+
+
+func _complete_battle(outcome: BattleOutcome.Type) -> void:
+	if is_battle_complete() or outcome == BattleOutcome.Type.IN_PROGRESS:
+		return
+	_battle_outcome = outcome
+	_turn_queue.clear()
+	_current_turn_index = 0
+	battle_completed.emit(_battle_outcome)
 
 
 func _advance_after_action(attacker_id: StringName) -> void:
@@ -220,6 +246,12 @@ func _refresh_context() -> void:
 func _refresh_turn_ui() -> void:
 	_round_label.text = "Round %d" % round_number
 	_render_units()
+	_refresh_result_ui()
+	if is_battle_complete():
+		_current_unit_label.text = BattleOutcome.get_display_text(_battle_outcome)
+		_advance_debug_button.disabled = true
+		_refresh_highlights()
+		return
 	var current_unit := get_current_unit()
 	if not is_instance_valid(current_unit):
 		_current_unit_label.text = "No active units"
@@ -235,6 +267,12 @@ func _refresh_turn_ui() -> void:
 	var target := BattleTargetSelector.find_closest_enemy(current_unit, _units)
 	_advance_debug_button.disabled = not is_instance_valid(target) or _action_in_progress
 	_refresh_highlights()
+
+
+func _refresh_result_ui() -> void:
+	var complete := is_battle_complete()
+	_battle_result_panel.visible = complete
+	_battle_result_label.text = BattleOutcome.get_display_text(_battle_outcome)
 
 
 func _render_units() -> void:
@@ -270,6 +308,8 @@ func _refresh_highlights() -> void:
 		return
 	if is_instance_valid(_transient_log_entry):
 		_apply_entry_feedback(_transient_log_entry)
+		return
+	if is_battle_complete():
 		return
 	var current_unit := get_current_unit()
 	var current_slot := _get_slot_for_unit(current_unit)
