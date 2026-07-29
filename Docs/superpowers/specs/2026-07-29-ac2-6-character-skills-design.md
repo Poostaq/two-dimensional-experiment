@@ -47,7 +47,7 @@ Store a copied typed skill array directly on the existing runtime `BattleUnitSta
 - `display_name: String` — the short name shown by the AC2.6 debug inspector.
 - `kind: Kind` — an enum containing `ACTIVE` and `PASSIVE`.
 
-Construction requires a non-empty ID, a non-empty display name, and a valid enum value. The object contains no description, targeting data, requirements, cooldown state, combo data, scene references, or executable behavior.
+Construction requires an ID and display name whose string forms remain non-empty after trimming surrounding whitespace, plus a valid enum value. Empty and whitespace-only values such as `""`, `" "`, and `"\t"` are invalid. The object retains the caller-provided non-blank text; trimming is used for validation rather than silently normalizing identity or presentation. The object contains no description, targeting data, requirements, cooldown state, combo data, scene references, or executable behavior.
 
 ### BattleUnitState skill roster
 
@@ -85,7 +85,7 @@ These fixtures demonstrate the contract only. Their skill names and classificati
 
 ### BattleArena debug skill inspector
 
-The existing battle arena receives this exact subtree immediately after `Margin/VBox/TurnStatus` and before `Margin/VBox/BattleResultPanel`:
+The existing battle arena receives this exact subtree, with every listed node wired persistently in `battle_arena.tscn` rather than created by `battle_arena.gd`. Its intended placement is immediately after the turn-status controls and before the battle-result controls. The current concrete location is after `Margin/VBox/TurnStatus` and before `Margin/VBox/BattleResultPanel`; implementation may adapt the parent path if the surrounding layout changes, provided the subtree order, node names, unique-name access, ownership, and persistent scene wiring remain unchanged.
 
 ```text
 SkillInspectorPanel (PanelContainer, unique name)
@@ -127,7 +127,7 @@ Reward presentation and battle completion do not add skill behavior or change th
 ## Defensive behavior
 
 - More than four character-specific skills is invalid and fails clearly at the model boundary; it is never silently truncated.
-- Empty skill IDs and display names are invalid.
+- Empty and whitespace-only skill IDs and display names are invalid.
 - Unknown kind values are invalid.
 - `null`, wrong-type, and duplicate-ID roster elements reject the complete roster.
 - Caller-side array mutation does not change a constructed unit's roster.
@@ -144,7 +144,7 @@ Reward presentation and battle completion do not add skill behavior or change th
 A focused AC2.6 test runner verifies:
 
 - `CharacterSkill` preserves valid ID, display name, and typed Active/Passive identity.
-- Empty IDs, empty names, and invalid kind values are rejected.
+- Empty or whitespace-only IDs and names, plus invalid kind values, are rejected.
 - `BattleUnitState` accepts zero through four skills.
 - A fifth skill is rejected rather than truncated.
 - `null`, wrong-type, and duplicate-ID roster entries are rejected.
