@@ -622,6 +622,115 @@ git log -7 --oneline
 
 Expected: focused PASS `(14/14)`, all AC2.6 commits are present, evidence points to the tested implementation commit, and unrelated `.vscode` plus temporary user files remain uncommitted.
 
-## Completion boundary
+## Original completion boundary
 
 AC2.6 is complete only when the exact named fixtures, typed roster validation, persistent scene-wired inspector, both-side slot inspection, inactive retained-unit status, stale-state cleanup, four-skill viewport fit, focused `(14/14)` suite, complete regressions, GodotIQ gates, runtime input checks, visual QA, and matching evidence all pass. Any failed or blocked gate keeps AC2.6 unchecked.
+
+### Task 5: Replace skill rows with selectable square buttons
+
+**Files:**
+
+- Modify: `Scenes/battle_arena.tscn`
+- Modify: `Scripts/Battle/battle_arena.gd`
+- Modify: `Tests/Battle/test_ac2_6_character_skills.gd`
+- Refresh: `Docs/Specs/AC2/Evidence/AC2.6/2026-07-30/*`
+
+- [ ] **Step 1: Add three failing tile-contract tests**
+
+Raise `EXPECTED_TEST_COUNT` to `17`. Add focused cases that verify:
+
+```gdscript
+# Exact four-skill tile contract
+inspect player_4
+SkillInspectorSkills is HBoxContainer
+four children are Button controls
+each button.custom_minimum_size == Vector2(88.0, 88.0)
+metadata skill_index values are 1, 2, 3, 4
+metadata skill_id values follow the fixture roster
+each button has NumberLabel, NameLabel, and KindLabel children
+labels show "1", "Quick Strike", "Active" through "4", "Momentum", "Passive"
+
+# Non-actionable selection
+record round, current unit ID, and every HP value
+press player_4's second skill button
+selected skill ID becomes rally
+only button 2 has selected metadata and selected color
+round, current unit, HP, battle log, and outcome remain unchanged
+
+# Selection lifecycle and viewport
+select a player_4 skill, inspect enemy_0, and verify selected skill ID is empty
+select enemy skill 1, defeat retained enemy, and verify selection and buttons remain
+reconfigure arena and verify character and skill selection are empty
+at 1152x648, four buttons and BattleLogPanel remain within the viewport
+```
+
+Run the focused runner. Expected: the three new cases fail against the current vertical `Label` list.
+
+- [ ] **Step 2: Restructure the persistent inspector scene**
+
+Use GodotIQ scene operations, never raw `.tscn` writes:
+
+```text
+SkillInspectorBody (HBoxContainer, unique name)
+├── SkillInspectorCharacterBlock (VBoxContainer, unique name, minimum width 150)
+│   ├── SkillInspectorUnitNameLabel
+│   ├── SkillInspectorStatusLabel
+│   └── SkillInspectorCountLabel
+├── SkillInspectorSkills (HBoxContainer, unique name, separation 8)
+└── SkillInspectorEmptyLabel
+```
+
+Reparent the existing character labels into `SkillInspectorCharacterBlock`, replace the current `VBoxContainer` skill container with `HBoxContainer`, and preserve the existing prompt, title, empty label, unique names, and scene ownership. Save and verify the scene tree.
+
+- [ ] **Step 3: Implement exact skill-button construction**
+
+Add:
+
+```gdscript
+const SKILL_BUTTON_SIZE := Vector2(88.0, 88.0)
+const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
+
+var _selected_skill_id: StringName = &""
+```
+
+Expose:
+
+```gdscript
+func get_selected_skill_id() -> StringName:
+	return _selected_skill_id
+
+
+func select_skill(skill_id: StringName) -> void:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		return
+	for skill: CharacterSkill in unit.skills:
+		if skill.skill_id == skill_id:
+			_selected_skill_id = skill_id
+			_refresh_skill_selection()
+			return
+```
+
+For each owned skill, create one square `Button` with `skill_id`, one-based `skill_index`, and `selected=false` metadata. Add three mouse-pass-through child labels: `NumberLabel` anchored top-left, `NameLabel` centered with wrapping, and `KindLabel` anchored along the bottom. Connect `pressed` to `select_skill.bind(skill.skill_id)`.
+
+`_refresh_skill_selection()` sets exactly the matching button's `selected` metadata and `self_modulate` to `SELECTED_SKILL_COLOR`; every other button is white.
+
+- [ ] **Step 4: Apply lifecycle rules**
+
+Character selection clears `_selected_skill_id` before rebuilding. Retained-unit refresh preserves a still-owned selected skill. Invalid/removal cleanup and `configure_units()` clear both IDs. Zero-skill characters show the existing empty state and create no buttons.
+
+- [ ] **Step 5: Verify GREEN and refresh evidence**
+
+Run:
+
+```powershell
+godot --headless --path . --script res://Tests/Battle/test_ac2_6_character_skills.gd
+```
+
+Expected: `AC2.6 character skill tests: PASS (17/17)`.
+
+Run the full test corpus, project validation, parser checks, runtime mouse input, debugger checks, and one visual verification at 1152x648. Record refreshed automated and manual evidence under `Docs/Specs/AC2/Evidence/AC2.6/2026-07-30/` and update the implementation link to the newly tested commit.
+
+## Revised completion boundary
+
+AC2.6 remains complete only when the original typed roster and lifecycle contracts plus the selected-character horizontal tile row, exact square-button contents, non-actionable selection, selection cleanup, viewport fit, focused `(17/17)` suite, regressions, runtime QA, and refreshed evidence all pass.

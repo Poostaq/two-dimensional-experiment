@@ -92,23 +92,25 @@ SkillInspectorPanel (PanelContainer, unique name)
 └── SkillInspectorContent (VBoxContainer)
     ├── SkillInspectorTitleLabel (Label, unique name, text="Character Skills (Debug)")
     ├── SkillInspectorPromptLabel (Label, unique name, text="Select a populated slot to inspect skills.")
-    ├── SkillInspectorHeader (HBoxContainer)
-    │   ├── SkillInspectorUnitNameLabel (Label, unique name, text="")
-    │   ├── SkillInspectorStatusLabel (Label, unique name, text="")
-    │   └── SkillInspectorCountLabel (Label, unique name, text="")
-    ├── SkillInspectorSkills (VBoxContainer, unique name)
-    └── SkillInspectorEmptyLabel (Label, unique name, text="No character-specific skills")
+    └── SkillInspectorBody (HBoxContainer, unique name)
+        ├── SkillInspectorCharacterBlock (VBoxContainer, unique name)
+        │   ├── SkillInspectorUnitNameLabel (Label, unique name, text="")
+        │   ├── SkillInspectorStatusLabel (Label, unique name, text="")
+        │   └── SkillInspectorCountLabel (Label, unique name, text="")
+        ├── SkillInspectorSkills (HBoxContainer, unique name)
+        └── SkillInspectorEmptyLabel (Label, unique name, text="No character-specific skills")
 ```
 
-The neutral state shows `SkillInspectorPromptLabel` and hides the header, dynamic skill rows, and empty-state label. An inspected unit hides the prompt and shows:
+The neutral state shows `SkillInspectorPromptLabel` and hides the body. An inspected unit hides the prompt and shows one horizontal character-and-skills row:
 
-- `SkillInspectorUnitNameLabel`: the exact unit display name.
-- `SkillInspectorStatusLabel`: `Active` while `unit.is_active()` is true, otherwise `Defeated`.
-- `SkillInspectorCountLabel`: `Skills: N/4`.
-- One dynamic `Label` child under `SkillInspectorSkills` per skill, formatted as `Skill Name — Active` or `Skill Name — Passive`.
+- `SkillInspectorCharacterBlock` stays on the left and contains the exact unit display name, `Active` or `Defeated` status, and `Skills: N/4`.
+- `SkillInspectorSkills` follows the character block and contains up to four equal square `Button` controls in roster order.
+- Only owned skills create buttons; unused roster positions are omitted.
+- Each button shows its one-based roster number in the top-left, the skill name centered, and `Active` or `Passive` along the bottom edge.
+- The button exposes `skill_id` and `skill_index` metadata for stable tests and future AC2.7 consumers.
 - `SkillInspectorEmptyLabel` only when `N` is zero.
 
-Clicking a populated player or enemy formation slot selects that unit. Clicking an empty slot is a no-op and preserves the current inspection. The panel contains no skill-use controls and no description surface.
+Clicking a populated player or enemy formation slot selects that unit. Clicking an empty slot is a no-op and preserves the current inspection. Clicking a skill button selects and persistently highlights that skill but performs no battle action. Selecting a different character clears the selected skill before rebuilding the buttons. The panel contains no description surface and no executable skill behavior.
 
 ## State and data flow
 
@@ -116,11 +118,12 @@ Clicking a populated player or enemy formation slot selects that unit. Clicking 
 2. Each unit retains its copied zero-to-four-item skill roster.
 3. `BattleArena.configure_units()` clears the prior inspection and renders the formations.
 4. Each populated formation slot is connected to inspection using its stable `unit_id`.
-5. Selecting a populated slot resolves the current unit and renders its name, count, and typed skill labels.
-6. Turn advancement and damage preserve inspection while the unit remains present in `_units`.
-7. If the inspected unit becomes inactive but remains in `_units`, the inspector remains selected, retains its skill rows, and changes `SkillInspectorStatusLabel` to `Defeated`.
-8. If the inspected unit is removed from `_units` or becomes invalid, the arena clears the inspection rather than showing stale state.
-9. Reconfiguration clears the selection and restores the neutral prompt.
+5. Selecting a populated slot resolves the current unit and renders its left-hand character block plus numbered skill buttons.
+6. Selecting a skill button stores its `skill_id`, highlights exactly that button, and performs no battle action.
+7. Turn advancement and damage preserve character and skill selection while the unit remains present in `_units`.
+8. If the inspected unit becomes inactive but remains in `_units`, the inspector remains selected, retains its skill buttons, and changes `SkillInspectorStatusLabel` to `Defeated`.
+9. If the inspected unit is removed from `_units` or becomes invalid, the arena clears both selections rather than showing stale state.
+10. Reconfiguration clears character and skill selection and restores the neutral prompt.
 
 Reward presentation and battle completion do not add skill behavior or change the selected unit unless that unit has been removed.
 
@@ -133,6 +136,8 @@ Reward presentation and battle completion do not add skill behavior or change th
 - Caller-side array mutation does not change a constructed unit's roster.
 - Both battle sides use identical validation and presentation rules.
 - Empty formation slots cannot become inspection targets.
+- Skill buttons are selectable inspection controls only and cannot mutate battle state.
+- At most one skill button is highlighted, and character changes clear the highlight.
 - An inactive retained unit remains inspectable and is explicitly labeled `Defeated`.
 - Reconfiguration, removal, and invalidation cannot leave stale character details visible.
 - AC2.6 labels only Active or Passive and does not suggest that either type is executable.
@@ -154,6 +159,9 @@ A focused AC2.6 test runner verifies:
 - The debug inspector begins in its neutral state.
 - Selecting a populated player slot renders the correct name, count, skill names, and labels.
 - Selecting a populated enemy slot follows the same contract.
+- Skill buttons are square, remain in roster order, and show top-left number, centered name, and bottom-edge Active/Passive type.
+- Selecting a skill highlights exactly one button without advancing the turn or changing HP.
+- Selecting another character clears the selected skill.
 - Selecting a zero-skill character shows the explicit empty state.
 - Clicking an empty slot does not change inspection.
 - Reconfiguration clears inspection.
@@ -167,12 +175,13 @@ A focused AC2.6 test runner verifies:
 2. Verify each inspected character reports between zero and four character-specific skills.
 3. Verify every listed skill is labeled exactly Active or Passive.
 4. Inspect the zero-skill fixture and verify the explicit empty state.
-5. Inspect the four-skill fixture and verify all four rows remain readable.
-6. Click an empty slot and verify it does not replace the current inspection.
-7. Defeat the inspected unit and verify its skills remain visible while its status changes to `Defeated`.
-8. Reconfigure the arena and verify the inspector returns to its neutral prompt.
-9. Exit and enter another battle and verify no prior inspected character remains selected.
+5. Inspect the four-skill fixture and verify all four square buttons remain readable in one horizontal row.
+6. Select multiple skill buttons and verify exactly one persistent highlight follows the selection without resolving an action.
+7. Click an empty slot and verify it does not replace the current inspection.
+8. Defeat the inspected unit and verify its skills remain visible while its status changes to `Defeated`.
+9. Reconfigure the arena and verify the inspector returns to its neutral prompt.
+10. Exit and enter another battle and verify no prior character or skill remains selected.
 
 ## Completion boundary
 
-AC2.6 is complete when every named player and enemy fixture carries its specified validated zero-to-four typed skill roster, the exact debug inspector exposes names, status, counts, and Active/Passive labels without stale state, focused and regression tests pass, runtime inspection passes, and matching evidence is recorded. Descriptions and all functional skill mechanics remain intentionally unimplemented.
+AC2.6 is complete when every named player and enemy fixture carries its specified validated zero-to-four typed skill roster, the exact debug inspector exposes the selected character on the left and up to four numbered square skill buttons on the right, button selection remains non-actionable and free of stale state, focused and regression tests pass, runtime inspection passes, and matching evidence is recorded. Descriptions and all functional skill mechanics remain intentionally unimplemented.
