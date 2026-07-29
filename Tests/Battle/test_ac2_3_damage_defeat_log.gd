@@ -168,8 +168,9 @@ func _test_defeat_preserves_next_actor() -> void:
 	var attacker := _unit(&"attacker", 0, 0, 9)
 	var receiver := _unit(&"receiver", 1, 0, 8)
 	var next_actor := _unit(&"next", 0, 1, 7)
+	var remaining_enemy := _unit(&"remaining_enemy", 1, 1, 1)
 	_set_hp(receiver, 6)
-	_configure(arena, [attacker, receiver, next_actor])
+	_configure(arena, [attacker, receiver, next_actor, remaining_enemy])
 	if arena != null and arena.has_method("perform_debug_damage"):
 		arena.call("perform_debug_damage")
 	var current: Variant = arena.call("get_current_unit") if arena != null else null

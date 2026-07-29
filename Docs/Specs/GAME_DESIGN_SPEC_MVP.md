@@ -183,7 +183,7 @@
 - [x] AC2.1 — Battles use a 6-slot player side and a 6-slot enemy side
 - [x] AC2.2 — Faster units act earlier according to speed order
 - [x] AC2.3 — Unit takes damage; at 0 HP, removed from battle
-- [ ] AC2.4 — Player wins if all enemies defeated; loses if all units defeated
+- [x] AC2.4 — Player wins if all enemies defeated; loses if all units defeated
 - [ ] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
 - [ ] AC2.6 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
 - [ ] AC2.7 — Skills grant combo bonuses only when their specific combo conditions are met
@@ -220,7 +220,7 @@
 | `AC2.1` | Manual runtime check | Enter battle and verify the battlefield shows exactly 6 player slots and 6 enemy slots. |
 | `AC2.2` | Manual runtime check | Start a battle with at least two units of different speed values and confirm action order follows descending speed. |
 | `AC2.3` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_3_damage_defeat_log.gd`, then use the debug damage action in battle. Verify deterministic closest-enemy targeting, fixed `7` damage with zero clamping, immediate defeated-unit queue/target exclusion, one turn advance and log entry per action, transient negative damage feedback, scroll-to-newest history, and green-attacker/red-receiver hover inspection. |
-| `AC2.4` | Manual runtime check | Complete one battle by defeating all enemies and one battle by losing all player units, verifying the correct win/loss result in each case. |
+| `AC2.4` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_4_battle_results.gd` to verify pure outcome evaluation, final-hit victory and defeat, terminal idempotence, reset behavior, and exact persistent result presentation. Then complete Combat and Boss battles in both directions, confirming `Victory` after all enemies fall, `Defeat` after all player units fall, frozen combat mutation after completion, readable persistent presentation, and a working debug exit. |
 | `AC2.5` | Manual runtime check | Win battles from at least two different event types and verify the reward screen presents multiple selectable options appropriate to each event. |
 | `AC2.6` | Manual runtime check | Use skills with positional requirements, condition requirements, pre-use cooldowns, and post-use cooldowns, verifying invalid uses are blocked and valid uses resolve correctly. |
 | `AC2.7` | Manual runtime check | Trigger a skill's documented combo condition and confirm the bonus applies; repeat without the condition and confirm the bonus does not apply. |

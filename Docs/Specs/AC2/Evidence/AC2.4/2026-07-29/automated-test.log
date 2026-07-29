@@ -1,0 +1,71 @@
+AC2.4 AUTOMATED VERIFICATION
+Date: 2026-07-29
+Implementation commit: 297e184252d2f2224af7fe60f3bf7238afb2f33f
+
+Executable discovery
+Status: PASS
+The `godot` command was not on PATH. GodotIQ editor execution returned:
+D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe
+The resolved executable ran Godot 4.7.1 stable and all commands below.
+
+TDD RED
+Status: PASS
+Command:
+  godot.windows.opt.tools.64.exe --headless --path . --script res://Tests/Battle/test_ac2_4_battle_results.gd
+Observed before implementation:
+  9 expected FAILED lines covering the missing pure rules, lifecycle, immutability,
+  reset, and presentation behavior.
+
+Focused AC2.4 runner
+Status: PASS
+Command:
+  godot.windows.opt.tools.64.exe --headless --path . --script res://Tests/Battle/test_ac2_4_battle_results.gd
+Signature:
+  AC2.4 battle result tests: PASS (9/9)
+
+AC2.3 compatibility runner
+Status: PASS
+Command:
+  godot.windows.opt.tools.64.exe --headless --path . --script res://Tests/Battle/test_ac2_3_damage_defeat_log.gd
+Signature:
+  AC2.3 damage and battle log tests: PASS (18/18)
+
+Complete test corpus
+Status: PASS
+Discovery:
+  rg --files Tests -g 'test_*.gd'
+Result:
+  13 runners executed
+  13 runners contained their PASS signature
+  0 runners contained FAILED, SCRIPT ERROR, Parse Error, or ERROR
+
+GodotIQ project validation
+Status: PASS
+  25 scripts checked
+  4 scenes checked
+  0 errors
+  0 warnings
+  2 informational findings
+
+GodotIQ parser check
+Status: PASS
+  25 scripts checked
+  0 parser or compilation errors
+
+GodotIQ signal checks
+Status: PASS with documented informational findings
+  No production missing-signal definition was found.
+  `battle_completed` is intentionally unconsumed until AC2.5 or AC4.1 integrates it.
+  Existing `hover_changed` remains unconsumed.
+  The tool reports test-emitted built-in `pressed` as missing in
+  Tests/Battle/test_ac2_2_speed_order.gd; this is a pre-existing static-analysis
+  false positive for a built-in Button signal, and the runner passes.
+
+GodotIQ runtime startup
+Status: PASS
+  BattleArena and GameWorld started with the runtime bridge attached.
+  verify_project_runs verdict: PASS.
+  Runtime errors: 0.
+  Script errors: 0.
+
+Overall automated status: PASS
