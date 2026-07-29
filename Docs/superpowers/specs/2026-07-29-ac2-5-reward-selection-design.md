@@ -63,7 +63,7 @@ The fixed MVP catalog is:
 | Boss | `boss_money_250` | Money | 250 Money | Offers 250 run currency |
 | Boss | `boss_rare_relic` | Item | Rare Relic | Offers a rare boss item |
 
-Every lookup returns fresh option instances so selection state cannot leak between battles. Unsupported event types return an empty typed array; there is no implicit fallback.
+Every lookup returns fresh option instances so selection state cannot leak between battles. Unsupported event types return an empty typed array; there is no implicit fallback. On an unsupported-type victory, the reward panel is shown with `No rewards available`, no option controls, and disabled Confirm so the terminal state is explicit rather than silently hiding the reward surface.
 
 ### BattleArena reward panel
 
