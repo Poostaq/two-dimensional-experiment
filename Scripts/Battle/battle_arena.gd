@@ -31,6 +31,13 @@ const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 @onready var _reward_empty_state_label: Label = %RewardEmptyStateLabel
 @onready var _reward_description_label: Label = %RewardDescriptionLabel
 @onready var _confirm_reward_button: Button = %ConfirmRewardButton
+@onready var _skill_inspector_prompt_label: Label = %SkillInspectorPromptLabel
+@onready var _skill_inspector_header: HBoxContainer = %SkillInspectorHeader
+@onready var _skill_inspector_unit_name_label: Label = %SkillInspectorUnitNameLabel
+@onready var _skill_inspector_status_label: Label = %SkillInspectorStatusLabel
+@onready var _skill_inspector_count_label: Label = %SkillInspectorCountLabel
+@onready var _skill_inspector_skills: VBoxContainer = %SkillInspectorSkills
+@onready var _skill_inspector_empty_label: Label = %SkillInspectorEmptyLabel
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -48,6 +55,7 @@ var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
 var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
 var _reward_confirmation_latched: bool = false
+var _inspected_unit_id: StringName = &""
 
 
 func _ready() -> void:
@@ -78,6 +86,7 @@ func configure(coordinate: Vector2i, type: String) -> void:
 
 func configure_units(units: Array[BattleUnitState]) -> void:
 	_clear_reward_ui()
+	_clear_skill_inspector()
 	_feedback_generation += 1
 	_action_in_progress = false
 	_hovered_log_index = -1
@@ -147,6 +156,19 @@ func confirm_reward_selection() -> void:
 	_clear_reward_ui(false)
 	reward_confirmed.emit(confirmed_reward)
 	exit_requested.emit()
+
+
+func get_inspected_unit_id() -> StringName:
+	return _inspected_unit_id
+
+
+func inspect_unit(unit_id: StringName) -> void:
+	var unit := get_unit_by_id(unit_id)
+	if not is_instance_valid(unit):
+		_clear_skill_inspector()
+		return
+	_inspected_unit_id = unit.unit_id
+	_refresh_skill_inspector()
 
 
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
@@ -225,19 +247,26 @@ func get_enemy_slots() -> Array[Control]:
 
 func _create_debug_units() -> Array[BattleUnitState]:
 	return [
-		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8),
+		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8, 20, _skill_roster([CharacterSkill.new(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE)])),
 		BattleUnitState.new(&"player_1", "Player Front 2", BattleUnitState.Side.PLAYER, 1, 6),
-		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6),
+		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6, 20, _skill_roster([CharacterSkill.new(&"quick_step", "Quick Step", CharacterSkill.Kind.ACTIVE)])),
 		BattleUnitState.new(&"player_3", "Player Back 1", BattleUnitState.Side.PLAYER, 3, 4),
-		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9),
+		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9, 20, _skill_roster([CharacterSkill.new(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"rally", "Rally", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"evasion", "Evasion", CharacterSkill.Kind.PASSIVE), CharacterSkill.new(&"momentum", "Momentum", CharacterSkill.Kind.PASSIVE)])),
 		BattleUnitState.new(&"player_5", "Player Back 3", BattleUnitState.Side.PLAYER, 5, 2),
-		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8),
+		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8, 20, _skill_roster([CharacterSkill.new(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE)])),
 		BattleUnitState.new(&"enemy_1", "Enemy Front 2", BattleUnitState.Side.ENEMY, 1, 7),
-		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6),
+		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6, 20, _skill_roster([CharacterSkill.new(&"brace", "Brace", CharacterSkill.Kind.PASSIVE)])),
 		BattleUnitState.new(&"enemy_3", "Enemy Back 1", BattleUnitState.Side.ENEMY, 3, 4),
-		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9),
+		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([CharacterSkill.new(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE)])),
 		BattleUnitState.new(&"enemy_5", "Enemy Back 3", BattleUnitState.Side.ENEMY, 5, 2),
 	]
+
+
+func _skill_roster(values: Array) -> Array[CharacterSkill]:
+	var roster: Array[CharacterSkill] = []
+	for value: Variant in values:
+		roster.append(value as CharacterSkill)
+	return roster
 
 
 func _complete_battle(outcome: BattleOutcome.Type) -> void:
@@ -334,6 +363,20 @@ func _assign_slot_metadata(formation: GridContainer, side: String) -> void:
 		slot.set_meta("slot_index", slot_index)
 		slot.set_meta("is_current_unit", false)
 		slot.set_meta("highlight_role", &"neutral")
+		slot.set_meta("unit_id", &"")
+		var input_callable := Callable(self, "_on_slot_gui_input").bind(slot)
+		if not slot.gui_input.is_connected(input_callable):
+			slot.gui_input.connect(input_callable)
+
+
+func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
+	var click := event as InputEventMouseButton
+	if click == null or click.button_index != MOUSE_BUTTON_LEFT or not click.pressed:
+		return
+	var unit_id := slot.get_meta("unit_id", &"") as StringName
+	if unit_id.is_empty():
+		return
+	inspect_unit(unit_id)
 
 
 func _refresh_context() -> void:
@@ -346,6 +389,7 @@ func _refresh_context() -> void:
 func _refresh_turn_ui() -> void:
 	_round_label.text = "Round %d" % round_number
 	_render_units()
+	_refresh_skill_inspector()
 	_refresh_result_ui()
 	if is_battle_complete():
 		_current_unit_label.text = BattleOutcome.get_display_text(_battle_outcome)
@@ -383,12 +427,14 @@ func _render_units() -> void:
 		name_label.text = "Unoccupied"
 		speed_label.text = "Speed —"
 		health_label.text = "HP —"
+		slot.set_meta("unit_id", &"")
 	for unit: BattleUnitState in _units:
 		if not is_instance_valid(unit):
 			continue
 		var slot := _get_slot_for_unit(unit)
 		if not is_instance_valid(slot):
 			continue
+		slot.set_meta("unit_id", unit.unit_id)
 		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
 		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
@@ -399,6 +445,43 @@ func _render_units() -> void:
 			if unit.is_active()
 			else "Defeated — HP 0/%d" % unit.max_hp
 		)
+
+
+func _refresh_skill_inspector() -> void:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		_clear_skill_inspector()
+		return
+	_clear_skill_rows()
+	_skill_inspector_prompt_label.visible = false
+	_skill_inspector_header.visible = true
+	_skill_inspector_unit_name_label.text = unit.display_name
+	_skill_inspector_status_label.text = "Active" if unit.is_active() else "Defeated"
+	_skill_inspector_count_label.text = "Skills: %d/%d" % [unit.skills.size(), BattleUnitState.MAX_CHARACTER_SKILLS]
+	_skill_inspector_empty_label.visible = unit.skills.is_empty()
+	for skill: CharacterSkill in unit.skills:
+		var row := Label.new()
+		row.text = "%s — %s" % [skill.display_name, "Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"]
+		_skill_inspector_skills.add_child(row)
+
+
+func _clear_skill_inspector() -> void:
+	_inspected_unit_id = &""
+	if not is_node_ready():
+		return
+	_clear_skill_rows()
+	_skill_inspector_prompt_label.visible = true
+	_skill_inspector_header.visible = false
+	_skill_inspector_unit_name_label.text = ""
+	_skill_inspector_status_label.text = ""
+	_skill_inspector_count_label.text = ""
+	_skill_inspector_empty_label.visible = false
+
+
+func _clear_skill_rows() -> void:
+	for child: Node in _skill_inspector_skills.get_children():
+		_skill_inspector_skills.remove_child(child)
+		child.queue_free()
 
 
 func _refresh_highlights() -> void:
