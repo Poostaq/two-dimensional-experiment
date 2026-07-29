@@ -3,6 +3,7 @@ extends Control
 
 signal exit_requested
 signal battle_completed(outcome: BattleOutcome.Type)
+signal reward_confirmed(option: BattleRewardOption)
 
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
@@ -10,6 +11,7 @@ const CURRENT_SLOT_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 const ATTACKER_SLOT_COLOR := Color(0.35, 0.9, 0.5, 1.0)
 const RECEIVER_SLOT_COLOR := Color(1.0, 0.35, 0.4, 1.0)
 const FEEDBACK_DURATION_SECONDS := 0.8
+const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
 @onready var _player_formation: GridContainer = %PlayerFormation
@@ -22,6 +24,13 @@ const FEEDBACK_DURATION_SECONDS := 0.8
 @onready var _battle_log_entries_container: VBoxContainer = %BattleLogEntries
 @onready var _battle_result_panel: PanelContainer = %BattleResultPanel
 @onready var _battle_result_label: Label = %BattleResultLabel
+@onready var _reward_overlay: CenterContainer = %RewardOverlay
+@onready var _reward_panel: PanelContainer = %RewardPanel
+@onready var _reward_heading_label: Label = %RewardHeadingLabel
+@onready var _reward_options_container: VBoxContainer = %RewardOptions
+@onready var _reward_empty_state_label: Label = %RewardEmptyStateLabel
+@onready var _reward_description_label: Label = %RewardDescriptionLabel
+@onready var _confirm_reward_button: Button = %ConfirmRewardButton
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -36,6 +45,9 @@ var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
 var _action_in_progress: bool = false
 var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
+var _reward_options: Array[BattleRewardOption] = []
+var _selected_reward: BattleRewardOption
+var _reward_confirmation_latched: bool = false
 
 
 func _ready() -> void:
@@ -45,6 +57,10 @@ func _ready() -> void:
 	var advance_callable := Callable(self, "_on_advance_debug_pressed")
 	if not _advance_debug_button.pressed.is_connected(advance_callable):
 		_advance_debug_button.pressed.connect(advance_callable)
+	var confirm_callable := Callable(self, "confirm_reward_selection")
+	if not _confirm_reward_button.pressed.is_connected(confirm_callable):
+		_confirm_reward_button.pressed.connect(confirm_callable)
+	_clear_reward_ui()
 	_assign_slot_metadata(_player_formation, "player")
 	_assign_slot_metadata(_enemy_formation, "enemy")
 	_refresh_context()
@@ -61,6 +77,7 @@ func configure(coordinate: Vector2i, type: String) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	_clear_reward_ui()
 	_feedback_generation += 1
 	_action_in_progress = false
 	_hovered_log_index = -1
@@ -98,6 +115,38 @@ func get_battle_outcome() -> BattleOutcome.Type:
 
 func is_battle_complete() -> bool:
 	return _battle_outcome != BattleOutcome.Type.IN_PROGRESS
+
+
+func get_reward_options() -> Array[BattleRewardOption]:
+	return _reward_options.duplicate()
+
+
+func get_selected_reward() -> BattleRewardOption:
+	return _selected_reward
+
+
+func select_reward(reward_id: StringName) -> void:
+	if _reward_confirmation_latched or _battle_outcome != BattleOutcome.Type.VICTORY:
+		return
+	for option: BattleRewardOption in _reward_options:
+		if option.reward_id == reward_id:
+			_selected_reward = option
+			_refresh_reward_selection_ui()
+			return
+
+
+func confirm_reward_selection() -> void:
+	if (
+		_reward_confirmation_latched
+		or _battle_outcome != BattleOutcome.Type.VICTORY
+		or not is_instance_valid(_selected_reward)
+	):
+		return
+	_reward_confirmation_latched = true
+	var confirmed_reward := _selected_reward
+	_clear_reward_ui(false)
+	reward_confirmed.emit(confirmed_reward)
+	exit_requested.emit()
 
 
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
@@ -198,6 +247,57 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	_turn_queue.clear()
 	_current_turn_index = 0
 	battle_completed.emit(_battle_outcome)
+	if _battle_outcome == BattleOutcome.Type.VICTORY:
+		_show_victory_rewards()
+	else:
+		_clear_reward_ui()
+
+
+func _show_victory_rewards() -> void:
+	_clear_reward_ui()
+	_reward_options = BattleRewardCatalog.get_options_for(encounter_type)
+	_reward_overlay.visible = true
+	_reward_panel.visible = true
+	_reward_heading_label.text = "%s Rewards" % encounter_type.capitalize()
+	_reward_empty_state_label.visible = _reward_options.is_empty()
+	for option: BattleRewardOption in _reward_options:
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(0.0, 48.0)
+		button.text = option.title
+		button.set_meta("reward_id", option.reward_id)
+		button.pressed.connect(select_reward.bind(option.reward_id))
+		_reward_options_container.add_child(button)
+
+
+func _refresh_reward_selection_ui() -> void:
+	if not is_instance_valid(_selected_reward):
+		return
+	for child: Node in _reward_options_container.get_children():
+		var button := child as Button
+		if button == null:
+			continue
+		var is_selected: bool = button.get_meta("reward_id", &"") == _selected_reward.reward_id
+		button.self_modulate = SELECTED_REWARD_COLOR if is_selected else Color.WHITE
+	_reward_description_label.text = _selected_reward.description
+	_confirm_reward_button.disabled = false
+
+
+func _clear_reward_ui(reset_latch: bool = true) -> void:
+	if reset_latch:
+		_reward_confirmation_latched = false
+	_selected_reward = null
+	_reward_options.clear()
+	if not is_node_ready():
+		return
+	for child: Node in _reward_options_container.get_children():
+		_reward_options_container.remove_child(child)
+		child.queue_free()
+	_reward_overlay.visible = false
+	_reward_panel.visible = false
+	_reward_heading_label.text = "Choose a reward"
+	_reward_empty_state_label.visible = false
+	_reward_description_label.text = ""
+	_confirm_reward_button.disabled = true
 
 
 func _advance_after_action(attacker_id: StringName) -> void:
@@ -411,6 +511,7 @@ func _on_advance_debug_pressed() -> void:
 
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
+	_clear_reward_ui()
 	call_deferred("_emit_exit_requested")
 
 

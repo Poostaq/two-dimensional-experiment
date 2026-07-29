@@ -462,7 +462,10 @@ layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 
-[node name="BattleResultLabel" type="Label" parent="Margin/VBox/BattleResultPanel" unique_id=266677693]
+[node name="BattleResultContent" type="VBoxContainer" parent="Margin/VBox/BattleResultPanel" unique_id=1745206833]
+layout_mode = 2
+
+[node name="BattleResultLabel" type="Label" parent="Margin/VBox/BattleResultPanel/BattleResultContent" unique_id=266677693]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
@@ -505,3 +508,48 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="RewardOverlay" type="CenterContainer" parent="." unique_id=227454104]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+
+[node name="RewardPanel" type="PanelContainer" parent="RewardOverlay" unique_id=1759408279]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+
+[node name="RewardContent" type="VBoxContainer" parent="RewardOverlay/RewardPanel" unique_id=2101800464]
+layout_mode = 2
+
+[node name="RewardHeadingLabel" type="Label" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=797488608]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Choose a reward"
+horizontal_alignment = 1
+
+[node name="RewardOptions" type="VBoxContainer" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=1295601627]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RewardEmptyStateLabel" type="Label" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=299649046]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "No rewards available"
+
+[node name="RewardDescriptionLabel" type="Label" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=463755129]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="ConfirmRewardButton" type="Button" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=1890032994]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+disabled = true
+text = "Confirm Reward"
