@@ -69,11 +69,11 @@ Use exactly these states in every evidence artifact:
 
 An unavailable tool is never a pass. Record the exact command and error. Any `FAIL`, `BLOCKED`, stale result, missing artifact, mismatched commit, parser/runtime error, unreadable panel, duplicate emission, or stale next-battle UI keeps AC2.5 unchecked.
 
-## Source-spec verification mismatch to resolve
+## Source-spec verification contract
 
-`Docs/Specs/GAME_DESIGN_SPEC_MVP.md` currently classifies AC2.5 as `Manual runtime check`. This plan adds deterministic automated coverage for the fixed catalog, victory/defeat branching, selection/confirmation contract, signal ordering, idempotence, unsupported-type behavior, cleanup, reset, and new-instance isolation. Manual Combat and Boss checks remain required for interaction and layout.
+`Docs/Specs/GAME_DESIGN_SPEC_MVP.md` classifies AC2.5 as `Automated and manual runtime check`. The contract was migrated during planning because this plan adds deterministic automated coverage for the fixed catalog, victory/defeat branching, selection/confirmation contract, signal ordering, idempotence, unsupported-type behavior, cleanup, reset, and new-instance isolation. Manual Combat and Boss checks remain required for interaction and layout.
 
-Task 4 must replace the existing AC2.5 verification row with `Automated and manual runtime check`. This is a verification-contract migration, not proof of completion. The criterion remains unchecked until both automated and manual halves pass.
+The migration is not proof of completion. Task 4 must verify that the combined row remains exact, and AC2.5 remains unchecked until both automated and manual halves pass.
 
 ### Task 1: Add the typed reward model and fixed catalog
 
@@ -448,7 +448,7 @@ BattleResultContent (VBoxContainer)
         └── ConfirmRewardButton (Button, unique name, text="Confirm Reward", disabled=true)
 ```
 
-Use `node_ops(validate=true)` for the scene changes, then `save_scene()`, `undo_history(detail="brief")`, and `file_context(..., detail="full")`. Do not write raw `.tscn` text. Preserve the existing `%BattleResultLabel` unique name so AC2.4 remains compatible.
+Use `node_ops` without spatial validation for these 2D `Control` changes; GodotIQ spatial validation is unsupported on 2D scenes and returns `BLOCKED`. Always pass `scene="res://Scenes/battle_arena.tscn"`, inspect `all_verified` and every per-operation status, then call `save_scene()`, `undo_history(detail="brief")`, and `file_context(..., detail="full")`. Treat `error`, `unverified`, or a failed save as not applied. Do not write raw `.tscn` text. Preserve the existing `%BattleResultLabel` unique name so AC2.4 remains compatible.
 
 - [ ] **Step 4: Add the exact BattleArena interface and state**
 
@@ -671,7 +671,12 @@ Use the mandatory sequence:
 run(action="play")
 verify_project_runs()
 read_debug_console()
-state_inspect(query="active battle, reward panel visible, selected reward, confirm disabled")
+state_inspect(queries=[
+  {"node": "/root/GameWorld", "properties": ["has_active_battle()"]},
+  {"node": "/root/GameWorld/UI/BattleArena", "properties": ["get_reward_options().size()", "get_selected_reward()"]},
+  {"node": "/root/GameWorld/UI/BattleArena/Margin/VBox/BattleResultPanel/BattleResultContent/RewardPanel", "properties": ["visible"]},
+  {"node": "/root/GameWorld/UI/BattleArena/Margin/VBox/BattleResultPanel/BattleResultContent/RewardPanel/RewardContent/ConfirmRewardButton", "properties": ["disabled"]}
+], detail="brief")
 run(action="stop")
 ```
 
@@ -727,19 +732,15 @@ Create:
 Overall: PASS/FAIL/BLOCKED
 ```
 
-- [ ] **Step 3: Replace the manual-only AC2.5 verification row**
+- [ ] **Step 3: Verify the combined AC2.5 verification row**
 
-Replace the existing row, rather than adding a duplicate:
-
-```markdown
-| `AC2.5` | Manual runtime check | Win battles from at least two different event types and verify the reward screen presents multiple selectable options appropriate to each event. |
-```
-
-with:
+Confirm that the source spec contains exactly one AC2.5 verification row and that it is:
 
 ```markdown
 | `AC2.5` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_5_reward_selection.gd` to verify the fixed Combat/Boss catalogs, explicit selection and Confirm gating, typed signal order and idempotence, defeat and unsupported-event behavior, cleanup, reset, and new-battle isolation. Then win Combat and Boss battles, verify each presents its three appropriate fixed options, select and confirm one, confirm the reward screen disappears with the fight, and verify the next battle starts without stale reward UI or selection. |
 ```
+
+Do not downgrade it to manual-only or add a duplicate row. This combined verification contract is already authoritative, but it does not mark AC2.5 complete.
 
 - [ ] **Step 4: Mark AC2.5 complete only after every gate passes**
 

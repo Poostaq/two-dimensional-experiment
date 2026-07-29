@@ -102,7 +102,7 @@ The debug exit path also hides and clears the panel before requesting exit, but 
 The reward UI must not survive its battle:
 
 - It is hidden on scene entry and after every configuration/reset.
-- It becomes visible only for a completed victory with supported reward options.
+- It becomes visible for every completed victory: supported Combat/Boss victories show selectable options, while unsupported-type victories show the non-actionable `No rewards available` empty state.
 - It is immediately hidden and cleared on Confirm, before the battle exit signals.
 - It is immediately hidden and cleared on debug exit.
 - Removing the active battle instance removes the panel with it.
