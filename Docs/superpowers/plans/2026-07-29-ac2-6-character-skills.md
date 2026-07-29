@@ -42,7 +42,7 @@ Expected: appending a defaulted parameter preserves every existing constructor c
 
 - [ ] **Step 2: Write the failing model tests**
 
-Create the runner with `EXPECTED_TEST_COUNT := 13`. Its first seven synchronous cases must use these exact assertions:
+Create the runner with `EXPECTED_TEST_COUNT := 14`. Its first seven synchronous cases must use these exact assertions:
 
 ```gdscript
 func _test_active_and_passive_identity() -> void:
@@ -243,7 +243,7 @@ Expected: no validation or parser errors.
 
 - [ ] **Step 5: Prove the model tests pass**
 
-Run the focused runner. Expected: the seven model cases pass; the six arena cases still fail until Tasks 2 and 3.
+Run the focused runner. Expected: the seven model cases pass; the seven arena and layout cases still fail until Tasks 2 and 3.
 
 - [ ] **Step 6: Commit the model**
 
@@ -378,7 +378,7 @@ git commit -m "feat: add AC2.6 skill fixtures and inspector scene"
 - Modify: `Scripts/Battle/battle_arena.gd`
 - Test: `Tests/Battle/test_ac2_6_character_skills.gd`
 
-- [ ] **Step 1: Add four failing interaction cases**
+- [ ] **Step 1: Add five failing interaction and layout cases**
 
 Add cases for:
 
@@ -400,9 +400,13 @@ Reconfigure and verify the neutral state.
 # Retained defeat and invalid/removal cleanup
 Inspect an enemy with 6 HP, resolve debug damage, verify the same skill rows remain
 and status becomes Defeated. Reconfigure without that ID and verify neutral state.
+
+# Four-skill viewport fit
+Set the test window to 1152x648, inspect player_4, await one frame, and verify
+Margin/VBox and the bottom of BattleLogPanel remain at or above y=648.
 ```
 
-Run the focused runner. Expected: all four fail because the API and wiring do not exist.
+Run the focused runner. Expected: all five fail because the API, wiring, and compact layout do not exist.
 
 - [ ] **Step 2: Add exact inspector state and public test seam**
 
@@ -484,6 +488,7 @@ func _refresh_skill_inspector() -> void:
 	_skill_inspector_empty_label.visible = unit.skills.is_empty()
 	for skill: CharacterSkill in unit.skills:
 		var row := Label.new()
+		row.add_theme_font_size_override("font_size", 12)
 		row.text = "%s — %s" % [
 			skill.display_name,
 			"Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive",
@@ -512,6 +517,8 @@ func _clear_skill_rows() -> void:
 
 Call `_clear_skill_inspector()` at the start of `configure_units()`. Call `_refresh_skill_inspector()` after `_render_units()` so retained inactive units change to `Defeated`, and absent or invalid units clear.
 
+Compact the persistent inspector labels to 12px with zero content separation. Set `BattleLogPanel` and `BattleLogVBox` minimum heights to `60`, and `BattleLogScroll` to `40`, so the four-skill inspector and battle log fit the project viewport without hiding either surface.
+
 - [ ] **Step 5: Validate and prove the focused suite**
 
 ```text
@@ -523,7 +530,7 @@ check_errors(scope="res://Scripts/Battle/battle_arena.gd")
 godot --headless --path . --script res://Tests/Battle/test_ac2_6_character_skills.gd
 ```
 
-Expected: `AC2.6 character skill tests: PASS (13/13)` and exit `0`.
+Expected: `AC2.6 character skill tests: PASS (14/14)` and exit `0`.
 
 - [ ] **Step 6: Commit interaction behavior**
 
@@ -552,7 +559,7 @@ foreach ($testScript in $testScripts) {
 }
 ```
 
-Expected: focused PASS `(13/13)` and every existing runner exits `0`.
+Expected: focused PASS `(14/14)` and every existing runner exits `0`.
 
 - [ ] **Step 2: Run project-wide GodotIQ gates**
 
@@ -593,7 +600,7 @@ Only after every gate passes, change AC2.6 from `[ ]` to `[x]`. Do not check AC2
 
 ```powershell
 rg -n "T(BD)|T(ODO)|implement la[t]er|fill in det[a]ils|appropriate error handl[i]ng|similar to Ta[s]k" Docs/superpowers/plans/2026-07-29-ac2-6-character-skills.md
-rg -n "AC2\\.6|CharacterSkill|MAX_CHARACTER_SKILLS|SkillInspector|13/13|PASS|FAIL|BLOCKED" Docs/superpowers/plans/2026-07-29-ac2-6-character-skills.md Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+rg -n "AC2\\.6|CharacterSkill|MAX_CHARACTER_SKILLS|SkillInspector|14/14|PASS|FAIL|BLOCKED" Docs/superpowers/plans/2026-07-29-ac2-6-character-skills.md Docs/Specs/GAME_DESIGN_SPEC_MVP.md
 git diff --check
 git status --short
 ```
@@ -613,8 +620,8 @@ git status --short --branch
 git log -7 --oneline
 ```
 
-Expected: focused PASS `(13/13)`, all AC2.6 commits are present, evidence points to the tested implementation commit, and unrelated `.vscode` plus temporary user files remain uncommitted.
+Expected: focused PASS `(14/14)`, all AC2.6 commits are present, evidence points to the tested implementation commit, and unrelated `.vscode` plus temporary user files remain uncommitted.
 
 ## Completion boundary
 
-AC2.6 is complete only when the exact named fixtures, typed roster validation, persistent scene-wired inspector, both-side slot inspection, inactive retained-unit status, stale-state cleanup, focused `(13/13)` suite, complete regressions, GodotIQ gates, runtime input checks, visual QA, and matching evidence all pass. Any failed or blocked gate keeps AC2.6 unchecked.
+AC2.6 is complete only when the exact named fixtures, typed roster validation, persistent scene-wired inspector, both-side slot inspection, inactive retained-unit status, stale-state cleanup, four-skill viewport fit, focused `(14/14)` suite, complete regressions, GodotIQ gates, runtime input checks, visual QA, and matching evidence all pass. Any failed or blocked gate keeps AC2.6 unchecked.
