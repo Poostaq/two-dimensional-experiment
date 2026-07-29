@@ -2,7 +2,7 @@ class_name Ac2_6CharacterSkillTests
 extends SceneTree
 
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 13
+const EXPECTED_TEST_COUNT := 14
 
 var _failures: Array[String] = []
 
@@ -25,6 +25,7 @@ func _run() -> void:
 	await _test_zero_skill_and_empty_slot_behavior()
 	await _test_reconfiguration_clears_inspection()
 	await _test_retained_defeat_updates_status()
+	await _test_four_skill_layout_fits_viewport()
 	_report()
 	quit(1 if not _failures.is_empty() else 0)
 
@@ -169,6 +170,19 @@ func _test_retained_defeat_updates_status() -> void:
 		and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
 		and (arena.get_node_or_null("%SkillInspectorSkills") as VBoxContainer).get_child_count() == 1,
 		"Retained defeat updates status", "defeated retained units keep rows and show Defeated")
+	_free_arena(arena)
+
+
+func _test_four_skill_layout_fits_viewport() -> void:
+	root.size = Vector2i(1152, 648)
+	await process_frame
+	var arena := await _instantiate_arena()
+	arena.call("inspect_unit", &"player_4")
+	await process_frame
+	var main_vbox := arena.get_node_or_null("Margin/VBox") as Control
+	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control
+	_assert(main_vbox.size.y <= 648.0 and battle_log.position.y + battle_log.size.y <= 648.0,
+		"Four-skill layout fits viewport", "VBox %.1f, log bottom %.1f must be <= 648" % [main_vbox.size.y, battle_log.position.y + battle_log.size.y])
 	_free_arena(arena)
 
 

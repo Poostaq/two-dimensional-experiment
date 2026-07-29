@@ -461,6 +461,7 @@ func _refresh_skill_inspector() -> void:
 	_skill_inspector_empty_label.visible = unit.skills.is_empty()
 	for skill: CharacterSkill in unit.skills:
 		var row := Label.new()
+		row.add_theme_font_size_override("font_size", 12)
 		row.text = "%s — %s" % [skill.display_name, "Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"]
 		_skill_inspector_skills.add_child(row)
 
