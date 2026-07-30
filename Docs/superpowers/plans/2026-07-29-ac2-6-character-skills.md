@@ -624,13 +624,13 @@ Write the full tested implementation commit SHA plus a newline to `implementatio
 
 - [ ] **Step 5: Upgrade the AC2.6 verification contract and checkbox**
 
-Change the AC2.6 row to:
+Change the AC2.6 row to the following interim 14/14 contract:
 
 ```markdown
 | `AC2.6` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_6_character_skills.gd` to verify typed Active/Passive identity, blank and invalid definition rejection, zero-to-four roster limits, null/wrong-type/duplicate rejection, copy semantics, exact player/enemy fixtures, persistent inspector wiring, slot selection, zero-skill state, empty-slot behavior, defeated-unit status, and cleanup. Then inspect multiple player and enemy characters in battle and verify every character exposes 0 to 4 character-specific skills with each listed skill labeled Active or Passive. |
 ```
 
-Only after every gate passes, change AC2.6 from `[ ]` to `[x]`. Do not check AC2.7–AC2.9 or claim descriptions or functional skill mechanics.
+Only after every gate passes, change AC2.6 from `[ ]` to `[x]`. This interim row is not the final documentation state: after Task 5 reaches 19/19, Task 5 Step 6 must replace it with the hardened tile-selection contract. Do not check AC2.7–AC2.9 or claim descriptions or functional skill mechanics.
 
 - [ ] **Step 6: Self-review and commit evidence**
 
@@ -673,7 +673,7 @@ AC2.6 is complete only when the exact named fixtures, typed roster validation, p
 - Modify: `Tests/Battle/test_ac2_6_character_skills.gd`
 - Refresh: `Docs/Specs/AC2/Evidence/AC2.6/2026-07-30/*`
 
-- [ ] **Step 1: Add five failing runtime and tile-contract tests**
+- [ ] **Step 1: Add five hardening test categories and verify the mixed baseline**
 
 Raise `EXPECTED_TEST_COUNT` to `19`. Add focused cases that verify:
 
@@ -716,7 +716,7 @@ reconfigure arena and verify character and skill selection are empty
 at 1152x648, four buttons and BattleLogPanel remain within the viewport
 ```
 
-Run the focused runner. Expected: all five new cases fail against the current assert-based mutable model and vertical `Label` list.
+Run the focused runner after Tasks 1–4 are complete. Expected: the runtime-rejection and defensive-copying cases pass against the already hardened model; the tile-contract, non-actionable-selection, and selection-lifecycle/viewport cases fail against the current vertical `Label` inspector. Treat any model-contract failure as a regression to fix before proceeding with the inspector changes.
 
 - [ ] **Step 2: Reshape the existing persistent inspector scene**
 
@@ -785,13 +785,13 @@ Run the full test corpus, project validation, parser checks, runtime mouse input
 
 - [ ] **Step 6: Replace the AC2.6 verification row with the final hardened contract**
 
-After the focused `(19/19)` suite and every regression/runtime gate pass, replace the older 14-case AC2.6 verification row in `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` with:
+After the focused `(19/19)` suite and every regression/runtime gate pass, replace the interim 14/14 AC2.6 verification row written in Task 4 Step 5 in `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` with:
 
 ```markdown
 | `AC2.6` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_6_character_skills.gd` to verify runtime-safe invalid skill and roster rejection, defensive skill-object and roster-array copying, typed Active/Passive identity, zero-to-four limits, exact player/enemy fixtures, persistent inspector reshaping, selected-character slot inspection, numbered square skill buttons, non-actionable skill selection, zero-skill and empty-slot behavior, defeated-unit retention, selection cleanup, and four-skill viewport fit. Then inspect multiple player and enemy characters in battle, verify each exposes 0 to 4 character-specific skill buttons labeled Active or Passive, and confirm selecting a skill button highlights it without resolving a battle action. |
 ```
 
-Keep AC2.6 checked `[x]` only after the refreshed `2026-07-30` automated log, manual runtime record, and implementation link all identify the same tested implementation commit. Do not retain the older verification-row wording as a second row, and do not check AC2.7–AC2.9.
+This replacement is mandatory even if AC2.6 was already checked during the interim 14/14 phase. Keep AC2.6 checked `[x]` only after the refreshed `2026-07-30` automated log, manual runtime record, and implementation link all identify the same tested implementation commit. The final MVP specification must contain exactly one AC2.6 row—the hardened 19/19 wording above. Do not retain the interim wording as a second row, and do not check AC2.7–AC2.9.
 
 ## Revised completion boundary
 
