@@ -254,6 +254,8 @@ func _test_target_viewport_layout() -> void:
 	var preview := arena.get_node("%SkillPreviewPanel") as Control
 	var inspector_rect := inspector.get_global_rect()
 	var preview_rect := preview.get_global_rect()
+	var selection_rect := (arena.get_node("%SkillSelectionRegion") as Control).get_global_rect()
+	_expect(preview_rect.position.x >= selection_rect.end.x, "preview must be right-docked after selection region")
 	var preview_ratio := preview_rect.size.x / inspector_rect.size.x
 	_expect(preview_ratio >= 0.25 and preview_ratio <= 0.33, "preview ratio must be 0.25-0.33, got %.3f" % preview_ratio)
 	_expect(inspector_rect.position.x >= 0.0 and inspector_rect.end.x <= 1152.0, "inspector must fit horizontally")
