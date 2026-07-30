@@ -40,6 +40,13 @@ const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 @onready var _skill_inspector_count_label: Label = %SkillInspectorCountLabel
 @onready var _skill_inspector_skills: HBoxContainer = %SkillInspectorSkills
 @onready var _skill_inspector_empty_label: Label = %SkillInspectorEmptyLabel
+@onready var _skill_preview_prompt_label: Label = %SkillPreviewPromptLabel
+@onready var _skill_preview_name_label: Label = %SkillPreviewNameLabel
+@onready var _skill_preview_kind_label: Label = %SkillPreviewKindLabel
+@onready var _skill_preview_effect_label: Label = %SkillPreviewEffectLabel
+@onready var _skill_preview_targeting_label: Label = %SkillPreviewTargetingLabel
+@onready var _skill_preview_requirements_label: Label = %SkillPreviewRequirementsLabel
+@onready var _skill_preview_cooldown_label: Label = %SkillPreviewCooldownLabel
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -187,6 +194,7 @@ func select_skill(skill_id: StringName) -> void:
 		if skill.skill_id == skill_id:
 			_selected_skill_id = skill_id
 			_refresh_skill_selection()
+			_refresh_skill_preview()
 			return
 
 
@@ -516,6 +524,7 @@ func _refresh_skill_inspector() -> void:
 	if not selection_still_owned:
 		_selected_skill_id = &""
 	_refresh_skill_selection()
+	_refresh_skill_preview()
 
 
 func _create_skill_button(skill: CharacterSkill, skill_index: int) -> Button:
@@ -570,6 +579,48 @@ func _refresh_skill_selection() -> void:
 		button.self_modulate = SELECTED_SKILL_COLOR if is_selected else Color.WHITE
 
 
+func _get_selected_skill() -> CharacterSkill:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		return null
+	for skill: CharacterSkill in unit.skills:
+		if skill.skill_id == _selected_skill_id:
+			return skill
+	return null
+
+
+func _refresh_skill_preview() -> void:
+	var skill := _get_selected_skill()
+	var has_skill := is_instance_valid(skill)
+	_skill_preview_prompt_label.visible = not has_skill
+	_skill_preview_name_label.visible = has_skill
+	_skill_preview_kind_label.visible = has_skill
+	_skill_preview_effect_label.visible = has_skill
+	_skill_preview_targeting_label.visible = has_skill
+	_skill_preview_requirements_label.visible = has_skill
+	_skill_preview_cooldown_label.visible = has_skill
+	if not has_skill:
+		_clear_skill_preview_text()
+		return
+	_skill_preview_name_label.text = skill.display_name
+	_skill_preview_kind_label.text = (
+		"Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"
+	)
+	_skill_preview_effect_label.text = "Effect: %s" % skill.effect_text
+	_skill_preview_targeting_label.text = "Targeting: %s" % skill.targeting_text
+	_skill_preview_requirements_label.text = "Requirements: %s" % skill.requirements_text
+	_skill_preview_cooldown_label.text = "Cooldown: %s" % skill.cooldown_text
+
+
+func _clear_skill_preview_text() -> void:
+	_skill_preview_name_label.text = ""
+	_skill_preview_kind_label.text = ""
+	_skill_preview_effect_label.text = ""
+	_skill_preview_targeting_label.text = ""
+	_skill_preview_requirements_label.text = ""
+	_skill_preview_cooldown_label.text = ""
+
+
 func _clear_skill_inspector() -> void:
 	_inspected_unit_id = &""
 	_selected_skill_id = &""
@@ -582,6 +633,7 @@ func _clear_skill_inspector() -> void:
 	_skill_inspector_status_label.text = ""
 	_skill_inspector_count_label.text = ""
 	_skill_inspector_empty_label.visible = false
+	_refresh_skill_preview()
 
 
 func _clear_skill_rows() -> void:

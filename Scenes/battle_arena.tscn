@@ -479,31 +479,82 @@ text = "Select a populated slot to inspect skills."
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SkillInspectorCharacterBlock" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=1751821891]
+[node name="SkillPreviewPanel" type="PanelContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=490861792]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(288, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 3.0
+
+[node name="SkillPreviewContent" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel" unique_id=2003719608]
+layout_mode = 2
+
+[node name="SkillPreviewPromptLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=1986913607]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Select a skill to inspect its description."
+autowrap_mode = 2
+
+[node name="SkillPreviewNameLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=2060166804]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillPreviewKindLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=908318000]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillPreviewEffectLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=476792381]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillPreviewTargetingLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=1712777886]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillPreviewRequirementsLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=234798944]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillPreviewCooldownLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillPreviewPanel/SkillPreviewContent" unique_id=252958978]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillSelectionRegion" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=707293362]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 7.0
+
+[node name="SkillInspectorCharacterBlock" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1751821891]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 
-[node name="SkillInspectorUnitNameLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillInspectorCharacterBlock" unique_id=713145833]
+[node name="SkillInspectorUnitNameLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=713145833]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SkillInspectorStatusLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillInspectorCharacterBlock" unique_id=1401560804]
+[node name="SkillInspectorStatusLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=1401560804]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SkillInspectorCountLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillInspectorCharacterBlock" unique_id=1655803130]
+[node name="SkillInspectorCountLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=1655803130]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SkillInspectorEmptyLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=943690158]
+[node name="SkillInspectorEmptyLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=943690158]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "No character-specific skills"
 
-[node name="SkillInspectorSkills" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=1077560603]
+[node name="SkillInspectorSkills" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1077560603]
 unique_name_in_owner = true
 layout_mode = 2
 
