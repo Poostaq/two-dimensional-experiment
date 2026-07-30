@@ -97,7 +97,14 @@ SkillInspectorPanel
 
 The preview occupies approximately 30% of the inspector's available width and must remain within the accepted 25–33% range at the project target viewport. The selection region expands into the remaining width. Spacing or a vertical separator visually distinguishes the right-docked preview from the skill buttons while both regions remain inside the same outer panel.
 
-Preview values use wrapping labels and remain readable without overlap. The four-skill fixture must continue to fit inside the viewport with all four buttons visible.
+Preview values use wrapping labels and remain readable without overlap. At the project target viewport:
+
+- The complete inspector remains inside the viewport bounds.
+- The preview occupies 25–33% of the inspector's rendered width.
+- All four skill buttons of the four-skill fixture are fully visible.
+- The selected skill name, kind, and all four preview rows are simultaneously visible.
+- No heading, row label, or row value is clipped, truncated, overlapped, or obscured.
+- The inspector requires no horizontal scrolling.
 
 ## Presentation states
 
@@ -175,14 +182,22 @@ Update the AC2.6 runner only where the expanded required constructor contract de
 2. Inspect an active player skill and confirm the exact heading and four labeled preview rows.
 3. Inspect a passive player skill and confirm the same stable surface, including visible `None` values.
 4. Repeat active and passive inspection for enemy skills.
-5. Confirm the preview occupies roughly the rightmost 30% of the shared inspector panel.
-6. Inspect the four-skill fixture and confirm all buttons and the preview remain readable without overlap or viewport overflow.
+5. Confirm the preview occupies 25–33% of the shared inspector's rendered width.
+6. Inspect the four-skill fixture and confirm all four buttons, the selected skill name and kind, and all four preview rows are simultaneously visible with no clipping, truncation, overlap, obscuring, horizontal scrolling, or viewport overflow.
 7. Select different skills and characters and confirm highlight and preview state follow the lifecycle contract.
 8. Advance a turn, apply damage, and defeat the inspected unit; confirm retained inspection remains stable and non-actionable.
 9. Reconfigure or enter a new battle and confirm no prior preview remains.
 
-Record the automated log, manual runtime record, and implementation commit link under `Docs/Specs/AC2/Evidence/AC2.7/<verification-date>/`.
+Record the automated log, manual runtime record, and implementation commit link under `Docs/Specs/AC2/Evidence/AC2.7/<verification-date>/`. The automated log and manual record must identify the same tested implementation commit.
+
+After every automated, regression, runtime, and evidence gate passes:
+
+1. Change the AC2.7 checkbox in `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` from `[ ]` to `[x]`.
+2. Replace the AC2.7 verification row with an `Automated and manual runtime check` path that names the focused test runner, structured model validation, exact eleven-skill fixture coverage, active/passive preview states, lifecycle behavior, non-actionability, the 25–33% width constraint, and the no-clipping target-viewport gate.
+3. Confirm the MVP document contains exactly one AC2.7 acceptance row and exactly one AC2.7 verification row.
+4. Keep AC2.8 and AC2.9 unchecked and avoid claiming executable skill mechanics.
+5. Commit the MVP closeout and evidence files together so the checked criterion points to a complete, traceable evidence package.
 
 ## Completion boundary
 
-AC2.7 is complete when every AC2.6 fixture skill on both battle sides carries the exact validated structured preview, the existing inspector presents a readable right-docked four-row preview before action commitment for both active and passive skills, lifecycle and non-actionability contracts hold, the AC2.1–AC2.6 regressions remain green, runtime layout inspection passes, and matching evidence is recorded. Functional skill mechanics remain unimplemented.
+AC2.7 is complete when every AC2.6 fixture skill on both battle sides carries the exact validated structured preview, the existing inspector presents a readable right-docked four-row preview before action commitment for both active and passive skills, lifecycle and non-actionability contracts hold, the AC2.1–AC2.6 regressions remain green, the measurable target-viewport layout gates pass, matching evidence is recorded against one tested implementation commit, and the MVP checkbox and verification row are formally closed out. Functional skill mechanics remain unimplemented, and AC2.8 and AC2.9 remain unchecked.
