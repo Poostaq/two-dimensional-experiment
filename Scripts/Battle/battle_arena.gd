@@ -266,19 +266,48 @@ func get_enemy_slots() -> Array[Control]:
 
 func _create_debug_units() -> Array[BattleUnitState]:
 	return [
-		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8, 20, _skill_roster([CharacterSkill.new(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE)])),
+		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8, 20, _skill_roster([
+			_create_skill(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "Closest active enemy.", "User must occupy a front-row slot.", "1 turn after use."),
+			_create_skill(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE, "Reduce the next damage taken by an adjacent ally by 3.", "Adjacent active allies.", "User must occupy a front-row slot.", "None"),
+		])),
 		BattleUnitState.new(&"player_1", "Player Front 2", BattleUnitState.Side.PLAYER, 1, 6),
-		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6, 20, _skill_roster([CharacterSkill.new(&"quick_step", "Quick Step", CharacterSkill.Kind.ACTIVE)])),
+		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6, 20, _skill_roster([
+			_create_skill(&"quick_step", "Quick Step", CharacterSkill.Kind.ACTIVE, "Gain 2 Speed until the end of the next turn.", "Self.", "None", "2 turns after use."),
+		])),
 		BattleUnitState.new(&"player_3", "Player Back 1", BattleUnitState.Side.PLAYER, 3, 4),
-		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9, 20, _skill_roster([CharacterSkill.new(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"rally", "Rally", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"evasion", "Evasion", CharacterSkill.Kind.PASSIVE), CharacterSkill.new(&"momentum", "Momentum", CharacterSkill.Kind.PASSIVE)])),
+		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9, 20, _skill_roster([
+			_create_skill(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "Closest active enemy.", "None", "None"),
+			_create_skill(&"rally", "Rally", CharacterSkill.Kind.ACTIVE, "Grant all active allies 2 Speed until the end of the round.", "All active allies, including the user.", "None", "2 turns after use."),
+			_create_skill(&"evasion", "Evasion", CharacterSkill.Kind.PASSIVE, "Prevent the first damage instance received each round.", "Self.", "None", "None"),
+			_create_skill(&"momentum", "Momentum", CharacterSkill.Kind.PASSIVE, "Gain 1 Speed after taking an action, lasting until battle ends.", "Self.", "User must remain active.", "None"),
+		])),
 		BattleUnitState.new(&"player_5", "Player Back 3", BattleUnitState.Side.PLAYER, 5, 2),
-		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8, 20, _skill_roster([CharacterSkill.new(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE), CharacterSkill.new(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE)])),
+		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8, 20, _skill_roster([
+			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "Closest active enemy.", "User must be above 50% HP.", "2 turns after use."),
+			_create_skill(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"),
+		])),
 		BattleUnitState.new(&"enemy_1", "Enemy Front 2", BattleUnitState.Side.ENEMY, 1, 7),
-		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6, 20, _skill_roster([CharacterSkill.new(&"brace", "Brace", CharacterSkill.Kind.PASSIVE)])),
+		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6, 20, _skill_roster([
+			_create_skill(&"brace", "Brace", CharacterSkill.Kind.PASSIVE, "Reduce the first damage received each round by 2.", "Self.", "None", "None"),
+		])),
 		BattleUnitState.new(&"enemy_3", "Enemy Back 1", BattleUnitState.Side.ENEMY, 3, 4),
-		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([CharacterSkill.new(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE)])),
+		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([
+			_create_skill(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."),
+		])),
 		BattleUnitState.new(&"enemy_5", "Enemy Back 3", BattleUnitState.Side.ENEMY, 5, 2),
 	]
+
+
+func _create_skill(
+	id: StringName,
+	name: String,
+	kind: CharacterSkill.Kind,
+	effect: String,
+	targeting: String,
+	requirements: String,
+	cooldown: String
+) -> CharacterSkill:
+	return CharacterSkill.new(id, name, kind, effect, targeting, requirements, cooldown)
 
 
 func _skill_roster(values: Array) -> Array[CharacterSkill]:

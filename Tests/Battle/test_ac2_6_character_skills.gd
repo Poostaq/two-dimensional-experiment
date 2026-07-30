@@ -36,26 +36,26 @@ func _run() -> void:
 
 
 func _test_active_and_passive_identity() -> void:
-	var active := CharacterSkill.new(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE)
-	var passive := CharacterSkill.new(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE)
+	var active := _test_skill(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE)
+	var passive := _test_skill(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE)
 	_assert(active.skill_id == &"shield_bash" and active.display_name == "Shield Bash"
 		and active.kind == CharacterSkill.Kind.ACTIVE and passive.kind == CharacterSkill.Kind.PASSIVE,
 		"Typed skill identity", "valid definitions must preserve identity and kind")
 
 
 func _test_blank_definition_validation() -> void:
-	_assert(not CharacterSkill.is_valid_definition(&"", "Name", CharacterSkill.Kind.ACTIVE)
-		and not CharacterSkill.is_valid_definition(&" ", "Name", CharacterSkill.Kind.ACTIVE)
-		and not CharacterSkill.is_valid_definition(&"\t", "Name", CharacterSkill.Kind.ACTIVE)
-		and not CharacterSkill.is_valid_definition(&"valid", "", CharacterSkill.Kind.ACTIVE)
-		and not CharacterSkill.is_valid_definition(&"valid", " ", CharacterSkill.Kind.ACTIVE)
-		and not CharacterSkill.is_valid_definition(&"valid", "\t", CharacterSkill.Kind.ACTIVE),
+	_assert(not _is_valid_test_definition(&"", "Name", CharacterSkill.Kind.ACTIVE)
+		and not _is_valid_test_definition(&" ", "Name", CharacterSkill.Kind.ACTIVE)
+		and not _is_valid_test_definition(&"\t", "Name", CharacterSkill.Kind.ACTIVE)
+		and not _is_valid_test_definition(&"valid", "", CharacterSkill.Kind.ACTIVE)
+		and not _is_valid_test_definition(&"valid", " ", CharacterSkill.Kind.ACTIVE)
+		and not _is_valid_test_definition(&"valid", "\t", CharacterSkill.Kind.ACTIVE),
 		"Blank definitions are invalid", "empty and whitespace-only values must be rejected")
 
 
 func _test_invalid_kind_validation() -> void:
-	_assert(not CharacterSkill.is_valid_definition(&"valid", "Valid", -1)
-		and not CharacterSkill.is_valid_definition(&"valid", "Valid", 2),
+	_assert(not _is_valid_test_definition(&"valid", "Valid", -1)
+		and not _is_valid_test_definition(&"valid", "Valid", 2),
 		"Unknown kinds are invalid", "only Active and Passive are accepted")
 
 
@@ -67,15 +67,15 @@ func _test_zero_through_four_skills_are_valid() -> void:
 
 
 func _test_invalid_roster_elements_are_rejected() -> void:
-	var valid_skill := CharacterSkill.new(&"valid", "Valid", CharacterSkill.Kind.ACTIVE)
+	var valid_skill := _test_skill(&"valid", "Valid", CharacterSkill.Kind.ACTIVE)
 	_assert(not BattleUnitState.is_valid_skill_roster([valid_skill, null])
 		and not BattleUnitState.is_valid_skill_roster([valid_skill, "wrong type"]),
 		"Invalid roster elements are rejected", "null and wrong-type entries reject the roster")
 
 
 func _test_duplicate_and_oversized_rosters_are_rejected() -> void:
-	var first := CharacterSkill.new(&"duplicate", "First", CharacterSkill.Kind.ACTIVE)
-	var second := CharacterSkill.new(&"duplicate", "Second", CharacterSkill.Kind.PASSIVE)
+	var first := _test_skill(&"duplicate", "First", CharacterSkill.Kind.ACTIVE)
+	var second := _test_skill(&"duplicate", "Second", CharacterSkill.Kind.PASSIVE)
 	_assert(not BattleUnitState.is_valid_skill_roster([first, second])
 		and not BattleUnitState.is_valid_skill_roster(_skills(5)),
 		"Duplicate and oversized rosters are rejected", "duplicate IDs and a fifth skill are invalid")
@@ -93,22 +93,22 @@ func _test_roster_is_copied_for_both_sides() -> void:
 
 
 func _test_runtime_safe_rejection() -> void:
-	var blank_id := CharacterSkill.create(&" ", "Name", CharacterSkill.Kind.ACTIVE)
-	var blank_name := CharacterSkill.create(&"valid", " ", CharacterSkill.Kind.ACTIVE)
-	var invalid_kind := CharacterSkill.create(&"valid", "Name", -1)
+	var blank_id := _create_test_skill(&" ", "Name", CharacterSkill.Kind.ACTIVE)
+	var blank_name := _create_test_skill(&"valid", " ", CharacterSkill.Kind.ACTIVE)
+	var invalid_kind := _create_test_skill(&"valid", "Name", -1)
 	var unit := BattleUnitState.new(&"unit", "Unit", BattleUnitState.Side.PLAYER, 0, 8)
 	var duplicate: Array[CharacterSkill] = [
-		CharacterSkill.new(&"same", "One", CharacterSkill.Kind.ACTIVE),
-		CharacterSkill.new(&"same", "Two", CharacterSkill.Kind.PASSIVE),
+		_test_skill(&"same", "One", CharacterSkill.Kind.ACTIVE),
+		_test_skill(&"same", "Two", CharacterSkill.Kind.PASSIVE),
 	]
-	var invalid_entry: Array = [CharacterSkill.new(&"valid", "Valid", CharacterSkill.Kind.ACTIVE), null]
+	var invalid_entry: Array = [_test_skill(&"valid", "Valid", CharacterSkill.Kind.ACTIVE), null]
 	var rejected := not unit.set_skills(duplicate) and not unit.set_skills(invalid_entry) and not unit.set_skills(_skills(5))
 	_assert(blank_id == null and blank_name == null and invalid_kind == null and rejected and unit.skills.is_empty(),
 		"Runtime-safe rejection", "invalid definitions and rosters must fail without relying on assertions")
 
 
 func _test_defensive_skill_object_copying() -> void:
-	var source := CharacterSkill.new(&"source", "Source", CharacterSkill.Kind.ACTIVE)
+	var source := _test_skill(&"source", "Source", CharacterSkill.Kind.ACTIVE)
 	var roster: Array[CharacterSkill] = [source]
 	var unit := BattleUnitState.new(&"unit", "Unit", BattleUnitState.Side.PLAYER, 0, 8, 20, roster)
 	source._skill_id = &"mutated"
@@ -199,7 +199,7 @@ func _test_reconfiguration_clears_inspection() -> void:
 func _test_retained_defeat_updates_status() -> void:
 	var arena := await _instantiate_arena()
 	var player := BattleUnitState.new(&"player", "Player", BattleUnitState.Side.PLAYER, 0, 9)
-	var enemy_skills: Array[CharacterSkill] = [CharacterSkill.new(&"brace", "Brace", CharacterSkill.Kind.PASSIVE)]
+	var enemy_skills: Array[CharacterSkill] = [_test_skill(&"brace", "Brace", CharacterSkill.Kind.PASSIVE)]
 	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 8, 20, enemy_skills)
 	enemy.current_hp = 6
 	arena.call("configure_units", _typed_units([player, enemy]))
@@ -305,10 +305,24 @@ func _typed_units(values: Array) -> Array[BattleUnitState]:
 	return result
 
 
+func _test_skill(id: StringName, name: String, kind: int) -> CharacterSkill:
+	return CharacterSkill.new(id, name, kind, "Test effect.", "Test target.", "None", "None")
+
+
+func _create_test_skill(id: StringName, name: String, kind: int) -> CharacterSkill:
+	return CharacterSkill.create(id, name, kind, "Test effect.", "Test target.", "None", "None")
+
+
+func _is_valid_test_definition(id: StringName, name: String, kind: int) -> bool:
+	return CharacterSkill.is_valid_definition(
+		id, name, kind, "Test effect.", "Test target.", "None", "None"
+	)
+
+
 func _skills(count: int) -> Array[CharacterSkill]:
 	var result: Array[CharacterSkill] = []
 	for index: int in count:
-		result.append(CharacterSkill.new(StringName("skill_%d" % index), "Skill %d" % index,
+		result.append(_test_skill(StringName("skill_%d" % index), "Skill %d" % index,
 			CharacterSkill.Kind.ACTIVE if index % 2 == 0 else CharacterSkill.Kind.PASSIVE))
 	return result
 
