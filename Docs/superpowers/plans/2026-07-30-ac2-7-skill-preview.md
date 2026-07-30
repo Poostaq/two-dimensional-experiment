@@ -1,6 +1,6 @@
 # AC2.7 Structured Skill Preview Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **Recommended workflow for agentic workers:** Use superpowers:subagent-driven-development or superpowers:executing-plans when available. Any executor may follow this plan manually task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Give every existing player and enemy fixture skill a validated four-field description and show the selected active or passive skill in a measurable right-docked preview before any action is committed.
 
@@ -17,7 +17,7 @@
 - Modify `Scenes/battle_arena.tscn`: split the existing inspector body into a 70/30 selection/preview layout.
 - Modify `Tests/Battle/test_ac2_6_character_skills.gd`: keep AC2.6 fixtures valid under the expanded required constructor without changing AC2.6 assertions.
 - Create `Tests/Battle/test_ac2_7_skill_preview.gd`: focused model, fixture, UI, lifecycle, non-actionability, and layout coverage.
-- Create `Tests/Battle/test_ac2_7_skill_preview.gd.uid`: Godot-generated UID companion.
+- Godot may generate `Tests/Battle/test_ac2_7_skill_preview.gd.uid` during import; never create or edit this UID file manually.
 - Modify `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`: check AC2.7 and replace its manual-only verification row after every gate passes.
 - Create `Docs/Specs/AC2/Evidence/AC2.7/2026-07-30/automated-test.log`: captured focused and regression output from the tested implementation commit.
 - Create `Docs/Specs/AC2/Evidence/AC2.7/2026-07-30/manual-runtime-check.md`: measurable runtime and readability record.
@@ -293,9 +293,11 @@ Expected: both exit `0`; focused output contains `AC2.7 tests passed`.
 - [ ] **Step 7: Commit the model contract**
 
 ```powershell
-git add -- Scripts/Battle/character_skill.gd Tests/Battle/test_ac2_6_character_skills.gd Tests/Battle/test_ac2_7_skill_preview.gd Tests/Battle/test_ac2_7_skill_preview.gd.uid
+git add -- Scripts/Battle/character_skill.gd Tests/Battle/test_ac2_6_character_skills.gd Tests/Battle/test_ac2_7_skill_preview.gd
 git commit -m "feat: add structured AC2.7 skill previews"
 ```
+
+If Godot generated `Tests/Battle/test_ac2_7_skill_preview.gd.uid`, inspect it through GodotIQ and stage the untouched generated file separately. Never create, patch, or rewrite its contents.
 
 ### Task 2: Author and verify all eleven fixture previews
 
