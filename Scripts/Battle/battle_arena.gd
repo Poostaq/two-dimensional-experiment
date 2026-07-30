@@ -12,6 +12,8 @@ const ATTACKER_SLOT_COLOR := Color(0.35, 0.9, 0.5, 1.0)
 const RECEIVER_SLOT_COLOR := Color(1.0, 0.35, 0.4, 1.0)
 const FEEDBACK_DURATION_SECONDS := 0.8
 const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
+const SKILL_BUTTON_SIZE := Vector2(88.0, 88.0)
+const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
 @onready var _player_formation: GridContainer = %PlayerFormation
@@ -32,11 +34,11 @@ const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 @onready var _reward_description_label: Label = %RewardDescriptionLabel
 @onready var _confirm_reward_button: Button = %ConfirmRewardButton
 @onready var _skill_inspector_prompt_label: Label = %SkillInspectorPromptLabel
-@onready var _skill_inspector_header: HBoxContainer = %SkillInspectorHeader
+@onready var _skill_inspector_body: HBoxContainer = %SkillInspectorBody
 @onready var _skill_inspector_unit_name_label: Label = %SkillInspectorUnitNameLabel
 @onready var _skill_inspector_status_label: Label = %SkillInspectorStatusLabel
 @onready var _skill_inspector_count_label: Label = %SkillInspectorCountLabel
-@onready var _skill_inspector_skills: VBoxContainer = %SkillInspectorSkills
+@onready var _skill_inspector_skills: HBoxContainer = %SkillInspectorSkills
 @onready var _skill_inspector_empty_label: Label = %SkillInspectorEmptyLabel
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
@@ -56,6 +58,7 @@ var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
 var _reward_confirmation_latched: bool = false
 var _inspected_unit_id: StringName = &""
+var _selected_skill_id: StringName = &""
 
 
 func _ready() -> void:
@@ -167,8 +170,24 @@ func inspect_unit(unit_id: StringName) -> void:
 	if not is_instance_valid(unit):
 		_clear_skill_inspector()
 		return
+	_selected_skill_id = &""
 	_inspected_unit_id = unit.unit_id
 	_refresh_skill_inspector()
+
+
+func get_selected_skill_id() -> StringName:
+	return _selected_skill_id
+
+
+func select_skill(skill_id: StringName) -> void:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		return
+	for skill: CharacterSkill in unit.skills:
+		if skill.skill_id == skill_id:
+			_selected_skill_id = skill_id
+			_refresh_skill_selection()
+			return
 
 
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
@@ -454,25 +473,82 @@ func _refresh_skill_inspector() -> void:
 		return
 	_clear_skill_rows()
 	_skill_inspector_prompt_label.visible = false
-	_skill_inspector_header.visible = true
+	_skill_inspector_body.visible = true
 	_skill_inspector_unit_name_label.text = unit.display_name
 	_skill_inspector_status_label.text = "Active" if unit.is_active() else "Defeated"
-	_skill_inspector_count_label.text = "Skills: %d/%d" % [unit.skills.size(), BattleUnitState.MAX_CHARACTER_SKILLS]
-	_skill_inspector_empty_label.visible = unit.skills.is_empty()
-	for skill: CharacterSkill in unit.skills:
-		var row := Label.new()
-		row.add_theme_font_size_override("font_size", 12)
-		row.text = "%s — %s" % [skill.display_name, "Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"]
-		_skill_inspector_skills.add_child(row)
+	var unit_skills := unit.skills
+	_skill_inspector_count_label.text = "Skills: %d/%d" % [unit_skills.size(), BattleUnitState.MAX_CHARACTER_SKILLS]
+	_skill_inspector_empty_label.visible = unit_skills.is_empty()
+	var selection_still_owned := false
+	for index: int in unit_skills.size():
+		var skill := unit_skills[index]
+		selection_still_owned = selection_still_owned or skill.skill_id == _selected_skill_id
+		_skill_inspector_skills.add_child(_create_skill_button(skill, index + 1))
+	if not selection_still_owned:
+		_selected_skill_id = &""
+	_refresh_skill_selection()
+
+
+func _create_skill_button(skill: CharacterSkill, skill_index: int) -> Button:
+	var button := Button.new()
+	button.custom_minimum_size = SKILL_BUTTON_SIZE
+	button.set_meta("skill_id", skill.skill_id)
+	button.set_meta("skill_index", skill_index)
+	button.set_meta("selected", false)
+	button.pressed.connect(select_skill.bind(skill.skill_id))
+
+	var number_label := Label.new()
+	number_label.name = "NumberLabel"
+	number_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	number_label.text = str(skill_index)
+	number_label.offset_left = 6.0
+	number_label.offset_top = 3.0
+	button.add_child(number_label)
+
+	var name_label := Label.new()
+	name_label.name = "NameLabel"
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	name_label.offset_left = 8.0
+	name_label.offset_top = 18.0
+	name_label.offset_right = -8.0
+	name_label.offset_bottom = -18.0
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.text = skill.display_name
+	button.add_child(name_label)
+
+	var kind_label := Label.new()
+	kind_label.name = "KindLabel"
+	kind_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(kind_label)
+	kind_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	kind_label.offset_top = -20.0
+	kind_label.offset_bottom = -3.0
+	kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	kind_label.text = "Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"
+	return button
+
+
+func _refresh_skill_selection() -> void:
+	for child: Node in _skill_inspector_skills.get_children():
+		var button := child as Button
+		if not is_instance_valid(button):
+			continue
+		var is_selected: bool = button.get_meta("skill_id", &"") == _selected_skill_id
+		button.set_meta("selected", is_selected)
+		button.self_modulate = SELECTED_SKILL_COLOR if is_selected else Color.WHITE
 
 
 func _clear_skill_inspector() -> void:
 	_inspected_unit_id = &""
+	_selected_skill_id = &""
 	if not is_node_ready():
 		return
 	_clear_skill_rows()
 	_skill_inspector_prompt_label.visible = true
-	_skill_inspector_header.visible = false
+	_skill_inspector_body.visible = false
 	_skill_inspector_unit_name_label.text = ""
 	_skill_inspector_status_label.text = ""
 	_skill_inspector_count_label.text = ""

@@ -2,7 +2,7 @@ class_name Ac2_6CharacterSkillTests
 extends SceneTree
 
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 14
+const EXPECTED_TEST_COUNT := 19
 
 var _failures: Array[String] = []
 
@@ -19,12 +19,17 @@ func _run() -> void:
 	_test_invalid_roster_elements_are_rejected()
 	_test_duplicate_and_oversized_rosters_are_rejected()
 	_test_roster_is_copied_for_both_sides()
+	_test_runtime_safe_rejection()
+	_test_defensive_skill_object_copying()
 	await _test_exact_debug_fixtures()
 	await _test_persistent_inspector_scene_contract()
 	await _test_neutral_and_populated_inspection()
 	await _test_zero_skill_and_empty_slot_behavior()
 	await _test_reconfiguration_clears_inspection()
 	await _test_retained_defeat_updates_status()
+	await _test_four_skill_tile_contract()
+	await _test_non_actionable_skill_selection()
+	await _test_skill_selection_lifecycle_and_viewport()
 	await _test_four_skill_layout_fits_viewport()
 	_report()
 	quit(1 if not _failures.is_empty() else 0)
@@ -81,8 +86,40 @@ func _test_roster_is_copied_for_both_sides() -> void:
 	var player := BattleUnitState.new(&"player", "Player", BattleUnitState.Side.PLAYER, 0, 9, 20, source)
 	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 8, 20, source)
 	source.clear()
-	_assert(player.skills.size() == 2 and enemy.skills.size() == 2 and player.skills[0] == enemy.skills[0],
-		"Rosters are copied for both sides", "caller mutation must not alter either roster")
+	_assert(player.skills.size() == 2 and enemy.skills.size() == 2
+		and player.skills[0].skill_id == &"skill_0" and enemy.skills[0].skill_id == &"skill_0"
+		and player.skills[0] != enemy.skills[0],
+		"Rosters are copied for both sides", "caller mutation must not alter either independently copied roster")
+
+
+func _test_runtime_safe_rejection() -> void:
+	var blank_id := CharacterSkill.create(&" ", "Name", CharacterSkill.Kind.ACTIVE)
+	var blank_name := CharacterSkill.create(&"valid", " ", CharacterSkill.Kind.ACTIVE)
+	var invalid_kind := CharacterSkill.create(&"valid", "Name", -1)
+	var unit := BattleUnitState.new(&"unit", "Unit", BattleUnitState.Side.PLAYER, 0, 8)
+	var duplicate: Array[CharacterSkill] = [
+		CharacterSkill.new(&"same", "One", CharacterSkill.Kind.ACTIVE),
+		CharacterSkill.new(&"same", "Two", CharacterSkill.Kind.PASSIVE),
+	]
+	var invalid_entry: Array = [CharacterSkill.new(&"valid", "Valid", CharacterSkill.Kind.ACTIVE), null]
+	var rejected := not unit.set_skills(duplicate) and not unit.set_skills(invalid_entry) and not unit.set_skills(_skills(5))
+	_assert(blank_id == null and blank_name == null and invalid_kind == null and rejected and unit.skills.is_empty(),
+		"Runtime-safe rejection", "invalid definitions and rosters must fail without relying on assertions")
+
+
+func _test_defensive_skill_object_copying() -> void:
+	var source := CharacterSkill.new(&"source", "Source", CharacterSkill.Kind.ACTIVE)
+	var roster: Array[CharacterSkill] = [source]
+	var unit := BattleUnitState.new(&"unit", "Unit", BattleUnitState.Side.PLAYER, 0, 8, 20, roster)
+	source._skill_id = &"mutated"
+	source._display_name = "Mutated"
+	source._kind = CharacterSkill.Kind.PASSIVE
+	var returned := unit.skills
+	returned.clear()
+	var stored := unit.skills[0]
+	_assert(unit.skills.size() == 1 and stored.skill_id == &"source" and stored.display_name == "Source"
+		and stored.kind == CharacterSkill.Kind.ACTIVE,
+		"Defensive skill object copying", "caller-held objects and returned arrays must not mutate stored metadata")
 
 
 func _test_exact_debug_fixtures() -> void:
@@ -110,7 +147,9 @@ func _test_persistent_inspector_scene_contract() -> void:
 		and arena.get_node_or_null("%SkillInspectorUnitNameLabel") is Label
 		and arena.get_node_or_null("%SkillInspectorStatusLabel") is Label
 		and arena.get_node_or_null("%SkillInspectorCountLabel") is Label
-		and arena.get_node_or_null("%SkillInspectorSkills") is VBoxContainer
+		and arena.get_node_or_null("%SkillInspectorBody") is HBoxContainer
+		and arena.get_node_or_null("%SkillInspectorCharacterBlock") is VBoxContainer
+		and arena.get_node_or_null("%SkillInspectorSkills") is HBoxContainer
 		and arena.get_node_or_null("%SkillInspectorEmptyLabel") is Label,
 		"Persistent inspector scene contract", "the exact scene-owned subtree must exist")
 	_free_arena(arena)
@@ -121,7 +160,7 @@ func _test_neutral_and_populated_inspection() -> void:
 	var prompt := arena.get_node_or_null("%SkillInspectorPromptLabel") as Label
 	var neutral: bool = arena.call("get_inspected_unit_id") == &"" and prompt.visible
 	arena.call("inspect_unit", &"player_4")
-	var rows := arena.get_node_or_null("%SkillInspectorSkills") as VBoxContainer
+	var rows := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	var populated := (arena.get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Player Back 2"
 	populated = populated and (arena.get_node_or_null("%SkillInspectorCountLabel") as Label).text == "Skills: 4/4"
 	populated = populated and rows.get_child_count() == 4
@@ -168,8 +207,81 @@ func _test_retained_defeat_updates_status() -> void:
 	arena.call("perform_debug_damage")
 	_assert(arena.call("get_inspected_unit_id") == &"enemy"
 		and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
-		and (arena.get_node_or_null("%SkillInspectorSkills") as VBoxContainer).get_child_count() == 1,
+		and (arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 1,
 		"Retained defeat updates status", "defeated retained units keep rows and show Defeated")
+	_free_arena(arena)
+
+
+func _test_four_skill_tile_contract() -> void:
+	var arena := await _instantiate_arena()
+	arena.call("inspect_unit", &"player_4")
+	var skills := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	var expected := [
+		[&"quick_strike", "1", "Quick Strike", "Active"],
+		[&"rally", "2", "Rally", "Active"],
+		[&"evasion", "3", "Evasion", "Passive"],
+		[&"momentum", "4", "Momentum", "Passive"],
+	]
+	var valid := is_instance_valid(skills) and skills.get_child_count() == 4
+	if valid:
+		for index: int in expected.size():
+			var button := skills.get_child(index) as Button
+			valid = valid and is_instance_valid(button) and button.custom_minimum_size == Vector2(88.0, 88.0)
+			valid = valid and int(button.get_meta("skill_index", 0)) == index + 1
+			valid = valid and button.get_meta("skill_id", &"") == expected[index][0]
+			valid = valid and (button.get_node("NumberLabel") as Label).text == expected[index][1]
+			valid = valid and (button.get_node("NameLabel") as Label).text == expected[index][2]
+			valid = valid and (button.get_node("KindLabel") as Label).text == expected[index][3]
+	_assert(valid, "Four-skill tile contract", "player_4 must render four exact numbered square buttons")
+	_free_arena(arena)
+
+
+func _test_non_actionable_skill_selection() -> void:
+	var arena := await _instantiate_arena()
+	arena.call("inspect_unit", &"player_4")
+	var before_round: int = arena.round_number
+	var before_current: BattleUnitState = arena.call("get_current_unit")
+	var before_hp: Array[int] = []
+	for unit_id: StringName in [&"player_4", &"enemy_0"]:
+		before_hp.append((arena.call("get_unit_by_id", unit_id) as BattleUnitState).current_hp)
+	var before_log: Array = arena.call("get_battle_log_entries")
+	var before_outcome: int = arena.call("get_battle_outcome")
+	var skills := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	(skills.get_child(1) as Button).pressed.emit()
+	var selected_count := 0
+	for child: Node in skills.get_children():
+		if bool(child.get_meta("selected", false)):
+			selected_count += 1
+	_assert(arena.call("get_selected_skill_id") == &"rally" and selected_count == 1
+		and bool(skills.get_child(1).get_meta("selected", false))
+		and arena.round_number == before_round and arena.call("get_current_unit") == before_current
+		and (arena.call("get_unit_by_id", &"player_4") as BattleUnitState).current_hp == before_hp[0]
+		and (arena.call("get_unit_by_id", &"enemy_0") as BattleUnitState).current_hp == before_hp[1]
+		and arena.call("get_battle_log_entries") == before_log and arena.call("get_battle_outcome") == before_outcome,
+		"Non-actionable skill selection", "selection must only highlight one button and change inspector state")
+	_free_arena(arena)
+
+
+func _test_skill_selection_lifecycle_and_viewport() -> void:
+	root.size = Vector2i(1152, 648)
+	await process_frame
+	var arena := await _instantiate_arena()
+	arena.call("inspect_unit", &"player_4")
+	arena.call("select_skill", &"rally")
+	arena.call("inspect_unit", &"enemy_0")
+	var changed_character_clears: bool = arena.call("get_selected_skill_id") == &""
+	arena.call("select_skill", &"savage_blow")
+	var enemy := arena.call("get_unit_by_id", &"enemy_0") as BattleUnitState
+	enemy.current_hp = 0
+	arena.call("_refresh_turn_ui")
+	var retained: bool = arena.call("get_selected_skill_id") == &"savage_blow"
+	retained = retained and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
+	retained = retained and (arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 2
+	arena.call("configure_units", _typed_units([BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]))
+	var cleared: bool = arena.call("get_inspected_unit_id") == &"" and arena.call("get_selected_skill_id") == &""
+	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control
+	_assert(changed_character_clears and retained and cleared and battle_log.position.y + battle_log.size.y <= 648.0,
+		"Skill selection lifecycle and viewport", "character changes clear selection, retained defeat preserves it, and reconfigure clears it")
 	_free_arena(arena)
 
 
