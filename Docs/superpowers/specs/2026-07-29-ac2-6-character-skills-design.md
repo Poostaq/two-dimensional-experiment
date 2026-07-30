@@ -47,18 +47,24 @@ Store a copied typed skill array directly on the existing runtime `BattleUnitSta
 - `display_name: String` — the short name shown by the AC2.6 debug inspector.
 - `kind: Kind` — an enum containing `ACTIVE` and `PASSIVE`.
 
-Construction requires an ID and display name whose string forms remain non-empty after trimming surrounding whitespace, plus a valid enum value. Empty and whitespace-only values such as `""`, `" "`, and `"\t"` are invalid. The object retains the caller-provided non-blank text; trimming is used for validation rather than silently normalizing identity or presentation. The object contains no description, targeting data, requirements, cooldown state, combo data, scene references, or executable behavior.
+Creation requires an ID and display name whose string forms remain non-empty after trimming surrounding whitespace, plus a valid enum value. Empty and whitespace-only values such as `""`, `" "`, and `"\t"` are invalid. The object retains the caller-provided non-blank text; trimming is used for validation rather than silently normalizing identity or presentation.
+
+Validation is not based on `assert`. `CharacterSkill.create(id, name, kind)` performs the check in every build, calls `push_error()` with the rejected fields when invalid, and returns `null`. Direct `_init` construction follows the same validation path and produces an invalid object that `is_valid()` reports as false; such an object cannot enter a `BattleUnitState` roster. All production fixtures and tests use `create()`, so invalid creation has an explicit nullable result.
+
+The public properties are read-only getters backed by `_skill_id`, `_display_name`, and `_kind`; no public setters are exposed. `duplicate_skill()` returns a fresh validated copy. GDScript does not provide enforceable private access modifiers, so underscore-prefixed backing fields remain convention-private, while defensive copying prevents caller-held source objects from mutating the metadata stored by a battle unit. The object contains no description, targeting data, requirements, cooldown state, combo data, scene references, or executable behavior.
 
 ### BattleUnitState skill roster
 
 `BattleUnitState` gains:
 
-- `skills: Array[CharacterSkill]`.
+- A read-only `skills: Array[CharacterSkill]` getter backed by `_skills`.
 - A `MAX_CHARACTER_SKILLS` constant set to `4`.
 
-The constructor accepts an optional typed skill array so existing callers remain source-compatible. It rejects input containing more than four skills and duplicates valid input so later caller mutation cannot add, remove, or replace entries in the unit's roster accidentally.
+The constructor accepts an optional typed skill array so existing callers remain source-compatible. It delegates to `set_skills()`, which returns `true` only when the complete roster is valid. Invalid input calls `push_error()`, returns `false`, and leaves `_skills` empty; it never relies on `assert`, filters entries, truncates input, or partially accepts a roster.
 
 Zero skills are valid. Every roster element must be a valid `CharacterSkill`; `null` is rejected. A roster cannot contain the same `skill_id` more than once, even if the duplicate entries are different objects. The typed `Array[CharacterSkill]` constructor boundary rejects values of any other object type before construction can succeed. Every invalid roster rejects the entire construction attempt rather than filtering, truncating, or partially accepting entries.
+
+For valid input, `set_skills()` stores a fresh `duplicate_skill()` copy of every entry. The public `skills` getter returns a duplicate array, so callers cannot add, remove, or replace the stored entries. The copied `CharacterSkill` values expose no public setters, so caller-held source objects cannot mutate stored IDs, names, or kinds.
 
 The same rules apply to `PLAYER` and `ENEMY` units.
 
@@ -85,7 +91,7 @@ These fixtures demonstrate the contract only. Their skill names and classificati
 
 ### BattleArena debug skill inspector
 
-The existing battle arena receives this exact subtree, with every listed node wired persistently in `battle_arena.tscn` rather than created by `battle_arena.gd`. Its intended placement is immediately after the turn-status controls and before the battle-result controls. The current concrete location is after `Margin/VBox/TurnStatus` and before `Margin/VBox/BattleResultPanel`; implementation may adapt the parent path if the surrounding layout changes, provided the subtree order, node names, unique-name access, ownership, and persistent scene wiring remain unchanged.
+The existing `SkillInspectorPanel` subtree in `battle_arena.tscn` is reshaped in place into the structure below; it is not added as a second inspector. Every listed persistent node remains scene-owned rather than being created by `battle_arena.gd`. Its intended placement remains immediately after the turn-status controls and before the battle-result controls. The current concrete location is after `Margin/VBox/TurnStatus` and before `Margin/VBox/BattleResultPanel`; implementation may adapt the parent path if the surrounding layout changes, provided the subtree order, node names, unique-name access, ownership, and persistent scene wiring remain unchanged.
 
 ```text
 SkillInspectorPanel (PanelContainer, unique name)
@@ -133,7 +139,8 @@ Reward presentation and battle completion do not add skill behavior or change th
 - Empty and whitespace-only skill IDs and display names are invalid.
 - Unknown kind values are invalid.
 - `null`, wrong-type, and duplicate-ID roster elements reject the complete roster.
-- Caller-side array mutation does not change a constructed unit's roster.
+- Invalid skill creation returns `null`; invalid roster assignment returns `false`, logs an error, and leaves the stored roster empty in every build.
+- Caller-side array or source-object mutation does not change a constructed unit's stored roster.
 - Both battle sides use identical validation and presentation rules.
 - Empty formation slots cannot become inspection targets.
 - Skill buttons are selectable inspection controls only and cannot mutate battle state.

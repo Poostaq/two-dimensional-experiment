@@ -46,8 +46,8 @@ Create the runner with `EXPECTED_TEST_COUNT := 14`. Its first seven synchronous 
 
 ```gdscript
 func _test_active_and_passive_identity() -> void:
-	var active := CharacterSkill.new(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE)
-	var passive := CharacterSkill.new(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE)
+	var active := CharacterSkill.create(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE)
+	var passive := CharacterSkill.create(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE)
 	_assert(
 		active.skill_id == &"shield_bash" and active.display_name == "Shield Bash"
 		and active.kind == CharacterSkill.Kind.ACTIVE
@@ -89,7 +89,7 @@ func _test_zero_through_four_skills_are_valid() -> void:
 
 
 func _test_invalid_roster_elements_are_rejected() -> void:
-	var valid := CharacterSkill.new(&"valid", "Valid", CharacterSkill.Kind.ACTIVE)
+	var valid := CharacterSkill.create(&"valid", "Valid", CharacterSkill.Kind.ACTIVE)
 	_assert(
 		not BattleUnitState.is_valid_skill_roster([valid, null])
 		and not BattleUnitState.is_valid_skill_roster([valid, "wrong type"]),
@@ -99,8 +99,8 @@ func _test_invalid_roster_elements_are_rejected() -> void:
 
 
 func _test_duplicate_and_oversized_rosters_are_rejected() -> void:
-	var first := CharacterSkill.new(&"duplicate", "First", CharacterSkill.Kind.ACTIVE)
-	var second := CharacterSkill.new(&"duplicate", "Second", CharacterSkill.Kind.PASSIVE)
+	var first := CharacterSkill.create(&"duplicate", "First", CharacterSkill.Kind.ACTIVE)
+	var second := CharacterSkill.create(&"duplicate", "Second", CharacterSkill.Kind.PASSIVE)
 	_assert(
 		not BattleUnitState.is_valid_skill_roster([first, second])
 		and not BattleUnitState.is_valid_skill_roster(_skills(5)),
@@ -128,7 +128,7 @@ Helper:
 func _skills(count: int) -> Array[CharacterSkill]:
 	var result: Array[CharacterSkill] = []
 	for index: int in count:
-		result.append(CharacterSkill.new(
+		result.append(CharacterSkill.create(
 			StringName("skill_%d" % index),
 			"Skill %d" % index,
 			CharacterSkill.Kind.ACTIVE if index % 2 == 0 else CharacterSkill.Kind.PASSIVE
@@ -146,7 +146,7 @@ Expected: FAIL because `CharacterSkill` and the roster APIs do not exist.
 
 - [ ] **Step 3: Create `CharacterSkill`**
 
-Use `script_ops(op="create")` with:
+Use `script_ops(op="create")` with this runtime-safe factory contract. Do not use `assert` for input rejection:
 
 ```gdscript
 class_name CharacterSkill
@@ -157,19 +157,41 @@ enum Kind {
 	PASSIVE,
 }
 
-var skill_id: StringName
-var display_name: String
-var kind: Kind
+var skill_id: StringName:
+	get:
+		return _skill_id
+var display_name: String:
+	get:
+		return _display_name
+var kind: Kind:
+	get:
+		return _kind
+
+var _skill_id: StringName
+var _display_name: String
+var _kind: Kind
+
+
+static func create(id: StringName, name: String, skill_kind: int) -> CharacterSkill:
+	var skill := CharacterSkill.new(id, name, skill_kind)
+	return skill if skill.is_valid() else null
 
 
 func _init(id: StringName, name: String, skill_kind: int) -> void:
-	assert(
-		is_valid_definition(id, name, skill_kind),
-		"CharacterSkill requires non-blank identity and an Active or Passive kind."
-	)
-	skill_id = id
-	display_name = name
-	kind = skill_kind
+	if not is_valid_definition(id, name, skill_kind):
+		push_error("Rejected invalid CharacterSkill: id='%s', name='%s', kind=%d" % [id, name, skill_kind])
+		return
+	_skill_id = id
+	_display_name = name
+	_kind = skill_kind
+
+
+func is_valid() -> bool:
+	return is_valid_definition(_skill_id, _display_name, _kind)
+
+
+func duplicate_skill() -> CharacterSkill:
+	return CharacterSkill.create(_skill_id, _display_name, _kind)
 
 
 static func is_valid_definition(id: StringName, name: String, skill_kind: int) -> bool:
@@ -191,12 +213,16 @@ Expected: no validation or parser errors.
 
 - [ ] **Step 4: Extend `BattleUnitState`**
 
-Add:
+Add a read-only roster surface:
 
 ```gdscript
 const MAX_CHARACTER_SKILLS := 4
 
-var skills: Array[CharacterSkill] = []
+var skills: Array[CharacterSkill]:
+	get:
+		return _skills.duplicate()
+
+var _skills: Array[CharacterSkill] = []
 ```
 
 Append this defaulted constructor parameter:
@@ -205,19 +231,27 @@ Append this defaulted constructor parameter:
 unit_skills: Array[CharacterSkill] = []
 ```
 
-Before assignment, enforce the complete roster:
+Before assignment, invoke the explicit runtime setter:
 
 ```gdscript
-assert(
-	is_valid_skill_roster(unit_skills),
-	"BattleUnitState requires zero to four unique, valid CharacterSkill entries."
-)
-skills = unit_skills.duplicate()
+if not set_skills(unit_skills):
+	push_error("BattleUnitState '%s' rejected its character-skill roster." % id)
 ```
 
 Add:
 
 ```gdscript
+func set_skills(candidate: Array) -> bool:
+	if not is_valid_skill_roster(candidate):
+		push_error("Rejected invalid character-skill roster for '%s'." % unit_id)
+		return false
+	var copied: Array[CharacterSkill] = []
+	for skill: CharacterSkill in candidate:
+		copied.append(skill.duplicate_skill())
+	_skills = copied
+	return true
+
+
 static func is_valid_skill_roster(candidate: Array) -> bool:
 	if candidate.size() > MAX_CHARACTER_SKILLS:
 		return false
@@ -226,6 +260,8 @@ static func is_valid_skill_roster(candidate: Array) -> bool:
 		if not is_instance_valid(entry) or not entry is CharacterSkill:
 			return false
 		var skill := entry as CharacterSkill
+		if not skill.is_valid():
+			return false
 		if seen_ids.has(skill.skill_id):
 			return false
 		seen_ids[skill.skill_id] = true
@@ -318,14 +354,14 @@ Add helpers:
 
 ```gdscript
 func _skill(id: StringName, name: String, kind: CharacterSkill.Kind) -> CharacterSkill:
-	return CharacterSkill.new(id, name, kind)
+	return CharacterSkill.create(id, name, kind)
 
 
 func _skills(values: Array[CharacterSkill]) -> Array[CharacterSkill]:
 	return values
 ```
 
-Construct the twelve existing units with the exact rosters from the approved design table. Pass each roster as the final constructor argument after `BattleUnitState.DEFAULT_MAX_HP`. Do not change IDs, display names, sides, slots, speeds, or HP.
+Construct the twelve existing units with the exact rosters from the approved design table, using `CharacterSkill.create()` rather than direct `new()` calls. Pass each roster as the final constructor argument after `BattleUnitState.DEFAULT_MAX_HP`. Do not change IDs, display names, sides, slots, speeds, or HP.
 
 - [ ] **Step 3: Build the inspector subtree with GodotIQ**
 
@@ -336,7 +372,7 @@ file_context(file="res://Scenes/battle_arena.tscn", detail="full")
 scene_tree(root="Margin/VBox", depth=3, detail="normal")
 ```
 
-Use one `node_ops` batch to add the persistent subtree from the design after `TurnStatus`, with `unique_name_in_owner=true` on every named access node. Use the exact default text:
+Reshape the existing `SkillInspectorPanel` subtree with `node_ops`, preserving its position after `TurnStatus` and `unique_name_in_owner=true` on every named access node. Do not create a second inspector. Use the exact default text:
 
 ```text
 Character Skills (Debug)
@@ -626,20 +662,36 @@ Expected: focused PASS `(14/14)`, all AC2.6 commits are present, evidence points
 
 AC2.6 is complete only when the exact named fixtures, typed roster validation, persistent scene-wired inspector, both-side slot inspection, inactive retained-unit status, stale-state cleanup, four-skill viewport fit, focused `(14/14)` suite, complete regressions, GodotIQ gates, runtime input checks, visual QA, and matching evidence all pass. Any failed or blocked gate keeps AC2.6 unchecked.
 
-### Task 5: Replace skill rows with selectable square buttons
+### Task 5: Harden runtime contracts and replace skill rows with selectable square buttons
 
 **Files:**
 
+- Modify: `Scripts/Battle/character_skill.gd`
+- Modify: `Scripts/Battle/battle_unit_state.gd`
 - Modify: `Scenes/battle_arena.tscn`
 - Modify: `Scripts/Battle/battle_arena.gd`
 - Modify: `Tests/Battle/test_ac2_6_character_skills.gd`
 - Refresh: `Docs/Specs/AC2/Evidence/AC2.6/2026-07-30/*`
 
-- [ ] **Step 1: Add three failing tile-contract tests**
+- [ ] **Step 1: Add five failing runtime and tile-contract tests**
 
-Raise `EXPECTED_TEST_COUNT` to `17`. Add focused cases that verify:
+Raise `EXPECTED_TEST_COUNT` to `19`. Add focused cases that verify:
 
 ```gdscript
+# Guaranteed runtime rejection
+CharacterSkill.create(&" ", "Name", ACTIVE) returns null
+CharacterSkill.create(&"valid", " ", ACTIVE) returns null
+CharacterSkill.create(&"valid", "Name", -1) returns null
+BattleUnitState.set_skills() returns false for invalid, duplicate, or five-item input
+the unit's stored roster remains empty after every rejected assignment
+
+# Defensive object immutability
+construct a unit from a valid source skill
+mutate the convention-private backing fields on the caller-held source object
+the unit's stored skill ID, display name, and kind remain unchanged
+mutate the array returned by unit.skills
+the next unit.skills read still returns the complete stored roster
+
 # Exact four-skill tile contract
 inspect player_4
 SkillInspectorSkills is HBoxContainer
@@ -666,9 +718,9 @@ at 1152x648, four buttons and BattleLogPanel remain within the viewport
 
 Run the focused runner. Expected: the three new cases fail against the current vertical `Label` list.
 
-- [ ] **Step 2: Restructure the persistent inspector scene**
+- [ ] **Step 2: Reshape the existing persistent inspector scene**
 
-Use GodotIQ scene operations, never raw `.tscn` writes:
+`battle_arena.tscn` already contains one `SkillInspectorPanel`. Use GodotIQ scene operations to reshape or replace that existing subtree in place; do not add a second inspector and never use raw `.tscn` writes:
 
 ```text
 SkillInspectorBody (HBoxContainer, unique name)
@@ -727,10 +779,10 @@ Run:
 godot --headless --path . --script res://Tests/Battle/test_ac2_6_character_skills.gd
 ```
 
-Expected: `AC2.6 character skill tests: PASS (17/17)`.
+Expected: `AC2.6 character skill tests: PASS (19/19)`.
 
 Run the full test corpus, project validation, parser checks, runtime mouse input, debugger checks, and one visual verification at 1152x648. Record refreshed automated and manual evidence under `Docs/Specs/AC2/Evidence/AC2.6/2026-07-30/` and update the implementation link to the newly tested commit.
 
 ## Revised completion boundary
 
-AC2.6 remains complete only when the original typed roster and lifecycle contracts plus the selected-character horizontal tile row, exact square-button contents, non-actionable selection, selection cleanup, viewport fit, focused `(17/17)` suite, regressions, runtime QA, and refreshed evidence all pass.
+AC2.6 remains complete only when explicit runtime rejection, defensive skill-object copying, the original roster and lifecycle contracts, the selected-character horizontal tile row, exact square-button contents, non-actionable selection, selection cleanup, viewport fit, focused `(19/19)` suite, regressions, runtime QA, and refreshed evidence all pass.
