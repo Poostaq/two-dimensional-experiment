@@ -716,7 +716,7 @@ reconfigure arena and verify character and skill selection are empty
 at 1152x648, four buttons and BattleLogPanel remain within the viewport
 ```
 
-Run the focused runner. Expected: the three new cases fail against the current vertical `Label` list.
+Run the focused runner. Expected: all five new cases fail against the current assert-based mutable model and vertical `Label` list.
 
 - [ ] **Step 2: Reshape the existing persistent inspector scene**
 
@@ -782,6 +782,16 @@ godot --headless --path . --script res://Tests/Battle/test_ac2_6_character_skill
 Expected: `AC2.6 character skill tests: PASS (19/19)`.
 
 Run the full test corpus, project validation, parser checks, runtime mouse input, debugger checks, and one visual verification at 1152x648. Record refreshed automated and manual evidence under `Docs/Specs/AC2/Evidence/AC2.6/2026-07-30/` and update the implementation link to the newly tested commit.
+
+- [ ] **Step 6: Replace the AC2.6 verification row with the final hardened contract**
+
+After the focused `(19/19)` suite and every regression/runtime gate pass, replace the older 14-case AC2.6 verification row in `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` with:
+
+```markdown
+| `AC2.6` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_6_character_skills.gd` to verify runtime-safe invalid skill and roster rejection, defensive skill-object and roster-array copying, typed Active/Passive identity, zero-to-four limits, exact player/enemy fixtures, persistent inspector reshaping, selected-character slot inspection, numbered square skill buttons, non-actionable skill selection, zero-skill and empty-slot behavior, defeated-unit retention, selection cleanup, and four-skill viewport fit. Then inspect multiple player and enemy characters in battle, verify each exposes 0 to 4 character-specific skill buttons labeled Active or Passive, and confirm selecting a skill button highlights it without resolving a battle action. |
+```
+
+Keep AC2.6 checked `[x]` only after the refreshed `2026-07-30` automated log, manual runtime record, and implementation link all identify the same tested implementation commit. Do not retain the older verification-row wording as a second row, and do not check AC2.7–AC2.9.
 
 ## Revised completion boundary
 
