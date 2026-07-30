@@ -308,14 +308,14 @@ func _create_debug_units() -> Array[BattleUnitState]:
 
 func _create_skill(
 	id: StringName,
-	name: String,
+	display_name: String,
 	kind: CharacterSkill.Kind,
 	effect: String,
 	targeting: String,
 	requirements: String,
 	cooldown: String
 ) -> CharacterSkill:
-	return CharacterSkill.new(id, name, kind, effect, targeting, requirements, cooldown)
+	return CharacterSkill.new(id, display_name, kind, effect, targeting, requirements, cooldown)
 
 
 func _skill_roster(values: Array) -> Array[CharacterSkill]:

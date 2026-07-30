@@ -134,7 +134,10 @@ func _test_exact_debug_fixtures() -> void:
 	var actual: Dictionary = {}
 	for unit_id: StringName in expected:
 		var unit := arena.call("get_unit_by_id", unit_id) as BattleUnitState
-		actual[unit_id] = _skill_signature(unit.skills) if is_instance_valid(unit) else null
+		if is_instance_valid(unit):
+			actual[unit_id] = _skill_signature(unit.skills)
+		else:
+			actual[unit_id] = null
 	_assert(actual == expected, "Exact debug fixtures", "all twelve fixture rosters must match")
 	_free_arena(arena)
 
