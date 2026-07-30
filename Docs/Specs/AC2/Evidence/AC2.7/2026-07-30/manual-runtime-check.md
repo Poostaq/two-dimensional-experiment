@@ -1,6 +1,6 @@
 # AC2.7 Manual Runtime Check
 
-- Tested implementation commit: `afe44a24d075788075e73b4943df158545523356`
+- Tested implementation commit: `76ad92d4c2516bb400856f283695764057af3e72`
 - Viewport: `1152x648`
 - Result: PASS
 

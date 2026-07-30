@@ -1,7 +1,7 @@
 Acceptance criterion: AC2.7
 Verification date: 2026-07-30
 Godot version: 4.7.1.stable.steam.a13da4feb
-Tested implementation commit: afe44a24d075788075e73b4943df158545523356
+Tested implementation commit: 76ad92d4c2516bb400856f283695764057af3e72
 Focused runner: Tests/Battle/test_ac2_7_skill_preview.gd
 Regression scope: AC2.1 through AC2.6 and complete Tests corpus
 Result: PASS
@@ -18,6 +18,7 @@ Focused and AC regression results:
 Complete repository test corpus:
 - 16/16 standalone SceneTree runners passed.
 - No SCRIPT ERROR, failed script load, or FAILED test marker was detected.
+- The AC2.6 mixed-type ternary and BattleArena `Node.name` shadowing diagnostic were removed before this fresh run.
 
 GodotIQ verification:
 - Project validation: 0 errors, 0 warnings; 2 pre-existing informational orphan signals.
