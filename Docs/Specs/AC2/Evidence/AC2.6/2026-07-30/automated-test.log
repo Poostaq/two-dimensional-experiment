@@ -1,0 +1,29 @@
+AC2.6 hardened character skills automated evidence
+Date: 2026-07-30
+Tested implementation: d52a6f855ba7cfec27a08cc9cf426cfc2936597d
+
+Focused command:
+& 'D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe' --headless --path . --script res://Tests/Battle/test_ac2_6_character_skills.gd
+
+Exit code: 0
+Signature: AC2.6 character skill tests: PASS (19/19)
+Outcome: PASS
+
+The focused invalid-input cases intentionally exercise push_error paths. CharacterSkill.create()
+returns null for blank identity/name and invalid kind; BattleUnitState.set_skills() returns false
+for duplicate, invalid-entry, and oversized rosters. These expected boundary diagnostics do not
+change the zero exit code or the 19/19 result.
+
+Full regression command:
+$godotExe='D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe'; Get-ChildItem Tests -Recurse -Filter '*.gd' | Sort-Object FullName | ForEach-Object { <run each script headlessly and reject nonzero, FAILED, SCRIPT ERROR, or Parse Error> }
+
+Exit code: 0
+Outcome: PASS
+Runners: 15/15
+
+GodotIQ project gates:
+- validate(target="project", detail="brief"): PASS, 0 errors, 0 warnings, 2 informational pre-existing orphan-signal notices
+- check_errors(scope="project"): PASS, 30 scripts checked, 0 errors
+- signal_map(scope="all", find="orphans", detail="brief"): two known orphan signals; no new AC2.6 signal
+- verify_project_runs(scene="main", check_scope="project"): PASS, no failing debugger entries
+

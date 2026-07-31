@@ -64,12 +64,14 @@
 
 - **Identity:** Each character is defined by a name, race, and class
 - **Stats:** Each character uses the stat model defined in this section
-- **Skill Loadout:** Each character has 4 character-specific skills plus 2 default skills shared by all characters
-- **Active Skill Requirement:** At least 1 of the 4 skills must be active
-- **Passive/Active Mix:** The remaining 3 skills can be active or passive
+- **Skill Loadout:** Each character has up to 4 character-specific skills plus 2 default actions shared by all characters
+- **Skill Type:** Each character-specific skill is classified as either active or passive
 - **Default Attack:** Every character can use a default attack that applies its power value
 - **Default Swap:** Every character can use a default swap action to exchange places with an adjacent allied character
 - **Turn Usage Limit:** A character can use only 1 active skill per turn
+- **Skill Description Requirement:** Every character-specific skill must expose a player-visible name and description before use
+- **Description Content:** A skill description must explain, in player-readable language, the skill's effect and any relevant targeting, positional requirement, condition requirement, cooldown timing, and notable limitations
+- **Description Visibility:** The player must be able to inspect a skill's description from at least one stable UI surface before committing the action; passive skill descriptions must also be inspectable even when the passive is not directly activated
 
 ### AC2.3 Debug Damage Slice
 
@@ -184,9 +186,11 @@
 - [x] AC2.2 — Faster units act earlier according to speed order
 - [x] AC2.3 — Unit takes damage; at 0 HP, removed from battle
 - [x] AC2.4 — Player wins if all enemies defeated; loses if all units defeated
-- [ ] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
-- [ ] AC2.6 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
-- [ ] AC2.7 — Skills grant combo bonuses only when their specific combo conditions are met
+- [x] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
+- [x] AC2.6 — Each character can expose up to 4 character-specific skills, and each skill is identified as active or passive
+- [x] AC2.7 — The player can inspect a readable description for each skill before committing an action, including passive skills from an inspectable UI surface
+- [ ] AC2.8 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
+- [ ] AC2.9 — Skills grant combo bonuses only when their specific combo conditions are met
 
 ### Unit Management
 - [ ] AC3.1 — Player can acquire a unit from a valid run-based source if roster < 6
@@ -221,9 +225,11 @@
 | `AC2.2` | Manual runtime check | Start a battle with at least two units of different speed values and confirm action order follows descending speed. |
 | `AC2.3` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_3_damage_defeat_log.gd`, then use the debug damage action in battle. Verify deterministic closest-enemy targeting, fixed `7` damage with zero clamping, immediate defeated-unit queue/target exclusion, one turn advance and log entry per action, transient negative damage feedback, scroll-to-newest history, and green-attacker/red-receiver hover inspection. |
 | `AC2.4` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_4_battle_results.gd` to verify pure outcome evaluation, final-hit victory and defeat, terminal idempotence, reset behavior, and exact persistent result presentation. Then complete Combat and Boss battles in both directions, confirming `Victory` after all enemies fall, `Defeat` after all player units fall, frozen combat mutation after completion, readable persistent presentation, and a working debug exit. |
-| `AC2.5` | Manual runtime check | Win battles from at least two different event types and verify the reward screen presents multiple selectable options appropriate to each event. |
-| `AC2.6` | Manual runtime check | Use skills with positional requirements, condition requirements, pre-use cooldowns, and post-use cooldowns, verifying invalid uses are blocked and valid uses resolve correctly. |
-| `AC2.7` | Manual runtime check | Trigger a skill's documented combo condition and confirm the bonus applies; repeat without the condition and confirm the bonus does not apply. |
+| `AC2.5` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_5_reward_selection.gd` to verify the fixed Combat/Boss catalogs, explicit selection and Confirm gating, typed signal order and idempotence, defeat and unsupported-event behavior, cleanup, reset, and new-battle isolation. Then win Combat and Boss battles, verify each presents its three appropriate fixed options, select and confirm one, confirm the reward screen disappears with the fight, and verify the next battle starts without stale reward UI or selection. |
+| `AC2.6` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_6_character_skills.gd` to verify runtime-safe invalid skill and roster rejection, defensive skill-object and roster-array copying, typed Active/Passive identity, zero-to-four limits, exact player/enemy fixtures, persistent inspector reshaping, selected-character slot inspection, numbered square skill buttons, non-actionable skill selection, zero-skill and empty-slot behavior, defeated-unit retention, selection cleanup, and four-skill viewport fit. Then inspect multiple player and enemy characters in battle, verify each exposes 0 to 4 character-specific skill buttons labeled Active or Passive, and confirm selecting a skill button highlights it without resolving a battle action. |
+| `AC2.7` | Automated and manual runtime check | Run `Tests/Battle/test_ac2_7_skill_preview.gd` to verify required structured effect, targeting, requirements, and cooldown text; runtime-safe blank rejection; defensive copying; exact eleven-skill player/enemy fixtures; active and passive preview states; selection, defeat, removal, invalidation, reconfiguration, and new-battle lifecycle behavior; non-actionability; the 25–33% right-docked width contract; and target-viewport no-clipping coverage. Then inspect active and passive skills on both battle sides at 1152×648 and confirm the selected name, kind, and all four rows are simultaneously visible inside the shared inspector without clipping, truncation, overlap, obscuring, or horizontal scrolling before committing an action. |
+| `AC2.8` | Manual runtime check | Use skills with positional requirements, condition requirements, pre-use cooldowns, and post-use cooldowns, verifying invalid uses are blocked and valid uses resolve correctly. |
+| `AC2.9` | Manual runtime check | Trigger a skill's documented combo condition and confirm the bonus applies; repeat without the condition and confirm the bonus does not apply. |
 | `AC3.1` | Manual runtime check | Acquire a character reward while the roster has fewer than 6 characters and confirm the new character is added successfully. |
 | `AC3.2` | Manual runtime check | Attempt to acquire a new character while already at 6 roster members and verify the game requires dismissing one character before the acquisition completes. |
 | `AC3.3` | Manual runtime check | Open the party-management interface before a fight and after a fight, reorder the party, and verify the updated lineup is used for the next battle. |

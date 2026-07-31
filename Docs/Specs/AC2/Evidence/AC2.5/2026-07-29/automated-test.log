@@ -1,0 +1,88 @@
+AC2.5 AUTOMATED VERIFICATION
+Date: 2026-07-29
+Implementation commit: df7f2c34e1a78cbcabd106176b463bfee29a1a65
+Godot: D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe
+
+PASS — Focused AC2.5 runner
+Command:
+  godot.windows.opt.tools.64.exe --headless --path . --script res://Tests/Battle/test_ac2_5_reward_selection.gd
+Result:
+  AC2.5 reward selection tests: PASS (15/15)
+  Process exit: 0
+
+PASS — AC2.1 regression
+Result:
+  AC2.1 battle arena tests: PASS (11/11)
+  Process exit: 0
+
+PASS — AC2.2 regression
+Result:
+  AC2.2 speed order tests: PASS (12/12)
+  Process exit: 0
+Note:
+  Expected invalid-speed and duplicate-slot rejection messages were emitted by negative test cases.
+
+PASS — AC2.3 regression
+Result:
+  AC2.3 damage and battle log tests: PASS (18/18)
+  Process exit: 0
+
+PASS — AC2.4 regression
+Result:
+  AC2.4 battle result tests: PASS (9/9)
+  Process exit: 0
+
+PASS — Complete test corpus
+Discovery:
+  rg --files Tests -g 'test_*.gd' | Sort-Object
+Result:
+  14/14 discovered runners exited 0 in the final per-runner loop.
+Note:
+  An earlier output-suppressed loop timed out and was discarded as evidence. The final per-runner rerun completed with exit 0.
+
+PASS — GodotIQ project validation
+Result:
+  28 scripts and 4 scenes checked.
+  0 errors, 0 warnings, 2 informational pre-existing orphan signals:
+  - battle_completed
+  - hover_changed
+
+PASS — GodotIQ parser/compile check
+Result:
+  28 scripts checked, 0 errors.
+
+PASS — Signal audit
+Result:
+  No AC2.5 signal-definition error.
+  reward_confirmed is consumed by the AC2.5 contract runner and remains intentionally unconsumed by run-state production code.
+  The existing test-only pressed report and pre-existing orphan signals are not AC2.5 regressions.
+
+PASS — Battle arena runtime gate
+Result:
+  verify_project_runs(scene=res://Scenes/battle_arena.tscn, check_scope=project)
+  Scene started with runtime attached and no debugger entries.
+
+PASS — Main scene runtime and map lifecycle gate
+Result:
+  verify_project_runs(scene=main, check_scope=project)
+  Combat victory: outcome=1, rewards=3, panel visible.
+  Combat selection: combat_money_100 with the expected description.
+  Combat confirm: MapController.has_active_battle() became false.
+  Fresh Boss battle: clean_start=true.
+  Boss victory IDs:
+  - boss_recruit_champion
+  - boss_money_250
+  - boss_rare_relic
+  Boss confirm: MapController.has_active_battle() became false.
+  Defeat: outcome=2, reward_panel=false, rewards=0.
+  Debug console: 0 runtime errors, 0 script errors.
+
+PASS — Visual tour
+Result:
+  Victory reward overlay is centered and fills the viewport through RewardOverlay.
+  Three reward options, description surface, and Confirm are visible.
+  Selected reward is persistently highlighted.
+  Reward panel width is at least 320 px and all reward controls have at least 48 px height.
+  The battle log and debug controls remain within the existing battle layout.
+
+Overall: PASS

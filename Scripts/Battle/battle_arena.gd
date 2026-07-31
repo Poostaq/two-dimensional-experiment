@@ -3,6 +3,7 @@ extends Control
 
 signal exit_requested
 signal battle_completed(outcome: BattleOutcome.Type)
+signal reward_confirmed(option: BattleRewardOption)
 
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
@@ -10,6 +11,9 @@ const CURRENT_SLOT_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 const ATTACKER_SLOT_COLOR := Color(0.35, 0.9, 0.5, 1.0)
 const RECEIVER_SLOT_COLOR := Color(1.0, 0.35, 0.4, 1.0)
 const FEEDBACK_DURATION_SECONDS := 0.8
+const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
+const SKILL_BUTTON_SIZE := Vector2(88.0, 88.0)
+const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
 @onready var _player_formation: GridContainer = %PlayerFormation
@@ -22,6 +26,27 @@ const FEEDBACK_DURATION_SECONDS := 0.8
 @onready var _battle_log_entries_container: VBoxContainer = %BattleLogEntries
 @onready var _battle_result_panel: PanelContainer = %BattleResultPanel
 @onready var _battle_result_label: Label = %BattleResultLabel
+@onready var _reward_overlay: CenterContainer = %RewardOverlay
+@onready var _reward_panel: PanelContainer = %RewardPanel
+@onready var _reward_heading_label: Label = %RewardHeadingLabel
+@onready var _reward_options_container: VBoxContainer = %RewardOptions
+@onready var _reward_empty_state_label: Label = %RewardEmptyStateLabel
+@onready var _reward_description_label: Label = %RewardDescriptionLabel
+@onready var _confirm_reward_button: Button = %ConfirmRewardButton
+@onready var _skill_inspector_prompt_label: Label = %SkillInspectorPromptLabel
+@onready var _skill_inspector_body: HBoxContainer = %SkillInspectorBody
+@onready var _skill_inspector_unit_name_label: Label = %SkillInspectorUnitNameLabel
+@onready var _skill_inspector_status_label: Label = %SkillInspectorStatusLabel
+@onready var _skill_inspector_count_label: Label = %SkillInspectorCountLabel
+@onready var _skill_inspector_skills: HBoxContainer = %SkillInspectorSkills
+@onready var _skill_inspector_empty_label: Label = %SkillInspectorEmptyLabel
+@onready var _skill_preview_prompt_label: Label = %SkillPreviewPromptLabel
+@onready var _skill_preview_name_label: Label = %SkillPreviewNameLabel
+@onready var _skill_preview_kind_label: Label = %SkillPreviewKindLabel
+@onready var _skill_preview_effect_label: Label = %SkillPreviewEffectLabel
+@onready var _skill_preview_targeting_label: Label = %SkillPreviewTargetingLabel
+@onready var _skill_preview_requirements_label: Label = %SkillPreviewRequirementsLabel
+@onready var _skill_preview_cooldown_label: Label = %SkillPreviewCooldownLabel
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -36,6 +61,11 @@ var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
 var _action_in_progress: bool = false
 var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
+var _reward_options: Array[BattleRewardOption] = []
+var _selected_reward: BattleRewardOption
+var _reward_confirmation_latched: bool = false
+var _inspected_unit_id: StringName = &""
+var _selected_skill_id: StringName = &""
 
 
 func _ready() -> void:
@@ -45,6 +75,10 @@ func _ready() -> void:
 	var advance_callable := Callable(self, "_on_advance_debug_pressed")
 	if not _advance_debug_button.pressed.is_connected(advance_callable):
 		_advance_debug_button.pressed.connect(advance_callable)
+	var confirm_callable := Callable(self, "confirm_reward_selection")
+	if not _confirm_reward_button.pressed.is_connected(confirm_callable):
+		_confirm_reward_button.pressed.connect(confirm_callable)
+	_clear_reward_ui()
 	_assign_slot_metadata(_player_formation, "player")
 	_assign_slot_metadata(_enemy_formation, "enemy")
 	_refresh_context()
@@ -61,6 +95,8 @@ func configure(coordinate: Vector2i, type: String) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	_clear_reward_ui()
+	_clear_skill_inspector()
 	_feedback_generation += 1
 	_action_in_progress = false
 	_hovered_log_index = -1
@@ -98,6 +134,68 @@ func get_battle_outcome() -> BattleOutcome.Type:
 
 func is_battle_complete() -> bool:
 	return _battle_outcome != BattleOutcome.Type.IN_PROGRESS
+
+
+func get_reward_options() -> Array[BattleRewardOption]:
+	return _reward_options.duplicate()
+
+
+func get_selected_reward() -> BattleRewardOption:
+	return _selected_reward
+
+
+func select_reward(reward_id: StringName) -> void:
+	if _reward_confirmation_latched or _battle_outcome != BattleOutcome.Type.VICTORY:
+		return
+	for option: BattleRewardOption in _reward_options:
+		if option.reward_id == reward_id:
+			_selected_reward = option
+			_refresh_reward_selection_ui()
+			return
+
+
+func confirm_reward_selection() -> void:
+	if (
+		_reward_confirmation_latched
+		or _battle_outcome != BattleOutcome.Type.VICTORY
+		or not is_instance_valid(_selected_reward)
+	):
+		return
+	_reward_confirmation_latched = true
+	var confirmed_reward := _selected_reward
+	_clear_reward_ui(false)
+	reward_confirmed.emit(confirmed_reward)
+	exit_requested.emit()
+
+
+func get_inspected_unit_id() -> StringName:
+	return _inspected_unit_id
+
+
+func inspect_unit(unit_id: StringName) -> void:
+	var unit := get_unit_by_id(unit_id)
+	if not is_instance_valid(unit):
+		_clear_skill_inspector()
+		return
+	_selected_skill_id = &""
+	_inspected_unit_id = unit.unit_id
+	_refresh_skill_inspector()
+
+
+func get_selected_skill_id() -> StringName:
+	return _selected_skill_id
+
+
+func select_skill(skill_id: StringName) -> void:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		return
+	for skill: CharacterSkill in unit.skills:
+		if skill.skill_id == skill_id:
+			_selected_skill_id = skill_id
+			_refresh_skill_selection()
+			_refresh_skill_preview()
+			return
 
 
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
@@ -176,19 +274,55 @@ func get_enemy_slots() -> Array[Control]:
 
 func _create_debug_units() -> Array[BattleUnitState]:
 	return [
-		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8),
+		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8, 20, _skill_roster([
+			_create_skill(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "Closest active enemy.", "User must occupy a front-row slot.", "1 turn after use."),
+			_create_skill(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE, "Reduce the next damage taken by an adjacent ally by 3.", "Adjacent active allies.", "User must occupy a front-row slot.", "None"),
+		])),
 		BattleUnitState.new(&"player_1", "Player Front 2", BattleUnitState.Side.PLAYER, 1, 6),
-		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6),
+		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6, 20, _skill_roster([
+			_create_skill(&"quick_step", "Quick Step", CharacterSkill.Kind.ACTIVE, "Gain 2 Speed until the end of the next turn.", "Self.", "None", "2 turns after use."),
+		])),
 		BattleUnitState.new(&"player_3", "Player Back 1", BattleUnitState.Side.PLAYER, 3, 4),
-		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9),
+		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9, 20, _skill_roster([
+			_create_skill(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "Closest active enemy.", "None", "None"),
+			_create_skill(&"rally", "Rally", CharacterSkill.Kind.ACTIVE, "Grant all active allies 2 Speed until the end of the round.", "All active allies, including the user.", "None", "2 turns after use."),
+			_create_skill(&"evasion", "Evasion", CharacterSkill.Kind.PASSIVE, "Prevent the first damage instance received each round.", "Self.", "None", "None"),
+			_create_skill(&"momentum", "Momentum", CharacterSkill.Kind.PASSIVE, "Gain 1 Speed after taking an action, lasting until battle ends.", "Self.", "User must remain active.", "None"),
+		])),
 		BattleUnitState.new(&"player_5", "Player Back 3", BattleUnitState.Side.PLAYER, 5, 2),
-		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8),
+		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8, 20, _skill_roster([
+			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "Closest active enemy.", "User must be above 50% HP.", "2 turns after use."),
+			_create_skill(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"),
+		])),
 		BattleUnitState.new(&"enemy_1", "Enemy Front 2", BattleUnitState.Side.ENEMY, 1, 7),
-		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6),
+		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6, 20, _skill_roster([
+			_create_skill(&"brace", "Brace", CharacterSkill.Kind.PASSIVE, "Reduce the first damage received each round by 2.", "Self.", "None", "None"),
+		])),
 		BattleUnitState.new(&"enemy_3", "Enemy Back 1", BattleUnitState.Side.ENEMY, 3, 4),
-		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9),
+		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([
+			_create_skill(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."),
+		])),
 		BattleUnitState.new(&"enemy_5", "Enemy Back 3", BattleUnitState.Side.ENEMY, 5, 2),
 	]
+
+
+func _create_skill(
+	id: StringName,
+	display_name: String,
+	kind: CharacterSkill.Kind,
+	effect: String,
+	targeting: String,
+	requirements: String,
+	cooldown: String
+) -> CharacterSkill:
+	return CharacterSkill.new(id, display_name, kind, effect, targeting, requirements, cooldown)
+
+
+func _skill_roster(values: Array) -> Array[CharacterSkill]:
+	var roster: Array[CharacterSkill] = []
+	for value: Variant in values:
+		roster.append(value as CharacterSkill)
+	return roster
 
 
 func _complete_battle(outcome: BattleOutcome.Type) -> void:
@@ -198,6 +332,57 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	_turn_queue.clear()
 	_current_turn_index = 0
 	battle_completed.emit(_battle_outcome)
+	if _battle_outcome == BattleOutcome.Type.VICTORY:
+		_show_victory_rewards()
+	else:
+		_clear_reward_ui()
+
+
+func _show_victory_rewards() -> void:
+	_clear_reward_ui()
+	_reward_options = BattleRewardCatalog.get_options_for(encounter_type)
+	_reward_overlay.visible = true
+	_reward_panel.visible = true
+	_reward_heading_label.text = "%s Rewards" % encounter_type.capitalize()
+	_reward_empty_state_label.visible = _reward_options.is_empty()
+	for option: BattleRewardOption in _reward_options:
+		var button := Button.new()
+		button.custom_minimum_size = Vector2(0.0, 48.0)
+		button.text = option.title
+		button.set_meta("reward_id", option.reward_id)
+		button.pressed.connect(select_reward.bind(option.reward_id))
+		_reward_options_container.add_child(button)
+
+
+func _refresh_reward_selection_ui() -> void:
+	if not is_instance_valid(_selected_reward):
+		return
+	for child: Node in _reward_options_container.get_children():
+		var button := child as Button
+		if button == null:
+			continue
+		var is_selected: bool = button.get_meta("reward_id", &"") == _selected_reward.reward_id
+		button.self_modulate = SELECTED_REWARD_COLOR if is_selected else Color.WHITE
+	_reward_description_label.text = _selected_reward.description
+	_confirm_reward_button.disabled = false
+
+
+func _clear_reward_ui(reset_latch: bool = true) -> void:
+	if reset_latch:
+		_reward_confirmation_latched = false
+	_selected_reward = null
+	_reward_options.clear()
+	if not is_node_ready():
+		return
+	for child: Node in _reward_options_container.get_children():
+		_reward_options_container.remove_child(child)
+		child.queue_free()
+	_reward_overlay.visible = false
+	_reward_panel.visible = false
+	_reward_heading_label.text = "Choose a reward"
+	_reward_empty_state_label.visible = false
+	_reward_description_label.text = ""
+	_confirm_reward_button.disabled = true
 
 
 func _advance_after_action(attacker_id: StringName) -> void:
@@ -234,6 +419,20 @@ func _assign_slot_metadata(formation: GridContainer, side: String) -> void:
 		slot.set_meta("slot_index", slot_index)
 		slot.set_meta("is_current_unit", false)
 		slot.set_meta("highlight_role", &"neutral")
+		slot.set_meta("unit_id", &"")
+		var input_callable := Callable(self, "_on_slot_gui_input").bind(slot)
+		if not slot.gui_input.is_connected(input_callable):
+			slot.gui_input.connect(input_callable)
+
+
+func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
+	var click := event as InputEventMouseButton
+	if click == null or click.button_index != MOUSE_BUTTON_LEFT or not click.pressed:
+		return
+	var unit_id := slot.get_meta("unit_id", &"") as StringName
+	if unit_id.is_empty():
+		return
+	inspect_unit(unit_id)
 
 
 func _refresh_context() -> void:
@@ -246,6 +445,7 @@ func _refresh_context() -> void:
 func _refresh_turn_ui() -> void:
 	_round_label.text = "Round %d" % round_number
 	_render_units()
+	_refresh_skill_inspector()
 	_refresh_result_ui()
 	if is_battle_complete():
 		_current_unit_label.text = BattleOutcome.get_display_text(_battle_outcome)
@@ -283,12 +483,14 @@ func _render_units() -> void:
 		name_label.text = "Unoccupied"
 		speed_label.text = "Speed —"
 		health_label.text = "HP —"
+		slot.set_meta("unit_id", &"")
 	for unit: BattleUnitState in _units:
 		if not is_instance_valid(unit):
 			continue
 		var slot := _get_slot_for_unit(unit)
 		if not is_instance_valid(slot):
 			continue
+		slot.set_meta("unit_id", unit.unit_id)
 		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
 		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
@@ -299,6 +501,145 @@ func _render_units() -> void:
 			if unit.is_active()
 			else "Defeated — HP 0/%d" % unit.max_hp
 		)
+
+
+func _refresh_skill_inspector() -> void:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		_clear_skill_inspector()
+		return
+	_clear_skill_rows()
+	_skill_inspector_prompt_label.visible = false
+	_skill_inspector_body.visible = true
+	_skill_inspector_unit_name_label.text = unit.display_name
+	_skill_inspector_status_label.text = "Active" if unit.is_active() else "Defeated"
+	var unit_skills := unit.skills
+	_skill_inspector_count_label.text = "Skills: %d/%d" % [unit_skills.size(), BattleUnitState.MAX_CHARACTER_SKILLS]
+	_skill_inspector_empty_label.visible = unit_skills.is_empty()
+	var selection_still_owned := false
+	for index: int in unit_skills.size():
+		var skill := unit_skills[index]
+		selection_still_owned = selection_still_owned or skill.skill_id == _selected_skill_id
+		_skill_inspector_skills.add_child(_create_skill_button(skill, index + 1))
+	if not selection_still_owned:
+		_selected_skill_id = &""
+	_refresh_skill_selection()
+	_refresh_skill_preview()
+
+
+func _create_skill_button(skill: CharacterSkill, skill_index: int) -> Button:
+	var button := Button.new()
+	button.custom_minimum_size = SKILL_BUTTON_SIZE
+	button.set_meta("skill_id", skill.skill_id)
+	button.set_meta("skill_index", skill_index)
+	button.set_meta("selected", false)
+	button.pressed.connect(select_skill.bind(skill.skill_id))
+
+	var number_label := Label.new()
+	number_label.name = "NumberLabel"
+	number_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	number_label.text = str(skill_index)
+	number_label.offset_left = 6.0
+	number_label.offset_top = 3.0
+	button.add_child(number_label)
+
+	var name_label := Label.new()
+	name_label.name = "NameLabel"
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	name_label.offset_left = 8.0
+	name_label.offset_top = 18.0
+	name_label.offset_right = -8.0
+	name_label.offset_bottom = -18.0
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.text = skill.display_name
+	button.add_child(name_label)
+
+	var kind_label := Label.new()
+	kind_label.name = "KindLabel"
+	kind_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	button.add_child(kind_label)
+	kind_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
+	kind_label.offset_top = -20.0
+	kind_label.offset_bottom = -3.0
+	kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	kind_label.text = "Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"
+	return button
+
+
+func _refresh_skill_selection() -> void:
+	for child: Node in _skill_inspector_skills.get_children():
+		var button := child as Button
+		if not is_instance_valid(button):
+			continue
+		var is_selected: bool = button.get_meta("skill_id", &"") == _selected_skill_id
+		button.set_meta("selected", is_selected)
+		button.self_modulate = SELECTED_SKILL_COLOR if is_selected else Color.WHITE
+
+
+func _get_selected_skill() -> CharacterSkill:
+	var unit := get_unit_by_id(_inspected_unit_id)
+	if not is_instance_valid(unit):
+		return null
+	for skill: CharacterSkill in unit.skills:
+		if skill.skill_id == _selected_skill_id:
+			return skill
+	return null
+
+
+func _refresh_skill_preview() -> void:
+	var skill := _get_selected_skill()
+	var has_skill := is_instance_valid(skill)
+	_skill_preview_prompt_label.visible = not has_skill
+	_skill_preview_name_label.visible = has_skill
+	_skill_preview_kind_label.visible = has_skill
+	_skill_preview_effect_label.visible = has_skill
+	_skill_preview_targeting_label.visible = has_skill
+	_skill_preview_requirements_label.visible = has_skill
+	_skill_preview_cooldown_label.visible = has_skill
+	if not has_skill:
+		_clear_skill_preview_text()
+		return
+	_skill_preview_name_label.text = skill.display_name
+	_skill_preview_kind_label.text = (
+		"Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"
+	)
+	_skill_preview_effect_label.text = "Effect: %s" % skill.effect_text
+	_skill_preview_targeting_label.text = "Targeting: %s" % skill.targeting_text
+	_skill_preview_requirements_label.text = "Requirements: %s" % skill.requirements_text
+	_skill_preview_cooldown_label.text = "Cooldown: %s" % skill.cooldown_text
+
+
+func _clear_skill_preview_text() -> void:
+	_skill_preview_name_label.text = ""
+	_skill_preview_kind_label.text = ""
+	_skill_preview_effect_label.text = ""
+	_skill_preview_targeting_label.text = ""
+	_skill_preview_requirements_label.text = ""
+	_skill_preview_cooldown_label.text = ""
+
+
+func _clear_skill_inspector() -> void:
+	_inspected_unit_id = &""
+	_selected_skill_id = &""
+	if not is_node_ready():
+		return
+	_clear_skill_rows()
+	_skill_inspector_prompt_label.visible = true
+	_skill_inspector_body.visible = false
+	_skill_inspector_unit_name_label.text = ""
+	_skill_inspector_status_label.text = ""
+	_skill_inspector_count_label.text = ""
+	_skill_inspector_empty_label.visible = false
+	_refresh_skill_preview()
+
+
+func _clear_skill_rows() -> void:
+	for child: Node in _skill_inspector_skills.get_children():
+		_skill_inspector_skills.remove_child(child)
+		child.queue_free()
 
 
 func _refresh_highlights() -> void:
@@ -411,6 +752,7 @@ func _on_advance_debug_pressed() -> void:
 
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
+	_clear_reward_ui()
 	call_deferred("_emit_exit_requested")
 
 
