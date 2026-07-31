@@ -11,6 +11,7 @@
 .vscode/*.code-workspace
 .codex/
 .godotiq/
+.superpowers/
 
 # OS files
 .DS_Store
