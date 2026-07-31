@@ -28,9 +28,9 @@ func _run() -> void:
 	_test_blank_preview_rejection()
 	_test_preview_duplication()
 	await _test_exact_fixture_previews()
-	await _test_preview_scene_and_content()
-	await _test_preview_lifecycle_and_non_actionability()
-	await _test_target_viewport_layout()
+	await _test_tooltip_scene_and_hover_content()
+	await _test_tooltip_lifecycle_and_non_actionability()
+	await _test_tooltip_placement_and_event_guards()
 	if _failures.is_empty():
 		print("AC2.7 tests passed")
 		quit(0)
@@ -147,143 +147,188 @@ func _test_exact_fixture_previews() -> void:
 	await process_frame
 
 
-func _test_preview_scene_and_content() -> void:
+func _test_tooltip_scene_and_hover_content() -> void:
 	var arena := await _instantiate_arena()
-	_expect(is_instance_valid(arena), "battle arena should instantiate for preview UI")
+	_expect(is_instance_valid(arena), "battle arena should instantiate for tooltip UI")
 	if not is_instance_valid(arena):
 		return
+	_expect(arena.get_node_or_null("%SkillPreviewPanel") == null, "fixed skill preview panel should be removed")
 	for node_name: String in [
-		"SkillSelectionRegion",
-		"SkillPreviewPanel",
-		"SkillPreviewPromptLabel",
-		"SkillPreviewNameLabel",
-		"SkillPreviewKindLabel",
-		"SkillPreviewEffectLabel",
-		"SkillPreviewTargetingLabel",
-		"SkillPreviewRequirementsLabel",
-		"SkillPreviewCooldownLabel",
+		"SkillTooltipPanel",
+		"SkillTooltipNameLabel",
+		"SkillTooltipKindLabel",
+		"SkillTooltipEffectLabel",
+		"SkillTooltipTargetingLabel",
+		"SkillTooltipRequirementsLabel",
+		"SkillTooltipCooldownLabel",
 	]:
 		var node := arena.get_node_or_null("%%%s" % node_name)
-		_expect(is_instance_valid(node), "scene-owned preview node %s should exist" % node_name)
-	var prompt := arena.get_node_or_null("%SkillPreviewPromptLabel") as Label
+		_expect(is_instance_valid(node), "scene-owned tooltip node %s should exist" % node_name)
+	var tooltip := arena.get_node_or_null("%SkillTooltipPanel") as PanelContainer
+	if not is_instance_valid(tooltip):
+		arena.queue_free()
+		await process_frame
+		return
+	_expect(not tooltip.visible, "tooltip should start hidden")
 	arena.inspect_unit(&"player_0")
-	_expect(is_instance_valid(prompt) and prompt.visible, "inspected character should show preview prompt")
-	if is_instance_valid(prompt):
-		_expect(prompt.text == "Select a skill to inspect its description.", "preview prompt should be exact")
-	arena.select_skill(&"shield_bash")
-	_expect(_preview_text(arena) == [
-		"Shield Bash",
-		"Active",
-		"Effect: Deal 7 damage.",
-		"Targeting: Closest active enemy.",
-		"Requirements: User must occupy a front-row slot.",
-		"Cooldown: 1 turn after use.",
-	], "active preview should render exact content")
-	arena.select_skill(&"frontline_guard")
-	_expect(_preview_text(arena) == [
-		"Frontline Guard",
-		"Passive",
-		"Effect: Reduce the next damage taken by an adjacent ally by 3.",
-		"Targeting: Adjacent active allies.",
-		"Requirements: User must occupy a front-row slot.",
-		"Cooldown: None",
-	], "passive preview should render exact content including None")
+	var active_button := _skill_button(arena, &"shield_bash")
+	_expect(is_instance_valid(active_button), "active skill button should exist")
+	if is_instance_valid(active_button):
+		_emit_skill_hover(active_button, true)
+		await process_frame
+		_expect(tooltip.visible, "active tooltip should show on hover without clicking")
+		_expect(_tooltip_text(arena) == [
+			"Shield Bash",
+			"Active",
+			"Effect: Deal 7 damage.",
+			"Targeting: Closest active enemy.",
+			"Requirements: User must occupy a front-row slot.",
+			"Cooldown: 1 turn after use.",
+		], "active tooltip should render exact content")
+		_emit_skill_hover(active_button, false)
+		_expect(not tooltip.visible, "active tooltip should hide immediately on exit")
+		_expect(_tooltip_text(arena) == ["", "", "", "", "", ""], "exit should clear tooltip text")
+	var passive_button := _skill_button(arena, &"frontline_guard")
+	_expect(is_instance_valid(passive_button), "passive skill button should exist")
+	if is_instance_valid(passive_button):
+		_emit_skill_hover(passive_button, true)
+		await process_frame
+		_expect(_tooltip_text(arena) == [
+			"Frontline Guard",
+			"Passive",
+			"Effect: Reduce the next damage taken by an adjacent ally by 3.",
+			"Targeting: Adjacent active allies.",
+			"Requirements: User must occupy a front-row slot.",
+			"Cooldown: None",
+		], "passive tooltip should render exact content including None")
+		_emit_skill_hover(passive_button, false)
 	arena.queue_free()
 	await process_frame
 
 
-func _test_preview_lifecycle_and_non_actionability() -> void:
+func _test_tooltip_lifecycle_and_non_actionability() -> void:
 	var arena := await _instantiate_arena()
-	_expect(is_instance_valid(arena), "battle arena should instantiate for lifecycle")
+	_expect(is_instance_valid(arena), "battle arena should instantiate for tooltip lifecycle")
 	if not is_instance_valid(arena):
 		return
+	var tooltip := arena.get_node_or_null("%SkillTooltipPanel") as PanelContainer
+	var has_handlers := (
+		arena.has_method("_on_skill_button_mouse_entered")
+		and arena.has_method("_on_skill_button_mouse_exited")
+	)
+	_expect(is_instance_valid(tooltip), "tooltip panel should exist for lifecycle checks")
+	_expect(has_handlers, "battle arena should expose guarded hover handlers")
+	if not is_instance_valid(tooltip) or not has_handlers:
+		arena.queue_free()
+		await process_frame
+		return
 	arena.inspect_unit(&"player_0")
+	var active_button := _skill_button(arena, &"shield_bash")
+	var passive_button := _skill_button(arena, &"frontline_guard")
+	_expect(is_instance_valid(active_button) and is_instance_valid(passive_button), "lifecycle skill buttons should exist")
+	if not is_instance_valid(active_button) or not is_instance_valid(passive_button):
+		arena.queue_free()
+		await process_frame
+		return
 	var turn_before := arena.get_current_unit().unit_id
 	var round_before := arena.round_number
 	var log_count_before := arena.get_battle_log_entries().size()
 	var hp_before := _snapshot_hp(arena)
-	arena.select_skill(&"shield_bash")
-	_expect(arena.get_current_unit().unit_id == turn_before, "inspection should not change turn")
-	_expect(arena.round_number == round_before, "inspection should not change round")
-	_expect(arena.get_battle_log_entries().size() == log_count_before, "inspection should not add log entries")
-	_expect(_snapshot_hp(arena) == hp_before, "inspection should not change HP")
-	arena.advance_turn()
-	_expect(arena.get_selected_skill_id() == &"shield_bash", "turn advance should preserve preview")
+	var inspected_before := arena.get_inspected_unit_id()
+	var selected_before := arena.get_selected_skill_id()
+	_emit_skill_hover(active_button, true)
+	await process_frame
+	_expect(arena.get_current_unit().unit_id == turn_before, "hover should not change turn")
+	_expect(arena.round_number == round_before, "hover should not change round")
+	_expect(arena.get_battle_log_entries().size() == log_count_before, "hover should not add log entries")
+	_expect(_snapshot_hp(arena) == hp_before, "hover should not change HP")
+	_expect(arena.get_inspected_unit_id() == inspected_before, "hover should not change inspected unit")
+	_expect(arena.get_selected_skill_id() == selected_before, "hover should not select a skill")
+	active_button.pressed.emit()
+	_expect(arena.get_selected_skill_id() == &"shield_bash", "click selection should remain available")
+	_emit_skill_hover(active_button, false)
+	_expect(not tooltip.visible, "click should not pin tooltip after exit")
+	_emit_skill_hover(active_button, true)
+	_emit_skill_hover(passive_button, true)
+	_emit_skill_hover(active_button, false)
+	await process_frame
+	_expect(tooltip.visible, "stale exit should not hide newer hovered tooltip")
+	_expect(_tooltip_text(arena)[0] == "Frontline Guard", "newer hover should own tooltip content")
+	_emit_skill_hover(passive_button, true)
+	await process_frame
+	_expect(tooltip.visible and _tooltip_text(arena)[0] == "Frontline Guard", "duplicate enter should be safe")
 	arena.inspect_unit(&"player_4")
-	_expect(arena.get_selected_skill_id().is_empty(), "character change should clear selected skill")
-	_expect((arena.get_node("%SkillPreviewPromptLabel") as Label).visible, "character change should restore prompt")
-	arena.select_skill(&"rally")
-	var empty_event := InputEventMouseButton.new()
-	empty_event.button_index = MOUSE_BUTTON_LEFT
-	empty_event.pressed = true
-	var empty_slot := arena.get_player_slots()[0]
-	empty_slot.set_meta("unit_id", &"")
-	arena.call("_on_slot_gui_input", empty_event, empty_slot)
-	_expect(arena.get_selected_skill_id() == &"rally", "empty slot should preserve preview")
-	var selected_unit := arena.get_unit_by_id(&"player_4")
-	selected_unit.current_hp = 0
-	arena.call("_refresh_turn_ui")
-	_expect(arena.get_selected_skill_id() == &"rally", "retained defeat should preserve preview")
-	_expect((arena.get_node("%SkillInspectorStatusLabel") as Label).text == "Defeated", "retained defeat should show Defeated")
-	arena.inspect_unit(&"missing")
-	_expect(arena.get_inspected_unit_id().is_empty(), "invalid unit should clear inspection")
-	_expect(arena.get_selected_skill_id().is_empty(), "invalid unit should clear selected skill")
-	arena.inspect_unit(&"enemy_0")
-	arena.select_skill(&"blood_scent")
+	_expect(not tooltip.visible, "character change should hide tooltip")
+	var player_four_button := _skill_button(arena, &"quick_strike")
+	_emit_skill_hover(player_four_button, true)
+	await process_frame
 	arena.configure_units(_single_unit_roster())
-	_expect(arena.get_inspected_unit_id().is_empty(), "reconfiguration should clear inspection")
-	_expect(arena.get_selected_skill_id().is_empty(), "reconfiguration should clear preview")
+	_expect(not tooltip.visible, "reconfiguration should hide tooltip")
 	arena.queue_free()
 	await process_frame
-	var fresh := await _instantiate_arena()
-	_expect(fresh.get_inspected_unit_id().is_empty(), "new battle should start neutral")
-	_expect(fresh.get_selected_skill_id().is_empty(), "new battle should have no preview selection")
-	fresh.queue_free()
-	await process_frame
 
 
-func _test_target_viewport_layout() -> void:
+func _test_tooltip_placement_and_event_guards() -> void:
 	root.size = Vector2i(1152, 648)
 	await process_frame
 	var arena := await _instantiate_arena()
-	arena.inspect_unit(&"player_4")
-	arena.select_skill(&"quick_strike")
+	_expect(is_instance_valid(arena), "battle arena should instantiate for tooltip placement")
+	if not is_instance_valid(arena):
+		return
+	var tooltip := arena.get_node_or_null("%SkillTooltipPanel") as PanelContainer
+	var has_handlers := (
+		arena.has_method("_on_skill_button_mouse_entered")
+		and arena.has_method("_position_skill_tooltip")
+	)
+	_expect(is_instance_valid(tooltip), "tooltip panel should exist for placement checks")
+	_expect(has_handlers, "battle arena should expose tooltip placement handlers")
+	if not is_instance_valid(tooltip) or not has_handlers:
+		arena.queue_free()
+		await process_frame
+		return
+	var unit := arena.get_unit_by_id(&"player_0")
+	var skill: CharacterSkill = unit.skills[0] if is_instance_valid(unit) and not unit.skills.is_empty() else null
+	_expect(is_instance_valid(skill), "placement fixture skill should exist")
+	if not is_instance_valid(skill):
+		arena.queue_free()
+		await process_frame
+		return
+	var anchor := Button.new()
+	anchor.custom_minimum_size = Vector2(88.0, 88.0)
+	anchor.size = Vector2(88.0, 88.0)
+	arena.add_child(anchor)
+	anchor.position = Vector2(500.0, 400.0)
+	arena.call("_on_skill_button_mouse_entered", skill, anchor)
 	await process_frame
+	var viewport_rect := Rect2(Vector2.ZERO, Vector2(1152.0, 648.0))
+	var button_rect := anchor.get_global_rect()
+	var tooltip_rect := tooltip.get_global_rect()
+	_expect(viewport_rect.encloses(tooltip_rect), "tooltip should stay inside target viewport")
+	_expect(tooltip_rect.end.y <= button_rect.position.y - 8.0 + 0.5, "tooltip should prefer above")
+	_expect(absf(tooltip_rect.get_center().x - button_rect.get_center().x) <= 0.5, "unclamped tooltip should center")
+	anchor.position = Vector2(500.0, 4.0)
+	arena.call("_on_skill_button_mouse_entered", skill, anchor)
 	await process_frame
-	var inspector := arena.get_node("%SkillInspectorPanel") as Control
-	var preview := arena.get_node("%SkillPreviewPanel") as Control
-	var inspector_rect := inspector.get_global_rect()
-	var preview_rect := preview.get_global_rect()
-	var selection_rect := (arena.get_node("%SkillSelectionRegion") as Control).get_global_rect()
-	_expect(preview_rect.position.x >= selection_rect.end.x, "preview must be right-docked after selection region")
-	var preview_ratio := preview_rect.size.x / inspector_rect.size.x
-	_expect(preview_ratio >= 0.25 and preview_ratio <= 0.33, "preview ratio must be 0.25-0.33, got %.3f" % preview_ratio)
-	_expect(inspector_rect.position.x >= 0.0 and inspector_rect.end.x <= 1152.0, "inspector must fit horizontally")
-	_expect(inspector_rect.position.y >= 0.0 and inspector_rect.end.y <= 648.0, "inspector must fit vertically")
-	var skills := arena.get_node("%SkillInspectorSkills") as HBoxContainer
-	_expect(skills.get_child_count() == 4, "four-skill fixture should show four buttons")
-	for child: Node in skills.get_children():
-		var button := child as Control
-		_expect(button.visible and inspector_rect.encloses(button.get_global_rect()), "%s must stay visible inside inspector" % button.name)
-	for node_name: String in [
-		"SkillPreviewNameLabel",
-		"SkillPreviewKindLabel",
-		"SkillPreviewEffectLabel",
-		"SkillPreviewTargetingLabel",
-		"SkillPreviewRequirementsLabel",
-		"SkillPreviewCooldownLabel",
-	]:
-		var label := arena.get_node("%%%s" % node_name) as Label
-		_expect(label.visible, "%s must be visible" % node_name)
-		_expect(inspector_rect.encloses(label.get_global_rect()), "%s must stay inside inspector" % node_name)
-		_expect(label.size.x > 0.0 and label.size.y > 0.0, "%s must have rendered size" % node_name)
-		_expect(label.get_minimum_size().y <= label.size.y + 0.5, "%s text must not be clipped" % node_name)
-	var ancestor: Node = arena.get_node("%SkillInspectorBody").get_parent()
-	var has_scroll_ancestor := false
-	while is_instance_valid(ancestor) and ancestor != inspector:
-		has_scroll_ancestor = has_scroll_ancestor or ancestor is ScrollContainer
-		ancestor = ancestor.get_parent()
-	_expect(not has_scroll_ancestor, "inspector must not use scrolling as a layout workaround")
+	button_rect = anchor.get_global_rect()
+	tooltip_rect = tooltip.get_global_rect()
+	_expect(tooltip_rect.position.y >= button_rect.end.y + 8.0 - 0.5, "tooltip should flip below")
+	anchor.position = Vector2(0.0, 400.0)
+	arena.call("_on_skill_button_mouse_entered", skill, anchor)
+	await process_frame
+	tooltip_rect = tooltip.get_global_rect()
+	_expect(tooltip_rect.position.x >= 12.0, "left-edge tooltip should clamp to margin")
+	anchor.position = Vector2(1064.0, 400.0)
+	arena.call("_on_skill_button_mouse_entered", skill, anchor)
+	await process_frame
+	tooltip_rect = tooltip.get_global_rect()
+	_expect(tooltip_rect.end.x <= 1140.0, "right-edge tooltip should clamp to margin")
+	arena.call("_on_skill_button_mouse_entered", null, anchor)
+	_expect(not tooltip.visible, "invalid skill should hide tooltip")
+	anchor.queue_free()
+	await process_frame
+	var stale_generation := int(arena.get("_skill_tooltip_generation"))
+	arena.call("_position_skill_tooltip", anchor, stale_generation)
+	_expect(not tooltip.visible, "freed anchor should not restore tooltip")
 	arena.queue_free()
 	await process_frame
 
@@ -304,18 +349,34 @@ func _single_unit_roster() -> Array[BattleUnitState]:
 	return [BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]
 
 
-func _preview_text(arena: BattleArena) -> Array[String]:
+func _emit_skill_hover(button: Button, entered: bool) -> void:
+	if entered:
+		button.mouse_entered.emit()
+	else:
+		button.mouse_exited.emit()
+
+
+func _skill_button(arena: BattleArena, skill_id: StringName) -> Button:
+	var skills := arena.get_node("%SkillInspectorSkills") as HBoxContainer
+	for child: Node in skills.get_children():
+		var button := child as Button
+		if is_instance_valid(button) and button.get_meta("skill_id", &"") == skill_id:
+			return button
+	return null
+
+
+func _tooltip_text(arena: BattleArena) -> Array[String]:
 	var result: Array[String] = []
 	for node_name: String in [
-		"SkillPreviewNameLabel",
-		"SkillPreviewKindLabel",
-		"SkillPreviewEffectLabel",
-		"SkillPreviewTargetingLabel",
-		"SkillPreviewRequirementsLabel",
-		"SkillPreviewCooldownLabel",
+		"SkillTooltipNameLabel",
+		"SkillTooltipKindLabel",
+		"SkillTooltipEffectLabel",
+		"SkillTooltipTargetingLabel",
+		"SkillTooltipRequirementsLabel",
+		"SkillTooltipCooldownLabel",
 	]:
 		var label := arena.get_node_or_null("%%%s" % node_name) as Label
-		result.append(label.text if is_instance_valid(label) and label.visible else "")
+		result.append(label.text if is_instance_valid(label) else "")
 	return result
 
 
