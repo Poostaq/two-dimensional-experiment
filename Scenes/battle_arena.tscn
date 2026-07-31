@@ -455,6 +455,63 @@ size_flags_horizontal = 3
 text = "No active units"
 horizontal_alignment = 1
 
+[node name="SkillInspectorPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1884290476]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillInspectorContent" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel" unique_id=358593966]
+layout_mode = 2
+theme_override_constants/separation = 0
+
+[node name="SkillInspectorTitleLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=266280407]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Character Skills (Debug)"
+
+[node name="SkillInspectorPromptLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=1424856640]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Select a populated slot to inspect skills."
+
+[node name="SkillInspectorBody" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=19874224]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillSelectionRegion" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=707293362]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SkillInspectorCharacterBlock" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1751821891]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="SkillInspectorUnitNameLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=713145833]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillInspectorStatusLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=1401560804]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillInspectorCountLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=1655803130]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillInspectorEmptyLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=943690158]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "No character-specific skills"
+
+[node name="SkillInspectorSkills" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1077560603]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="BattleResultPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1316659299]
 unique_name_in_owner = true
 visible = false
@@ -462,7 +519,10 @@ layout_mode = 2
 size_flags_horizontal = 4
 mouse_filter = 2
 
-[node name="BattleResultLabel" type="Label" parent="Margin/VBox/BattleResultPanel" unique_id=266677693]
+[node name="BattleResultContent" type="VBoxContainer" parent="Margin/VBox/BattleResultPanel" unique_id=1745206833]
+layout_mode = 2
+
+[node name="BattleResultLabel" type="Label" parent="Margin/VBox/BattleResultPanel/BattleResultContent" unique_id=266677693]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
@@ -485,10 +545,11 @@ layout_mode = 2
 text = "Exit Battle (Debug)"
 
 [node name="BattleLogPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1042687046]
-custom_minimum_size = Vector2(0, 150)
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
 [node name="BattleLogVBox" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel" unique_id=358462316]
+custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
 [node name="BattleLogTitle" type="Label" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=1741101699]
@@ -497,7 +558,7 @@ text = "Battle Log"
 
 [node name="BattleLogScroll" type="ScrollContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=903810453]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 110)
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
@@ -505,3 +566,96 @@ horizontal_scroll_mode = 0
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="RewardOverlay" type="CenterContainer" parent="." unique_id=227454104]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 0
+
+[node name="RewardPanel" type="PanelContainer" parent="RewardOverlay" unique_id=1759408279]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+
+[node name="RewardContent" type="VBoxContainer" parent="RewardOverlay/RewardPanel" unique_id=2101800464]
+layout_mode = 2
+
+[node name="RewardHeadingLabel" type="Label" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=797488608]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Choose a reward"
+horizontal_alignment = 1
+
+[node name="RewardOptions" type="VBoxContainer" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=1295601627]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="RewardEmptyStateLabel" type="Label" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=299649046]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "No rewards available"
+
+[node name="RewardDescriptionLabel" type="Label" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=463755129]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="ConfirmRewardButton" type="Button" parent="RewardOverlay/RewardPanel/RewardContent" unique_id=1890032994]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+disabled = true
+text = "Confirm Reward"
+
+[node name="SkillTooltipPanel" type="PanelContainer" parent="." unique_id=1971942413]
+unique_name_in_owner = true
+visible = false
+z_index = 20
+custom_minimum_size = Vector2(288, 0)
+layout_mode = 0
+mouse_filter = 2
+
+[node name="SkillTooltipMargin" type="MarginContainer" parent="SkillTooltipPanel" unique_id=1840637800]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SkillTooltipContent" type="VBoxContainer" parent="SkillTooltipPanel/SkillTooltipMargin" unique_id=773299983]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SkillTooltipNameLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1019767714]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillTooltipKindLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1767515953]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillTooltipEffectLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1390629672]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillTooltipTargetingLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=552847106]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillTooltipRequirementsLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1542155304]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
+layout_mode = 2
+autowrap_mode = 2
+
+[node name="SkillTooltipCooldownLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1971711230]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
+layout_mode = 2
+autowrap_mode = 2
