@@ -60,6 +60,10 @@ These seams describe the intended separation of responsibilities. Equivalent nam
 
 Rules evaluation must remain callable without scene nodes. UI presentation consumes snapshots/results and never determines whether an action is legal.
 
+### Runtime UI wiring
+
+Skill-button hover/exit and press events, formation-slot hover/exit and press events, and Confirm/Cancel button presses are forwarded from `BattleArena` controls to the transaction orchestrator as ID-based commands. The orchestrator evaluates rules, changes transaction state, and publishes one presentation snapshot containing the state, generation, message, button visibility/enabled state, and per-unit indicator roles. `BattleArena` renders that snapshot into the existing skill panel and formation slots. Confirmed effect plans travel in the opposite direction through the guarded battle-integration seam; scene controls never call damage, Speed, cooldown, queue, log, or result mutation directly. Authoritative battle-change notifications then return to the orchestrator for stale reevaluation and a fresh presentation snapshot.
+
 ## Transaction state model
 
 One arena owns at most one skill interaction transaction. The explicit states are:
@@ -190,6 +194,25 @@ Every accepted skill applies its listed effect exactly once, produces one logica
 Front-row slots are semantic indices 0–2 and back-row slots are indices 3–5. Defeated or invalid units are never valid targets.
 
 Shadow Lunge chooses the active enemy with the greatest row distance from the user (`abs((target.slot_index % 3) - (user.slot_index % 3))`). Ties prefer a back-row target over a front-row target, then the highest semantic slot index. Automated tests lock this ordering explicitly.
+
+## Minimum automated battle fixture
+
+The focused runner uses a deterministic test-only fixture for mechanics and transaction tests. It reuses the canonical six active `CharacterSkill` definitions without changing the production player/enemy rosters.
+
+| Unit ID | Side | Slot | Speed | HP | Purpose |
+|---|---|---:|---:|---:|---|
+| `player_actor` | Player | 0 by default; 4 for back-row cases | 10 | 20/20 | Current actor; receives the single active skill under test |
+| `player_ally_front` | Player | 1 | 5 | 20/20 | Rally ally and ownership control |
+| `player_ally_back` | Player | 5 | 4 | 20/20 | Rally ally and row coverage |
+| `enemy_front` | Enemy | 0 | 3 | 20/20 | Active free-target candidate and near predefined candidate |
+| `enemy_offset` | Enemy | 1 | 2 | 20/20 | Active free-target candidate and distance/tie coverage |
+| `enemy_back` | Enemy | 5 | 1 | 20/20 | Active free-target candidate and farthest-target coverage |
+
+Initial authoritative state is round 1, outcome `IN_PROGRESS`, `player_actor` at queue index 0, no cooldowns, no temporary modifiers, no defeated units, no action in progress, no transaction, and `battle_revision == 0` immediately after fixture construction. Fixture construction itself establishes revision 0 rather than incrementing it.
+
+Each test creates a fresh fixture. It may apply only the named setup override needed by that case: move `player_actor` between slots 0 and 4 before queue construction, set actor HP to 10/20 or 11/20, mark/remove/change ownership of a target, seed a cooldown, advance to round 2, or add/expire a Speed modifier. Tests never depend on state left by another case.
+
+For per-skill execution cases, `player_actor` receives exactly one copied canonical active definition, including Savage Blow or Shadow Lunge. This makes all six rule/effect contracts executable through the player transaction harness while production `enemy_0` and `enemy_4` remain player-inspectable and non-controllable. Separate fixture-contract assertions continue to verify the unchanged production roster ownership.
 
 ## Cooldown and duration semantics
 
@@ -329,7 +352,7 @@ Every confirmed skill consumes the acting unit's one active action for the turn.
 
 ## Stale-state detection and messages
 
-The battle owns a monotonically increasing `battle_revision`. It increments after every authoritative change that can affect actor ownership, skill availability, target validity, target calculation, effect results, or turn order. Target evaluation and effect plans capture the revision they evaluated.
+The battle owns a monotonically increasing `battle_revision`. It increments once after each committed atomic authoritative mutation that can affect actor ownership, skill availability, target validity, target calculation, effect results, or turn order—including completed effect-plan application, turn/round advancement, unit removal or ownership change, cooldown tick, modifier add/expiry, and external battle reconfiguration. Multiple field writes inside one guarded effect-plan commit produce one revision increment. Rejected validation, cancellation, hover/selection changes, presentation updates, and other transient UI events do not increment it. Target evaluation and effect plans capture the committed revision they evaluated.
 
 While `TARGETING`, authoritative battle-change notifications trigger immediate reevaluation. If the locked action is no longer valid, the lock is cleared immediately, Confirm is disabled, indicators are removed, and the transaction enters `REJECTED_STALE`. Confirmation repeats the same validation as a mandatory backstop, so an unobserved or same-frame change still cannot resolve.
 
@@ -447,7 +470,7 @@ At the 1152×648 target viewport:
 6. Lock and retarget a valid candidate, verifying only the current lock retains the green border and center tint.
 7. Start every predefined skill and verify the complete affected target set locks immediately.
 8. Cancel both targeting styles and verify complete cleanup without mutation.
-9. Confirm all six active skills and verify exact damage or Speed effects, one log/action/turn advance, cooldown timing, modifier expiration, and queue behavior.
+9. Using the test-only player execution fixture described above, confirm all six active skills and verify exact damage or Speed effects, one log/action/turn advance, cooldown timing, modifier expiration, and queue behavior. The harness is verification-only and does not change production roster ownership.
 10. Exercise front/back, HP, round-1, cooldown, ownership, passive, defeated, and battle-complete rejection paths.
 11. Invalidate a locked target before confirmation and verify stale resolution is rejected safely.
 12. Verify targeting messages, action summaries, Confirm, Cancel, and blocking reasons appear only when needed inside the existing skill panel.
