@@ -1,0 +1,29 @@
+Acceptance criterion: AC2.7
+Tested implementation commit: 43a792bd92144eb9d604ed4951b404aac0e192d0
+Engine: Godot 4.7.1 stable Steam
+Result: PASS
+
+Project gates:
+- GodotIQ validate(target="project", detail="brief"): PASS, 0 errors, 0 warnings, 2 existing informational orphan-signal reports.
+- GodotIQ check_errors(scope="project"): PASS, 31 scripts checked, 0 parser errors.
+- GodotIQ signal_map(find="orphans"): no new project-signal orphan introduced; built-in test signal emissions are reported as external definitions.
+
+Focused runner:
+- Command: godot --headless --path . --script res://Tests/Battle/test_ac2_7_skill_preview.gd
+- Result: PASS, output contained "AC2.7 tests passed" and no SCRIPT ERROR.
+
+AC2 regression runners:
+- Tests/Map/test_ac2_1_battle_arena.gd: PASS (11/11)
+- Tests/Battle/test_ac2_2_speed_order.gd: PASS (12/12)
+- Tests/Battle/test_ac2_3_damage_defeat_log.gd: PASS (18/18)
+- Tests/Battle/test_ac2_4_battle_results.gd: PASS (9/9)
+- Tests/Battle/test_ac2_5_reward_selection.gd: PASS (15/15)
+- Tests/Battle/test_ac2_6_character_skills.gd: PASS (19/19)
+- Tests/Battle/test_ac2_7_skill_preview.gd: PASS
+
+Complete repository corpus:
+- Command shape: godot --headless --path . --script res://<test-runner>
+- Scope: all 16 GDScript runners under Tests, sorted by full path.
+- Result: PASS; all 16 runners printed their expected PASS marker.
+
+Expected negative-validation messages from CharacterSkill and BattleUnitState rejection tests were present. They are asserted fixture behavior, not parser or runtime failures.

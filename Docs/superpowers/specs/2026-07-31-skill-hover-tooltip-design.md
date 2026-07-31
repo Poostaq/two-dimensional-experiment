@@ -72,7 +72,7 @@ BattleArena
 └── ... existing root children
 ```
 
-`SkillTooltipPanel` and all six labels are `unique_name_in_owner`. The panel starts hidden, has `z_index = 20`, `mouse_filter = Control.MOUSE_FILTER_IGNORE`, and a `custom_minimum_size.x` of `288.0`. `SkillTooltipMargin` applies 10 pixels on every side. `SkillTooltipContent` uses 4 pixels of vertical separation. Every label uses `mouse_filter = Control.MOUSE_FILTER_IGNORE`; the four description labels use word wrapping. There is no prompt label because the tooltip is absent when no skill is hovered.
+`SkillTooltipPanel` and all six labels are `unique_name_in_owner`. The panel starts hidden, has `z_index = 20`, `mouse_filter = Control.MOUSE_FILTER_IGNORE`, and a `custom_minimum_size.x` of `288.0`. `SkillTooltipContent` uses the theme's default vertical separation. Every label uses `mouse_filter = Control.MOUSE_FILTER_IGNORE`; the four description labels use word wrapping and a `custom_minimum_size.x` of `268.0` so their first minimum-size calculation uses the intended content width. There is no prompt label because the tooltip is absent when no skill is hovered.
 
 After removing the fixed preview, `SkillSelectionRegion` becomes the only child of `SkillInspectorBody` and uses horizontal expand/fill with stretch ratio `1.0`.
 
@@ -137,7 +137,7 @@ button.mouse_exited.connect(
 4. Call `reset_size()` on the panel so the new wrapped content determines its minimum size.
 5. Defer `_position_skill_tooltip(button, generation)` once, passing the captured generation value.
 
-The deferred positioning method returns without moving the tooltip unless all of these remain true: the panel is visible, the button is valid, `_hovered_skill_button == button`, and the captured generation equals `_skill_tooltip_generation`. This prevents stale deferred calls from repositioning a newer tooltip.
+The deferred positioning method accepts its button argument as `Variant`, then returns without moving the tooltip unless the value is a valid `Button`, the panel is visible, `_hovered_skill_button == button`, and the captured generation equals `_skill_tooltip_generation`. The untyped boundary is required because GDScript rejects a freed object before entering a typed `Button` parameter. This prevents freed or stale deferred calls from producing an argument error or repositioning a newer tooltip.
 
 `_on_skill_button_mouse_exited(button)` hides only when `button == _hovered_skill_button`. Duplicate exits or an exit from a previously hovered button are no-ops. `_hide_skill_tooltip()` increments the generation, clears `_hovered_skill_button`, hides the panel, and clears all six labels; repeated calls are safe.
 

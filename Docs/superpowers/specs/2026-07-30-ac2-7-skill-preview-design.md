@@ -2,6 +2,8 @@
 
 **Status:** Approved
 
+**Presentation superseded:** The fixed right-docked preview described below was replaced by the shared hover-tooltip design in `Docs/superpowers/specs/2026-07-31-skill-hover-tooltip-design.md`. The `CharacterSkill` metadata contract, exact fixture descriptions, and non-actionability requirements remain authoritative.
+
 **Acceptance criterion:** AC2.7 — The player can inspect a readable description for each skill before committing an action, including passive skills from an inspectable UI surface.
 
 ## Goal

@@ -197,7 +197,7 @@ SkillTooltipPanel (PanelContainer)
         └── SkillTooltipCooldownLabel (Label)
 ```
 
-Set the panel to `visible=false`, `unique_name_in_owner=true`, `z_index=20`, `mouse_filter=2`, and `custom_minimum_size=Vector2(288, 0)`. Set all four margin constants to `10`, content separation to `4`, all labels to `mouse_filter=2`, and all four description labels to `autowrap_mode=2`. Mark all six labels unique in owner.
+Set the panel to `visible=false`, `unique_name_in_owner=true`, `z_index=20`, `mouse_filter=2`, and `custom_minimum_size=Vector2(288, 0)`. Set all labels to `mouse_filter=2`; set all four description labels to `autowrap_mode=2` and `custom_minimum_size=Vector2(268, 0)` so first-frame wrapped-height measurement is deterministic. Mark all six labels unique in owner.
 
 - [ ] **Step 4: Save and verify the scene once**
 
@@ -303,14 +303,17 @@ func _on_skill_button_mouse_exited(button: Button) -> void:
 	_hide_skill_tooltip()
 
 
-func _position_skill_tooltip(button: Button, generation: int) -> void:
+func _position_skill_tooltip(button_value: Variant, generation: int) -> void:
+	if not is_instance_valid(button_value) or not button_value is Button:
+		return
+	var button := button_value as Button
 	if (
 		not _skill_tooltip_panel.visible
-		or not is_instance_valid(button)
 		or button != _hovered_skill_button
 		or generation != _skill_tooltip_generation
 	):
 		return
+	_skill_tooltip_panel.size = _skill_tooltip_panel.get_combined_minimum_size()
 	var button_rect := button.get_global_rect()
 	var tooltip_size := _skill_tooltip_panel.size
 	var viewport_size := get_viewport_rect().size
