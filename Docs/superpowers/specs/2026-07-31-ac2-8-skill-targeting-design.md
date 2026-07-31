@@ -32,6 +32,10 @@ AC2.8 excludes:
 - Animation, audio, final visual polish, balancing, localization, persistence, and serialization.
 - Player-controlled enemy actions; enemy skills remain inspectable but cannot be executed by the player.
 
+### Implementation-detail non-goals
+
+AC2.8 specifies gameplay rules, transaction safety, data boundaries needed for deterministic verification, and the minimum targeting feedback required for player comprehension. It does not require a particular number of scripts, exact class filenames, animation system, shader implementation, particle treatment, audio cue, transition timing, or production-art style. Architectural seams in this document constrain responsibility and mutation safety; equivalent implementation structures satisfy the criterion when all observable contracts and tests pass.
+
 ## Architecture
 
 `CharacterSkill` retains its existing identity, classification, and player-facing description fields and gains typed mechanical data. Battle logic must never parse `effect_text`, `targeting_text`, `requirements_text`, or `cooldown_text`; those strings remain presentation data.
@@ -41,6 +45,116 @@ AC2.8 excludes:
 A focused skill rules/resolution unit owns candidate calculation, requirement checks, confirmation validation, effect application, and cooldown application. Its interfaces return structured results rather than mutating UI. This keeps targeting and mechanics independently testable and prevents `BattleArena` from becoming the only rules container.
 
 `BattleArena` owns the interaction transaction: hovered skill preview, selected skill, targeting mode, locked targets, contextual messages, confirmation/cancellation, visual indicators, and lifecycle cleanup. It delegates rule evaluation and effect resolution, then uses the established damage, defeat, battle-log, turn, and battle-result paths.
+
+## Implementation seams and mutation ownership
+
+These seams describe the intended separation of responsibilities. Equivalent names and file boundaries are acceptable when they preserve the contracts and observable behavior; the physical module layout is not itself an AC2.8 acceptance requirement.
+
+| Seam | Likely responsibility | Mutation authority |
+|---|---|---|
+| Skill data / typed contract | `CharacterSkill` identity, authored description, targeting mode, target rule, requirements, effect definition, and cooldown definition | Construction-time validation and defensive copying only |
+| Rules evaluation | Pure target-candidate evaluation, blocking-reason evaluation, target-lock validation, and effect-plan construction | None; reports structured state only |
+| Battle transaction orchestration | Interaction state, generation token, selected actor/skill, locked targets, confirm de-duplication, cancellation, and stale rejection | Transient transaction state only |
+| UI presentation and indicators | Skill-panel messages/buttons and formation-slot preview, hover, invalid, and locked visuals | Control presentation only; never combat state |
+| Battle integration and logging | Apply an accepted effect plan through damage, Speed, cooldown, queue, log, turn, defeat, and result paths | Sole authority for committed combat mutation |
+
+Rules evaluation must remain callable without scene nodes. UI presentation consumes snapshots/results and never determines whether an action is legal.
+
+## Transaction state model
+
+One arena owns at most one skill interaction transaction. The explicit states are:
+
+- `IDLE` — no skill preview or action transaction.
+- `PREVIEWING` — a skill is hovered; target indicators are advisory and no action is selected.
+- `TARGETING` — an executable skill is selected; free targets await a lock or predefined targets are already locked and awaiting confirmation.
+- `VALIDATING` — confirmation has been accepted for processing and fresh validation is running; further clicks are ignored.
+- `RESOLVING` — an accepted immutable effect plan is being applied; further action input is ignored.
+- `CANCELLED` — a transient cleanup state entered after explicit or lifecycle cancellation; cleanup completes before transition to `IDLE`.
+- `REJECTED_STALE` — validation or authoritative state observation invalidated the transaction; no effect was applied and a concrete reason is visible.
+
+Allowed transitions are:
+
+| Event | Current state | Result |
+|---|---|---|
+| Active-skill hover enters | `IDLE` | Evaluate preview, increment generation, enter `PREVIEWING` |
+| Skill hover changes | `PREVIEWING` | Replace preview under a new generation; remain `PREVIEWING` |
+| Skill hover exits | `PREVIEWING` | Clear preview and enter `IDLE` |
+| Usable active skill clicked | `IDLE` or matching `PREVIEWING` | Clear preview, create transaction, enter `TARGETING` |
+| Unusable active skill clicked | `IDLE` or `PREVIEWING` | Clear preview, remain `IDLE`, show blocking reason; no transaction exists |
+| Passive, enemy-owned, defeated, or non-current skill clicked | `IDLE` or `PREVIEWING` | Remain non-actionable, show exact blocking reason, never enter `TARGETING` |
+| Candidate hovered/exited | `TARGETING` | Update hover-only indicator under the transaction generation; remain `TARGETING` |
+| Valid free target clicked | `TARGETING` | Replace target lock and remain `TARGETING` |
+| Invalid target clicked | `TARGETING` | Preserve existing valid lock, show invalid-target reason, remain `TARGETING` |
+| Confirm clicked with complete lock | `TARGETING` | Latch confirmation and enter `VALIDATING` |
+| Validation succeeds | `VALIDATING` | Freeze the returned effect plan and enter `RESOLVING` |
+| Validation fails | `VALIDATING` | Clear lock, preserve reason, enter `REJECTED_STALE` |
+| Resolution succeeds | `RESOLVING` | Clear transaction and enter `IDLE` after one committed action |
+| Cancel clicked | `TARGETING` or `REJECTED_STALE` | Enter `CANCELLED`, clear transient state, then `IDLE` |
+| Authoritative invalidation observed | `TARGETING` | Clear lock immediately and enter `REJECTED_STALE` |
+| New inspected unit selected | `PREVIEWING`, `TARGETING`, or `REJECTED_STALE` | Cancel/clear transaction, then inspect in `IDLE` |
+| Battle exit, completion, or reconfiguration | Any non-resolving state | Enter `CANCELLED`, clear, then `IDLE` |
+| Any action input | `VALIDATING`, `RESOLVING`, or `CANCELLED` | Ignore it |
+
+Selecting a different skill while a transaction is active does not replace the transaction. Other skill buttons are disabled in `TARGETING`, `VALIDATING`, and `RESOLVING`; synthetic or stale click callbacks are rejected by transaction ID and generation. The player must Cancel before starting another skill.
+
+`CANCELLED` is not a player-visible resting state. `REJECTED_STALE` persists with its reason until the player cancels, selects a new inspected unit, or reselects the same skill to obtain a fresh evaluation.
+
+## Rules and resolution interface contract
+
+The rules layer reports immutable structured results. Concrete implementation may use typed `RefCounted` result classes, but consumers must receive the following exact fields and meanings.
+
+### Target evaluation result
+
+`SkillTargetEvaluation` contains:
+
+- `actor_id: StringName`
+- `skill_id: StringName`
+- `targeting_mode: CharacterSkill.TargetingMode`
+- `can_start: bool`
+- `blocking_reason: SkillActionReason` — `NONE` only when `can_start` is true
+- `valid_target_ids: Array[StringName]` — selectable candidates for free targeting
+- `invalid_targets: Dictionary[StringName, SkillActionReason]` — relevant-side candidates that cannot be selected
+- `affected_target_ids: Array[StringName]` — exact predefined targets; empty for free targeting before a lock
+- `battle_revision: int` — authoritative revision evaluated
+
+Target ID arrays are unique and deterministic. `can_start` describes actor/skill availability, not whether a free target has already been locked.
+
+### Confirmation validation result
+
+`SkillConfirmationValidation` contains:
+
+- `accepted: bool`
+- `reason: SkillActionReason` — `NONE` only when accepted
+- `actor_id: StringName`
+- `skill_id: StringName`
+- `target_ids: Array[StringName]`
+- `evaluated_revision: int`
+- `effect_plan: SkillEffectPlan` — non-null only when accepted
+
+### Rejection reason
+
+`SkillActionReason` contains:
+
+- `code: SkillActionReason.Code`
+- `message: String`
+- `actor_id: StringName`
+- `skill_id: StringName`
+- `target_id: StringName` — empty when the reason is not target-specific
+
+The required codes are `NONE`, `NOT_CURRENT_ACTOR`, `ACTOR_INACTIVE`, `ENEMY_NOT_PLAYER_CONTROLLABLE`, `PASSIVE_NOT_ACTIONABLE`, `BATTLE_COMPLETE`, `POSITION_REQUIRED`, `HEALTH_REQUIRED`, `PRE_USE_COOLDOWN`, `POST_USE_COOLDOWN`, `TARGET_INVALID`, `TARGET_DEFEATED`, `TARGET_REMOVED`, `TARGET_OWNERSHIP_CHANGED`, `ROUND_CHANGED`, `TURN_ORDER_CHANGED`, `SKILL_AVAILABILITY_CHANGED`, and `REVISION_MISMATCH`.
+
+### Effect plan and guarded application
+
+Rules validation builds an immutable `SkillEffectPlan`; it does not apply effects directly. The plan contains:
+
+- actor, skill, and ordered target IDs;
+- ordered damage operations with exact amounts;
+- ordered Speed-modifier operations with amount and expiry boundary;
+- post-use cooldown operation when applicable;
+- `advance_turn: bool`, which is true for every accepted AC2.8 active skill;
+- the authoritative battle revision from which it was built.
+
+Battle integration applies the whole plan inside one guarded transaction. It first verifies the plan revision and transaction latch, then commits ordered operations. If either check fails, it applies nothing. No UI callback may apply individual effect operations directly.
 
 ## Typed skill contract
 
@@ -60,14 +174,16 @@ The existing read-only and defensive-duplication behavior must cover every new t
 
 ## Exact active-skill behavior
 
-| Skill | Targeting | Requirement | Effect | Cooldown |
+Every accepted skill applies its listed effect exactly once, produces one logical action/log record, advances the acting unit's turn exactly once, and participates in defeat and battle-result evaluation. Every blocked, cancelled, stale, or rejected attempt applies no effect and does not advance the turn.
+
+| Skill | Selection and target validity | Blocking reasons | Effect application | Cooldown semantics |
 |---|---|---|---|---|
-| Shield Bash | Freely select one active enemy | User occupies a front-row slot | Deal 7 damage | Apply 1 action after use |
-| Quick Step | Predefined self | None | Gain 2 Speed until the end of the user's next turn | Apply 2 actions after use |
-| Quick Strike | Freely select one active enemy | None | Deal 5 damage | None |
-| Rally | Predefined all active allies, including user | None | Each target gains 2 Speed until the end of the current round | Apply 2 actions after use |
-| Savage Blow | Freely select one active enemy | User is above 50% HP | Deal 12 damage | Apply 2 actions after use |
-| Shadow Lunge | Predefined farthest active enemy | User occupies a back-row slot | Deal 10 damage | Unavailable during round 1; no cooldown after use |
+| Shield Bash | Free selection; exactly one active enemy owned by the opposing side | Non-current/inactive actor, enemy ownership, battle complete, user not in semantic front row, missing/invalid/defeated/removed target | Apply 7 damage to the confirmed target | On success set counter to 1 after the current action's tick; unavailable until one later confirmed action elapses |
+| Quick Step | Predefined; exactly the active user | Non-current/inactive actor, enemy ownership, battle complete, post-use counter above zero | Add a +2 Speed modifier to self; it expires after the user's next completed action | On success set counter to 2 after the current action's tick; unavailable until two later confirmed actions elapse |
+| Quick Strike | Free selection; exactly one active enemy owned by the opposing side | Non-current/inactive actor, enemy ownership, battle complete, missing/invalid/defeated/removed target | Apply 5 damage to the confirmed target | No pre-use gate or post-use counter |
+| Rally | Predefined; every active ally including the user, ordered by semantic slot index; at least the active user must be present | Non-current/inactive actor, enemy ownership, battle complete, post-use counter above zero | Add an independent +2 Speed modifier to every locked target; each expires at the end of the current round | On success set counter to 2 after the current action's tick; unavailable until two later confirmed actions elapse |
+| Savage Blow | Free selection; exactly one active enemy owned by the opposing side | Non-current/inactive actor, enemy ownership, battle complete, user at or below 50% HP, missing/invalid/defeated/removed target | Apply 12 damage to the confirmed target | On success set counter to 2 after the current action's tick; unavailable until two later confirmed actions elapse |
+| Shadow Lunge | Predefined; exactly the deterministic farthest active enemy | Non-current/inactive actor, enemy ownership, battle complete, user not in semantic back row, round 1, or no active enemy | Apply 10 damage to the locked farthest target | Pre-use gate blocks round 1; no post-use counter |
 
 “Above 50% HP” is strict: `current_hp * 2 > max_hp`. Exactly 50% is invalid.
 
@@ -88,6 +204,17 @@ Cooldown counters represent future successfully confirmed battle actions that mu
 Quick Step's Speed bonus expires after the affected unit completes its next action. Rally's Speed bonus expires when the current round ends. Temporary bonuses stack additively when their independent sources overlap, and each source expires according to its own duration.
 
 Whenever Speed changes, only the unresolved portion of the current round queue is rebuilt. Units that already acted do not act again, and no active unresolved unit is dropped. The current action completes before the rebuilt order becomes authoritative.
+
+## Ownership and action boundaries
+
+The only actor that may start a player-facing skill transaction is the current turn's active `PLAYER` unit. That actor may start only one of its own valid active skills.
+
+- A non-current player unit may be inspected but cannot enter `TARGETING`.
+- An enemy unit and its skills may be inspected and hovered for AC2.7 descriptions, but an enemy skill can never enter a player-facing AC2.8 transaction.
+- A defeated or removed unit cannot act.
+- A passive skill can never transition from inspection or preview into `TARGETING`, `VALIDATING`, or `RESOLVING`.
+- No UI metadata, selected inspector unit, or synthetic callback can confer action ownership; ownership comes only from authoritative battle turn state.
+- Enemy AI skill selection and resolution are not introduced by AC2.8.
 
 ## Skill-hover preview
 
@@ -200,6 +327,42 @@ Speed effects update effective Speed without overwriting the unit's base Speed. 
 
 Every confirmed skill consumes the acting unit's one active action for the turn. No other action may resolve from that unit during the same turn.
 
+## Stale-state detection and messages
+
+The battle owns a monotonically increasing `battle_revision`. It increments after every authoritative change that can affect actor ownership, skill availability, target validity, target calculation, effect results, or turn order. Target evaluation and effect plans capture the revision they evaluated.
+
+While `TARGETING`, authoritative battle-change notifications trigger immediate reevaluation. If the locked action is no longer valid, the lock is cleared immediately, Confirm is disabled, indicators are removed, and the transaction enters `REJECTED_STALE`. Confirmation repeats the same validation as a mandatory backstop, so an unobserved or same-frame change still cannot resolve.
+
+Required stale cases and exact panel messages are:
+
+| Change | Detection rule | Message |
+|---|---|---|
+| Target defeated | Locked target still exists but `is_active()` is false | `Target was defeated. Select another target.` |
+| Target removed | Locked target ID no longer resolves in the arena roster | `Target is no longer in battle. Select another target.` |
+| Target ownership changed | Locked target no longer belongs to the skill's required side | `Target changed sides and is no longer valid.` |
+| Acting ownership/current actor changed | Actor is no longer the current active player unit | `Only the current player unit can act.` |
+| Battle completed | Outcome is no longer in progress | `Battle is already complete.` |
+| Round progressed | Current round differs from the captured round and changes a gate or duration boundary | `Round advanced. Review this skill again.` |
+| Cooldown/availability changed | Skill cooldown, position, HP requirement, active state, or definition no longer permits use | `Skill availability changed. Review this skill again.` |
+| Speed/turn-order changed | Speed revision changes current actor ownership or predefined evaluation validity | `Turn order changed. Review this skill again.` |
+| Unclassified revision mismatch | Captured revision differs and no more specific reason applies | `Battle state changed. Review this skill again.` |
+
+A revision change that does not invalidate the actor, skill, or exact locked target set may refresh the transaction to the new revision and remain `TARGETING`. It must not silently change a predefined locked target set; if reevaluation selects different predefined targets, the old lock is cleared and the transaction is rejected as stale.
+
+## Callback and re-entry safety
+
+Every preview and transaction receives a monotonically increasing generation. Hover, deferred positioning, slot-enter/exit, target-click, and skill-click callbacks capture both the generation and relevant actor/skill/target ID. Before changing presentation or transaction state, a callback must match the current generation, state, and IDs.
+
+- A newer skill hover supersedes all older preview callbacks.
+- Leaving hover increments the preview generation before clearing indicators, so a delayed preview cannot restore them.
+- Entering `TARGETING` increments the generation and invalidates every `PREVIEWING` callback.
+- Rapid candidate enter/exit events are last-event-wins within the same transaction generation; they may change hover-only indicators but never the locked indicator.
+- Rapid target clicks may replace a free-target lock only while the transaction remains `TARGETING`; a click captured before cancellation or skill change is ignored afterward.
+- The first eligible Confirm click atomically sets a confirmation latch before entering `VALIDATING`. Further Confirm, target, skill, or Cancel callbacks are ignored in `VALIDATING` and `RESOLVING`.
+- The confirmation latch is cleared only when resolution finishes or transaction cleanup completes.
+- Deferred tooltip or preview layout work may update geometry only; it cannot change candidate evaluation, locked targets, messages, or combat state.
+- A callback with a freed control, unresolved unit, foreign transaction ID, mismatched generation, or unexpected state returns without side effects.
+
 ## Lifecycle and defensive behavior
 
 - Changing the inspected character cancels an active targeting transaction and clears all indicators.
@@ -217,7 +380,7 @@ Every confirmed skill consumes the acting unit's one active action for the turn.
 
 ### Automated coverage
 
-Create a focused AC2.8 test runner that verifies:
+Create `Tests/Battle/test_ac2_8_skill_targeting.gd` as the focused AC2.8 runner. It must verify:
 
 - Valid typed mechanical definitions survive defensive copying.
 - Every invalid enum combination, negative cooldown, impossible target count, and mismatched allegiance/rule definition is rejected.
@@ -243,8 +406,34 @@ Create a focused AC2.8 test runner that verifies:
 - Inspection change, defeat, battle completion, reconfiguration, exit, and new battle clear transient state.
 - Passive, enemy, defeated, and non-current skills cannot start an action.
 - Contextual messages and buttons are hidden when not needed.
+- `_test_stale_target_rejection_clears_lock_without_mutation()` covers defeat, removal, ownership change, battle completion, round change, cooldown/availability change, and turn-order change with each exact rejection message.
+- `_test_failed_confirmation_has_no_partial_mutation()` snapshots HP, effective Speed, modifiers, cooldowns, queue, turn, round, logs, and outcome before every rejected confirmation and proves exact equality afterward.
+- `_test_confirmation_reentry_resolves_once()` fires repeated confirmation in the same frame and proves one effect plan, one damage/Speed application, one cooldown application, one log record, and one turn advance.
+- `_test_callback_generation_supersedes_stale_events()` delivers old hover, deferred preview, target-click, and skill-click callbacks after a newer generation and proves they cannot change indicators, messages, locks, state, or combat data.
 
 Run the focused AC2.1 through AC2.7 runners as regressions after AC2.8 passes.
+
+### Explicit acceptance notes
+
+AC2.8 fails if any of the following is observed, even when all six happy-path skills appear usable:
+
+- A stale target remains confirmable after defeat, removal, ownership change, battle completion, or relevant revision change.
+- Any failed confirmation applies partial damage, Speed, modifier, cooldown, queue, log, turn, round, or outcome mutation.
+- Re-entrant confirmation resolves more than once.
+- A superseded callback restores an old preview, message, target lock, or actionable state.
+
+### Acceptance traceability
+
+| Contract | Classification | Automated path | Manual/runtime path | Completion evidence |
+|---|---|---|---|---|
+| Typed target, requirement, effect, and cooldown rules | Logic | Definition and fixture cases in `test_ac2_8_skill_targeting.gd` | Inspect all six authored tooltips and actions | AC2.8 automated log |
+| Free and predefined target previews/locks | Integration + visual | Candidate, indicator-state, free-lock, and predefined-lock cases | Manual steps 1–7 at 1152×648 | Automated log + manual record |
+| Position, HP, pre-use, and post-use blocking | Logic + integration | Front/back, exact-50%, round-1, and cooldown counter cases | Manual step 10 | Automated log + manual record |
+| Six exact effects and turn advancement | Integration | Per-skill effect-plan and resolution cases | Manual step 9 | Automated log + manual record |
+| Stale rejection and zero partial mutation | Integration | Named stale and failed-confirmation tests above | Manual step 11 | Automated log + manual record |
+| Confirmation de-duplication | Logic + integration | Named re-entry test above | Rapid Confirm input during manual step 9 | Automated log + manual record |
+| Callback supersession safety | Integration | Named generation test above | Rapid hover/selection exercise during manual steps 1 and 6 | Automated log + manual record |
+| Lifecycle cleanup and contextual visibility | Integration + visual | Cleanup and hidden-when-unused cases | Manual steps 8, 12, and 13 | Automated log + manual record |
 
 ### Manual runtime coverage
 
