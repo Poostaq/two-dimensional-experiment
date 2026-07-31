@@ -638,20 +638,24 @@ layout_mode = 2
 
 [node name="SkillTooltipEffectLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1390629672]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
 
 [node name="SkillTooltipTargetingLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=552847106]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
 
 [node name="SkillTooltipRequirementsLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1542155304]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
 
 [node name="SkillTooltipCooldownLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1971711230]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
