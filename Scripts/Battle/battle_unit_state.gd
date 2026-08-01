@@ -142,8 +142,10 @@ func add_speed_modifier(
 	return true
 
 
-func expire_speed_modifiers_after_action() -> void:
+func expire_speed_modifiers_after_action(excluded_source_ids: Array[StringName] = []) -> void:
 	for source_id: StringName in _speed_modifiers.keys():
+		if excluded_source_ids.has(source_id):
+			continue
 		var modifier: Dictionary = _speed_modifiers[source_id]
 		if modifier.get("expiry") != ModifierExpiry.NEXT_ACTION:
 			continue
