@@ -263,8 +263,9 @@ func get_skill_presentation_snapshot() -> Dictionary:
 	return _skill_transaction.presentation_snapshot()
 
 
-func notify_authoritative_battle_change() -> void:
-	_battle_revision += 1
+func notify_authoritative_battle_change(increment_revision: bool = true) -> void:
+	if increment_revision:
+		_battle_revision += 1
 	if (
 		_skill_transaction.state != BattleSkillTransaction.State.TARGETING
 		or _skill_transaction.locked_target_ids.is_empty()
@@ -381,6 +382,18 @@ func confirm_skill_action() -> bool:
 		_skill_transaction.finish_resolution(generation)
 	_render_skill_transaction()
 	return committed
+
+
+func remove_battle_unit(unit_id: StringName) -> bool:
+	var unit: BattleUnitState = get_unit_by_id(unit_id)
+	if not is_instance_valid(unit):
+		return false
+	_units.erase(unit)
+	_turn_queue = BattleTurnQueue.build(_units)
+	_current_turn_index = 0
+	notify_authoritative_battle_change()
+	_refresh_turn_ui()
+	return true
 
 
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
@@ -586,6 +599,7 @@ func advance_turn() -> void:
 		_turn_queue = BattleTurnQueue.build(_units)
 		_current_turn_index = 0
 	_battle_revision += 1
+	notify_authoritative_battle_change(false)
 	_refresh_turn_ui()
 
 
@@ -1225,6 +1239,8 @@ func _on_advance_debug_pressed() -> void:
 
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
+	_skill_transaction.reset()
+	_render_skill_transaction()
 	_clear_reward_ui()
 	call_deferred("_emit_exit_requested")
 

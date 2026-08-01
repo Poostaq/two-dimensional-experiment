@@ -242,7 +242,14 @@ func _is_current(callback_generation: int) -> bool:
 
 func _is_stale_reason(code: SkillActionReason.Code) -> bool:
 	return code in [
+		SkillActionReason.Code.NOT_CURRENT_ACTOR,
 		SkillActionReason.Code.ACTOR_INACTIVE,
+		SkillActionReason.Code.ENEMY_NOT_PLAYER_CONTROLLABLE,
+		SkillActionReason.Code.PASSIVE_NOT_ACTIONABLE,
+		SkillActionReason.Code.POSITION_REQUIRED,
+		SkillActionReason.Code.HEALTH_REQUIRED,
+		SkillActionReason.Code.PRE_USE_COOLDOWN,
+		SkillActionReason.Code.POST_USE_COOLDOWN,
 		SkillActionReason.Code.BATTLE_COMPLETE,
 		SkillActionReason.Code.TARGET_DEFEATED,
 		SkillActionReason.Code.TARGET_REMOVED,
