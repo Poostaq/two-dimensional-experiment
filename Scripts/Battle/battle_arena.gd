@@ -517,10 +517,13 @@ func _render_skill_transaction() -> void:
 		var unit_id: StringName = slot.get_meta("unit_id", &"")
 		var role: StringName = roles.get(unit_id, &"")
 		overlay.visible = not role.is_empty()
+		var tint: TextureRect = _get_or_create_indicator_tint(overlay)
 		if role.is_empty():
 			overlay.remove_theme_stylebox_override("panel")
+			tint.visible = false
 			continue
 		overlay.add_theme_stylebox_override("panel", _indicator_style(role))
+		_update_indicator_tint(tint, role)
 
 
 func _indicator_style(role: StringName) -> StyleBoxFlat:
@@ -529,15 +532,59 @@ func _indicator_style(role: StringName) -> StyleBoxFlat:
 	var border_color := Color(0.95, 0.2, 0.2, 1.0) if is_invalid else Color(0.25, 0.95, 0.45, 1.0)
 	style.border_color = border_color
 	style.set_border_width_all(3)
-	if role in [&"valid_preview", &"invalid_preview", &"invalid_hover", &"locked"]:
-		style.bg_color = Color(border_color.r, border_color.g, border_color.b, 0.14)
-	else:
-		style.bg_color = Color.TRANSPARENT
+	style.bg_color = Color.TRANSPARENT
 	style.corner_radius_top_left = 8
 	style.corner_radius_top_right = 8
 	style.corner_radius_bottom_left = 8
 	style.corner_radius_bottom_right = 8
 	return style
+
+
+func _get_or_create_indicator_tint(overlay: Panel) -> TextureRect:
+	var existing := overlay.get_node_or_null("CenterTint") as TextureRect
+	if is_instance_valid(existing):
+		return existing
+	var tint := TextureRect.new()
+	tint.name = "CenterTint"
+	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tint.offset_left = 4.0
+	tint.offset_top = 4.0
+	tint.offset_right = -4.0
+	tint.offset_bottom = -4.0
+	tint.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tint.stretch_mode = TextureRect.STRETCH_SCALE
+	overlay.add_child(tint)
+	return tint
+
+
+func _update_indicator_tint(tint: TextureRect, role: StringName) -> void:
+	var has_tint: bool = role in [
+		&"valid_preview",
+		&"invalid_preview",
+		&"invalid_hover",
+		&"locked",
+	]
+	tint.visible = has_tint
+	if not has_tint:
+		return
+	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var tint_color := Color(0.95, 0.2, 0.2, 0.16) if is_invalid else Color(0.25, 0.95, 0.45, 0.16)
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.7, 1.0])
+	gradient.colors = PackedColorArray([
+		tint_color,
+		Color(tint_color.r, tint_color.g, tint_color.b, tint_color.a * 0.35),
+		Color(tint_color.r, tint_color.g, tint_color.b, 0.0),
+	])
+	var texture := GradientTexture2D.new()
+	texture.width = 128
+	texture.height = 96
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1.0, 0.5)
+	texture.gradient = gradient
+	tint.texture = texture
 
 
 func perform_debug_damage() -> void:
