@@ -198,12 +198,20 @@ func _test_stale_target_rejects_without_mutation(arena: BattleArena) -> void:
 	arena.configure_units(units)
 	arena.begin_skill_action(&"player_stale", &"shield_bash")
 	arena.select_skill_target(&"enemy_stale")
+	var initial_battle_log_count: int = arena.get_battle_log_entries().size()
+	var initial_action_log_count: int = arena.get_battle_action_log_entries().size()
+	var initial_current_unit_id: StringName = arena.get_current_unit().unit_id
+	var initial_actor_speed: int = actor.get_effective_speed()
 	enemy.current_hp = 0
 	arena.notify_authoritative_battle_change()
 	_expect(arena.get_battle_revision() == 1, "Authoritative target defeat should increment revision once.")
 	_expect(not arena.confirm_skill_action(), "Defeated locked target should reject confirmation.")
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.REJECTED_STALE, "Stale target should enter REJECTED_STALE.")
 	_expect(actor.get_skill_cooldown(&"shield_bash") == 0, "Rejected stale action must not apply cooldown.")
+	_expect(actor.get_effective_speed() == initial_actor_speed, "Rejected stale action must not apply Speed modifiers.")
+	_expect(arena.get_battle_log_entries().size() == initial_battle_log_count, "Rejected stale action must not append damage logs.")
+	_expect(arena.get_battle_action_log_entries().size() == initial_action_log_count, "Rejected stale action must not append action logs.")
+	_expect(arena.get_current_unit().unit_id == initial_current_unit_id, "Rejected stale action must not advance the turn.")
 	_expect(arena.get_battle_revision() == 1, "Rejected stale action must not commit an additional revision.")
 
 
