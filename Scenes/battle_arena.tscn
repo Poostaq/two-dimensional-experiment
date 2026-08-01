@@ -81,6 +81,12 @@ modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3" unique_id=1522365209]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
+
 [node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1036836558]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -111,6 +117,12 @@ horizontal_alignment = 1
 modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0" unique_id=1761663776]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
 
 [node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1322027728]
 custom_minimum_size = Vector2(140, 80)
@@ -143,6 +155,12 @@ modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4" unique_id=1660369941]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
+
 [node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1949479684]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -173,6 +191,12 @@ horizontal_alignment = 1
 modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1" unique_id=827143908]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
 
 [node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1715924655]
 custom_minimum_size = Vector2(140, 80)
@@ -205,6 +229,12 @@ modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5" unique_id=636756879]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
+
 [node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1507983800]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -235,6 +265,12 @@ horizontal_alignment = 1
 modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2" unique_id=147045985]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
 
 [node name="CenterDivider" type="VSeparator" parent="Margin/VBox/Formations" unique_id=869679255]
 custom_minimum_size = Vector2(72, 0)
@@ -284,6 +320,12 @@ modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0" unique_id=939177655]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
+
 [node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1444131745]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -314,6 +356,12 @@ horizontal_alignment = 1
 modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3" unique_id=1786855970]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
 
 [node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1388062701]
 custom_minimum_size = Vector2(140, 80)
@@ -346,6 +394,12 @@ modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1" unique_id=604350600]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
+
 [node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1898023519]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -376,6 +430,12 @@ horizontal_alignment = 1
 modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4" unique_id=203310674]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
 
 [node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1830338772]
 custom_minimum_size = Vector2(140, 80)
@@ -408,6 +468,12 @@ modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
 
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2" unique_id=473541350]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
+
 [node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1678816950]
 custom_minimum_size = Vector2(140, 80)
 layout_mode = 2
@@ -438,6 +504,12 @@ horizontal_alignment = 1
 modulate = Color(1, 0.35, 0.35, 1)
 layout_mode = 2
 horizontal_alignment = 1
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5" unique_id=1977716227]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2
 
 [node name="TurnStatus" type="HBoxContainer" parent="Margin/VBox" unique_id=891639891]
 layout_mode = 2
@@ -511,6 +583,33 @@ text = "No character-specific skills"
 [node name="SkillInspectorSkills" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1077560603]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="SkillActionRegion" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=2020473495]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="SkillActionMessageLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=75753652]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillActionSummaryLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=715885485]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillActionButtons" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=346632962]
+layout_mode = 2
+
+[node name="SkillConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/SkillActionButtons" unique_id=2113784067]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Confirm"
+
+[node name="SkillCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/SkillActionButtons" unique_id=1089106861]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"
 
 [node name="BattleResultPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1316659299]
 unique_name_in_owner = true

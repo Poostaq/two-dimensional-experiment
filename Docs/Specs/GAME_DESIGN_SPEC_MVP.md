@@ -189,7 +189,7 @@
 - [x] AC2.5 — Winning battle presents multiple reward options based on the event type, with the player choosing from options such as recruitment, money, or item rewards
 - [x] AC2.6 — Each character can expose up to 4 character-specific skills, and each skill is identified as active or passive
 - [x] AC2.7 — The player can inspect a readable description for each skill before committing an action, including passive skills from an inspectable UI surface
-- [ ] AC2.8 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
+- [x] AC2.8 — Skills support positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
 - [ ] AC2.9 — Skills grant combo bonuses only when their specific combo conditions are met
 
 ### Unit Management

@@ -49,6 +49,11 @@ const SKILL_TOOLTIP_ANCHOR_GAP: float = 8.0
 @onready var _skill_tooltip_targeting_label: Label = %SkillTooltipTargetingLabel
 @onready var _skill_tooltip_requirements_label: Label = %SkillTooltipRequirementsLabel
 @onready var _skill_tooltip_cooldown_label: Label = %SkillTooltipCooldownLabel
+@onready var _skill_action_region: VBoxContainer = %SkillActionRegion
+@onready var _skill_action_message_label: Label = %SkillActionMessageLabel
+@onready var _skill_action_summary_label: Label = %SkillActionSummaryLabel
+@onready var _skill_confirm_button: Button = %SkillConfirmButton
+@onready var _skill_cancel_button: Button = %SkillCancelButton
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -58,6 +63,7 @@ var _units: Array[BattleUnitState] = []
 var _turn_queue: Array[BattleUnitState] = []
 var _current_turn_index: int = 0
 var _battle_log_entries: Array[BattleLogEntry] = []
+var _battle_action_log_entries: Array[BattleActionLogEntry] = []
 var _hovered_log_index: int = -1
 var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
@@ -70,6 +76,8 @@ var _inspected_unit_id: StringName = &""
 var _selected_skill_id: StringName = &""
 var _hovered_skill_button: Button
 var _skill_tooltip_generation: int = 0
+var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
+var _battle_revision: int = 0
 
 
 func _ready() -> void:
@@ -79,6 +87,12 @@ func _ready() -> void:
 	var advance_callable := Callable(self, "_on_advance_debug_pressed")
 	if not _advance_debug_button.pressed.is_connected(advance_callable):
 		_advance_debug_button.pressed.connect(advance_callable)
+	var skill_confirm_callable := Callable(self, "confirm_skill_action")
+	if not _skill_confirm_button.pressed.is_connected(skill_confirm_callable):
+		_skill_confirm_button.pressed.connect(skill_confirm_callable)
+	var skill_cancel_callable := Callable(self, "cancel_skill_action")
+	if not _skill_cancel_button.pressed.is_connected(skill_cancel_callable):
+		_skill_cancel_button.pressed.connect(skill_cancel_callable)
 	var confirm_callable := Callable(self, "confirm_reward_selection")
 	if not _confirm_reward_button.pressed.is_connected(confirm_callable):
 		_confirm_reward_button.pressed.connect(confirm_callable)
@@ -101,11 +115,14 @@ func configure(coordinate: Vector2i, type: String) -> void:
 func configure_units(units: Array[BattleUnitState]) -> void:
 	_clear_reward_ui()
 	_clear_skill_inspector()
+	_skill_transaction.reset()
+	_battle_revision = 0
 	_feedback_generation += 1
 	_action_in_progress = false
 	_hovered_log_index = -1
 	_transient_log_entry = null
 	_battle_log_entries.clear()
+	_battle_action_log_entries.clear()
 	if is_node_ready():
 		_clear_log_controls()
 		_clear_all_damage_feedback()
@@ -130,6 +147,10 @@ func get_current_unit() -> BattleUnitState:
 
 func get_battle_log_entries() -> Array[BattleLogEntry]:
 	return _battle_log_entries.duplicate()
+
+
+func get_battle_action_log_entries() -> Array[BattleActionLogEntry]:
+	return _battle_action_log_entries.duplicate()
 
 
 func get_battle_outcome() -> BattleOutcome.Type:
@@ -198,7 +219,181 @@ func select_skill(skill_id: StringName) -> void:
 		if skill.skill_id == skill_id:
 			_selected_skill_id = skill_id
 			_refresh_skill_selection()
+			if skill.kind == CharacterSkill.Kind.ACTIVE:
+				begin_skill_action(unit.unit_id, skill.skill_id)
 			return
+
+
+func preview_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
+	if _skill_transaction.state not in [
+		BattleSkillTransaction.State.IDLE,
+		BattleSkillTransaction.State.PREVIEWING,
+		BattleSkillTransaction.State.CANCELLED,
+		BattleSkillTransaction.State.REJECTED_STALE,
+	]:
+		return false
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	var skill: CharacterSkill = _find_skill(actor, skill_id)
+	var current: BattleUnitState = get_current_unit()
+	var evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
+		actor,
+		skill,
+		_units,
+		current.unit_id if is_instance_valid(current) else &"",
+		is_battle_complete(),
+		round_number,
+		_battle_revision
+	)
+	_skill_transaction.preview(evaluation)
+	_render_skill_transaction()
+	return evaluation.can_start
+
+
+func clear_skill_preview() -> void:
+	if _skill_transaction.state == BattleSkillTransaction.State.PREVIEWING:
+		_skill_transaction.reset()
+		_render_skill_transaction()
+
+
+func get_battle_revision() -> int:
+	return _battle_revision
+
+
+func get_skill_presentation_snapshot() -> Dictionary:
+	return _skill_transaction.presentation_snapshot()
+
+
+func notify_authoritative_battle_change(increment_revision: bool = true) -> void:
+	if increment_revision:
+		_battle_revision += 1
+	if (
+		_skill_transaction.state != BattleSkillTransaction.State.TARGETING
+		or _skill_transaction.locked_target_ids.is_empty()
+	):
+		_render_skill_transaction()
+		return
+	var generation: int = _skill_transaction.generation
+	var actor: BattleUnitState = get_unit_by_id(_skill_transaction.actor_id)
+	var skill: CharacterSkill = _find_skill(actor, _skill_transaction.skill_id)
+	var current: BattleUnitState = get_current_unit()
+	var validation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor,
+		skill,
+		_units,
+		current.unit_id if is_instance_valid(current) else &"",
+		is_battle_complete(),
+		round_number,
+		_skill_transaction.locked_target_ids,
+		_battle_revision,
+		_battle_revision
+	)
+	if validation.accepted:
+		_skill_transaction.battle_revision = _battle_revision
+	else:
+		_skill_transaction.begin_confirmation(generation)
+		_skill_transaction.complete_confirmation(validation, generation)
+	_render_skill_transaction()
+
+
+func get_skill_transaction_state() -> BattleSkillTransaction.State:
+	return _skill_transaction.state
+
+
+func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	var skill: CharacterSkill = _find_skill(actor, skill_id)
+	var current: BattleUnitState = get_current_unit()
+	var evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
+		actor,
+		skill,
+		_units,
+		current.unit_id if is_instance_valid(current) else &"",
+		is_battle_complete(),
+		round_number,
+		_battle_revision
+	)
+	var generation: int = _skill_transaction.preview(evaluation)
+	if not _skill_transaction.begin_targeting(generation):
+		_render_skill_transaction()
+		return false
+	_inspected_unit_id = actor_id
+	_selected_skill_id = skill_id
+	_render_skill_transaction()
+	_refresh_skill_selection()
+	return true
+
+
+func select_skill_target(target_id: StringName) -> bool:
+	var accepted: bool = _skill_transaction.select_target(
+		target_id,
+		_skill_transaction.generation
+	)
+	_render_skill_transaction()
+	return accepted
+
+
+func hover_skill_target(target_id: StringName) -> bool:
+	var accepted: bool = _skill_transaction.hover_target(
+		target_id,
+		_skill_transaction.generation
+	)
+	_render_skill_transaction()
+	return accepted
+
+
+func clear_skill_target_hover() -> void:
+	_skill_transaction.clear_target_hover(_skill_transaction.generation)
+	_render_skill_transaction()
+
+
+func cancel_skill_action() -> bool:
+	var cancelled: bool = _skill_transaction.cancel(_skill_transaction.generation)
+	_render_skill_transaction()
+	return cancelled
+
+
+func confirm_skill_action() -> bool:
+	var generation: int = _skill_transaction.generation
+	if not _skill_transaction.begin_confirmation(generation):
+		return false
+	_render_skill_transaction()
+	var actor: BattleUnitState = get_unit_by_id(_skill_transaction.actor_id)
+	var skill: CharacterSkill = _find_skill(actor, _skill_transaction.skill_id)
+	var current: BattleUnitState = get_current_unit()
+	var validation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor,
+		skill,
+		_units,
+		current.unit_id if is_instance_valid(current) else &"",
+		is_battle_complete(),
+		round_number,
+		_skill_transaction.locked_target_ids,
+		_skill_transaction.battle_revision,
+		_battle_revision
+	)
+	if not _skill_transaction.complete_confirmation(validation, generation):
+		_render_skill_transaction()
+		return false
+	if not validation.accepted or not is_instance_valid(validation.effect_plan):
+		_render_skill_transaction()
+		return false
+	var committed: bool = _commit_skill_effect_plan(validation.effect_plan)
+	if committed:
+		_skill_transaction.finish_resolution(generation)
+	_render_skill_transaction()
+	return committed
+
+
+func remove_battle_unit(unit_id: StringName) -> bool:
+	var unit: BattleUnitState = get_unit_by_id(unit_id)
+	if not is_instance_valid(unit):
+		return false
+	_units.erase(unit)
+	_turn_queue = BattleTurnQueue.build(_units)
+	_current_turn_index = 0
+	notify_authoritative_battle_change()
+	_refresh_turn_ui()
+	return true
 
 
 func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
@@ -206,6 +401,190 @@ func get_unit_by_id(unit_id: StringName) -> BattleUnitState:
 		if is_instance_valid(unit) and unit.unit_id == unit_id:
 			return unit
 	return null
+
+
+func _find_skill(actor: BattleUnitState, skill_id: StringName) -> CharacterSkill:
+	if not is_instance_valid(actor):
+		return null
+	for skill: CharacterSkill in actor.skills:
+		if skill.skill_id == skill_id:
+			return skill
+	return null
+
+
+func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
+	if (
+		_action_in_progress
+		or not is_instance_valid(plan)
+		or plan.battle_revision != _battle_revision
+		or plan.actor_id != _skill_transaction.actor_id
+		or plan.skill_id != _skill_transaction.skill_id
+	):
+		return false
+	var actor: BattleUnitState = get_unit_by_id(plan.actor_id)
+	var skill: CharacterSkill = _find_skill(actor, plan.skill_id)
+	if not is_instance_valid(actor) or not is_instance_valid(skill):
+		return false
+	for operation: Dictionary in plan.damage_operations:
+		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
+		if not is_instance_valid(target) or not target.is_active() or int(operation.get("amount", 0)) <= 0:
+			return false
+	for operation: Dictionary in plan.speed_operations:
+		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
+		if not is_instance_valid(target) or not target.is_active():
+			return false
+	_action_in_progress = true
+	var action_round: int = round_number
+	var action_damage_results: Array[BattleDamageResult] = []
+	var action_speed_target_ids: Array[StringName] = []
+	for operation: Dictionary in plan.damage_operations:
+		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
+		var result: BattleDamageResult = BattleDamageResolver.apply_damage(
+			actor,
+			target,
+			int(operation["amount"])
+		)
+		if not is_instance_valid(result):
+			_action_in_progress = false
+			return false
+		action_damage_results.append(result)
+		var entry := BattleLogEntry.new(
+			_battle_log_entries.size() + 1,
+			action_round,
+			result
+		)
+		_battle_log_entries.append(entry)
+		_append_log_control(entry, _battle_log_entries.size() - 1)
+		_show_resolution_feedback(entry)
+	var new_actor_speed_sources: Array[StringName] = []
+	for operation: Dictionary in plan.speed_operations:
+		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
+		action_speed_target_ids.append(target.unit_id)
+		target.add_speed_modifier(
+			operation["source_id"],
+			int(operation["amount"]),
+			operation["expiry"],
+			int(operation["duration"]),
+			int(operation["applied_round"])
+		)
+		if target == actor:
+			new_actor_speed_sources.append(operation["source_id"])
+	if plan.cooldown_actions > 0:
+		actor.set_skill_cooldown(plan.skill_id, plan.cooldown_actions)
+	var excluded_cooldowns: Array[StringName] = []
+	if plan.cooldown_actions > 0:
+		excluded_cooldowns.append(plan.skill_id)
+	actor.tick_skill_cooldowns(excluded_cooldowns)
+	actor.expire_speed_modifiers_after_action(new_actor_speed_sources)
+	var action_entry := BattleActionLogEntry.new(
+		_battle_action_log_entries.size() + 1,
+		action_round,
+		plan.actor_id,
+		plan.skill_id,
+		plan.target_ids,
+		action_damage_results,
+		action_speed_target_ids
+	)
+	_battle_action_log_entries.append(action_entry)
+	_battle_revision += 1
+	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
+	if resolved_outcome == BattleOutcome.Type.IN_PROGRESS and plan.advance_turn:
+		_advance_after_action(actor.unit_id)
+	else:
+		_complete_battle(resolved_outcome)
+	_action_in_progress = false
+	_refresh_turn_ui()
+	return true
+
+
+func _render_skill_transaction() -> void:
+	if not is_node_ready():
+		return
+	var snapshot: Dictionary = _skill_transaction.presentation_snapshot()
+	_skill_action_region.visible = snapshot["action_region_visible"]
+	_skill_action_message_label.text = snapshot["message"]
+	_skill_action_summary_label.text = snapshot["summary"]
+	_skill_action_summary_label.visible = not _skill_action_summary_label.text.is_empty()
+	_skill_confirm_button.visible = snapshot["confirm_visible"]
+	_skill_confirm_button.disabled = not snapshot["confirm_enabled"]
+	_skill_cancel_button.visible = snapshot["cancel_visible"]
+	_skill_cancel_button.disabled = not snapshot["cancel_enabled"]
+	var roles: Dictionary = snapshot["indicator_roles"]
+	for slot: Control in get_player_slots() + get_enemy_slots():
+		var overlay := slot.get_node_or_null("TargetIndicatorOverlay") as Panel
+		if not is_instance_valid(overlay):
+			continue
+		var unit_id: StringName = slot.get_meta("unit_id", &"")
+		var role: StringName = roles.get(unit_id, &"")
+		overlay.visible = not role.is_empty()
+		var tint: TextureRect = _get_or_create_indicator_tint(overlay)
+		if role.is_empty():
+			overlay.remove_theme_stylebox_override("panel")
+			tint.visible = false
+			continue
+		overlay.add_theme_stylebox_override("panel", _indicator_style(role))
+		_update_indicator_tint(tint, role)
+
+
+func _indicator_style(role: StringName) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var border_color := Color(0.95, 0.2, 0.2, 1.0) if is_invalid else Color(0.25, 0.95, 0.45, 1.0)
+	style.border_color = border_color
+	style.set_border_width_all(3)
+	style.bg_color = Color.TRANSPARENT
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	return style
+
+
+func _get_or_create_indicator_tint(overlay: Panel) -> TextureRect:
+	var existing := overlay.get_node_or_null("CenterTint") as TextureRect
+	if is_instance_valid(existing):
+		return existing
+	var tint := TextureRect.new()
+	tint.name = "CenterTint"
+	tint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tint.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	tint.offset_left = 4.0
+	tint.offset_top = 4.0
+	tint.offset_right = -4.0
+	tint.offset_bottom = -4.0
+	tint.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tint.stretch_mode = TextureRect.STRETCH_SCALE
+	overlay.add_child(tint)
+	return tint
+
+
+func _update_indicator_tint(tint: TextureRect, role: StringName) -> void:
+	var has_tint: bool = role in [
+		&"valid_preview",
+		&"invalid_preview",
+		&"invalid_hover",
+		&"locked",
+	]
+	tint.visible = has_tint
+	if not has_tint:
+		return
+	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var tint_color := Color(0.95, 0.2, 0.2, 0.16) if is_invalid else Color(0.25, 0.95, 0.45, 0.16)
+	var gradient := Gradient.new()
+	gradient.offsets = PackedFloat32Array([0.0, 0.7, 1.0])
+	gradient.colors = PackedColorArray([
+		tint_color,
+		Color(tint_color.r, tint_color.g, tint_color.b, tint_color.a * 0.35),
+		Color(tint_color.r, tint_color.g, tint_color.b, 0.0),
+	])
+	var texture := GradientTexture2D.new()
+	texture.width = 128
+	texture.height = 96
+	texture.fill = GradientTexture2D.FILL_RADIAL
+	texture.fill_from = Vector2(0.5, 0.5)
+	texture.fill_to = Vector2(1.0, 0.5)
+	texture.gradient = gradient
+	tint.texture = texture
 
 
 func perform_debug_damage() -> void:
@@ -261,9 +640,13 @@ func advance_turn() -> void:
 		return
 	_current_turn_index += 1
 	if _current_turn_index >= _turn_queue.size():
+		var completed_round: int = round_number
 		round_number += 1
+		_expire_round_modifiers(completed_round)
 		_turn_queue = BattleTurnQueue.build(_units)
 		_current_turn_index = 0
+	_battle_revision += 1
+	notify_authoritative_battle_change(false)
 	_refresh_turn_ui()
 
 
@@ -278,7 +661,7 @@ func get_enemy_slots() -> Array[Control]:
 func _create_debug_units() -> Array[BattleUnitState]:
 	return [
 		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8, 20, _skill_roster([
-			_create_skill(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "Closest active enemy.", "User must occupy a front-row slot.", "1 turn after use."),
+			_create_skill(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One selected active enemy.", "User must occupy a front-row slot.", "1 turn after use."),
 			_create_skill(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE, "Reduce the next damage taken by an adjacent ally by 3.", "Adjacent active allies.", "User must occupy a front-row slot.", "None"),
 		])),
 		BattleUnitState.new(&"player_1", "Player Front 2", BattleUnitState.Side.PLAYER, 1, 6),
@@ -287,14 +670,14 @@ func _create_debug_units() -> Array[BattleUnitState]:
 		])),
 		BattleUnitState.new(&"player_3", "Player Back 1", BattleUnitState.Side.PLAYER, 3, 4),
 		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9, 20, _skill_roster([
-			_create_skill(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "Closest active enemy.", "None", "None"),
+			_create_skill(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "One selected active enemy.", "None", "None"),
 			_create_skill(&"rally", "Rally", CharacterSkill.Kind.ACTIVE, "Grant all active allies 2 Speed until the end of the round.", "All active allies, including the user.", "None", "2 turns after use."),
 			_create_skill(&"evasion", "Evasion", CharacterSkill.Kind.PASSIVE, "Prevent the first damage instance received each round.", "Self.", "None", "None"),
 			_create_skill(&"momentum", "Momentum", CharacterSkill.Kind.PASSIVE, "Gain 1 Speed after taking an action, lasting until battle ends.", "Self.", "User must remain active.", "None"),
 		])),
 		BattleUnitState.new(&"player_5", "Player Back 3", BattleUnitState.Side.PLAYER, 5, 2),
 		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8, 20, _skill_roster([
-			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "Closest active enemy.", "User must be above 50% HP.", "2 turns after use."),
+			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "One selected active enemy.", "User must be above 50% HP.", "2 turns after use."),
 			_create_skill(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"),
 		])),
 		BattleUnitState.new(&"enemy_1", "Enemy Front 2", BattleUnitState.Side.ENEMY, 1, 7),
@@ -318,7 +701,88 @@ func _create_skill(
 	requirements: String,
 	cooldown: String
 ) -> CharacterSkill:
-	return CharacterSkill.new(id, display_name, kind, effect, targeting, requirements, cooldown)
+	var targeting_mode: CharacterSkill.TargetingMode = CharacterSkill.TargetingMode.PREDEFINED
+	var target_side: CharacterSkill.TargetSide = CharacterSkill.TargetSide.SELF
+	var target_rule: CharacterSkill.TargetRule = CharacterSkill.TargetRule.SELF
+	var requirement: CharacterSkill.Requirement = CharacterSkill.Requirement.NONE
+	var mechanical_effect: CharacterSkill.Effect = CharacterSkill.Effect.NONE
+	var effect_magnitude: int = 0
+	var effect_duration: int = 0
+	var effect_duration_mode: CharacterSkill.EffectDuration = CharacterSkill.EffectDuration.NONE
+	var cooldown_mode: CharacterSkill.CooldownMode = CharacterSkill.CooldownMode.NONE
+	var cooldown_actions: int = 0
+	var unavailable_through_round: int = 0
+	match id:
+		&"shield_bash":
+			targeting_mode = CharacterSkill.TargetingMode.FREE
+			target_side = CharacterSkill.TargetSide.ENEMY
+			target_rule = CharacterSkill.TargetRule.SELECT_ONE
+			requirement = CharacterSkill.Requirement.FRONT_ROW
+			mechanical_effect = CharacterSkill.Effect.DAMAGE
+			effect_magnitude = 7
+			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
+			cooldown_actions = 1
+		&"quick_step":
+			target_side = CharacterSkill.TargetSide.SELF
+			target_rule = CharacterSkill.TargetRule.SELF
+			mechanical_effect = CharacterSkill.Effect.SPEED_BOOST
+			effect_magnitude = 2
+			effect_duration = 1
+			effect_duration_mode = CharacterSkill.EffectDuration.NEXT_ACTION
+			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
+			cooldown_actions = 2
+		&"quick_strike":
+			targeting_mode = CharacterSkill.TargetingMode.FREE
+			target_side = CharacterSkill.TargetSide.ENEMY
+			target_rule = CharacterSkill.TargetRule.SELECT_ONE
+			mechanical_effect = CharacterSkill.Effect.DAMAGE
+			effect_magnitude = 5
+		&"rally":
+			target_side = CharacterSkill.TargetSide.ALLY
+			target_rule = CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES
+			mechanical_effect = CharacterSkill.Effect.SPEED_BOOST
+			effect_magnitude = 2
+			effect_duration = 1
+			effect_duration_mode = CharacterSkill.EffectDuration.CURRENT_ROUND
+			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
+			cooldown_actions = 2
+		&"savage_blow":
+			targeting_mode = CharacterSkill.TargetingMode.FREE
+			target_side = CharacterSkill.TargetSide.ENEMY
+			target_rule = CharacterSkill.TargetRule.SELECT_ONE
+			requirement = CharacterSkill.Requirement.ABOVE_HALF_HP
+			mechanical_effect = CharacterSkill.Effect.DAMAGE
+			effect_magnitude = 12
+			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
+			cooldown_actions = 2
+		&"shadow_lunge":
+			target_side = CharacterSkill.TargetSide.ENEMY
+			target_rule = CharacterSkill.TargetRule.FARTHEST_ACTIVE_ENEMY
+			requirement = CharacterSkill.Requirement.BACK_ROW
+			mechanical_effect = CharacterSkill.Effect.DAMAGE
+			effect_magnitude = 10
+			cooldown_mode = CharacterSkill.CooldownMode.ROUND_GATE
+			unavailable_through_round = 1
+	return CharacterSkill.new(
+		id,
+		display_name,
+		kind,
+		effect,
+		targeting,
+		requirements,
+		cooldown,
+		targeting_mode,
+		target_side,
+		target_rule,
+		requirement,
+		mechanical_effect,
+		effect_magnitude,
+		effect_duration,
+		effect_duration_mode,
+		cooldown_mode,
+		cooldown_actions,
+		unavailable_through_round
+	)
 
 
 func _skill_roster(values: Array) -> Array[CharacterSkill]:
@@ -403,8 +867,16 @@ func _advance_after_action(attacker_id: StringName) -> void:
 		return
 	_current_turn_index = attacker_index + 1
 	if _current_turn_index >= _turn_queue.size():
+		var completed_round: int = round_number
 		round_number += 1
+		_expire_round_modifiers(completed_round)
 		_current_turn_index = 0
+
+
+func _expire_round_modifiers(completed_round: int) -> void:
+	for unit: BattleUnitState in _units:
+		if is_instance_valid(unit):
+			unit.expire_speed_modifiers_for_round(completed_round)
 
 
 func _get_control_children(formation: GridContainer) -> Array[Control]:
@@ -426,6 +898,12 @@ func _assign_slot_metadata(formation: GridContainer, side: String) -> void:
 		var input_callable := Callable(self, "_on_slot_gui_input").bind(slot)
 		if not slot.gui_input.is_connected(input_callable):
 			slot.gui_input.connect(input_callable)
+		var enter_callable := Callable(self, "_on_slot_mouse_entered").bind(slot)
+		if not slot.mouse_entered.is_connected(enter_callable):
+			slot.mouse_entered.connect(enter_callable)
+		var exit_callable := Callable(self, "_on_slot_mouse_exited").bind(slot)
+		if not slot.mouse_exited.is_connected(exit_callable):
+			slot.mouse_exited.connect(exit_callable)
 
 
 func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
@@ -435,7 +913,20 @@ func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
 	var unit_id := slot.get_meta("unit_id", &"") as StringName
 	if unit_id.is_empty():
 		return
+	if _skill_transaction.state == BattleSkillTransaction.State.TARGETING:
+		select_skill_target(unit_id)
+		return
 	inspect_unit(unit_id)
+
+
+func _on_slot_mouse_entered(slot: Control) -> void:
+	var unit_id: StringName = slot.get_meta("unit_id", &"")
+	if not unit_id.is_empty():
+		hover_skill_target(unit_id)
+
+
+func _on_slot_mouse_exited(_slot: Control) -> void:
+	clear_skill_target_hover()
 
 
 func _refresh_context() -> void:
@@ -463,7 +954,7 @@ func _refresh_turn_ui() -> void:
 		return
 	_current_unit_label.text = "%s | Speed %d | HP %d/%d" % [
 		current_unit.display_name,
-		current_unit.speed,
+		current_unit.get_effective_speed(),
 		current_unit.current_hp,
 		current_unit.max_hp,
 	]
@@ -498,7 +989,7 @@ func _render_units() -> void:
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
 		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
 		name_label.text = unit.display_name
-		speed_label.text = "Speed %d" % unit.speed
+		speed_label.text = "Speed %d" % unit.get_effective_speed()
 		health_label.text = (
 			"HP %d/%d" % [unit.current_hp, unit.max_hp]
 			if unit.is_active()
@@ -600,6 +1091,7 @@ func _on_skill_button_mouse_entered(skill: CharacterSkill, button: Button) -> vo
 	_skill_tooltip_cooldown_label.text = "Cooldown: %s" % skill.cooldown_text
 	_skill_tooltip_panel.visible = true
 	_skill_tooltip_panel.reset_size()
+	preview_skill_action(_inspected_unit_id, skill.skill_id)
 	call_deferred("_position_skill_tooltip", button, generation)
 
 
@@ -607,6 +1099,7 @@ func _on_skill_button_mouse_exited(button: Button) -> void:
 	if button != _hovered_skill_button:
 		return
 	_hide_skill_tooltip()
+	clear_skill_preview()
 
 
 func _position_skill_tooltip(button_value: Variant, generation: int) -> void:
@@ -666,6 +1159,8 @@ func _clear_skill_inspector() -> void:
 	if not is_node_ready():
 		return
 	_clear_skill_rows()
+	_skill_transaction.reset()
+	_render_skill_transaction()
 	_skill_inspector_prompt_label.visible = true
 	_skill_inspector_body.visible = false
 	_skill_inspector_unit_name_label.text = ""
@@ -791,6 +1286,8 @@ func _on_advance_debug_pressed() -> void:
 
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
+	_skill_transaction.reset()
+	_render_skill_transaction()
 	_clear_reward_ui()
 	call_deferred("_emit_exit_requested")
 

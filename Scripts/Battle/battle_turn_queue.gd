@@ -16,8 +16,9 @@ static func build(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
 		if unit.side != BattleUnitState.Side.PLAYER and unit.side != BattleUnitState.Side.ENEMY:
 			print("BattleTurnQueue rejected: unit %s has invalid side %d" % [unit.unit_id, unit.side])
 			return []
-		if unit.speed < MIN_SPEED or unit.speed > MAX_SPEED:
-			print("BattleTurnQueue rejected: unit %s has speed %d outside %d..%d" % [unit.unit_id, unit.speed, MIN_SPEED, MAX_SPEED])
+		var base_speed := unit.get_base_speed()
+		if base_speed < MIN_SPEED or base_speed > MAX_SPEED:
+			print("BattleTurnQueue rejected: unit %s has speed %d outside %d..%d" % [unit.unit_id, base_speed, MIN_SPEED, MAX_SPEED])
 			return []
 		if unit.slot_index < 0 or unit.slot_index >= SIDE_SLOT_COUNT:
 			print("BattleTurnQueue rejected: unit %s has invalid slot %d" % [unit.unit_id, unit.slot_index])
@@ -40,8 +41,10 @@ static func build(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
 
 
 static func _comes_before(first: BattleUnitState, second: BattleUnitState) -> bool:
-	if first.speed != second.speed:
-		return first.speed > second.speed
+	var first_speed := first.get_effective_speed()
+	var second_speed := second.get_effective_speed()
+	if first_speed != second_speed:
+		return first_speed > second_speed
 	if first.side != second.side:
 		return first.side < second.side
 	return first.slot_index < second.slot_index

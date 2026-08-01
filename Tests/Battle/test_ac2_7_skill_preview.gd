@@ -3,14 +3,14 @@ extends SceneTree
 
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
 const EXPECTED_PREVIEWS := {
-	&"shield_bash": ["Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "Closest active enemy.", "User must occupy a front-row slot.", "1 turn after use."],
+	&"shield_bash": ["Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One selected active enemy.", "User must occupy a front-row slot.", "1 turn after use."],
 	&"frontline_guard": ["Frontline Guard", CharacterSkill.Kind.PASSIVE, "Reduce the next damage taken by an adjacent ally by 3.", "Adjacent active allies.", "User must occupy a front-row slot.", "None"],
 	&"quick_step": ["Quick Step", CharacterSkill.Kind.ACTIVE, "Gain 2 Speed until the end of the next turn.", "Self.", "None", "2 turns after use."],
-	&"quick_strike": ["Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "Closest active enemy.", "None", "None"],
+	&"quick_strike": ["Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "One selected active enemy.", "None", "None"],
 	&"rally": ["Rally", CharacterSkill.Kind.ACTIVE, "Grant all active allies 2 Speed until the end of the round.", "All active allies, including the user.", "None", "2 turns after use."],
 	&"evasion": ["Evasion", CharacterSkill.Kind.PASSIVE, "Prevent the first damage instance received each round.", "Self.", "None", "None"],
 	&"momentum": ["Momentum", CharacterSkill.Kind.PASSIVE, "Gain 1 Speed after taking an action, lasting until battle ends.", "Self.", "User must remain active.", "None"],
-	&"savage_blow": ["Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "Closest active enemy.", "User must be above 50% HP.", "2 turns after use."],
+	&"savage_blow": ["Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "One selected active enemy.", "User must be above 50% HP.", "2 turns after use."],
 	&"blood_scent": ["Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"],
 	&"brace": ["Brace", CharacterSkill.Kind.PASSIVE, "Reduce the first damage received each round by 2.", "Self.", "None", "None"],
 	&"shadow_lunge": ["Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."],
@@ -46,7 +46,7 @@ func _test_structured_preview_contract() -> void:
 		"Shield Bash",
 		CharacterSkill.Kind.ACTIVE,
 		"Deal 7 damage.",
-		"Closest active enemy.",
+		"One selected active enemy.",
 		"User must occupy a front-row slot.",
 		"1 turn after use."
 	)
@@ -54,7 +54,7 @@ func _test_structured_preview_contract() -> void:
 	if not is_instance_valid(skill):
 		return
 	_expect(skill.effect_text == "Deal 7 damage.", "effect text should be exact")
-	_expect(skill.targeting_text == "Closest active enemy.", "targeting text should be exact")
+	_expect(skill.targeting_text == "One selected active enemy.", "targeting text should be exact")
 	_expect(
 		skill.requirements_text == "User must occupy a front-row slot.",
 		"requirements text should be exact"
@@ -181,7 +181,7 @@ func _test_tooltip_scene_and_hover_content() -> void:
 			"Shield Bash",
 			"Active",
 			"Effect: Deal 7 damage.",
-			"Targeting: Closest active enemy.",
+			"Targeting: One selected active enemy.",
 			"Requirements: User must occupy a front-row slot.",
 			"Cooldown: 1 turn after use.",
 		], "active tooltip should render exact content")

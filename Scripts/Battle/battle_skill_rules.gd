@@ -1,0 +1,436 @@
+class_name BattleSkillRules
+extends RefCounted
+
+const FRONT_ROW_END := 3
+
+
+static func evaluate_targets(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	units: Array[BattleUnitState],
+	current_actor_id: StringName,
+	battle_complete: bool,
+	round_number: int,
+	battle_revision: int
+) -> SkillTargetEvaluation:
+	var reason: SkillActionReason = _evaluate_actor_and_skill(
+		actor, skill, current_actor_id, battle_complete, round_number
+	)
+	var valid_ids: Array[StringName] = []
+	var invalid_targets: Dictionary[StringName, SkillActionReason] = {}
+	var affected_ids: Array[StringName] = []
+	if is_instance_valid(actor) and is_instance_valid(skill):
+		if skill.targeting_mode == CharacterSkill.TargetingMode.FREE:
+			for unit: BattleUnitState in _sorted_units(units):
+				if not is_instance_valid(unit) or unit.side == actor.side:
+					continue
+				if unit.is_active():
+					valid_ids.append(unit.unit_id)
+				else:
+					invalid_targets[unit.unit_id] = _reason(
+						SkillActionReason.Code.TARGET_DEFEATED,
+						"Target was defeated. Select another target.",
+						actor,
+						skill,
+						unit.unit_id
+					)
+		else:
+			affected_ids = _predefined_targets(actor, skill, units)
+	if (
+		reason.code == SkillActionReason.Code.NONE
+		and skill.targeting_mode == CharacterSkill.TargetingMode.PREDEFINED
+		and affected_ids.is_empty()
+	):
+		reason = _reason(
+			SkillActionReason.Code.TARGET_INVALID,
+			"No valid target is available.",
+			actor,
+			skill
+		)
+	return SkillTargetEvaluation.new(
+		actor.unit_id if is_instance_valid(actor) else &"",
+		skill.skill_id if is_instance_valid(skill) else &"",
+		skill.targeting_mode if is_instance_valid(skill) else CharacterSkill.TargetingMode.PREDEFINED,
+		reason.code == SkillActionReason.Code.NONE,
+		reason,
+		valid_ids,
+		invalid_targets,
+		affected_ids,
+		battle_revision
+	)
+
+
+static func validate_confirmation(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	units: Array[BattleUnitState],
+	current_actor_id: StringName,
+	battle_complete: bool,
+	round_number: int,
+	proposed_target_ids: Array[StringName],
+	expected_revision: int,
+	current_revision: int
+) -> SkillConfirmationValidation:
+	if expected_revision != current_revision:
+		return _rejected(
+			actor,
+			skill,
+			proposed_target_ids,
+			current_revision,
+			_reason(
+				SkillActionReason.Code.REVISION_MISMATCH,
+				"Battle state changed. Review this skill again.",
+				actor,
+				skill
+			)
+		)
+	var evaluation: SkillTargetEvaluation = evaluate_targets(
+		actor,
+		skill,
+		units,
+		current_actor_id,
+		battle_complete,
+		round_number,
+		current_revision
+	)
+	if not evaluation.can_start:
+		return _rejected(
+			actor,
+			skill,
+			proposed_target_ids,
+			current_revision,
+			evaluation.blocking_reason
+		)
+	var accepted_ids: Array[StringName] = []
+	if skill.targeting_mode == CharacterSkill.TargetingMode.FREE:
+		if (
+			proposed_target_ids.size() != 1
+			or not evaluation.valid_target_ids.has(proposed_target_ids[0])
+		):
+			var target_id: StringName = proposed_target_ids[0] if not proposed_target_ids.is_empty() else &""
+			return _rejected(
+				actor,
+				skill,
+				proposed_target_ids,
+				current_revision,
+				_target_rejection(actor, skill, units, target_id)
+			)
+		accepted_ids = proposed_target_ids.duplicate()
+	elif proposed_target_ids != evaluation.affected_target_ids:
+		return _rejected(
+			actor,
+			skill,
+			proposed_target_ids,
+			current_revision,
+			_reason(
+				SkillActionReason.Code.TARGET_INVALID,
+				"Battle state changed. Review this skill again.",
+				actor,
+				skill
+			)
+		)
+	else:
+		accepted_ids = evaluation.affected_target_ids.duplicate()
+	var damage_operations: Array[Dictionary] = []
+	var speed_operations: Array[Dictionary] = []
+	match skill.effect:
+		CharacterSkill.Effect.DAMAGE:
+			for target_id: StringName in accepted_ids:
+				damage_operations.append({
+					"target_id": target_id,
+					"amount": skill.effect_magnitude,
+				})
+		CharacterSkill.Effect.SPEED_BOOST:
+			var expiry: BattleUnitState.ModifierExpiry = (
+				BattleUnitState.ModifierExpiry.NEXT_ACTION
+				if skill.effect_duration_mode == CharacterSkill.EffectDuration.NEXT_ACTION
+				else BattleUnitState.ModifierExpiry.CURRENT_ROUND
+			)
+			for target_id: StringName in accepted_ids:
+				speed_operations.append({
+					"target_id": target_id,
+					"source_id": skill.skill_id,
+					"amount": skill.effect_magnitude,
+					"expiry": expiry,
+					"duration": skill.effect_duration,
+					"applied_round": round_number,
+				})
+	var plan: SkillEffectPlan = SkillEffectPlan.new(
+		actor.unit_id,
+		skill.skill_id,
+		accepted_ids,
+		damage_operations,
+		speed_operations,
+		skill.cooldown_actions,
+		true,
+		current_revision
+	)
+	return SkillConfirmationValidation.new(
+		true,
+		SkillActionReason.none(),
+		actor.unit_id,
+		skill.skill_id,
+		accepted_ids,
+		current_revision,
+		plan
+	)
+
+
+static func _evaluate_actor_and_skill(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	current_actor_id: StringName,
+	battle_complete: bool,
+	round_number: int
+) -> SkillActionReason:
+	if not is_instance_valid(actor) or not actor.is_active():
+		return _reason(
+			SkillActionReason.Code.ACTOR_INACTIVE,
+			"Acting unit is no longer active.",
+			actor,
+			skill
+		)
+	if battle_complete:
+		return _reason(
+			SkillActionReason.Code.BATTLE_COMPLETE,
+			"Battle is already complete.",
+			actor,
+			skill
+		)
+	if actor.side != BattleUnitState.Side.PLAYER:
+		return _reason(
+			SkillActionReason.Code.ENEMY_NOT_PLAYER_CONTROLLABLE,
+			"Enemy skills can only be inspected.",
+			actor,
+			skill
+		)
+	if actor.unit_id != current_actor_id:
+		return _reason(
+			SkillActionReason.Code.NOT_CURRENT_ACTOR,
+			"Only the current player unit can act.",
+			actor,
+			skill
+		)
+	if not is_instance_valid(skill) or skill.kind == CharacterSkill.Kind.PASSIVE:
+		return _reason(
+			SkillActionReason.Code.PASSIVE_NOT_ACTIONABLE,
+			"Passive skills can only be inspected.",
+			actor,
+			skill
+		)
+	if not _actor_owns_skill(actor, skill.skill_id):
+		return _reason(
+			SkillActionReason.Code.SKILL_AVAILABILITY_CHANGED,
+			"Skill availability changed. Review this skill again.",
+			actor,
+			skill
+		)
+	if skill.requirement == CharacterSkill.Requirement.FRONT_ROW and actor.slot_index >= FRONT_ROW_END:
+		return _reason(
+			SkillActionReason.Code.POSITION_REQUIRED,
+			"Requires a front-row position.",
+			actor,
+			skill
+		)
+	if skill.requirement == CharacterSkill.Requirement.BACK_ROW and actor.slot_index < FRONT_ROW_END:
+		return _reason(
+			SkillActionReason.Code.POSITION_REQUIRED,
+			"Requires a back-row position.",
+			actor,
+			skill
+		)
+	if (
+		skill.requirement == CharacterSkill.Requirement.ABOVE_HALF_HP
+		and actor.current_hp * 2 <= actor.max_hp
+	):
+		return _reason(
+			SkillActionReason.Code.HEALTH_REQUIRED,
+			"Requires more than 50% HP.",
+			actor,
+			skill
+		)
+	if (
+		skill.cooldown_mode == CharacterSkill.CooldownMode.ROUND_GATE
+		and round_number <= skill.unavailable_through_round
+	):
+		return _reason(
+			SkillActionReason.Code.PRE_USE_COOLDOWN,
+			"Unavailable during round %d." % round_number,
+			actor,
+			skill
+		)
+	var remaining: int = actor.get_skill_cooldown(skill.skill_id)
+	if remaining > 0:
+		return _reason(
+			SkillActionReason.Code.POST_USE_COOLDOWN,
+			"Ready in %d actions." % remaining,
+			actor,
+			skill
+		)
+	return SkillActionReason.none()
+
+
+static func _predefined_targets(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	units: Array[BattleUnitState]
+) -> Array[StringName]:
+	if skill.target_rule == CharacterSkill.TargetRule.SELF:
+		var self_ids: Array[StringName] = []
+		if actor.is_active():
+			self_ids.append(actor.unit_id)
+		return self_ids
+	var candidates: Array[BattleUnitState] = []
+	for unit: BattleUnitState in units:
+		if not is_instance_valid(unit) or not unit.is_active():
+			continue
+		if (
+			skill.target_rule == CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES
+			and unit.side == actor.side
+		):
+			candidates.append(unit)
+		elif (
+			skill.target_rule == CharacterSkill.TargetRule.FARTHEST_ACTIVE_ENEMY
+			and unit.side != actor.side
+		):
+			candidates.append(unit)
+	if skill.target_rule == CharacterSkill.TargetRule.FARTHEST_ACTIVE_ENEMY:
+		if candidates.is_empty():
+			var empty_ids: Array[StringName] = []
+			return empty_ids
+		candidates.sort_custom(
+			func(first: BattleUnitState, second: BattleUnitState) -> bool:
+				return _farthest_comes_before(actor, first, second)
+		)
+		var farthest_ids: Array[StringName] = [candidates[0].unit_id]
+		return farthest_ids
+	candidates.sort_custom(
+		func(first: BattleUnitState, second: BattleUnitState) -> bool:
+			return first.slot_index < second.slot_index
+	)
+	var ids: Array[StringName] = []
+	for candidate: BattleUnitState in candidates:
+		ids.append(candidate.unit_id)
+	return ids
+
+
+static func _farthest_comes_before(
+	actor: BattleUnitState,
+	first: BattleUnitState,
+	second: BattleUnitState
+) -> bool:
+	var actor_lane: int = actor.slot_index % 3
+	var first_distance: int = absi((first.slot_index % 3) - actor_lane)
+	var second_distance: int = absi((second.slot_index % 3) - actor_lane)
+	if first_distance != second_distance:
+		return first_distance > second_distance
+	var first_back: bool = first.slot_index >= FRONT_ROW_END
+	var second_back: bool = second.slot_index >= FRONT_ROW_END
+	if first_back != second_back:
+		return first_back
+	return first.slot_index > second.slot_index
+
+
+static func _sorted_units(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
+	var result: Array[BattleUnitState] = []
+	for unit: BattleUnitState in units:
+		if is_instance_valid(unit):
+			result.append(unit)
+	result.sort_custom(
+		func(first: BattleUnitState, second: BattleUnitState) -> bool:
+			if first.side != second.side:
+				return first.side < second.side
+			return first.slot_index < second.slot_index
+	)
+	return result
+
+
+static func _target_rejection(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	units: Array[BattleUnitState],
+	target_id: StringName
+) -> SkillActionReason:
+	var target: BattleUnitState = _find_unit(units, target_id)
+	if not is_instance_valid(target):
+		return _reason(
+			SkillActionReason.Code.TARGET_REMOVED,
+			"Target is no longer in battle. Select another target.",
+			actor,
+			skill,
+			target_id
+		)
+	if not target.is_active():
+		return _reason(
+			SkillActionReason.Code.TARGET_DEFEATED,
+			"Target was defeated. Select another target.",
+			actor,
+			skill,
+			target_id
+		)
+	if target.side == actor.side:
+		return _reason(
+			SkillActionReason.Code.TARGET_OWNERSHIP_CHANGED,
+			"Target changed sides and is no longer valid.",
+			actor,
+			skill,
+			target_id
+		)
+	return _reason(
+		SkillActionReason.Code.TARGET_INVALID,
+		"Invalid target.",
+		actor,
+		skill,
+		target_id
+	)
+
+
+static func _find_unit(
+	units: Array[BattleUnitState],
+	unit_id: StringName
+) -> BattleUnitState:
+	for unit: BattleUnitState in units:
+		if is_instance_valid(unit) and unit.unit_id == unit_id:
+			return unit
+	return null
+
+
+static func _actor_owns_skill(actor: BattleUnitState, skill_id: StringName) -> bool:
+	for owned_skill: CharacterSkill in actor.skills:
+		if owned_skill.skill_id == skill_id:
+			return true
+	return false
+
+
+static func _rejected(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	target_ids: Array[StringName],
+	revision: int,
+	reason: SkillActionReason
+) -> SkillConfirmationValidation:
+	return SkillConfirmationValidation.new(
+		false,
+		reason,
+		actor.unit_id if is_instance_valid(actor) else &"",
+		skill.skill_id if is_instance_valid(skill) else &"",
+		target_ids,
+		revision,
+		null
+	)
+
+
+static func _reason(
+	code: SkillActionReason.Code,
+	message: String,
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	target_id: StringName = &""
+) -> SkillActionReason:
+	return SkillActionReason.new(
+		code,
+		message,
+		actor.unit_id if is_instance_valid(actor) else &"",
+		skill.skill_id if is_instance_valid(skill) else &"",
+		target_id
+	)
