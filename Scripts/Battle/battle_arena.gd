@@ -63,6 +63,7 @@ var _units: Array[BattleUnitState] = []
 var _turn_queue: Array[BattleUnitState] = []
 var _current_turn_index: int = 0
 var _battle_log_entries: Array[BattleLogEntry] = []
+var _battle_action_log_entries: Array[BattleActionLogEntry] = []
 var _hovered_log_index: int = -1
 var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
@@ -121,6 +122,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_hovered_log_index = -1
 	_transient_log_entry = null
 	_battle_log_entries.clear()
+	_battle_action_log_entries.clear()
 	if is_node_ready():
 		_clear_log_controls()
 		_clear_all_damage_feedback()
@@ -145,6 +147,10 @@ func get_current_unit() -> BattleUnitState:
 
 func get_battle_log_entries() -> Array[BattleLogEntry]:
 	return _battle_log_entries.duplicate()
+
+
+func get_battle_action_log_entries() -> Array[BattleActionLogEntry]:
+	return _battle_action_log_entries.duplicate()
 
 
 func get_battle_outcome() -> BattleOutcome.Type:
@@ -251,6 +257,41 @@ func clear_skill_preview() -> void:
 
 func get_battle_revision() -> int:
 	return _battle_revision
+
+
+func get_skill_presentation_snapshot() -> Dictionary:
+	return _skill_transaction.presentation_snapshot()
+
+
+func notify_authoritative_battle_change() -> void:
+	_battle_revision += 1
+	if (
+		_skill_transaction.state != BattleSkillTransaction.State.TARGETING
+		or _skill_transaction.locked_target_ids.is_empty()
+	):
+		_render_skill_transaction()
+		return
+	var generation: int = _skill_transaction.generation
+	var actor: BattleUnitState = get_unit_by_id(_skill_transaction.actor_id)
+	var skill: CharacterSkill = _find_skill(actor, _skill_transaction.skill_id)
+	var current: BattleUnitState = get_current_unit()
+	var validation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor,
+		skill,
+		_units,
+		current.unit_id if is_instance_valid(current) else &"",
+		is_battle_complete(),
+		round_number,
+		_skill_transaction.locked_target_ids,
+		_battle_revision,
+		_battle_revision
+	)
+	if validation.accepted:
+		_skill_transaction.battle_revision = _battle_revision
+	else:
+		_skill_transaction.begin_confirmation(generation)
+		_skill_transaction.complete_confirmation(validation, generation)
+	_render_skill_transaction()
 
 
 func get_skill_transaction_state() -> BattleSkillTransaction.State:
@@ -381,6 +422,8 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 			return false
 	_action_in_progress = true
 	var action_round: int = round_number
+	var action_damage_results: Array[BattleDamageResult] = []
+	var action_speed_target_ids: Array[StringName] = []
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
 		var result: BattleDamageResult = BattleDamageResolver.apply_damage(
@@ -391,6 +434,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		if not is_instance_valid(result):
 			_action_in_progress = false
 			return false
+		action_damage_results.append(result)
 		var entry := BattleLogEntry.new(
 			_battle_log_entries.size() + 1,
 			action_round,
@@ -402,6 +446,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	var new_actor_speed_sources: Array[StringName] = []
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
+		action_speed_target_ids.append(target.unit_id)
 		target.add_speed_modifier(
 			operation["source_id"],
 			int(operation["amount"]),
@@ -418,6 +463,16 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		excluded_cooldowns.append(plan.skill_id)
 	actor.tick_skill_cooldowns(excluded_cooldowns)
 	actor.expire_speed_modifiers_after_action(new_actor_speed_sources)
+	var action_entry := BattleActionLogEntry.new(
+		_battle_action_log_entries.size() + 1,
+		action_round,
+		plan.actor_id,
+		plan.skill_id,
+		plan.target_ids,
+		action_damage_results,
+		action_speed_target_ids
+	)
+	_battle_action_log_entries.append(action_entry)
 	_battle_revision += 1
 	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
 	if resolved_outcome == BattleOutcome.Type.IN_PROGRESS and plan.advance_turn:
@@ -525,9 +580,12 @@ func advance_turn() -> void:
 		return
 	_current_turn_index += 1
 	if _current_turn_index >= _turn_queue.size():
+		var completed_round: int = round_number
 		round_number += 1
+		_expire_round_modifiers(completed_round)
 		_turn_queue = BattleTurnQueue.build(_units)
 		_current_turn_index = 0
+	_battle_revision += 1
 	_refresh_turn_ui()
 
 
@@ -748,8 +806,16 @@ func _advance_after_action(attacker_id: StringName) -> void:
 		return
 	_current_turn_index = attacker_index + 1
 	if _current_turn_index >= _turn_queue.size():
+		var completed_round: int = round_number
 		round_number += 1
+		_expire_round_modifiers(completed_round)
 		_current_turn_index = 0
+
+
+func _expire_round_modifiers(completed_round: int) -> void:
+	for unit: BattleUnitState in _units:
+		if is_instance_valid(unit):
+			unit.expire_speed_modifiers_for_round(completed_round)
 
 
 func _get_control_children(formation: GridContainer) -> Array[Control]:
@@ -827,7 +893,7 @@ func _refresh_turn_ui() -> void:
 		return
 	_current_unit_label.text = "%s | Speed %d | HP %d/%d" % [
 		current_unit.display_name,
-		current_unit.speed,
+		current_unit.get_effective_speed(),
 		current_unit.current_hp,
 		current_unit.max_hp,
 	]
@@ -862,7 +928,7 @@ func _render_units() -> void:
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
 		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
 		name_label.text = unit.display_name
-		speed_label.text = "Speed %d" % unit.speed
+		speed_label.text = "Speed %d" % unit.get_effective_speed()
 		health_label.text = (
 			"HP %d/%d" % [unit.current_hp, unit.max_hp]
 			if unit.is_active()

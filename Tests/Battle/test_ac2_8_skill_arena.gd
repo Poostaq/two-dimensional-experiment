@@ -16,6 +16,9 @@ func _run() -> void:
 	await _test_real_ui_signal_wiring(arena)
 	_test_speed_action_ticks_prior_cooldown(arena)
 	_test_stale_target_rejects_without_mutation(arena)
+	_test_rally_expires_at_round_end(arena)
+	_test_savage_blow_hp_boundary(arena)
+	_test_shadow_lunge_round_gate_and_farthest_lock(arena)
 	arena.queue_free()
 	await process_frame
 	if failures.is_empty():
@@ -62,6 +65,7 @@ func _test_confirmed_damage_resolves_once(arena: BattleArena) -> void:
 	_expect(enemy.current_hp == 13, "Shield Bash should apply exactly 7 damage.")
 	_expect(actor.get_skill_cooldown(&"shield_bash") == 1, "Shield Bash should apply one-action cooldown.")
 	_expect(arena.get_battle_revision() == 1, "Atomic committed action should increment revision once.")
+	_expect(arena.get_battle_action_log_entries().size() == 1, "Confirmed damage skill should create one logical action log.")
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.IDLE, "Resolved action should return to IDLE.")
 	_expect(not arena.confirm_skill_action(), "Repeated Confirm must not resolve again.")
 	_expect(enemy.current_hp == 13, "Repeated Confirm must not duplicate damage.")
@@ -161,6 +165,11 @@ func _test_speed_action_ticks_prior_cooldown(arena: BattleArena) -> void:
 	_expect(actor.get_effective_speed() == 12, "New next-action Speed modifier must survive its casting action.")
 	_expect(actor.get_skill_cooldown(&"quick_step") == 2, "New cooldown must not tick on its casting action.")
 	_expect(actor.get_skill_cooldown(&"quick_strike") == 0, "Prior cooldown should tick after the actor acts.")
+	var action_logs: Array = arena.get_battle_action_log_entries()
+	_expect(action_logs.size() == 1, "Speed skill should create one logical action log.")
+	if action_logs.size() == 1:
+		_expect(action_logs[0].skill_id == &"quick_step", "Speed action log should identify Quick Step.")
+		_expect(action_logs[0].target_ids == [&"player_speed"], "Speed action log should preserve locked targets.")
 
 
 func _test_stale_target_rejects_without_mutation(arena: BattleArena) -> void:
@@ -190,10 +199,122 @@ func _test_stale_target_rejects_without_mutation(arena: BattleArena) -> void:
 	arena.begin_skill_action(&"player_stale", &"shield_bash")
 	arena.select_skill_target(&"enemy_stale")
 	enemy.current_hp = 0
+	arena.notify_authoritative_battle_change()
+	_expect(arena.get_battle_revision() == 1, "Authoritative target defeat should increment revision once.")
 	_expect(not arena.confirm_skill_action(), "Defeated locked target should reject confirmation.")
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.REJECTED_STALE, "Stale target should enter REJECTED_STALE.")
 	_expect(actor.get_skill_cooldown(&"shield_bash") == 0, "Rejected stale action must not apply cooldown.")
-	_expect(arena.get_battle_revision() == 0, "Rejected stale action must not commit a revision.")
+	_expect(arena.get_battle_revision() == 1, "Rejected stale action must not commit an additional revision.")
+
+
+func _test_rally_expires_at_round_end(arena: BattleArena) -> void:
+	var rally := CharacterSkill.new(
+		&"rally", "Rally", CharacterSkill.Kind.ACTIVE,
+		"Grant allies 2 Speed.", "All active allies.", "None", "2 turns.",
+		CharacterSkill.TargetingMode.PREDEFINED,
+		CharacterSkill.TargetSide.ALLY,
+		CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.SPEED_BOOST,
+		2,
+		1,
+		CharacterSkill.EffectDuration.CURRENT_ROUND,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS,
+		2
+	)
+	var skills: Array[CharacterSkill] = [rally]
+	var actor := BattleUnitState.new(
+		&"player_rally", "Player Rally", BattleUnitState.Side.PLAYER, 0, 10, 20, skills
+	)
+	var ally := BattleUnitState.new(
+		&"player_ally", "Player Ally", BattleUnitState.Side.PLAYER, 1, 5
+	)
+	var enemy := BattleUnitState.new(
+		&"enemy_rally", "Enemy Rally", BattleUnitState.Side.ENEMY, 0, 1
+	)
+	var units: Array[BattleUnitState] = [actor, ally, enemy]
+	arena.configure_units(units)
+	_expect(arena.begin_skill_action(&"player_rally", &"rally"), "Rally should start with predefined ally locks.")
+	_expect(arena.confirm_skill_action(), "Rally should resolve.")
+	_expect(actor.get_effective_speed() == 12, "Rally should affect its user.")
+	_expect(ally.get_effective_speed() == 7, "Rally should affect every active ally.")
+	while arena.round_number == 1:
+		arena.advance_turn()
+	_expect(actor.get_effective_speed() == 10, "Rally should expire from its user at round end.")
+	_expect(ally.get_effective_speed() == 5, "Rally should expire from allies at round end.")
+	_expect(arena.get_battle_revision() > 1, "Authoritative turn advancement should increment revision.")
+
+
+func _test_savage_blow_hp_boundary(arena: BattleArena) -> void:
+	var savage_blow := CharacterSkill.new(
+		&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE,
+		"Deal 12 damage.", "One selected active enemy.", "Above 50% HP.", "2 turns.",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.ABOVE_HALF_HP,
+		CharacterSkill.Effect.DAMAGE,
+		12,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS,
+		2
+	)
+	var skills: Array[CharacterSkill] = [savage_blow]
+	var actor := BattleUnitState.new(
+		&"player_savage", "Player Savage", BattleUnitState.Side.PLAYER, 0, 10, 20, skills
+	)
+	var enemy := BattleUnitState.new(
+		&"enemy_savage", "Enemy Savage", BattleUnitState.Side.ENEMY, 0, 5
+	)
+	var units: Array[BattleUnitState] = [actor, enemy]
+	actor.current_hp = 10
+	arena.configure_units(units)
+	_expect(not arena.begin_skill_action(&"player_savage", &"savage_blow"), "Savage Blow must reject exactly 50% HP.")
+	actor.current_hp = 11
+	arena.configure_units(units)
+	_expect(arena.begin_skill_action(&"player_savage", &"savage_blow"), "Savage Blow should accept above 50% HP.")
+	arena.select_skill_target(&"enemy_savage")
+	_expect(arena.confirm_skill_action(), "Savage Blow should resolve above 50% HP.")
+	_expect(enemy.current_hp == 8, "Savage Blow should deal exactly 12 damage.")
+	_expect(actor.get_skill_cooldown(&"savage_blow") == 2, "Savage Blow should apply cooldown 2.")
+
+
+func _test_shadow_lunge_round_gate_and_farthest_lock(arena: BattleArena) -> void:
+	var shadow_lunge := CharacterSkill.new(
+		&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE,
+		"Deal 10 damage.", "Farthest active enemy.", "Back row.", "Round 1 gate.",
+		CharacterSkill.TargetingMode.PREDEFINED,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.FARTHEST_ACTIVE_ENEMY,
+		CharacterSkill.Requirement.BACK_ROW,
+		CharacterSkill.Effect.DAMAGE,
+		10,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.ROUND_GATE,
+		0,
+		1
+	)
+	var skills: Array[CharacterSkill] = [shadow_lunge]
+	var actor := BattleUnitState.new(
+		&"player_shadow", "Player Shadow", BattleUnitState.Side.PLAYER, 4, 10, 20, skills
+	)
+	var enemy_front := BattleUnitState.new(
+		&"enemy_shadow_front", "Enemy Front", BattleUnitState.Side.ENEMY, 0, 5
+	)
+	var enemy_back := BattleUnitState.new(
+		&"enemy_shadow_back", "Enemy Back", BattleUnitState.Side.ENEMY, 5, 1
+	)
+	var units: Array[BattleUnitState] = [actor, enemy_front, enemy_back]
+	arena.configure_units(units)
+	_expect(not arena.begin_skill_action(&"player_shadow", &"shadow_lunge"), "Shadow Lunge must reject round 1.")
+	while arena.round_number == 1:
+		arena.advance_turn()
+	_expect(arena.begin_skill_action(&"player_shadow", &"shadow_lunge"), "Shadow Lunge should unlock in round 2.")
+	_expect(arena.confirm_skill_action(), "Shadow Lunge predefined lock should confirm.")
+	_expect(enemy_front.current_hp == 20, "Shadow Lunge should leave nearer enemy unchanged.")
+	_expect(enemy_back.current_hp == 10, "Shadow Lunge should hit deterministic farthest enemy for 10.")
 
 
 func _expect(condition: bool, message: String) -> void:
