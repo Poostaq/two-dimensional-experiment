@@ -1,0 +1,31 @@
+Acceptance criterion: AC2.8
+Tested implementation commit: e59128da92b1fe076af667604f3ba772032b1b56
+Engine: Godot 4.7.1 stable Steam
+Result: PASS
+
+Focused runners:
+- Tests/Battle/test_ac2_8_skill_targeting.gd: PASS
+- Tests/Battle/test_ac2_8_skill_transaction.gd: PASS
+- Tests/Battle/test_ac2_8_skill_scene.gd: PASS
+- Tests/Battle/test_ac2_8_skill_arena.gd: PASS
+- Tests/Battle/test_ac2_8_skill_lifecycle.gd: PASS
+
+Coverage includes:
+- typed target-evaluation, confirmation-validation, rejection-reason, and effect-plan contracts
+- free and predefined targeting, valid/invalid indicators, target locking, Confirm, and Cancel
+- transaction states, callback supersession, confirmation de-duplication, and no duplicate resolution
+- stale rejection for removed/defeated units, ownership/current-actor changes, battle completion, round changes, cooldown changes, and availability changes
+- guarded damage and Speed mutation, cooldown timing, action logging, turn advancement, and round expiry
+- no partial mutation when confirmation fails
+
+Regression gates:
+- All tracked AC2.2 through AC2.8 runners passed during the implementation verification session.
+- GodotIQ validate(target="project"): 0 errors and 0 warnings in tracked implementation files.
+- GodotIQ check_errors on every changed AC2.8 script: 0 parser errors.
+- GodotIQ verify_project_runs(scene="res://Scenes/battle_arena.tscn", check_scope="scene"): PASS.
+- GodotIQ runtime debug capture after a complete Quick Strike transaction: 0 runtime errors and 0 script errors.
+
+Repository-local caveat:
+- Project-wide preflight also scans the existing untracked user file res://temp/run_ac2_7_test.gd, which has a type-inference parse error. The file is outside the AC2.8 change and was left untouched; scene-scoped compilation and every tracked AC2.8 runner pass.
+
+Expected negative-validation messages emitted by CharacterSkill rejection fixtures are asserted behavior, not test failures.
