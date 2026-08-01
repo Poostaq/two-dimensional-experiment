@@ -73,7 +73,7 @@ CharacterSkill.CooldownMode.POST_USE_ACTIONS
 CharacterSkill.CooldownMode.ROUND_GATE
 ```
 
-Assert that `mechanical_definition()` preserves all typed values, `duplicate_skill()` returns a distinct exact copy, and invalid combinations from the design return `null`: passive executable effect, free targeting with non-one target rule, enemy allegiance with all-allies, negative magnitude/duration, and negative cooldown.
+Assert that `mechanical_definition()` preserves all eleven added mechanical values—including typed `EffectDuration.NONE`, `NEXT_ACTION`, and `CURRENT_ROUND` boundaries—`duplicate_skill()` returns a distinct exact copy, and invalid combinations from the design return `null`: passive executable effect, free targeting with non-one target rule, enemy allegiance with all-allies, negative magnitude/duration, and negative cooldown. `is_valid_mechanical_definition()` accepts twelve inputs because `skill_kind` participates in validation in addition to the eleven added fields.
 
 - [ ] **Step 3: Run the focused runner to verify RED**
 
