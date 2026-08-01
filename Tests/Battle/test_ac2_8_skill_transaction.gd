@@ -8,6 +8,7 @@ func _init() -> void:
 	_test_free_targeting_and_confirmation_gate()
 	_test_predefined_lock_and_supersession()
 	_test_cancel_and_stale_rejection()
+	_test_presentation_snapshot_and_hover_supersession()
 	if failures.is_empty():
 		print("AC2.8 skill transaction tests: PASS")
 		quit(0)
@@ -101,6 +102,47 @@ func _test_cancel_and_stale_rejection() -> void:
 	_expect(transaction.state == BattleSkillTransaction.State.REJECTED_STALE, "Stale validation should enter REJECTED_STALE.")
 	_expect(transaction.locked_target_ids.is_empty(), "Stale rejection should clear locks immediately.")
 	_expect(not transaction.complete_confirmation(rejection, generation), "Completed validation callback must not re-enter.")
+
+
+func _test_presentation_snapshot_and_hover_supersession() -> void:
+	var transaction := BattleSkillTransaction.new()
+	var evaluation := SkillTargetEvaluation.new(
+		&"player_0", &"shield_bash", CharacterSkill.TargetingMode.FREE,
+		true, SkillActionReason.none(), [&"enemy_0"], {
+			&"enemy_1": SkillActionReason.new(
+				SkillActionReason.Code.TARGET_DEFEATED,
+				"Target was defeated. Select another target."
+			)
+		}, [], 41
+	)
+	var generation: int = transaction.preview(evaluation)
+	var preview_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(preview_snapshot["state"] == BattleSkillTransaction.State.PREVIEWING, "Snapshot should expose PREVIEWING.")
+	_expect(not preview_snapshot["action_region_visible"], "Hover preview should not expose action controls.")
+	_expect(preview_snapshot["indicator_roles"][&"enemy_0"] == &"valid_preview", "Valid preview role should be green+tint.")
+	_expect(preview_snapshot["indicator_roles"][&"enemy_1"] == &"invalid_preview", "Invalid preview role should be red+tint.")
+	transaction.begin_targeting(generation)
+	var targeting_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(targeting_snapshot["action_region_visible"], "Targeting should reveal contextual controls.")
+	_expect(targeting_snapshot["message"] == "Select a target for Shield Bash", "Targeting message should name the skill.")
+	_expect(targeting_snapshot["cancel_visible"], "Cancel should be visible while targeting.")
+	_expect(not targeting_snapshot["confirm_visible"], "Confirm should remain hidden before a free target lock.")
+	_expect(transaction.hover_target(&"enemy_1", generation), "Current invalid hover should be accepted.")
+	var invalid_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(invalid_snapshot["indicator_roles"][&"enemy_1"] == &"invalid_hover", "Invalid targeting hover should be red+tint.")
+	_expect(transaction.hover_target(&"enemy_0", generation), "Newest valid hover should replace the prior hover.")
+	var valid_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(not valid_snapshot["indicator_roles"].has(&"enemy_1"), "Last hover event should clear the old hover role.")
+	_expect(valid_snapshot["indicator_roles"][&"enemy_0"] == &"valid_hover", "Valid targeting hover should be green border.")
+	transaction.select_target(&"enemy_0", generation)
+	var locked_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(locked_snapshot["indicator_roles"][&"enemy_0"] == &"locked", "Locked target should be green+tint.")
+	_expect(locked_snapshot["confirm_visible"], "Confirm should appear after a target locks.")
+	_expect(locked_snapshot["confirm_enabled"], "Confirm should be enabled after a target locks.")
+	_expect(not transaction.hover_target(&"enemy_1", generation - 1), "Stale hover callback should be ignored.")
+	var defensive_roles: Dictionary = locked_snapshot["indicator_roles"]
+	defensive_roles.clear()
+	_expect(transaction.presentation_snapshot()["indicator_roles"].has(&"enemy_0"), "Snapshot indicator roles must be defensive.")
 
 
 func _expect(condition: bool, message: String) -> void:

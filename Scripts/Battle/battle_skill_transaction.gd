@@ -22,6 +22,7 @@ var invalid_targets: Dictionary[StringName, SkillActionReason] = {}
 var affected_target_ids: Array[StringName] = []
 var locked_target_ids: Array[StringName] = []
 var last_reason: SkillActionReason = SkillActionReason.none()
+var hovered_target_id: StringName = &""
 
 var _can_start: bool = false
 var _confirmation_pending: bool = false
@@ -59,6 +60,72 @@ func begin_targeting(callback_generation: int) -> bool:
 	return true
 
 
+func hover_target(target_id: StringName, callback_generation: int) -> bool:
+	if not _is_current(callback_generation) or state != State.TARGETING:
+		return false
+	if targeting_mode != CharacterSkill.TargetingMode.FREE:
+		return false
+	hovered_target_id = target_id
+	return valid_target_ids.has(target_id) or invalid_targets.has(target_id)
+
+
+func clear_target_hover(callback_generation: int) -> bool:
+	if not _is_current(callback_generation) or state != State.TARGETING:
+		return false
+	hovered_target_id = &""
+	return true
+
+
+func presentation_snapshot() -> Dictionary:
+	var roles: Dictionary[StringName, StringName] = {}
+	if state == State.PREVIEWING:
+		for target_id: StringName in valid_target_ids:
+			roles[target_id] = &"valid_preview"
+		for target_id: StringName in invalid_targets:
+			roles[target_id] = &"invalid_preview"
+	elif state in [State.TARGETING, State.VALIDATING, State.RESOLVING]:
+		for target_id: StringName in locked_target_ids:
+			roles[target_id] = &"locked"
+		if (
+			state == State.TARGETING
+			and not hovered_target_id.is_empty()
+			and not locked_target_ids.has(hovered_target_id)
+		):
+			if valid_target_ids.has(hovered_target_id):
+				roles[hovered_target_id] = &"valid_hover"
+			elif invalid_targets.has(hovered_target_id):
+				roles[hovered_target_id] = &"invalid_hover"
+	var has_lock: bool = not locked_target_ids.is_empty()
+	var action_visible: bool = state in [
+		State.TARGETING,
+		State.VALIDATING,
+		State.REJECTED_STALE,
+	]
+	var message: String = ""
+	if state == State.TARGETING:
+		message = (
+			"Select a target for %s" % _display_skill_name()
+			if targeting_mode == CharacterSkill.TargetingMode.FREE and not has_lock
+			else "Confirm %s" % _display_skill_name()
+		)
+	elif state == State.VALIDATING:
+		message = "Validating %s..." % _display_skill_name()
+	elif state == State.REJECTED_STALE:
+		message = last_reason.message
+	return {
+		"state": state,
+		"generation": generation,
+		"message": message,
+		"summary": _target_summary(),
+		"action_region_visible": action_visible,
+		"confirm_visible": action_visible and has_lock and state != State.REJECTED_STALE,
+		"confirm_enabled": state == State.TARGETING and has_lock,
+		"cancel_visible": action_visible,
+		"cancel_enabled": state in [State.TARGETING, State.REJECTED_STALE],
+		"indicator_roles": roles.duplicate(),
+	}
+
+
 func select_target(target_id: StringName, callback_generation: int) -> bool:
 	if not _is_current(callback_generation) or state != State.TARGETING:
 		return false
@@ -78,6 +145,7 @@ func select_target(target_id: StringName, callback_generation: int) -> bool:
 		return false
 	locked_target_ids.clear()
 	locked_target_ids.append(target_id)
+	hovered_target_id = &""
 	last_reason = SkillActionReason.none()
 	return true
 
@@ -149,9 +217,23 @@ func _clear_selection() -> void:
 	invalid_targets.clear()
 	affected_target_ids.clear()
 	locked_target_ids.clear()
+	hovered_target_id = &""
 	last_reason = SkillActionReason.none()
 	_can_start = false
 	_confirmation_pending = false
+
+
+func _display_skill_name() -> String:
+	return String(skill_id).replace("_", " ").capitalize()
+
+
+func _target_summary() -> String:
+	if locked_target_ids.is_empty():
+		return ""
+	var names: PackedStringArray = []
+	for target_id: StringName in locked_target_ids:
+		names.append(String(target_id))
+	return "Targets: %s" % ", ".join(names)
 
 
 func _is_current(callback_generation: int) -> bool:
