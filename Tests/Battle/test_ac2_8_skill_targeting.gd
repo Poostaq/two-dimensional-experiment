@@ -24,6 +24,8 @@ func _run() -> void:
 	_test_typed_mechanical_contract_exists()
 	_test_mechanical_definition_validation_and_copy()
 	await _test_active_fixture_mechanics()
+	_test_unit_runtime_state_contract_exists()
+	await _test_cooldown_and_speed_state()
 	if _failures.is_empty():
 		print("AC2.8 skill targeting tests: PASS")
 		quit(0)
@@ -171,6 +173,72 @@ func _test_active_fixture_mechanics() -> void:
 			_expect(skill.effect == values[4] and skill.effect_magnitude == values[5], "%s effect mismatch." % skill.skill_id)
 			_expect(skill.effect_duration_mode == values[6], "%s duration mode mismatch." % skill.skill_id)
 			_expect(skill.cooldown_mode == values[7] and skill.cooldown_actions == values[8] and skill.unavailable_through_round == values[9], "%s cooldown mismatch." % skill.skill_id)
+	arena.queue_free()
+	await process_frame
+
+
+func _test_unit_runtime_state_contract_exists() -> void:
+	var state_script := load("res://Scripts/Battle/battle_unit_state.gd") as Script
+	var constants := state_script.get_script_constant_map()
+	_expect(constants.has("ModifierExpiry"), "BattleUnitState must define ModifierExpiry.")
+	var method_names: Array[String] = []
+	for method: Dictionary in state_script.get_script_method_list():
+		method_names.append(String(method.get("name", "")))
+	for required_method: String in [
+		"get_base_speed",
+		"get_effective_speed",
+		"get_skill_cooldown",
+		"set_skill_cooldown",
+		"tick_skill_cooldowns",
+		"add_speed_modifier",
+		"expire_speed_modifiers_after_action",
+		"expire_speed_modifiers_for_round",
+		"get_speed_modifier_snapshot",
+	]:
+		_expect(method_names.has(required_method), "BattleUnitState must define %s." % required_method)
+
+
+func _test_cooldown_and_speed_state() -> void:
+	var arena := (load(ARENA_PATH) as PackedScene).instantiate() as BattleArena
+	get_root().add_child(arena)
+	await process_frame
+	var shield := arena.get_unit_by_id(&"player_0").skills[0]
+	var quick_step := arena.get_unit_by_id(&"player_2").skills[0]
+	var roster: Array[CharacterSkill] = [shield, quick_step]
+	var unit := BattleUnitState.new(
+		&"runtime_unit", "Runtime Unit", BattleUnitState.Side.PLAYER, 0, 5, 20, roster
+	)
+	_expect(unit.get_base_speed() == 5, "Base Speed must remain stable.")
+	_expect(unit.get_effective_speed() == 5, "Effective Speed must begin at base Speed.")
+	_expect(unit.get_skill_cooldown(&"shield_bash") == 0, "Cooldown must begin ready.")
+	_expect(unit.set_skill_cooldown(&"shield_bash", 2), "Owned skill cooldown must be accepted.")
+	unit.tick_skill_cooldowns([&"shield_bash"])
+	_expect(unit.get_skill_cooldown(&"shield_bash") == 2, "New cooldown must skip its application tick.")
+	unit.tick_skill_cooldowns([])
+	_expect(unit.get_skill_cooldown(&"shield_bash") == 1, "Cooldown must tick once per later action.")
+	var cooldown_snapshot := unit.get_skill_cooldown_snapshot()
+	cooldown_snapshot[&"shield_bash"] = 99
+	_expect(unit.get_skill_cooldown(&"shield_bash") == 1, "Cooldown snapshots must be defensive.")
+	_expect(not unit.set_skill_cooldown(&"foreign_skill", 1), "Foreign skill cooldown must be rejected.")
+	_expect(unit.add_speed_modifier(&"quick_step", 2, BattleUnitState.ModifierExpiry.NEXT_ACTION, 1, 1), "Next-action modifier must be accepted.")
+	_expect(unit.add_speed_modifier(&"rally", 2, BattleUnitState.ModifierExpiry.CURRENT_ROUND, 1, 1), "Round modifier must be accepted.")
+	_expect(unit.get_effective_speed() == 9, "Independent Speed modifiers must stack additively.")
+	var modifier_snapshot := unit.get_speed_modifier_snapshot()
+	var changed: Dictionary = modifier_snapshot[&"quick_step"]
+	changed["amount"] = 99
+	modifier_snapshot[&"quick_step"] = changed
+	_expect(unit.get_effective_speed() == 9, "Modifier snapshots must be deeply defensive.")
+	unit.expire_speed_modifiers_after_action()
+	_expect(unit.get_effective_speed() == 7, "Next-action modifier must expire after the unit acts.")
+	unit.expire_speed_modifiers_for_round(1)
+	_expect(unit.get_effective_speed() == 5, "Round modifier must expire at round end.")
+	_expect(not unit.add_speed_modifier(&"", 2, BattleUnitState.ModifierExpiry.NEXT_ACTION, 1, 1), "Blank modifier sources must be rejected.")
+	var boosted := BattleUnitState.new(&"boosted", "Boosted", BattleUnitState.Side.PLAYER, 1, 5)
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 7)
+	_expect(boosted.add_speed_modifier(&"boost", 3, BattleUnitState.ModifierExpiry.CURRENT_ROUND, 1, 1), "Queue fixture modifier must be accepted.")
+	var queue_units: Array[BattleUnitState] = [enemy, boosted]
+	var queue := BattleTurnQueue.build(queue_units)
+	_expect(not queue.is_empty() and queue[0].unit_id == &"boosted", "Turn queue must order by effective Speed.")
 	arena.queue_free()
 	await process_frame
 
