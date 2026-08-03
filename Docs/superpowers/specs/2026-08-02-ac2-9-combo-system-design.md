@@ -34,6 +34,16 @@ AC2.9 excludes:
 
 The combo system extends the existing immutable skill and effect-plan boundaries instead of adding feature-specific orchestration to `battle_arena.gd`.
 
+### Authoritative ownership rule
+
+The following ownership rule is non-negotiable and governs every component below:
+
+- **Arena owns history:** `BattleArena._battle_action_log_entries` is the one authoritative committed-action history collection. Only the arena mutates or resets it.
+- **Rules consume snapshots:** `BattleSkillRules` and `BattleComboRules` receive a deep defensive snapshot explicitly from `BattleArena.get_committed_action_history_snapshot()`. They never access, own, cache, mutate, or reset arena history.
+- **Presentation is derived:** Combo-ready indicators, tooltip rows, messages, summaries, hovered targets, and locked-target styling are transient projections recalculated from the current skill, targets, round, revision, and history snapshot. They are not committed facts, are never appended to history, and cannot be reused as confirmation evidence.
+
+Confirmation must request a current snapshot and reevaluate the combo definition. It must not trust a preview-time `ComboEvaluation`, transaction presentation snapshot, node property, or cached combo-ready flag. Cleanup may discard all derived presentation without changing committed history; history reset invalidates every derived combo-ready state.
+
 `CharacterSkill` owns an optional immutable `ComboDefinition`. A definition contains typed `ComboCondition` values and typed `ComboBonusEffect` values. Every condition must pass for the definition to activate. Definitions are data only: they contain no scene nodes, callbacks, mutable battle state, or skill-ID-specific behavior.
 
 `BattleComboRules` evaluates a definition against the actor, proposed targets, current round, and a defensive snapshot of committed `BattleActionLogEntry` history. It returns an immutable `ComboEvaluation` containing activation state, per-condition results, and resolved bonus operations. The evaluator dispatches by condition and effect type, never by the owning skill's ID.
