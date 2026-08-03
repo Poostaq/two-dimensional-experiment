@@ -115,6 +115,22 @@ The focused test fixture also creates `combo_probe` / Combo Probe as a separate 
 
 Construction requires a positive sequence and round, non-empty actor and skill IDs, a valid side, unique non-empty target IDs, and damage-breakdown entries whose IDs are included in `target_ids` and whose values are non-negative. Base plus combo bonus must equal each damage result's requested damage. Arrays, dictionaries, and nested damage results are copied on input and output. `duplicate_entry()` returns a distinct deep copy suitable for rule evaluation.
 
+### BattleActionLogEntry contract migration
+
+Extending `BattleActionLogEntry` is a coordinated public-contract change. Its constructor, immutable getters, validation rules, duplication behavior, and every producer and consumer must move to the new schema in one implementation task. The implementation must run GodotIQ `file_context` and `impact_check` before modifying the class and must not rely on optional constructor defaults to conceal unmigrated call sites.
+
+The migration includes:
+
+- Every arena construction path for damaging and non-damaging skill actions.
+- Action-log rendering and historical hover feedback.
+- Combo-history snapshots and evaluator inputs.
+- AC2.8 arena, lifecycle, transaction, and targeting fixtures that construct or assert action entries.
+- AC2.9 focused fixtures and defensive-copy assertions.
+
+Existing AC2.8 semantics remain mandatory: one logical entry per committed skill, ordered target identity, exact `BattleDamageResult` values, Speed target identity, and stable sequence/round/actor/skill fields. Non-combo entries explicitly carry empty damage-breakdown dictionaries or zero combo values as appropriate; they are not represented through an older constructor shape. The migration is complete only when no legacy constructor or partial entry shape remains and AC2.8 passes unchanged behavioral assertions.
+
+This contract migration receives its own RED/GREEN cycle and commit before evaluator or UI integration. Focused tests first fail against the old constructor/getters, then prove valid damage, non-combo damage, combo damage, Speed-only actions, malformed arithmetic, deep duplication, and legacy-call-site removal. GodotIQ validation and parser checks run immediately after the class and each affected producer/consumer are migrated.
+
 The arena appends an entry only after the complete effect plan commits. Preview, selection, cancellation, rejected confirmation, stale confirmation, duplicate callbacks, debug damage, and failed or partial attempts never create entries. One confirmed skill action creates exactly one entry even when it affects multiple targets. Presentation renders from this same entry; there is no second event collection and no derivation or synchronization path to maintain.
 
 `BattleArena.get_committed_action_history_snapshot() -> Array[BattleActionLogEntry]` is the only arena-facing history API. It returns a newly allocated array of `duplicate_entry()` values in ascending `sequence_number` order. The arena passes this snapshot explicitly to `BattleSkillRules`, which passes it unchanged to `BattleComboRules`; neither rules class holds an arena reference or fetches global state. Tests and runtime inspection use the same snapshot method rather than reading `_battle_action_log_entries`.
@@ -239,7 +255,7 @@ Player-facing invalid-action messages remain owned by the existing skill validat
 - `Scripts/Battle/battle_combo_rules.gd`: pure generic condition and bonus-effect evaluation.
 - `Scripts/Battle/character_skill.gd`: optional combo metadata and validation integration.
 - `Scripts/Battle/skill_effect_plan.gd`: explicit base, combo bonus, and requested damage values.
-- `Scripts/Battle/battle_action_log_entry.gd`: sole authoritative committed-skill history and combo-aware logical action record, with defensive duplication.
+- `Scripts/Battle/battle_action_log_entry.gd`: migrated public contract for the sole authoritative committed-skill history and combo-aware logical action record, with strict construction and defensive duplication.
 - `Scripts/Battle/battle_skill_rules.gd`: composes normal and combo evaluation into confirmation plans.
 - `Scripts/Battle/battle_arena.gd`: authoritative action-history ownership, `get_committed_action_history_snapshot()`, atomic entry recording, and presentation wiring.
 - `Scenes/battle_arena.tscn`: any additional scene-owned Combo tooltip label or indicator styling.
@@ -261,10 +277,11 @@ The focused AC2.9 automated runner proves:
 7. A setup actor's later defeat or removal does not invalidate its committed current-round history.
 8. Confirmation reevaluates current history and revision; stale preview state cannot grant a bonus.
 9. Every damage operation contains exactly `target_id`, `base_damage`, `combo_bonus_damage`, and `total_requested_damage`; invalid arithmetic or values are rejected, and returned operations are defensive copies.
-10. Combo resolution applies once, advances once, increments revision once, and records exactly one authoritative `BattleActionLogEntry`; no parallel committed-event collection exists.
-11. `get_committed_action_history_snapshot()` preserves sequence order, deep-copies every entry and nested value, and is the only history input passed through `BattleSkillRules` into `BattleComboRules`.
-12. Every lifecycle row in the history and presentation matrix is tested, including retained completed-battle entries, exact clear boundaries, neutral presentation, and empty replacement-battle snapshots.
-13. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
+10. The `BattleActionLogEntry` contract migration covers damaging, non-damaging, combo, and Speed-only entries; all producers and consumers use the new constructor/getters, no compatibility defaults or legacy shape remain, and AC2.8 entry behavior remains green.
+11. Combo resolution applies once, advances once, increments revision once, and records exactly one authoritative `BattleActionLogEntry`; no parallel committed-event collection exists.
+12. `get_committed_action_history_snapshot()` preserves sequence order, deep-copies every entry and nested value, and is the only history input passed through `BattleSkillRules` into `BattleComboRules`.
+13. Every lifecycle row in the history and presentation matrix is tested, including retained completed-battle entries, exact clear boundaries, neutral presentation, and empty replacement-battle snapshots.
+14. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
 
 Regression verification runs every AC2.1–AC2.8 focused runner individually, GodotIQ project validation, project parser/error checks, and orphan-signal inspection. Runtime verification starts Play, confirms clean debugger output, inspects authoritative history/revision values, and exercises both the qualifying and non-qualifying Quick Strike paths. Visual QA uses the target 1152×648 viewport and a post-fix tour.
 
