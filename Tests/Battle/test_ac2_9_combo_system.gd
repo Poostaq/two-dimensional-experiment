@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_character_skill_combo_contract()
 	_test_action_entry_migration_contract()
 	_test_effect_plan_damage_contract()
+	_test_generic_combo_rules_contract()
 	if _failures.is_empty():
 		print("AC2.9 combo system tests: PASS")
 		quit(0)
@@ -227,6 +228,53 @@ func _test_effect_plan_damage_contract() -> void:
 			&"actor", &"combo_probe", target_ids, invalid, speed_operations, 0, true, 4
 		) == null,
 		"invalid damage arithmetic should reject"
+	)
+
+
+func _test_generic_combo_rules_contract() -> void:
+	var rules_path := "res://Scripts/Battle/battle_combo_rules.gd"
+	_expect(FileAccess.file_exists(rules_path), "generic combo rules script should exist")
+	if not FileAccess.file_exists(rules_path):
+		return
+	var rules_script: Script = load(rules_path)
+	var condition_script: Script = load(CONDITION_PATH)
+	var effect_script: Script = load(EFFECT_PATH)
+	var definition_script: Script = load(DEFINITION_PATH)
+	var definition: RefCounted = definition_script.create(
+		[condition_script.create(0)],
+		[effect_script.create(0, 3)],
+		"Combo"
+	)
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 5)
+	var setup_result := BattleDamageResult.new(&"ally", &"target", 5, 5, 15, false)
+	var target_ids: Array[StringName] = [&"target"]
+	var results: Array[BattleDamageResult] = [setup_result]
+	var base: Dictionary[StringName, int] = {&"target": 5}
+	var bonus: Dictionary[StringName, int] = {&"target": 0}
+	var speed_targets: Array[StringName] = []
+	var history: Array[BattleActionLogEntry] = [BattleActionLogEntry.new(
+		1, 2, &"ally", BattleUnitState.Side.PLAYER, &"setup",
+		target_ids, results, base, bonus, speed_targets, false
+	)]
+	var evaluation: Variant = rules_script.evaluate(definition, actor, target_ids, 2, history)
+	_expect(evaluation.has_combo and evaluation.activated, "different ally setup should activate")
+	_expect(evaluation.bonus_operations[0][&"magnitude"] == 3, "activated bonus should be +3")
+	var same_actor_history: Array[BattleActionLogEntry] = [BattleActionLogEntry.new(
+		1, 2, &"actor", BattleUnitState.Side.PLAYER, &"setup",
+		target_ids, results, base, bonus, speed_targets, false
+	)]
+	var same_actor: Variant = rules_script.evaluate(definition, actor, target_ids, 2, same_actor_history)
+	_expect(same_actor.has_combo and not same_actor.activated, "same actor should not activate")
+	var previous_round: Variant = rules_script.evaluate(definition, actor, target_ids, 3, history)
+	_expect(not previous_round.activated, "previous-round setup should not activate")
+	var quick_definition: RefCounted = definition.duplicate_definition()
+	var probe_definition: RefCounted = definition.duplicate_definition()
+	var quick_result: Variant = rules_script.evaluate(quick_definition, actor, target_ids, 2, history)
+	var probe_result: Variant = rules_script.evaluate(probe_definition, actor, target_ids, 2, history)
+	_expect(
+		quick_result.activated == probe_result.activated
+		and quick_result.bonus_operations == probe_result.bonus_operations,
+		"differently owned equivalent definitions should evaluate identically"
 	)
 
 
