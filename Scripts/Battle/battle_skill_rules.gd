@@ -137,8 +137,10 @@ static func validate_confirmation(
 		CharacterSkill.Effect.DAMAGE:
 			for target_id: StringName in accepted_ids:
 				damage_operations.append({
-					"target_id": target_id,
-					"amount": skill.effect_magnitude,
+					&"target_id": target_id,
+					&"base_damage": skill.effect_magnitude,
+					&"combo_bonus_damage": 0,
+					&"total_requested_damage": skill.effect_magnitude,
 				})
 		CharacterSkill.Effect.SPEED_BOOST:
 			var expiry: BattleUnitState.ModifierExpiry = (
@@ -155,7 +157,7 @@ static func validate_confirmation(
 					"duration": skill.effect_duration,
 					"applied_round": round_number,
 				})
-	var plan: SkillEffectPlan = SkillEffectPlan.new(
+	var plan: SkillEffectPlan = SkillEffectPlan.create(
 		actor.unit_id,
 		skill.skill_id,
 		accepted_ids,

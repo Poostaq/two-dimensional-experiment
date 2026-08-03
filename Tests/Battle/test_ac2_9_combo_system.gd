@@ -15,6 +15,8 @@ func _init() -> void:
 func _run() -> void:
 	_test_combo_value_contracts()
 	_test_character_skill_combo_contract()
+	_test_action_entry_migration_contract()
+	_test_effect_plan_damage_contract()
 	if _failures.is_empty():
 		print("AC2.9 combo system tests: PASS")
 		quit(0)
@@ -158,6 +160,74 @@ func _test_character_skill_combo_contract() -> void:
 		definition
 	)
 	_expect(passive == null, "passive skill should reject combo definition")
+
+
+func _test_action_entry_migration_contract() -> void:
+	var script: Script = load("res://Scripts/Battle/battle_action_log_entry.gd")
+	var init_argument_count := 0
+	var has_duplicate := false
+	for method: Dictionary in script.get_script_method_list():
+		if method.get("name", "") == "_init":
+			init_argument_count = method.get("args", []).size()
+		if method.get("name", "") == "duplicate_entry":
+			has_duplicate = true
+	_expect(init_argument_count == 11, "BattleActionLogEntry constructor should use migrated schema")
+	_expect(has_duplicate, "BattleActionLogEntry should deep-duplicate")
+	if init_argument_count != 11 or not has_duplicate:
+		return
+	var result := BattleDamageResult.new(&"actor", &"target", 8, 8, 12, false)
+	var target_ids: Array[StringName] = [&"target"]
+	var damage_results: Array[BattleDamageResult] = [result]
+	var base_by_target: Dictionary[StringName, int] = {&"target": 5}
+	var bonus_by_target: Dictionary[StringName, int] = {&"target": 3}
+	var speed_targets: Array[StringName] = []
+	var entry: Variant = script.new(
+		1, 2, &"actor", BattleUnitState.Side.PLAYER, &"combo_probe",
+		target_ids, damage_results, base_by_target, bonus_by_target, speed_targets, true
+	)
+	_expect(entry.actor_side == BattleUnitState.Side.PLAYER, "entry should retain actor side")
+	_expect(entry.base_damage_by_target[&"target"] == 5, "entry should retain base damage")
+	_expect(entry.combo_bonus_damage_by_target[&"target"] == 3, "entry should retain combo bonus")
+	_expect(entry.combo_activated, "entry should retain combo state")
+	var duplicate: Variant = entry.duplicate_entry()
+	_expect(duplicate != entry, "entry duplicate should be distinct")
+	_expect(duplicate.damage_results[0] != entry.damage_results[0], "damage results should deep-copy")
+
+
+func _test_effect_plan_damage_contract() -> void:
+	var script: Script = load("res://Scripts/Battle/skill_effect_plan.gd")
+	_expect(script.has_method("create"), "SkillEffectPlan should expose validated create")
+	if not script.has_method("create"):
+		return
+	var operations: Array[Dictionary] = [{
+		&"target_id": &"target",
+		&"base_damage": 5,
+		&"combo_bonus_damage": 3,
+		&"total_requested_damage": 8,
+	}]
+	var target_ids: Array[StringName] = [&"target"]
+	var speed_operations: Array[Dictionary] = []
+	var plan: Variant = script.create(
+		&"actor", &"combo_probe", target_ids, operations, speed_operations, 0, true, 4
+	)
+	_expect(is_instance_valid(plan), "valid damage operation should construct")
+	if not is_instance_valid(plan):
+		return
+	var leaked: Array[Dictionary] = plan.damage_operations
+	leaked[0][&"total_requested_damage"] = 99
+	_expect(plan.damage_operations[0][&"total_requested_damage"] == 8, "plan operations should be defensive")
+	var invalid: Array[Dictionary] = [{
+		&"target_id": &"target",
+		&"base_damage": 5,
+		&"combo_bonus_damage": 3,
+		&"total_requested_damage": 7,
+	}]
+	_expect(
+		script.create(
+			&"actor", &"combo_probe", target_ids, invalid, speed_operations, 0, true, 4
+		) == null,
+		"invalid damage arithmetic should reject"
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

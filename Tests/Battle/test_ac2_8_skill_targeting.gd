@@ -284,7 +284,15 @@ func _test_target_evaluation_and_confirmation() -> void:
 	var selected_ids: Array[StringName] = [&"enemy_front"]
 	var accepted := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, selected_ids, 7, 7)
 	_expect(accepted.accepted and accepted.effect_plan != null, "Valid free-target confirmation must return an effect plan.")
-	_expect(accepted.effect_plan.damage_operations == [{"target_id": &"enemy_front", "amount": 7}], "Shield Bash must plan exact damage.")
+	_expect(
+		accepted.effect_plan.damage_operations == [{
+			&"target_id": &"enemy_front",
+			&"base_damage": 7,
+			&"combo_bonus_damage": 0,
+			&"total_requested_damage": 7,
+		}],
+		"Shield Bash must plan exact base damage without combo bonus."
+	)
 	_expect(accepted.effect_plan.cooldown_actions == 1 and accepted.effect_plan.advance_turn, "Shield Bash plan must apply cooldown and advance once.")
 	var defeated_ids: Array[StringName] = [&"enemy_defeated"]
 	var rejected := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, defeated_ids, 7, 7)

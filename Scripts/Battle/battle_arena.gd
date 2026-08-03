@@ -427,7 +427,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		return false
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
-		if not is_instance_valid(target) or not target.is_active() or int(operation.get("amount", 0)) <= 0:
+		if not is_instance_valid(target) or not target.is_active() or int(operation.get(&"total_requested_damage", 0)) <= 0:
 			return false
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
@@ -436,13 +436,18 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	_action_in_progress = true
 	var action_round: int = round_number
 	var action_damage_results: Array[BattleDamageResult] = []
+	var action_base_damage_by_target: Dictionary[StringName, int] = {}
+	var action_combo_bonus_damage_by_target: Dictionary[StringName, int] = {}
 	var action_speed_target_ids: Array[StringName] = []
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
+		var target_id: StringName = operation[&"target_id"]
+		action_base_damage_by_target[target_id] = int(operation[&"base_damage"])
+		action_combo_bonus_damage_by_target[target_id] = int(operation[&"combo_bonus_damage"])
 		var result: BattleDamageResult = BattleDamageResolver.apply_damage(
 			actor,
 			target,
-			int(operation["amount"])
+			int(operation[&"total_requested_damage"])
 		)
 		if not is_instance_valid(result):
 			_action_in_progress = false
@@ -480,10 +485,14 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_battle_action_log_entries.size() + 1,
 		action_round,
 		plan.actor_id,
+		actor.side,
 		plan.skill_id,
 		plan.target_ids,
 		action_damage_results,
-		action_speed_target_ids
+		action_base_damage_by_target,
+		action_combo_bonus_damage_by_target,
+		action_speed_target_ids,
+		_action_has_combo_bonus(action_combo_bonus_damage_by_target)
 	)
 	_battle_action_log_entries.append(action_entry)
 	_battle_revision += 1
@@ -495,6 +504,13 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	_action_in_progress = false
 	_refresh_turn_ui()
 	return true
+
+
+func _action_has_combo_bonus(bonus_by_target: Dictionary[StringName, int]) -> bool:
+	for bonus: int in bonus_by_target.values():
+		if bonus > 0:
+			return true
+	return false
 
 
 func _render_skill_transaction() -> void:
