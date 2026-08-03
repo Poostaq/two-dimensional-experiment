@@ -36,11 +36,11 @@ The combo system extends the existing immutable skill and effect-plan boundaries
 
 `CharacterSkill` owns an optional immutable `ComboDefinition`. A definition contains typed `ComboCondition` values and typed `ComboBonusEffect` values. Every condition must pass for the definition to activate. Definitions are data only: they contain no scene nodes, callbacks, mutable battle state, or skill-ID-specific behavior.
 
-`BattleComboRules` evaluates a definition against the actor, proposed targets, current round, and a defensive snapshot of committed `BattleSkillActionEvent` history. It returns an immutable `ComboEvaluation` containing activation state, per-condition results, and resolved bonus operations. The evaluator dispatches by condition and effect type, never by the owning skill's ID.
+`BattleComboRules` evaluates a definition against the actor, proposed targets, current round, and a defensive snapshot of committed `BattleActionLogEntry` history. It returns an immutable `ComboEvaluation` containing activation state, per-condition results, and resolved bonus operations. The evaluator dispatches by condition and effect type, never by the owning skill's ID.
 
 `BattleSkillRules` remains the pure confirmation authority. It evaluates the normal skill effect and the combo definition together, then produces one `SkillEffectPlan`. An activated damage bonus is represented separately from base damage in the plan while contributing to the same target's final applied damage.
 
-`BattleArena` remains the only mutation boundary. After a plan commits successfully, the arena appends one immutable action-history event and one logical action-log entry. Transaction generation and battle revision continue to guard preview, targeting, and confirmation.
+`BattleArena` remains the only mutation boundary. After a plan commits successfully, the arena appends one immutable `BattleActionLogEntry`; that entry is both the logical battle log and the sole authoritative committed-skill history record. Transaction generation and battle revision continue to guard preview, targeting, and confirmation.
 
 ## Typed combo definitions
 
@@ -95,23 +95,31 @@ Quick Strike keeps all AC2.7 and AC2.8 behavior except for the added combo metad
 
 No combat rule checks `quick_strike` or any other concrete skill ID. The fixture demonstrates the generic data contract by attaching the definition to Quick Strike.
 
-## Committed action history
+The focused test fixture also creates `combo_probe` / Combo Probe as a separate active, single-target, 5-damage skill. It receives an independently duplicated combo definition with the same condition and `+3` effect. It is not added to the production roster. Pure evaluation and full confirmation/resolution tests must produce identical results for Quick Strike and Combo Probe, preventing a hidden concrete skill-ID branch from satisfying AC2.9.
 
-`BattleSkillActionEvent` is an immutable record of one successfully committed skill action:
+## Authoritative committed action history
 
+`BattleActionLogEntry` remains the single immutable record of one successfully committed skill action. AC2.9 extends it with the history facts required for generic combo evaluation:
+
+- `sequence_number: int`
 - `round_number: int`
 - `actor_id: StringName`
 - `actor_side: BattleUnitState.Side`
 - `skill_id: StringName`
 - `target_ids: Array[StringName]`
-- `applied_damage_by_target: Dictionary[StringName, int]`
+- `damage_results: Array[BattleDamageResult]`
+- `base_damage_by_target: Dictionary[StringName, int]`
+- `combo_bonus_damage_by_target: Dictionary[StringName, int]`
 - `combo_activated: bool`
+- Existing non-damage action fields, including Speed target IDs
 
-Construction requires a positive round, non-empty actor and skill IDs, a valid side, unique non-empty target IDs, and damage entries whose IDs are included in `target_ids` and whose values are non-negative. Arrays and dictionaries are copied on input and output.
+Construction requires a positive sequence and round, non-empty actor and skill IDs, a valid side, unique non-empty target IDs, and damage-breakdown entries whose IDs are included in `target_ids` and whose values are non-negative. Base plus combo bonus must equal each damage result's requested damage. Arrays, dictionaries, and nested damage results are copied on input and output. `duplicate_entry()` returns a distinct deep copy suitable for rule evaluation.
 
-The arena appends an event only after the complete effect plan commits. Preview, selection, cancellation, rejected confirmation, stale confirmation, duplicate callbacks, debug damage, and failed or partial attempts never create events. One confirmed skill action creates exactly one event even when it affects multiple targets.
+The arena appends an entry only after the complete effect plan commits. Preview, selection, cancellation, rejected confirmation, stale confirmation, duplicate callbacks, debug damage, and failed or partial attempts never create entries. One confirmed skill action creates exactly one entry even when it affects multiple targets. Presentation renders from this same entry; there is no second event collection and no derivation or synchronization path to maintain.
 
-History is reset when a battle is configured or torn down. Earlier-round events may remain in the in-memory array during a battle, but the condition filters strictly by `round_number`; therefore they cannot activate a current-round combo. Consumers receive defensive snapshots rather than the arena's mutable array.
+`BattleArena.get_committed_action_history_snapshot() -> Array[BattleActionLogEntry]` is the only arena-facing history API. It returns a newly allocated array of `duplicate_entry()` values in ascending `sequence_number` order. The arena passes this snapshot explicitly to `BattleSkillRules`, which passes it unchanged to `BattleComboRules`; neither rules class holds an arena reference or fetches global state. Tests and runtime inspection use the same snapshot method rather than reading `_battle_action_log_entries`.
+
+The authoritative `_battle_action_log_entries` array is reset by battle configuration, teardown, and exit cleanup. Battle completion clears interactive combo presentation but retains the completed battle's entries for result-screen log inspection; those entries are discarded at teardown or when the next battle is configured. Earlier-round entries may remain in the array during a battle, but the condition filters strictly by `round_number`; therefore they cannot activate a current-round combo.
 
 ## Condition semantics
 
@@ -120,8 +128,8 @@ History is reset when a battle is configured or torn down. Earlier-round events 
 1. The event round equals the current round.
 2. The event actor side equals the current actor's side.
 3. The event actor ID differs from the current actor ID.
-4. The proposed target ID exists in `applied_damage_by_target`.
-5. Applied damage for that target is greater than zero.
+4. A `damage_results` item identifies the proposed target ID.
+5. That result's applied damage is greater than zero.
 
 The setup actor does not need to remain active after its committed hit. Its later defeat or removal does not erase valid history from the current round.
 
@@ -131,7 +139,7 @@ For a single-target skill, the definition activates when every condition passes 
 
 ## Evaluation and effect planning
 
-`BattleComboRules.evaluate(...) -> ComboEvaluation` receives the combo definition, actor, ordered proposed targets, current round, and a defensive history snapshot. It never mutates its inputs.
+`BattleComboRules.evaluate(...) -> ComboEvaluation` receives the combo definition, actor, ordered proposed targets, current round, and the `Array[BattleActionLogEntry]` returned by `BattleArena.get_committed_action_history_snapshot()`. It never mutates its inputs and has no reference to the arena.
 
 `ComboEvaluation` contains:
 
@@ -145,7 +153,7 @@ For a single-target skill, the definition activates when every condition passes 
 
 If no definition exists, evaluation returns `has_combo == false`, `activated == false`, and no operations. If a valid definition exists but any condition fails, evaluation returns `has_combo == true`, `activated == false`, and no operations. If all conditions pass, every configured bonus effect becomes an ordered bonus operation.
 
-For `BONUS_DAMAGE`, `BattleSkillRules` includes both base and bonus amounts in the confirmation result and effect plan. The plan retains one logical damage resolution per target with explicit `base_damage`, `combo_bonus_damage`, and `total_requested_damage` fields. `total_requested_damage` equals base plus bonus. Actual HP loss remains clamped by the existing damage resolver and is what the committed action event records.
+For `BONUS_DAMAGE`, `BattleSkillRules` includes both base and bonus amounts in the confirmation result and effect plan. The plan retains one logical damage resolution per target with explicit `base_damage`, `combo_bonus_damage`, and `total_requested_damage` fields. `total_requested_damage` equals base plus bonus. Actual HP loss remains clamped by the existing damage resolver and is stored in the authoritative action entry's damage result.
 
 Confirmation always reevaluates combo eligibility using the current battle revision and history. An action built from an older revision follows the existing stale rejection path and mutates nothing.
 
@@ -159,11 +167,11 @@ A confirmed combo-capable skill follows this order:
 4. Apply the total requested damage through `BattleDamageResolver`.
 5. Apply existing cooldown, modifier-expiry, defeat, result, queue, and turn rules.
 6. Increment the battle revision once for the atomic action.
-7. Append one immutable `BattleSkillActionEvent` using actual applied damage.
-8. Append one logical action-log entry containing base, bonus, requested total, applied total, and combo state.
+7. Append one immutable `BattleActionLogEntry` containing actor side, base, bonus, requested total, actual applied damage, and combo state.
+8. Render the logical battle log from that same authoritative entry.
 9. Return the transaction and presentation to the existing neutral state.
 
-Any failure before commit produces no HP change, cooldown change, history event, action-log entry, revision increment, or turn advancement. Re-entry and duplicate confirmation remain blocked by the existing latch and generation guards.
+Any failure before commit produces no HP change, cooldown change, action-log/history entry, revision increment, or turn advancement. Re-entry and duplicate confirmation remain blocked by the existing latch and generation guards.
 
 ## Presentation
 
@@ -200,13 +208,12 @@ Player-facing invalid-action messages remain owned by the existing skill validat
 - `Scripts/Battle/combo_definition.gd`: validated AND-only definition with defensive deep copies.
 - `Scripts/Battle/combo_condition_result.gd`: immutable per-condition evaluation evidence.
 - `Scripts/Battle/combo_evaluation.gd`: immutable aggregate activation result and diagnostic.
-- `Scripts/Battle/battle_skill_action_event.gd`: immutable committed skill-history event.
 - `Scripts/Battle/battle_combo_rules.gd`: pure generic condition and bonus-effect evaluation.
 - `Scripts/Battle/character_skill.gd`: optional combo metadata and validation integration.
 - `Scripts/Battle/skill_effect_plan.gd`: explicit base, combo bonus, and requested damage values.
-- `Scripts/Battle/battle_action_log_entry.gd`: combo-aware logical action record.
+- `Scripts/Battle/battle_action_log_entry.gd`: sole authoritative committed-skill history and combo-aware logical action record, with defensive duplication.
 - `Scripts/Battle/battle_skill_rules.gd`: composes normal and combo evaluation into confirmation plans.
-- `Scripts/Battle/battle_arena.gd`: defensive history ownership, atomic event recording, and presentation wiring.
+- `Scripts/Battle/battle_arena.gd`: authoritative action-history ownership, `get_committed_action_history_snapshot()`, atomic entry recording, and presentation wiring.
 - `Scenes/battle_arena.tscn`: any additional scene-owned Combo tooltip label or indicator styling.
 - `Tests/Battle/test_ac2_9_combo_system.gd`: focused model, evaluator, history, integration, presentation, and lifecycle coverage.
 - Existing AC2.6–AC2.8 tests: constructor and fixture updates preserving all prior contracts.
@@ -217,17 +224,18 @@ Player-facing invalid-action messages remain owned by the existing skill validat
 
 The focused AC2.9 automated runner proves:
 
-1. Condition, effect, definition, result, and event construction rejects every invalid boundary at runtime.
+1. Condition, effect, definition, evaluation-result, and authoritative action-entry construction rejects every invalid boundary at runtime.
 2. All public arrays, dictionaries, nested values, duplicated definitions, and history snapshots are defensive.
 3. Multiple conditions use AND semantics.
-4. Generic evaluation activates without inspecting a concrete skill ID.
-5. Quick Strike requests 8 damage only after a different allied actor dealt positive committed skill damage to the same target during the same round.
+4. Generic evaluation activates without inspecting a concrete skill ID: a test-only `combo_probe` skill with a different ID and display name but an independently duplicated equivalent combo definition must produce the same failed and activated evaluations and the same 5/8 damage integration results as Quick Strike.
+5. Quick Strike and `combo_probe` each request 8 damage only after a different allied actor dealt positive committed skill damage to the same target during the same round.
 6. Same-actor, enemy, other-target, zero-damage, debug, cancelled, rejected, stale, and earlier-round inputs do not activate the bonus.
 7. A setup actor's later defeat or removal does not invalidate its committed current-round history.
 8. Confirmation reevaluates current history and revision; stale preview state cannot grant a bonus.
-9. Combo resolution applies once, advances once, increments revision once, and records exactly one history event and one logical log entry.
-10. History and combo presentation clear on battle reconfiguration, completion, exit, and new battle setup.
-11. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
+9. Combo resolution applies once, advances once, increments revision once, and records exactly one authoritative `BattleActionLogEntry`; no parallel committed-event collection exists.
+10. `get_committed_action_history_snapshot()` preserves sequence order, deep-copies every entry and nested value, and is the only history input passed through `BattleSkillRules` into `BattleComboRules`.
+11. Combo presentation clears at battle completion while authoritative entries remain available for result-screen inspection; history clears exactly at teardown, exit, and new battle configuration.
+12. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
 
 Regression verification runs every AC2.1–AC2.8 focused runner individually, GodotIQ project validation, project parser/error checks, and orphan-signal inspection. Runtime verification starts Play, confirms clean debugger output, inspects authoritative history/revision values, and exercises both the qualifying and non-qualifying Quick Strike paths. Visual QA uses the target 1152×648 viewport and a post-fix tour.
 
