@@ -65,7 +65,7 @@ func _test_confirmed_damage_resolves_once(arena: BattleArena) -> void:
 	_expect(enemy.current_hp == 13, "Shield Bash should apply exactly 7 damage.")
 	_expect(actor.get_skill_cooldown(&"shield_bash") == 1, "Shield Bash should apply one-action cooldown.")
 	_expect(arena.get_battle_revision() == 1, "Atomic committed action should increment revision once.")
-	_expect(arena.get_battle_action_log_entries().size() == 1, "Confirmed damage skill should create one logical action log.")
+	_expect(arena.get_committed_action_history_snapshot().size() == 1, "Confirmed damage skill should create one logical action log.")
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.IDLE, "Resolved action should return to IDLE.")
 	_expect(not arena.confirm_skill_action(), "Repeated Confirm must not resolve again.")
 	_expect(enemy.current_hp == 13, "Repeated Confirm must not duplicate damage.")
@@ -165,7 +165,7 @@ func _test_speed_action_ticks_prior_cooldown(arena: BattleArena) -> void:
 	_expect(actor.get_effective_speed() == 12, "New next-action Speed modifier must survive its casting action.")
 	_expect(actor.get_skill_cooldown(&"quick_step") == 2, "New cooldown must not tick on its casting action.")
 	_expect(actor.get_skill_cooldown(&"quick_strike") == 0, "Prior cooldown should tick after the actor acts.")
-	var action_logs: Array = arena.get_battle_action_log_entries()
+	var action_logs: Array = arena.get_committed_action_history_snapshot()
 	_expect(action_logs.size() == 1, "Speed skill should create one logical action log.")
 	if action_logs.size() == 1:
 		_expect(action_logs[0].skill_id == &"quick_step", "Speed action log should identify Quick Step.")
@@ -199,7 +199,7 @@ func _test_stale_target_rejects_without_mutation(arena: BattleArena) -> void:
 	arena.begin_skill_action(&"player_stale", &"shield_bash")
 	arena.select_skill_target(&"enemy_stale")
 	var initial_battle_log_count: int = arena.get_battle_log_entries().size()
-	var initial_action_log_count: int = arena.get_battle_action_log_entries().size()
+	var initial_action_log_count: int = arena.get_committed_action_history_snapshot().size()
 	var initial_current_unit_id: StringName = arena.get_current_unit().unit_id
 	var initial_actor_speed: int = actor.get_effective_speed()
 	enemy.current_hp = 0
@@ -210,7 +210,7 @@ func _test_stale_target_rejects_without_mutation(arena: BattleArena) -> void:
 	_expect(actor.get_skill_cooldown(&"shield_bash") == 0, "Rejected stale action must not apply cooldown.")
 	_expect(actor.get_effective_speed() == initial_actor_speed, "Rejected stale action must not apply Speed modifiers.")
 	_expect(arena.get_battle_log_entries().size() == initial_battle_log_count, "Rejected stale action must not append damage logs.")
-	_expect(arena.get_battle_action_log_entries().size() == initial_action_log_count, "Rejected stale action must not append action logs.")
+	_expect(arena.get_committed_action_history_snapshot().size() == initial_action_log_count, "Rejected stale action must not append action logs.")
 	_expect(arena.get_current_unit().unit_id == initial_current_unit_id, "Rejected stale action must not advance the turn.")
 	_expect(arena.get_battle_revision() == 1, "Rejected stale action must not commit an additional revision.")
 

@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_action_entry_migration_contract()
 	_test_effect_plan_damage_contract()
 	_test_generic_combo_rules_contract()
+	_test_combo_bonus_composes_into_effect_plan()
 	if _failures.is_empty():
 		print("AC2.9 combo system tests: PASS")
 		quit(0)
@@ -276,6 +277,80 @@ func _test_generic_combo_rules_contract() -> void:
 		and quick_result.bonus_operations == probe_result.bonus_operations,
 		"differently owned equivalent definitions should evaluate identically"
 	)
+
+
+func _test_combo_bonus_composes_into_effect_plan() -> void:
+	var condition_script: Script = load(CONDITION_PATH)
+	var effect_script: Script = load(EFFECT_PATH)
+	var definition_script: Script = load(DEFINITION_PATH)
+	var character_script: Script = load("res://Scripts/Battle/character_skill.gd")
+	var definition: RefCounted = definition_script.create(
+		[condition_script.create(0)],
+		[effect_script.create(0, 3)],
+		"Combo"
+	)
+	var skill: CharacterSkill = character_script.call(
+		"create",
+		&"combo_probe",
+		"Combo Probe",
+		CharacterSkill.Kind.ACTIVE,
+		"Deal 5 damage.",
+		"One active enemy.",
+		"None",
+		"None",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		5,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE,
+		0,
+		0,
+		definition
+	)
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 20)
+	actor.set_skills([skill])
+	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 20)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 20)
+	var units: Array[BattleUnitState] = [actor, ally, target]
+	var proposed_targets: Array[StringName] = [&"target"]
+	var empty_history: Array[BattleActionLogEntry] = []
+	var without_combo: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor, skill, units, &"actor", false, 2, proposed_targets, 4, 4, empty_history
+	)
+	_expect(without_combo.accepted, "confirmation without setup should remain valid")
+	if without_combo.accepted:
+		var plain_operation: Dictionary = without_combo.effect_plan.damage_operations[0]
+		_expect(
+			plain_operation[&"base_damage"] == 5
+			and plain_operation[&"combo_bonus_damage"] == 0
+			and plain_operation[&"total_requested_damage"] == 5,
+			"non-qualifying confirmation should compose 5/0/5 damage"
+		)
+	var setup_result := BattleDamageResult.new(&"ally", &"target", 5, 5, 15, false)
+	var setup_results: Array[BattleDamageResult] = [setup_result]
+	var base_by_target: Dictionary[StringName, int] = {&"target": 5}
+	var bonus_by_target: Dictionary[StringName, int] = {&"target": 0}
+	var no_speed_targets: Array[StringName] = []
+	var qualifying_history: Array[BattleActionLogEntry] = [BattleActionLogEntry.new(
+		1, 2, &"ally", BattleUnitState.Side.PLAYER, &"setup",
+		proposed_targets, setup_results, base_by_target, bonus_by_target, no_speed_targets, false
+	)]
+	var with_combo: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor, skill, units, &"actor", false, 2, proposed_targets, 4, 4, qualifying_history
+	)
+	_expect(with_combo.accepted, "confirmation with qualifying setup should remain valid")
+	if with_combo.accepted:
+		var combo_operation: Dictionary = with_combo.effect_plan.damage_operations[0]
+		_expect(
+			combo_operation[&"base_damage"] == 5
+			and combo_operation[&"combo_bonus_damage"] == 3
+			and combo_operation[&"total_requested_damage"] == 8,
+			"qualifying confirmation should compose 5/3/8 damage"
+		)
 
 
 func _expect(condition: bool, message: String) -> void:

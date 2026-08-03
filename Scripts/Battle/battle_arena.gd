@@ -149,8 +149,11 @@ func get_battle_log_entries() -> Array[BattleLogEntry]:
 	return _battle_log_entries.duplicate()
 
 
-func get_battle_action_log_entries() -> Array[BattleActionLogEntry]:
-	return _battle_action_log_entries.duplicate()
+func get_committed_action_history_snapshot() -> Array[BattleActionLogEntry]:
+	var snapshot: Array[BattleActionLogEntry] = []
+	for entry: BattleActionLogEntry in _battle_action_log_entries:
+		snapshot.append(entry.duplicate_entry())
+	return snapshot
 
 
 func get_battle_outcome() -> BattleOutcome.Type:
@@ -242,7 +245,8 @@ func preview_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
 		current.unit_id if is_instance_valid(current) else &"",
 		is_battle_complete(),
 		round_number,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	_skill_transaction.preview(evaluation)
 	_render_skill_transaction()
@@ -285,7 +289,8 @@ func notify_authoritative_battle_change(increment_revision: bool = true) -> void
 		round_number,
 		_skill_transaction.locked_target_ids,
 		_battle_revision,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	if validation.accepted:
 		_skill_transaction.battle_revision = _battle_revision
@@ -310,7 +315,8 @@ func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
 		current.unit_id if is_instance_valid(current) else &"",
 		is_battle_complete(),
 		round_number,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	var generation: int = _skill_transaction.preview(evaluation)
 	if not _skill_transaction.begin_targeting(generation):
@@ -369,7 +375,8 @@ func confirm_skill_action() -> bool:
 		round_number,
 		_skill_transaction.locked_target_ids,
 		_skill_transaction.battle_revision,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	if not _skill_transaction.complete_confirmation(validation, generation):
 		_render_skill_transaction()

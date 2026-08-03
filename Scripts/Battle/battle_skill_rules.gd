@@ -11,7 +11,8 @@ static func evaluate_targets(
 	current_actor_id: StringName,
 	battle_complete: bool,
 	round_number: int,
-	battle_revision: int
+	battle_revision: int,
+	history_snapshot: Array[BattleActionLogEntry]
 ) -> SkillTargetEvaluation:
 	var reason: SkillActionReason = _evaluate_actor_and_skill(
 		actor, skill, current_actor_id, battle_complete, round_number
@@ -69,7 +70,8 @@ static func validate_confirmation(
 	round_number: int,
 	proposed_target_ids: Array[StringName],
 	expected_revision: int,
-	current_revision: int
+	current_revision: int,
+	history_snapshot: Array[BattleActionLogEntry]
 ) -> SkillConfirmationValidation:
 	if expected_revision != current_revision:
 		return _rejected(
@@ -91,7 +93,8 @@ static func validate_confirmation(
 		current_actor_id,
 		battle_complete,
 		round_number,
-		current_revision
+		current_revision,
+		history_snapshot
 	)
 	if not evaluation.can_start:
 		return _rejected(
@@ -133,14 +136,28 @@ static func validate_confirmation(
 		accepted_ids = evaluation.affected_target_ids.duplicate()
 	var damage_operations: Array[Dictionary] = []
 	var speed_operations: Array[Dictionary] = []
+	var combo_bonus_by_target: Dictionary[StringName, int] = {}
+	if is_instance_valid(skill.combo_definition):
+		var combo_rules: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+		var combo_evaluation: RefCounted = combo_rules.evaluate(
+			skill.combo_definition, actor, accepted_ids, round_number, history_snapshot
+		)
+		if combo_evaluation.activated:
+			for operation: Dictionary in combo_evaluation.bonus_operations:
+				for target_id: StringName in operation[&"target_ids"]:
+					combo_bonus_by_target[target_id] = (
+						combo_bonus_by_target.get(target_id, 0) + int(operation[&"magnitude"])
+					)
 	match skill.effect:
 		CharacterSkill.Effect.DAMAGE:
 			for target_id: StringName in accepted_ids:
 				damage_operations.append({
 					&"target_id": target_id,
 					&"base_damage": skill.effect_magnitude,
-					&"combo_bonus_damage": 0,
-					&"total_requested_damage": skill.effect_magnitude,
+					&"combo_bonus_damage": combo_bonus_by_target.get(target_id, 0),
+					&"total_requested_damage": (
+						skill.effect_magnitude + combo_bonus_by_target.get(target_id, 0)
+					),
 				})
 		CharacterSkill.Effect.SPEED_BOOST:
 			var expiry: BattleUnitState.ModifierExpiry = (
