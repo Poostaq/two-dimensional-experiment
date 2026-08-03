@@ -153,7 +153,18 @@ For a single-target skill, the definition activates when every condition passes 
 
 If no definition exists, evaluation returns `has_combo == false`, `activated == false`, and no operations. If a valid definition exists but any condition fails, evaluation returns `has_combo == true`, `activated == false`, and no operations. If all conditions pass, every configured bonus effect becomes an ordered bonus operation.
 
-For `BONUS_DAMAGE`, `BattleSkillRules` includes both base and bonus amounts in the confirmation result and effect plan. The plan retains one logical damage resolution per target with explicit `base_damage`, `combo_bonus_damage`, and `total_requested_damage` fields. `total_requested_damage` equals base plus bonus. Actual HP loss remains clamped by the existing damage resolver and is stored in the authoritative action entry's damage result.
+For `BONUS_DAMAGE`, `BattleSkillRules` includes both base and bonus amounts in the confirmation result and effect plan. Each item in `SkillEffectPlan.damage_operations: Array[Dictionary]` uses exactly this schema:
+
+```gdscript
+{
+    &"target_id": StringName,
+    &"base_damage": int,
+    &"combo_bonus_damage": int,
+    &"total_requested_damage": int,
+}
+```
+
+`target_id` must be non-empty. `base_damage` and `combo_bonus_damage` must be non-negative. `total_requested_damage` must equal `base_damage + combo_bonus_damage` and must be positive. A non-combo damage operation stores `combo_bonus_damage == 0`; an activated Quick Strike or Combo Probe operation stores `base_damage == 5`, `combo_bonus_damage == 3`, and `total_requested_damage == 8`. Operations remain ordered by the skill's resolved target order. `SkillEffectPlan` validates and deep-copies every operation at construction and returns defensive copies. Actual HP loss remains clamped by the existing damage resolver and is stored separately in the authoritative action entry's `BattleDamageResult`.
 
 Confirmation always reevaluates combo eligibility using the current battle revision and history. An action built from an older revision follows the existing stale rejection path and mutates nothing.
 
@@ -172,6 +183,23 @@ A confirmed combo-capable skill follows this order:
 9. Return the transaction and presentation to the existing neutral state.
 
 Any failure before commit produces no HP change, cooldown change, action-log/history entry, revision increment, or turn advancement. Re-entry and duplicate confirmation remain blocked by the existing latch and generation guards.
+
+## History and presentation lifecycle
+
+`_battle_action_log_entries` is the sole authoritative collection. Combo readiness, target roles, summaries, and tooltip state are derived presentation and are never stored as a second history source.
+
+| Boundary | Authoritative `_battle_action_log_entries` | Transaction and combo presentation | Snapshot API |
+|---|---|---|---|
+| Initial arena construction | Empty | Neutral/hidden | Returns an empty new array |
+| `configure_battle(...)` | Clear before installing new units and round state | Cancel transaction; clear hover, lock, message, summary, and combo-ready roles | Subsequent call returns only entries from the new battle |
+| Successful committed skill | Append exactly one immutable entry after effect application | Re-render from current state, then return to neutral after resolution | Returns all entries in ascending sequence order as deep copies |
+| Rejected, cancelled, stale, or duplicate action | Unchanged | Clear or retain state according to the existing transaction result; never claim a committed combo | Returns content equal to the pre-attempt snapshot |
+| Round advance | Retain all entries | Reevaluate; earlier-round entries cannot produce combo-ready state | Returns retained entries; evaluator filters by exact round |
+| Battle completion | Retain entries for result-screen log inspection | Cancel transaction and clear all interactive combo presentation | Returns the completed battle's entries read-only by copy |
+| Arena exit or teardown | Clear | Cancel transaction and clear all combo presentation | Returns an empty new array if the arena remains inspectable |
+| Next battle configuration | Clear before accepting new actions | Start neutral with no combo-ready state | Returns an empty new array |
+
+The same private cleanup routine clears transaction and presentation state at configuration, completion, exit, and teardown. The authoritative collection is cleared only at configuration, exit, and teardown, preserving the completed battle log until the arena lifecycle ends or a replacement battle begins.
 
 ## Presentation
 
@@ -232,10 +260,11 @@ The focused AC2.9 automated runner proves:
 6. Same-actor, enemy, other-target, zero-damage, debug, cancelled, rejected, stale, and earlier-round inputs do not activate the bonus.
 7. A setup actor's later defeat or removal does not invalidate its committed current-round history.
 8. Confirmation reevaluates current history and revision; stale preview state cannot grant a bonus.
-9. Combo resolution applies once, advances once, increments revision once, and records exactly one authoritative `BattleActionLogEntry`; no parallel committed-event collection exists.
-10. `get_committed_action_history_snapshot()` preserves sequence order, deep-copies every entry and nested value, and is the only history input passed through `BattleSkillRules` into `BattleComboRules`.
-11. Combo presentation clears at battle completion while authoritative entries remain available for result-screen inspection; history clears exactly at teardown, exit, and new battle configuration.
-12. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
+9. Every damage operation contains exactly `target_id`, `base_damage`, `combo_bonus_damage`, and `total_requested_damage`; invalid arithmetic or values are rejected, and returned operations are defensive copies.
+10. Combo resolution applies once, advances once, increments revision once, and records exactly one authoritative `BattleActionLogEntry`; no parallel committed-event collection exists.
+11. `get_committed_action_history_snapshot()` preserves sequence order, deep-copies every entry and nested value, and is the only history input passed through `BattleSkillRules` into `BattleComboRules`.
+12. Every lifecycle row in the history and presentation matrix is tested, including retained completed-battle entries, exact clear boundaries, neutral presentation, and empty replacement-battle snapshots.
+13. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
 
 Regression verification runs every AC2.1–AC2.8 focused runner individually, GodotIQ project validation, project parser/error checks, and orphan-signal inspection. Runtime verification starts Play, confirms clean debugger output, inspects authoritative history/revision values, and exercises both the qualifying and non-qualifying Quick Strike paths. Visual QA uses the target 1152×648 viewport and a post-fix tour.
 
