@@ -830,6 +830,59 @@ Repeat project GodotIQ validation, all AC2.1–AC2.9 runners, `verify_project_ru
 
 Do not claim AC2.9 complete if any current command fails, any evidence SHA differs, any duplicate history collection exists, or any derived combo-ready state survives its lifecycle boundary.
 
+### Task 11: Final handoff and branch disposition
+
+**Files:**
+- Inspect only: task branch, evidence package, commit range, and preserved user-work stash
+
+- [ ] **Step 1: Run the finishing gate before offering integration**
+
+Use the `superpowers:finishing-a-development-branch` skill. Confirm Task 10's final verification was run against `HEAD`, then run:
+
+```powershell
+git status --short --branch
+git log --oneline origin/main..HEAD
+git diff --stat origin/main...HEAD
+git stash list
+```
+
+Expected: the feature branch has no uncommitted AC2.9 changes; the commit range contains only approved design/plan history plus AC2.9 implementation/evidence changes; the original `user-work-before-ac2-9` stash is still present; no unrelated `.vscode` or `temp/` content entered an AC2.9 commit.
+
+- [ ] **Step 2: Produce the final handoff summary**
+
+Report all of the following together:
+
+- Feature branch name and final `HEAD` SHA.
+- AC2.9 design and implementation-plan paths.
+- Production files created and migrated, explicitly naming `BattleActionLogEntry` as the sole history contract.
+- Automated command count and pass/fail result.
+- Manual scenario IDs `Q0`–`Q7`, `N1`–`N5`, and `L1`–`L3` with aggregate PASS only if each row passed.
+- GodotIQ project validation, runtime readiness, debugger, orphan-signal, and 1152×648 visual results.
+- Evidence directory and tested implementation SHA.
+- Any pre-existing warnings or explicitly deferred scope.
+- The exact preserved stash name containing the user's unrelated workspace changes.
+
+- [ ] **Step 3: Present exactly four integration choices**
+
+Do not merge, push, create a PR, delete a branch, or apply the preserved stash before the user chooses:
+
+```text
+Implementation complete. What would you like to do?
+
+1. Merge back to main locally
+2. Push and create a Pull Request
+3. Keep the branch as-is (I'll handle it later)
+4. Discard this work
+
+Which option?
+```
+
+- [ ] **Step 4: Execute only the selected choice**
+
+For local merge, update `main`, merge `feat/ac2-9-generic-combos`, rerun the full final verification on the merged result, and delete the feature branch only after it passes. For PR, push the feature branch and create a PR containing the summary and test plan. For keep-as-is, preserve the branch. For discard, list the commits and require the user to type `discard` before deleting anything.
+
+This repository forbids worktrees, so no worktree cleanup command is permitted. Restore `user-work-before-ac2-9` only on `main`, after the selected integration action leaves `main` checked out; verify the stash applies without conflicts before dropping it. If the user keeps the feature branch checked out or requests a PR without returning to `main`, leave the stash intact and report how to restore it later rather than carrying unrelated changes onto the task branch.
+
 ## Self-review checklist
 
 - Every design requirement maps to a task and named verification.
@@ -842,4 +895,5 @@ Do not claim AC2.9 complete if any current command fails, any evidence SHA diffe
 - Completion retains entries; configuration, exit, and teardown clear them.
 - AC2.1–AC2.8 remain required regressions.
 - Evidence capture and authoritative AC2.9 closure are separate commits with a SHA/scenario consistency gate between them.
+- Final handoff verifies branch scope, reports the complete evidence package, preserves unrelated user work, and requires an explicit integration choice.
 - No placeholder steps or unbounded post-MVP features are included.
