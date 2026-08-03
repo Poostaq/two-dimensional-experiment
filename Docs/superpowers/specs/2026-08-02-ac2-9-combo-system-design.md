@@ -204,6 +204,19 @@ Any failure before commit produces no HP change, cooldown change, action-log/his
 
 `_battle_action_log_entries` is the sole authoritative collection. Combo readiness, target roles, summaries, and tooltip state are derived presentation and are never stored as a second history source.
 
+### Ownership invariants
+
+The implementation must preserve all of these invariants:
+
+1. `BattleArena._battle_action_log_entries: Array[BattleActionLogEntry]` is the only authoritative committed-action history collection in the battle system. AC2.9 must not add a combo-history array, event cache, evaluator-owned history, transaction-owned history, or scene-node metadata that duplicates committed facts.
+2. `BattleArena` is the only owner allowed to append, clear, or replace the authoritative collection. `BattleActionLogEntry` owns one immutable entry but does not own or locate the collection.
+3. `BattleArena.get_committed_action_history_snapshot()` is the only boundary through which committed history leaves the arena. It returns deep copies; callers cannot mutate arena-owned entries through the returned array or nested values.
+4. `BattleSkillRules` and `BattleComboRules` receive the snapshot explicitly as an argument. They do not reference `BattleArena`, scene nodes, autoloads, transaction state, or `_battle_action_log_entries`; they do not retain a snapshot after returning.
+5. `BattleSkillTransaction` may retain only its existing generation, revision, actor, skill, target, and presentation data. It never stores authoritative history or treats a previewed combo result as committed evidence.
+6. `BattleArena` owns one cleanup boundary, `_clear_skill_interaction_state()`, for transaction cancellation and all derived skill/combo presentation: hovered and selected skill IDs, target hover/lock, action message and summary, combo-ready roles, Confirm/Cancel state, and tooltip Combo row. Configuration, battle completion, exit, and teardown all call this boundary.
+7. `BattleArena` owns authoritative-history reset separately through `_clear_committed_action_history()`. Configuration calls it before installing a new battle; exit and teardown call it after interaction cleanup. Battle completion intentionally does not call it, so the completed battle log remains inspectable until exit, teardown, or replacement configuration.
+8. Cleanup is idempotent. Repeated completion, exit, teardown, or configuration callbacks leave history and presentation in the same state and cannot append entries, resurrect combo-ready UI, or expose a stale snapshot.
+
 | Boundary | Authoritative `_battle_action_log_entries` | Transaction and combo presentation | Snapshot API |
 |---|---|---|---|
 | Initial arena construction | Empty | Neutral/hidden | Returns an empty new array |
@@ -215,7 +228,7 @@ Any failure before commit produces no HP change, cooldown change, action-log/his
 | Arena exit or teardown | Clear | Cancel transaction and clear all combo presentation | Returns an empty new array if the arena remains inspectable |
 | Next battle configuration | Clear before accepting new actions | Start neutral with no combo-ready state | Returns an empty new array |
 
-The same private cleanup routine clears transaction and presentation state at configuration, completion, exit, and teardown. The authoritative collection is cleared only at configuration, exit, and teardown, preserving the completed battle log until the arena lifecycle ends or a replacement battle begins.
+`_clear_skill_interaction_state()` clears transaction and presentation state at configuration, completion, exit, and teardown. `_clear_committed_action_history()` clears the authoritative collection only at configuration, exit, and teardown, preserving the completed battle log until the arena lifecycle ends or a replacement battle begins.
 
 ## Presentation
 
@@ -280,8 +293,9 @@ The focused AC2.9 automated runner proves:
 10. The `BattleActionLogEntry` contract migration covers damaging, non-damaging, combo, and Speed-only entries; all producers and consumers use the new constructor/getters, no compatibility defaults or legacy shape remain, and AC2.8 entry behavior remains green.
 11. Combo resolution applies once, advances once, increments revision once, and records exactly one authoritative `BattleActionLogEntry`; no parallel committed-event collection exists.
 12. `get_committed_action_history_snapshot()` preserves sequence order, deep-copies every entry and nested value, and is the only history input passed through `BattleSkillRules` into `BattleComboRules`.
-13. Every lifecycle row in the history and presentation matrix is tested, including retained completed-battle entries, exact clear boundaries, neutral presentation, and empty replacement-battle snapshots.
-14. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
+13. Ownership tests prove that the arena has exactly one committed-action collection, rules receive only explicit deep snapshots and retain no state, the transaction contains no history, and no combo cache or parallel event collection exists.
+14. Every lifecycle row in the history and presentation matrix is tested, including idempotent `_clear_skill_interaction_state()` and `_clear_committed_action_history()` behavior, retained completed-battle entries, exact reset boundaries, neutral presentation, and empty replacement-battle snapshots.
+15. Tooltip, targeting, hover, lock, confirmation, and log presentation match the configured combo state.
 
 Regression verification runs every AC2.1–AC2.8 focused runner individually, GodotIQ project validation, project parser/error checks, and orphan-signal inspection. Runtime verification starts Play, confirms clean debugger output, inspects authoritative history/revision values, and exercises both the qualifying and non-qualifying Quick Strike paths. Visual QA uses the target 1152×648 viewport and a post-fix tour.
 
