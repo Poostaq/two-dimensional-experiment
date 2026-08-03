@@ -608,6 +608,18 @@ git commit -m "feat: own combo history in battle arena"
 - Modify: `Tests/Battle/test_ac2_8_skill_scene.gd`
 - Modify: `Tests/Battle/test_ac2_8_skill_transaction.gd`
 
+The finished UI must satisfy this exact state matrix:
+
+| State | Combo row | Target role | Message/summary | Layout requirement |
+|---|---|---|---|---|
+| Skill has no combo | Hidden; no empty gap | Existing AC2.8 roles only | Existing summary unchanged | Existing tooltip size and placement unchanged |
+| Combo skill, no qualifying history | Visible with exact configured description | Legal targets remain ordinary `valid` | Locked/hovered Quick Strike target shows 5 requested damage and no readiness claim | Full tooltip remains inside 1152×648 |
+| Combo skill, qualifying target not hovered | Visible | Only qualifying legal target gains `combo_ready`; other legal targets stay `valid` | Existing targeting instruction remains readable | Radial tint/border cannot obscure unit text or lock state |
+| Qualifying target hovered | Visible | `combo_ready` plus hover readability | `Combo ready: +3 damage`; summary shows base 5, bonus 3, total 8 | Message and summary do not overlap Confirm/Cancel |
+| Qualifying target locked | Visible | Locked target remains visibly locked with combo-ready distinction | `Combo ready: +3 damage`; confirmation summary shows 8 requested damage | Action region remains within viewport |
+| History/revision becomes stale | Visible only while skill inspection remains valid | Remove stale combo-ready roles | Existing stale-review message; no 8-damage claim | No stale tint, tooltip, or summary survives rerender |
+| Battle completes/configures/exits | Hidden through interaction cleanup | No combo roles | Empty message/summary; Confirm/Cancel neutral | No orphaned overlay or tooltip remains |
+
 - [ ] **Step 1: Write failing presentation tests**
 
 Assert:
@@ -635,6 +647,8 @@ Add combo-ready target IDs and bonus summaries to the presentation input/snapsho
 - [ ] **Step 5: Render Combo row and combo-ready overlay**
 
 Render the description from `skill.combo_definition.description_text`. Add `combo_ready` to `_indicator_style()` and radial tint handling while preserving lock/hover readability. Render exact message and 5/8 summaries from current evaluation. Clear all derived state through `_clear_skill_interaction_state()`.
+
+Implement the state matrix above directly in automated assertions. Do not treat a screenshot alone as proof of tooltip visibility, exact text, target-role identity, or cleanup.
 
 - [ ] **Step 6: Verify scene, scripts, and visual behavior**
 
@@ -699,13 +713,12 @@ git commit -m "test: harden generic combo lifecycle"
 
 Before committing, inspect `git diff --cached --name-only` and unstage any unrelated script; only files actually changed for a failing AC2.9 case belong in this commit.
 
-### Task 9: Runtime verification, evidence, and AC2.9 closeout
+### Task 9: Capture automated, runtime, and visual evidence
 
 **Files:**
 - Create: `Docs/Specs/AC2/Evidence/AC2.9/2026-08-03/automated-test.log`
 - Create: `Docs/Specs/AC2/Evidence/AC2.9/2026-08-03/manual-runtime-check.md`
 - Create: `Docs/Specs/AC2/Evidence/AC2.9/2026-08-03/implementation-link.txt`
-- Modify: `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`
 
 - [ ] **Step 1: Run final automated verification against one implementation commit**
 
@@ -731,37 +744,87 @@ Use `state_inspect` for round, revision, current actor, and action-history count
 
 - [ ] **Step 3: Perform the manual combo matrix**
 
-At 1152×648:
+At 1152×648, record a separate PASS/FAIL line and observed values for every scenario:
 
-1. Inspect Quick Strike and verify the Combo row.
-2. Target an enemy without setup; verify ordinary valid styling and 5-damage summary.
-3. Cancel; verify no entry or combo-ready residue.
-4. Have a different ally damage enemy A with a committed skill.
-5. Return to Quick Strike in the same round; verify enemy A is combo-ready and enemy B is not.
-6. Hover/lock enemy A; verify `Combo ready: +3 damage` and total 8.
-7. Confirm once; verify 8 requested damage, one action entry, one turn advance, one revision increment, and base/bonus/total log breakdown.
-8. Repeat exclusion cases for same actor, enemy source, other target, zero applied damage, and next round.
-9. Complete the battle; verify combo UI clears while completed entries remain inspectable.
-10. Exit and configure a new battle; verify history snapshot and presentation are empty.
+| ID | Runtime scenario | Required captured result |
+|---|---|---|
+| `Q0` | Inspect Quick Strike before any setup hit | Exact Combo row is visible and fully inside the viewport |
+| `Q1` | Select enemy A without qualifying history | Enemy A is ordinary valid, no `combo_ready` role exists, summary requests 5 damage |
+| `Q2` | Hover and lock enemy A without qualifying history | No combo-ready message; confirmation summary remains 5 |
+| `Q3` | Cancel the non-qualifying action | HP, revision, turn, entries, and cooldowns unchanged; all target roles/messages clear |
+| `Q4` | Different ally commits positive skill damage to enemy A in the current round | Exactly one authoritative setup entry records actor, side, round, target, and positive applied damage |
+| `Q5` | Reopen Quick Strike during that same round | Enemy A alone is `combo_ready`; untouched enemy B remains ordinary valid |
+| `Q6` | Hover and lock qualifying enemy A | Exact `Combo ready: +3 damage` message; summary shows base 5, bonus 3, total 8 |
+| `Q7` | Confirm qualifying Quick Strike once | 8 requested damage, one new authoritative entry, one turn advance, one revision increment, base/bonus/total log breakdown |
+| `N1` | Same actor supplied the earlier hit | No combo-ready role; Quick Strike requests 5 |
+| `N2` | Enemy supplied the earlier hit | No combo-ready role; Quick Strike requests 5 |
+| `N3` | Ally damaged enemy B, then Quick Strike targets enemy A | Enemy A is not combo-ready; Quick Strike requests 5 |
+| `N4` | Setup action applied zero damage | No combo-ready role; Quick Strike requests 5 |
+| `N5` | Qualifying setup entry is from the previous round | No combo-ready role; Quick Strike requests 5 |
+| `L1` | Setup ally is defeated/removed after its qualifying current-round hit | Enemy A remains combo-ready from committed history |
+| `L2` | Battle completes | Combo UI/transaction clears; completed authoritative entries remain inspectable |
+| `L3` | Exit, then configure a replacement battle | History snapshot is empty and all combo presentation starts neutral |
+
+For `Q1`, `Q6`, `Q7`, `N1`–`N5`, `L2`, and `L3`, capture the authoritative round, revision, current actor, entry count, requested/applied damage, and visible message/summary where applicable. This distinguishes the qualifying and non-qualifying Quick Strike paths with measurable state rather than prose alone.
 
 Run `explore(mode="tour")`, describe every screenshot, fix any visual issue, and tour again. Stop Play afterward.
 
 - [ ] **Step 4: Record traceable evidence**
 
-Write the tested SHA to `implementation-link.txt`. The manual record must identify the same SHA and report every step above, ownership/reset behavior, debugger state, and viewport result.
+Write the tested SHA to `implementation-link.txt`. The manual record must identify the same SHA and contain the full scenario table with PASS/FAIL, observed values, ownership/reset behavior, debugger state, and viewport result. `automated-test.log`, `manual-runtime-check.md`, and `implementation-link.txt` must all name the same SHA.
 
-- [ ] **Step 5: Close the MVP criterion**
+- [ ] **Step 5: Commit evidence capture without closing AC2.9**
+
+```powershell
+git add -- Docs/Specs/AC2/Evidence/AC2.9/2026-08-03
+git commit -m "test: record AC2.9 verification evidence"
+```
+
+Expected: the evidence is preserved independently, while `GAME_DESIGN_SPEC_MVP.md` still shows AC2.9 unchecked until Task 10 verifies consistency.
+
+### Task 10: Record final evidence consistency and close AC2.9
+
+**Files:**
+- Modify: `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`
+
+- [ ] **Step 1: Verify the evidence package before changing authority**
+
+```powershell
+$sha = (Get-Content -Raw 'Docs/Specs/AC2/Evidence/AC2.9/2026-08-03/implementation-link.txt').Trim()
+$auto = Get-Content -Raw 'Docs/Specs/AC2/Evidence/AC2.9/2026-08-03/automated-test.log'
+$manual = Get-Content -Raw 'Docs/Specs/AC2/Evidence/AC2.9/2026-08-03/manual-runtime-check.md'
+if (-not $auto.Contains($sha) -or -not $manual.Contains($sha)) { throw 'AC2.9 evidence SHA mismatch' }
+foreach ($scenario in 'Q0','Q1','Q2','Q3','Q4','Q5','Q6','Q7','N1','N2','N3','N4','N5','L1','L2','L3') {
+	if (-not $manual.Contains($scenario) -or -not $manual.Contains("$scenario | PASS")) {
+		throw "Missing AC2.9 manual PASS: $scenario"
+	}
+}
+```
+
+Expected: exit `0`; every mandatory manual scenario and both automated/manual SHA references are present.
+
+- [ ] **Step 2: Close the MVP criterion**
 
 Only after all evidence passes, change AC2.9 from `[ ]` to `[x]` and replace its verification row with an automated/manual contract naming `Tests/Battle/test_ac2_9_combo_system.gd`, generic Combo Probe parity, positive and negative combo cases, authoritative-history ownership, lifecycle cleanup, and runtime visual confirmation. Preserve exactly one AC2.9 acceptance row and one verification row.
 
-- [ ] **Step 6: Commit evidence and closeout**
+- [ ] **Step 3: Verify the authoritative document shape**
 
 ```powershell
-git add -- Docs/Specs/GAME_DESIGN_SPEC_MVP.md Docs/Specs/AC2/Evidence/AC2.9/2026-08-03
-git commit -m "docs: record AC2.9 verification"
+$spec = Get-Content -Raw 'Docs/Specs/GAME_DESIGN_SPEC_MVP.md'
+if (($spec.Split('AC2.9').Count - 1) -ne 2) { throw 'Expected one AC2.9 criterion and one verification row' }
+if (-not $spec.Contains('- [x] AC2.9')) { throw 'AC2.9 is not checked' }
 ```
 
-- [ ] **Step 7: Run verification-before-completion on the final committed tree**
+Expected: exit `0` with exactly one checked criterion and one verification row.
+
+- [ ] **Step 4: Commit closure separately**
+
+```powershell
+git add -- Docs/Specs/GAME_DESIGN_SPEC_MVP.md
+git commit -m "docs: close AC2.9 combo criterion"
+```
+
+- [ ] **Step 5: Run verification-before-completion on the final committed tree**
 
 Repeat project GodotIQ validation, all AC2.1–AC2.9 runners, `verify_project_runs`, and `read_debug_console` against the final commit. Confirm evidence files reference the tested implementation SHA and that only AC2.9 files are committed on the task branch.
 
@@ -778,4 +841,5 @@ Do not claim AC2.9 complete if any current command fails, any evidence SHA diffe
 - Combo-ready UI is derived and never confirmation evidence.
 - Completion retains entries; configuration, exit, and teardown clear them.
 - AC2.1–AC2.8 remain required regressions.
+- Evidence capture and authoritative AC2.9 closure are separate commits with a SHA/scenario consistency gate between them.
 - No placeholder steps or unbounded post-MVP features are included.
