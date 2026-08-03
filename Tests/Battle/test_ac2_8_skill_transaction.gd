@@ -9,6 +9,7 @@ func _init() -> void:
 	_test_predefined_lock_and_supersession()
 	_test_cancel_and_stale_rejection()
 	_test_presentation_snapshot_and_hover_supersession()
+	_test_combo_presentation_is_derived_and_defensive()
 	if failures.is_empty():
 		print("AC2.8 skill transaction tests: PASS")
 		quit(0)
@@ -143,6 +144,60 @@ func _test_presentation_snapshot_and_hover_supersession() -> void:
 	var defensive_roles: Dictionary = locked_snapshot["indicator_roles"]
 	defensive_roles.clear()
 	_expect(transaction.presentation_snapshot()["indicator_roles"].has(&"enemy_0"), "Snapshot indicator roles must be defensive.")
+
+
+func _test_combo_presentation_is_derived_and_defensive() -> void:
+	var transaction := BattleSkillTransaction.new()
+	var combo_ready_ids: Array[StringName] = [&"enemy_0"]
+	var combo_bonus_by_target: Dictionary[StringName, int] = {&"enemy_0": 3}
+	var evaluation := SkillTargetEvaluation.new(
+		&"player_0", &"combo_probe", CharacterSkill.TargetingMode.FREE,
+		true, SkillActionReason.none(), [&"enemy_0", &"enemy_1"], {}, [], 42,
+		combo_ready_ids, combo_bonus_by_target, 5
+	)
+	combo_ready_ids.clear()
+	combo_bonus_by_target.clear()
+	var generation: int = transaction.preview(evaluation)
+	var preview_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(
+		preview_snapshot["indicator_roles"][&"enemy_0"] == &"combo_ready",
+		"qualifying preview target should expose combo_ready role"
+	)
+	_expect(
+		preview_snapshot["indicator_roles"][&"enemy_1"] == &"valid_preview",
+		"ordinary legal target should retain valid preview role"
+	)
+	transaction.begin_targeting(generation)
+	transaction.hover_target(&"enemy_0", generation)
+	var hovered_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(
+		hovered_snapshot["message"] == "Combo ready: +3 damage",
+		"qualifying hover should expose exact combo-ready message"
+	)
+	_expect(
+		hovered_snapshot["summary"] == "Damage: 5 base + 3 combo = 8 total",
+		"qualifying hover should expose exact damage breakdown"
+	)
+	transaction.select_target(&"enemy_0", generation)
+	var locked_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(
+		locked_snapshot["indicator_roles"][&"enemy_0"] == &"combo_ready_locked",
+		"qualifying locked target should preserve lock and combo distinction"
+	)
+	_expect(
+		locked_snapshot["summary"] == "Damage: 5 base + 3 combo = 8 total",
+		"qualifying lock should retain exact damage breakdown"
+	)
+	var leaked_ready_ids: Array[StringName] = locked_snapshot["combo_ready_target_ids"]
+	leaked_ready_ids.clear()
+	_expect(
+		transaction.presentation_snapshot()["combo_ready_target_ids"] == [&"enemy_0"],
+		"combo presentation IDs should be defensive"
+	)
+	transaction.reset()
+	var reset_snapshot: Dictionary = transaction.presentation_snapshot()
+	_expect(reset_snapshot["combo_ready_target_ids"].is_empty(), "reset should clear combo presentation")
+	_expect(reset_snapshot["indicator_roles"].is_empty(), "reset should clear combo roles")
 
 
 func _expect(condition: bool, message: String) -> void:

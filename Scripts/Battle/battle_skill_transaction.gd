@@ -23,6 +23,9 @@ var affected_target_ids: Array[StringName] = []
 var locked_target_ids: Array[StringName] = []
 var last_reason: SkillActionReason = SkillActionReason.none()
 var hovered_target_id: StringName = &""
+var combo_ready_target_ids: Array[StringName] = []
+var combo_bonus_by_target: Dictionary[StringName, int] = {}
+var base_damage: int = 0
 
 var _can_start: bool = false
 var _confirmation_pending: bool = false
@@ -45,6 +48,9 @@ func preview(evaluation: SkillTargetEvaluation) -> int:
 	valid_target_ids = evaluation.valid_target_ids.duplicate()
 	invalid_targets = evaluation.invalid_targets.duplicate()
 	affected_target_ids = evaluation.affected_target_ids.duplicate()
+	combo_ready_target_ids = evaluation.combo_ready_target_ids.duplicate()
+	combo_bonus_by_target = evaluation.combo_bonus_by_target.duplicate()
+	base_damage = evaluation.base_damage
 	_can_start = evaluation.can_start
 	last_reason = evaluation.blocking_reason
 	return generation
@@ -80,19 +86,25 @@ func presentation_snapshot() -> Dictionary:
 	var roles: Dictionary[StringName, StringName] = {}
 	if state == State.PREVIEWING:
 		for target_id: StringName in valid_target_ids:
-			roles[target_id] = &"valid_preview"
+			roles[target_id] = (
+				&"combo_ready" if combo_ready_target_ids.has(target_id) else &"valid_preview"
+			)
 		for target_id: StringName in invalid_targets:
 			roles[target_id] = &"invalid_preview"
 	elif state in [State.TARGETING, State.VALIDATING, State.RESOLVING]:
 		for target_id: StringName in locked_target_ids:
-			roles[target_id] = &"locked"
+			roles[target_id] = (
+				&"combo_ready_locked" if combo_ready_target_ids.has(target_id) else &"locked"
+			)
 		if (
 			state == State.TARGETING
 			and not hovered_target_id.is_empty()
 			and not locked_target_ids.has(hovered_target_id)
 		):
 			if valid_target_ids.has(hovered_target_id):
-				roles[hovered_target_id] = &"valid_hover"
+				roles[hovered_target_id] = (
+					&"combo_ready" if combo_ready_target_ids.has(hovered_target_id) else &"valid_hover"
+				)
 			elif invalid_targets.has(hovered_target_id):
 				roles[hovered_target_id] = &"invalid_hover"
 	var has_lock: bool = not locked_target_ids.is_empty()
@@ -103,11 +115,15 @@ func presentation_snapshot() -> Dictionary:
 	]
 	var message: String = ""
 	if state == State.TARGETING:
-		message = (
+		var presented_target_id: StringName = _presented_target_id()
+		if combo_ready_target_ids.has(presented_target_id):
+			message = "Combo ready: +%d damage" % combo_bonus_by_target.get(presented_target_id, 0)
+		else:
+			message = (
 			"Select a target for %s" % _display_skill_name()
 			if targeting_mode == CharacterSkill.TargetingMode.FREE and not has_lock
 			else "Confirm %s" % _display_skill_name()
-		)
+			)
 	elif state == State.VALIDATING:
 		message = "Validating %s..." % _display_skill_name()
 	elif state == State.REJECTED_STALE:
@@ -123,6 +139,8 @@ func presentation_snapshot() -> Dictionary:
 		"cancel_visible": action_visible,
 		"cancel_enabled": state in [State.TARGETING, State.REJECTED_STALE],
 		"indicator_roles": roles.duplicate(),
+		"combo_ready_target_ids": combo_ready_target_ids.duplicate(),
+		"combo_bonus_by_target": combo_bonus_by_target.duplicate(),
 	}
 
 
@@ -218,6 +236,9 @@ func _clear_selection() -> void:
 	affected_target_ids.clear()
 	locked_target_ids.clear()
 	hovered_target_id = &""
+	combo_ready_target_ids.clear()
+	combo_bonus_by_target.clear()
+	base_damage = 0
 	last_reason = SkillActionReason.none()
 	_can_start = false
 	_confirmation_pending = false
@@ -228,12 +249,26 @@ func _display_skill_name() -> String:
 
 
 func _target_summary() -> String:
+	var presented_target_id: StringName = _presented_target_id()
+	if combo_ready_target_ids.has(presented_target_id):
+		var combo_bonus: int = combo_bonus_by_target.get(presented_target_id, 0)
+		return "Damage: %d base + %d combo = %d total" % [
+			base_damage, combo_bonus, base_damage + combo_bonus
+		]
 	if locked_target_ids.is_empty():
 		return ""
 	var names: PackedStringArray = []
 	for target_id: StringName in locked_target_ids:
 		names.append(String(target_id))
 	return "Targets: %s" % ", ".join(names)
+
+
+func _presented_target_id() -> StringName:
+	if not hovered_target_id.is_empty():
+		return hovered_target_id
+	if not locked_target_ids.is_empty():
+		return locked_target_ids[0]
+	return &""
 
 
 func _is_current(callback_generation: int) -> bool:

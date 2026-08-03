@@ -339,6 +339,17 @@ func _test_combo_bonus_composes_into_effect_plan() -> void:
 		1, 2, &"ally", BattleUnitState.Side.PLAYER, &"setup",
 		proposed_targets, setup_results, base_by_target, bonus_by_target, no_speed_targets, false
 	)]
+	var target_evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
+		actor, skill, units, &"actor", false, 2, 4, qualifying_history
+	)
+	_expect(
+		target_evaluation.combo_ready_target_ids == [&"target"],
+		"target evaluation should derive combo readiness from current history snapshot"
+	)
+	_expect(
+		target_evaluation.combo_bonus_by_target.get(&"target", 0) == 3,
+		"target evaluation should expose the qualifying target bonus"
+	)
 	var with_combo: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
 		actor, skill, units, &"actor", false, 2, proposed_targets, 4, 4, qualifying_history
 	)

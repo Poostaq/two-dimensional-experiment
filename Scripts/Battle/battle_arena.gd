@@ -49,6 +49,7 @@ const SKILL_TOOLTIP_ANCHOR_GAP: float = 8.0
 @onready var _skill_tooltip_targeting_label: Label = %SkillTooltipTargetingLabel
 @onready var _skill_tooltip_requirements_label: Label = %SkillTooltipRequirementsLabel
 @onready var _skill_tooltip_cooldown_label: Label = %SkillTooltipCooldownLabel
+@onready var _skill_tooltip_combo_label: Label = %SkillTooltipComboLabel
 @onready var _skill_action_region: VBoxContainer = %SkillActionRegion
 @onready var _skill_action_message_label: Label = %SkillActionMessageLabel
 @onready var _skill_action_summary_label: Label = %SkillActionSummaryLabel
@@ -539,6 +540,7 @@ func _render_skill_transaction() -> void:
 			continue
 		var unit_id: StringName = slot.get_meta("unit_id", &"")
 		var role: StringName = roles.get(unit_id, &"")
+		slot.set_meta("target_indicator_role", role)
 		overlay.visible = not role.is_empty()
 		var tint: TextureRect = _get_or_create_indicator_tint(overlay)
 		if role.is_empty():
@@ -552,7 +554,10 @@ func _render_skill_transaction() -> void:
 func _indicator_style(role: StringName) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var is_combo: bool = role in [&"combo_ready", &"combo_ready_locked"]
 	var border_color := Color(0.95, 0.2, 0.2, 1.0) if is_invalid else Color(0.25, 0.95, 0.45, 1.0)
+	if is_combo:
+		border_color = Color(1.0, 0.72, 0.18, 1.0)
 	style.border_color = border_color
 	style.set_border_width_all(3)
 	style.bg_color = Color.TRANSPARENT
@@ -587,12 +592,17 @@ func _update_indicator_tint(tint: TextureRect, role: StringName) -> void:
 		&"invalid_preview",
 		&"invalid_hover",
 		&"locked",
+		&"combo_ready",
+		&"combo_ready_locked",
 	]
 	tint.visible = has_tint
 	if not has_tint:
 		return
 	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var is_combo: bool = role in [&"combo_ready", &"combo_ready_locked"]
 	var tint_color := Color(0.95, 0.2, 0.2, 0.16) if is_invalid else Color(0.25, 0.95, 0.45, 0.16)
+	if is_combo:
+		tint_color = Color(1.0, 0.72, 0.18, 0.14)
 	var gradient := Gradient.new()
 	gradient.offsets = PackedFloat32Array([0.0, 0.7, 1.0])
 	gradient.colors = PackedColorArray([
@@ -1122,6 +1132,11 @@ func _on_skill_button_mouse_entered(skill: CharacterSkill, button: Button) -> vo
 	_skill_tooltip_targeting_label.text = "Targeting: %s" % skill.targeting_text
 	_skill_tooltip_requirements_label.text = "Requirements: %s" % skill.requirements_text
 	_skill_tooltip_cooldown_label.text = "Cooldown: %s" % skill.cooldown_text
+	_skill_tooltip_combo_label.visible = is_instance_valid(skill.combo_definition)
+	_skill_tooltip_combo_label.text = (
+		"Combo: %s" % skill.combo_definition.description_text
+		if is_instance_valid(skill.combo_definition) else ""
+	)
 	_skill_tooltip_panel.visible = true
 	_skill_tooltip_panel.reset_size()
 	preview_skill_action(_inspected_unit_id, skill.skill_id)
@@ -1181,8 +1196,8 @@ func _hide_skill_tooltip() -> void:
 	_skill_tooltip_targeting_label.text = ""
 	_skill_tooltip_requirements_label.text = ""
 	_skill_tooltip_cooldown_label.text = ""
-
-
+	_skill_tooltip_combo_label.text = ""
+	_skill_tooltip_combo_label.visible = false
 
 
 func _clear_skill_inspector() -> void:

@@ -37,6 +37,26 @@ static func evaluate_targets(
 					)
 		else:
 			affected_ids = _predefined_targets(actor, skill, units)
+	var combo_ready_ids: Array[StringName] = []
+	var combo_bonus_by_target: Dictionary[StringName, int] = {}
+	if is_instance_valid(skill) and is_instance_valid(skill.combo_definition):
+		var combo_rules: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+		var combo_candidate_ids: Array[StringName] = (
+			valid_ids if skill.targeting_mode == CharacterSkill.TargetingMode.FREE else affected_ids
+		)
+		for candidate_id: StringName in combo_candidate_ids:
+			var candidate_ids: Array[StringName] = [candidate_id]
+			var combo_evaluation: RefCounted = combo_rules.evaluate(
+				skill.combo_definition, actor, candidate_ids, round_number, history_snapshot
+			)
+			if not combo_evaluation.activated:
+				continue
+			var bonus_total: int = 0
+			for operation: Dictionary in combo_evaluation.bonus_operations:
+				bonus_total += int(operation[&"magnitude"])
+			if bonus_total > 0:
+				combo_ready_ids.append(candidate_id)
+				combo_bonus_by_target[candidate_id] = bonus_total
 	if (
 		reason.code == SkillActionReason.Code.NONE
 		and skill.targeting_mode == CharacterSkill.TargetingMode.PREDEFINED
@@ -57,7 +77,10 @@ static func evaluate_targets(
 		valid_ids,
 		invalid_targets,
 		affected_ids,
-		battle_revision
+		battle_revision,
+		combo_ready_ids,
+		combo_bonus_by_target,
+		skill.effect_magnitude if is_instance_valid(skill) else 0
 	)
 
 
