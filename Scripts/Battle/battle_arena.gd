@@ -712,6 +712,7 @@ func _create_skill(
 	var cooldown_mode: CharacterSkill.CooldownMode = CharacterSkill.CooldownMode.NONE
 	var cooldown_actions: int = 0
 	var unavailable_through_round: int = 0
+	var combo_definition: RefCounted = null
 	match id:
 		&"shield_bash":
 			targeting_mode = CharacterSkill.TargetingMode.FREE
@@ -737,6 +738,14 @@ func _create_skill(
 			target_rule = CharacterSkill.TargetRule.SELECT_ONE
 			mechanical_effect = CharacterSkill.Effect.DAMAGE
 			effect_magnitude = 5
+			var condition_script: Script = load("res://Scripts/Battle/combo_condition.gd")
+			var effect_script: Script = load("res://Scripts/Battle/combo_bonus_effect.gd")
+			var definition_script: Script = load("res://Scripts/Battle/combo_definition.gd")
+			combo_definition = definition_script.create(
+				[condition_script.create(0)],
+				[effect_script.create(0, 3)],
+				"+3 damage if another ally damaged this target with a skill this round."
+			)
 		&"rally":
 			target_side = CharacterSkill.TargetSide.ALLY
 			target_rule = CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES
@@ -781,7 +790,8 @@ func _create_skill(
 		effect_duration_mode,
 		cooldown_mode,
 		cooldown_actions,
-		unavailable_through_round
+		unavailable_through_round,
+		combo_definition
 	)
 
 
