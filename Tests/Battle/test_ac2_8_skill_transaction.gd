@@ -114,7 +114,7 @@ func _test_presentation_snapshot_and_hover_supersession() -> void:
 				SkillActionReason.Code.TARGET_DEFEATED,
 				"Target was defeated. Select another target."
 			)
-		}, [], 41
+		}, [], 41, [], {}, 5
 	)
 	var generation: int = transaction.preview(evaluation)
 	var preview_snapshot: Dictionary = transaction.presentation_snapshot()
@@ -140,6 +140,10 @@ func _test_presentation_snapshot_and_hover_supersession() -> void:
 	_expect(locked_snapshot["indicator_roles"][&"enemy_0"] == &"locked", "Locked target should be green+tint.")
 	_expect(locked_snapshot["confirm_visible"], "Confirm should appear after a target locks.")
 	_expect(locked_snapshot["confirm_enabled"], "Confirm should be enabled after a target locks.")
+	_expect(
+		locked_snapshot["summary"] == "Damage: 5 total",
+		"ordinary damage lock should expose requested total damage"
+	)
 	_expect(not transaction.hover_target(&"enemy_1", generation - 1), "Stale hover callback should be ignored.")
 	var defensive_roles: Dictionary = locked_snapshot["indicator_roles"]
 	defensive_roles.clear()

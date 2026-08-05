@@ -255,6 +255,8 @@ func _target_summary() -> String:
 		return "Damage: %d base + %d combo = %d total" % [
 			base_damage, combo_bonus, base_damage + combo_bonus
 		]
+	if base_damage > 0 and not presented_target_id.is_empty():
+		return "Damage: %d total" % base_damage
 	if locked_target_ids.is_empty():
 		return ""
 	var names: PackedStringArray = []
