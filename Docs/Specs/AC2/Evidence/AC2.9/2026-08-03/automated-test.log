@@ -1,0 +1,47 @@
+AC2.9 Automated Verification Evidence
+=====================================
+
+Evidence recorded: 2026-08-05
+Implementation commit: 284aeac4135ddea1ddfd22f217e97ceb9d4fe0bb
+Branch: feat/ac2-9-generic-combos
+Godot executable: D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe
+Command pattern: godot.windows.opt.tools.64.exe --headless --path . --script <test-runner>
+
+Focused and regression test results
+-----------------------------------
+
+PASS  AC2.1 battle arena (11/11)
+PASS  AC2.2 speed order (12/12)
+PASS  AC2.3 damage and battle log (18/18)
+PASS  AC2.4 battle result (9/9)
+PASS  AC2.5 reward selection (15/15)
+PASS  AC2.6 character skill (19/19)
+PASS  AC2.7 test suite
+PASS  AC2.8 arena
+PASS  AC2.8 lifecycle
+PASS  AC2.8 scene
+PASS  AC2.8 targeting
+PASS  AC2.8 transaction
+PASS  AC2.9 combo system
+
+Every runner exited with status 0. Expected negative-path push_error messages were
+emitted by tests that deliberately reject invalid contracts; they did not represent
+runner failures.
+
+GodotIQ static verification
+----------------------------
+
+PASS  Project validation: 50 scripts, 4 scenes, 0 errors
+PASS  Project parser/error check: 50 scripts, 0 errors
+
+Pre-existing, unrelated diagnostics retained:
+- skill_effect_plan.gd:73: local variable "plan" has no explicit type hint
+- orphan signal: battle_completed
+- orphan signal: hover_changed
+
+Runtime readiness gate
+----------------------
+
+PASS  res://Scenes/game_world.tscn launched as the main scene
+PASS  verify_project_runs completed successfully with project scope
+PASS  Fresh debugger inspection reported 0 runtime errors and 0 script errors
