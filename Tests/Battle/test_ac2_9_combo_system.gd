@@ -17,8 +17,14 @@ func _run() -> void:
 	_test_character_skill_combo_contract()
 	_test_action_entry_migration_contract()
 	_test_effect_plan_damage_contract()
-	_test_generic_combo_rules_contract()
+	_test_quick_strike_and_combo_probe_have_identical_generic_results()
+	_test_same_actor_enemy_other_target_zero_and_prior_round_do_not_activate()
+	_test_setup_actor_removal_preserves_current_round_evidence()
+	_test_preview_combo_state_is_not_confirmation_evidence()
+	_test_rules_and_transaction_retain_no_authoritative_history()
 	_test_combo_bonus_composes_into_effect_plan()
+	await _test_rejected_combo_has_zero_partial_mutation()
+	await _test_configure_exit_and_teardown_clear_history_idempotently()
 	if _failures.is_empty():
 		print("AC2.9 combo system tests: PASS")
 		quit(0)
@@ -232,7 +238,7 @@ func _test_effect_plan_damage_contract() -> void:
 	)
 
 
-func _test_generic_combo_rules_contract() -> void:
+func _test_quick_strike_and_combo_probe_have_identical_generic_results() -> void:
 	var rules_path := "res://Scripts/Battle/battle_combo_rules.gd"
 	_expect(FileAccess.file_exists(rules_path), "generic combo rules script should exist")
 	if not FileAccess.file_exists(rules_path):
@@ -276,6 +282,130 @@ func _test_generic_combo_rules_contract() -> void:
 		quick_result.activated == probe_result.activated
 		and quick_result.bonus_operations == probe_result.bonus_operations,
 		"differently owned equivalent definitions should evaluate identically"
+	)
+
+
+func _test_same_actor_enemy_other_target_zero_and_prior_round_do_not_activate() -> void:
+	var rules_script: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+	var definition: RefCounted = _combo_definition_for_test()
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 5)
+	var target_ids: Array[StringName] = [&"target"]
+	var same_actor: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"actor", BattleUnitState.Side.PLAYER, &"target", 2, 5)
+	]
+	var enemy_actor: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"enemy", BattleUnitState.Side.ENEMY, &"target", 2, 5)
+	]
+	var other_target: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"ally", BattleUnitState.Side.PLAYER, &"other", 2, 5)
+	]
+	var zero_damage: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"ally", BattleUnitState.Side.PLAYER, &"target", 2, 0)
+	]
+	var prior_round: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"ally", BattleUnitState.Side.PLAYER, &"target", 1, 5)
+	]
+	for case: Dictionary in [
+		{"name": "same actor", "history": same_actor},
+		{"name": "enemy actor", "history": enemy_actor},
+		{"name": "other target", "history": other_target},
+		{"name": "zero applied damage", "history": zero_damage},
+		{"name": "prior round", "history": prior_round},
+	]:
+		var evaluation: RefCounted = rules_script.evaluate(
+			definition, actor, target_ids, 2, case["history"]
+		)
+		_expect(not evaluation.activated, "%s must not activate combo" % case["name"])
+
+
+func _test_setup_actor_removal_preserves_current_round_evidence() -> void:
+	var rules_script: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 5)
+	var target_ids: Array[StringName] = [&"target"]
+	var committed_history: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"removed_ally", BattleUnitState.Side.PLAYER, &"target", 2, 5)
+	]
+	var evaluation: RefCounted = rules_script.evaluate(
+		_combo_definition_for_test(), actor, target_ids, 2, committed_history
+	)
+	_expect(
+		evaluation.activated,
+		"removing the setup actor from live units must not erase committed current-round evidence"
+	)
+
+
+func _test_preview_combo_state_is_not_confirmation_evidence() -> void:
+	var rules_script: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 5)
+	var target_ids: Array[StringName] = [&"target"]
+	var preview_history: Array[BattleActionLogEntry] = [
+		_combo_history_entry(&"ally", BattleUnitState.Side.PLAYER, &"target", 2, 5)
+	]
+	var preview: RefCounted = rules_script.evaluate(
+		_combo_definition_for_test(), actor, target_ids, 2, preview_history
+	)
+	var current_history: Array[BattleActionLogEntry] = []
+	var confirmation: RefCounted = rules_script.evaluate(
+		_combo_definition_for_test(), actor, target_ids, 2, current_history
+	)
+	_expect(preview.activated, "qualifying preview fixture should activate")
+	_expect(
+		not confirmation.activated,
+		"preview readiness must not become confirmation evidence when current history differs"
+	)
+
+
+func _test_rules_and_transaction_retain_no_authoritative_history() -> void:
+	var transaction := BattleSkillTransaction.new()
+	var transaction_properties: PackedStringArray = []
+	for property: Dictionary in transaction.get_property_list():
+		transaction_properties.append(String(property["name"]))
+	_expect(
+		not transaction_properties.has("_battle_action_log_entries")
+		and not transaction_properties.has("history_snapshot")
+		and not transaction_properties.has("committed_history"),
+		"transaction must not own authoritative history"
+	)
+	var rules: RefCounted = load("res://Scripts/Battle/battle_combo_rules.gd").new()
+	var rule_properties: PackedStringArray = []
+	for property: Dictionary in rules.get_property_list():
+		rule_properties.append(String(property["name"]))
+	_expect(
+		not rule_properties.has("_battle_action_log_entries")
+		and not rule_properties.has("history_snapshot")
+		and not rule_properties.has("committed_history"),
+		"combo rules must remain stateless and retain no authoritative history"
+	)
+
+
+func _combo_definition_for_test() -> RefCounted:
+	var condition_script: Script = load(CONDITION_PATH)
+	var effect_script: Script = load(EFFECT_PATH)
+	var definition_script: Script = load(DEFINITION_PATH)
+	return definition_script.create(
+		[condition_script.create(0)],
+		[effect_script.create(0, 3)],
+		"Combo"
+	)
+
+
+func _combo_history_entry(
+	actor_id: StringName,
+	actor_side: BattleUnitState.Side,
+	target_id: StringName,
+	entry_round: int,
+	applied_damage: int
+) -> BattleActionLogEntry:
+	var target_ids: Array[StringName] = [target_id]
+	var results: Array[BattleDamageResult] = [
+		BattleDamageResult.new(actor_id, target_id, 5, applied_damage, 15, false)
+	]
+	var base: Dictionary[StringName, int] = {target_id: 5}
+	var bonus: Dictionary[StringName, int] = {target_id: 0}
+	var speed_targets: Array[StringName] = []
+	return BattleActionLogEntry.new(
+		1, entry_round, actor_id, actor_side, &"setup",
+		target_ids, results, base, bonus, speed_targets, false
 	)
 
 
@@ -362,6 +492,198 @@ func _test_combo_bonus_composes_into_effect_plan() -> void:
 			and combo_operation[&"total_requested_damage"] == 8,
 			"qualifying confirmation should compose 5/3/8 damage"
 		)
+
+
+func _test_rejected_combo_has_zero_partial_mutation() -> void:
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	await process_frame
+	var skill: CharacterSkill = _make_combo_skill(&"rejected_combo", "Rejected Combo")
+	var skills: Array[CharacterSkill] = [skill]
+	var actor := BattleUnitState.new(
+		&"reject_actor", "Reject Actor", BattleUnitState.Side.PLAYER, 0, 10, 20, skills
+	)
+	var target := BattleUnitState.new(
+		&"reject_target", "Reject Target", BattleUnitState.Side.ENEMY, 0, 5, 20
+	)
+	var units: Array[BattleUnitState] = [actor, target]
+	arena.configure_units(units)
+	_expect(
+		arena.begin_skill_action(&"reject_actor", &"rejected_combo"),
+		"rejected combo fixture should start"
+	)
+	_expect(arena.select_skill_target(&"reject_target"), "rejected combo target should lock")
+	target.current_hp = 0
+	arena.notify_authoritative_battle_change()
+	var before: Dictionary = _arena_mutation_snapshot(arena, actor, target, skill.skill_id)
+	_expect(not arena.confirm_skill_action(), "stale combo confirmation should reject")
+	var after: Dictionary = _arena_mutation_snapshot(arena, actor, target, skill.skill_id)
+	_expect(after == before, "rejected combo must leave every authoritative field unchanged")
+	arena.queue_free()
+	await process_frame
+
+
+func _arena_mutation_snapshot(
+	arena: BattleArena,
+	actor: BattleUnitState,
+	target: BattleUnitState,
+	skill_id: StringName
+) -> Dictionary:
+	var queue_ids: Array[StringName] = []
+	for unit: BattleUnitState in arena.get_turn_queue():
+		queue_ids.append(unit.unit_id)
+	return {
+		"actor_hp": actor.current_hp,
+		"target_hp": target.current_hp,
+		"actor_speed": actor.get_effective_speed(),
+		"target_speed": target.get_effective_speed(),
+		"cooldown": actor.get_skill_cooldown(skill_id),
+		"queue_ids": queue_ids,
+		"round": arena.round_number,
+		"revision": arena.get_battle_revision(),
+		"history_count": arena.get_committed_action_history_snapshot().size(),
+		"damage_log_count": arena.get_battle_log_entries().size(),
+		"outcome": arena.get_battle_outcome(),
+		"transaction_state": arena.get_skill_transaction_state(),
+	}
+
+
+func _make_combo_skill(skill_id: StringName, display_name: String) -> CharacterSkill:
+	var character_script: Script = load("res://Scripts/Battle/character_skill.gd")
+	return character_script.call(
+		"create", skill_id, display_name, CharacterSkill.Kind.ACTIVE,
+		"Deal 5 damage.", "One active enemy.", "None", "None",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		5, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE, 0, 0, _combo_definition_for_test()
+	)
+
+
+func _test_combo_confirmation_reentry_commits_once(
+	arena: BattleArena,
+	target: BattleUnitState
+) -> void:
+	var hp_after_first_commit: int = target.current_hp
+	var revision_after_first_commit: int = arena.get_battle_revision()
+	var history_count_after_first_commit: int = (
+		arena.get_committed_action_history_snapshot().size()
+	)
+	_expect(not arena.confirm_skill_action(), "combo confirmation reentry should reject")
+	_expect(target.current_hp == hp_after_first_commit, "reentry must not apply damage twice")
+	_expect(
+		arena.get_battle_revision() == revision_after_first_commit,
+		"reentry must not increment revision twice"
+	)
+	_expect(
+		arena.get_committed_action_history_snapshot().size() == history_count_after_first_commit,
+		"reentry must not append a second authoritative entry"
+	)
+
+
+func _test_snapshot_and_nested_entry_mutation_cannot_reach_arena(arena: BattleArena) -> void:
+	var leaked_snapshot: Array[BattleActionLogEntry] = arena.get_committed_action_history_snapshot()
+	leaked_snapshot[0].target_ids.clear()
+	leaked_snapshot[0].base_damage_by_target.clear()
+	leaked_snapshot[0].combo_bonus_damage_by_target[&"history_target"] = 99
+	leaked_snapshot.clear()
+	var fresh_snapshot: Array[BattleActionLogEntry] = arena.get_committed_action_history_snapshot()
+	_expect(fresh_snapshot.size() == 1, "clearing a snapshot must not clear arena history")
+	if fresh_snapshot.size() == 1:
+		_expect(
+			fresh_snapshot[0].target_ids == [&"history_target"],
+			"nested target mutation must not reach arena history"
+		)
+		_expect(
+			fresh_snapshot[0].base_damage_by_target.get(&"history_target", 0) == 5,
+			"nested base-damage mutation must not reach arena history"
+		)
+		_expect(
+			fresh_snapshot[0].combo_bonus_damage_by_target.get(&"history_target", 0) == 0,
+			"nested combo mutation must not reach arena history"
+		)
+
+
+func _test_completion_retains_history_but_clears_presentation(arena: BattleArena) -> void:
+	_expect(arena.is_battle_complete(), "defeating the final enemy should complete the fixture")
+	_expect(
+		arena.get_committed_action_history_snapshot().size() == 1,
+		"battle completion should retain authoritative history"
+	)
+	var snapshot: Dictionary = arena.get_skill_presentation_snapshot()
+	_expect(snapshot["combo_ready_target_ids"].is_empty(), "completion should clear combo-ready IDs")
+	_expect(snapshot["indicator_roles"].is_empty(), "completion should clear combo target roles")
+
+
+func _test_configure_exit_and_teardown_clear_history_idempotently() -> void:
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	await process_frame
+	var character_script: Script = load("res://Scripts/Battle/character_skill.gd")
+	var skill: CharacterSkill = character_script.call(
+		"create", &"setup_hit", "Setup Hit", CharacterSkill.Kind.ACTIVE,
+		"Deal 5 damage.", "One active enemy.", "None", "None",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		5, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE, 0, 0, _combo_definition_for_test()
+	)
+	var skills: Array[CharacterSkill] = [skill]
+	var actor := BattleUnitState.new(
+		&"history_actor", "History Actor", BattleUnitState.Side.PLAYER, 0, 10, 20, skills
+	)
+	var target := BattleUnitState.new(
+		&"history_target", "History Target", BattleUnitState.Side.ENEMY, 0, 5, 20
+	)
+	target.current_hp = 5
+	var units: Array[BattleUnitState] = [actor, target]
+	arena.configure_units(units)
+	_expect(arena.begin_skill_action(&"history_actor", &"setup_hit"), "history fixture action should start")
+	_expect(arena.select_skill_target(&"history_target"), "history fixture target should lock")
+	_expect(arena.confirm_skill_action(), "history fixture action should commit")
+	_test_combo_confirmation_reentry_commits_once(arena, target)
+	_expect(
+		arena.get_committed_action_history_snapshot().size() == 1,
+		"history fixture should create one authoritative entry"
+	)
+	_test_snapshot_and_nested_entry_mutation_cannot_reach_arena(arena)
+	_test_completion_retains_history_but_clears_presentation(arena)
+	arena.call("_on_exit_debug_pressed")
+	_expect(
+		arena.get_committed_action_history_snapshot().is_empty(),
+		"exit cleanup should clear authoritative combo history"
+	)
+	_expect(
+		arena.get_skill_presentation_snapshot()["combo_ready_target_ids"].is_empty(),
+		"exit cleanup should clear derived combo presentation"
+	)
+	arena.call("_on_exit_debug_pressed")
+	_expect(
+		arena.get_committed_action_history_snapshot().is_empty(),
+		"repeated exit cleanup should remain idempotent"
+	)
+	arena.configure_units(units)
+	_expect(
+		arena.get_committed_action_history_snapshot().is_empty(),
+		"configuration should start with empty authoritative history"
+	)
+	_expect(
+		arena.get_skill_presentation_snapshot()["combo_ready_target_ids"].is_empty(),
+		"configuration should start with neutral combo presentation"
+	)
+	arena.configure_units(units)
+	_expect(
+		arena.get_committed_action_history_snapshot().is_empty(),
+		"repeated configuration cleanup should remain idempotent"
+	)
+	arena.queue_free()
+	await process_frame
 
 
 func _expect(condition: bool, message: String) -> void:

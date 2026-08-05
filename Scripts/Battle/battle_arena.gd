@@ -81,6 +81,11 @@ var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
 
 
+func _exit_tree() -> void:
+	_skill_transaction.reset()
+	_clear_committed_action_history()
+
+
 func _ready() -> void:
 	var exit_callable := Callable(self, "_on_exit_debug_pressed")
 	if not _exit_debug_button.pressed.is_connected(exit_callable):
@@ -123,7 +128,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_hovered_log_index = -1
 	_transient_log_entry = null
 	_battle_log_entries.clear()
-	_battle_action_log_entries.clear()
+	_clear_committed_action_history()
 	if is_node_ready():
 		_clear_log_controls()
 		_clear_all_damage_feedback()
@@ -148,6 +153,10 @@ func get_current_unit() -> BattleUnitState:
 
 func get_battle_log_entries() -> Array[BattleLogEntry]:
 	return _battle_log_entries.duplicate()
+
+
+func _clear_committed_action_history() -> void:
+	_battle_action_log_entries.clear()
 
 
 func get_committed_action_history_snapshot() -> Array[BattleActionLogEntry]:
@@ -1335,6 +1344,7 @@ func _on_advance_debug_pressed() -> void:
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
 	_skill_transaction.reset()
+	_clear_committed_action_history()
 	_render_skill_transaction()
 	_clear_reward_ui()
 	call_deferred("_emit_exit_requested")
