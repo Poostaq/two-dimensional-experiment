@@ -54,6 +54,10 @@ func _test_combo_tooltip_row(arena: Control) -> void:
 	if is_instance_valid(combo_label):
 		_expect(not combo_label.visible, "Combo tooltip row must be hidden initially.")
 		_expect(combo_label.text.is_empty(), "Hidden Combo tooltip row must start empty.")
+		_expect(
+			combo_label.custom_minimum_size.x >= 260.0,
+			"Combo tooltip row must reserve readable wrapping width."
+		)
 
 
 func _expect(condition: bool, message: String) -> void:

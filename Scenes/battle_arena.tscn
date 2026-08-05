@@ -762,5 +762,6 @@ autowrap_mode = 2
 [node name="SkillTooltipComboLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=2066151383]
 unique_name_in_owner = true
 visible = false
+custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
