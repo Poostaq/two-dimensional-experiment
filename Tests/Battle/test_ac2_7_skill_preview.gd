@@ -170,7 +170,7 @@ func _test_tooltip_scene_and_hover_content() -> void:
 		await process_frame
 		return
 	_expect(not tooltip.visible, "tooltip should start hidden")
-	arena.inspect_unit(&"player_0")
+	_expect(_advance_to_unit(arena, &"player_0"), "turn queue should contain player_0 for tooltip fixture")
 	var active_button := _skill_button(arena, &"shield_bash")
 	_expect(is_instance_valid(active_button), "active skill button should exist")
 	if is_instance_valid(active_button):
@@ -222,7 +222,7 @@ func _test_tooltip_lifecycle_and_non_actionability() -> void:
 		arena.queue_free()
 		await process_frame
 		return
-	arena.inspect_unit(&"player_0")
+	_expect(_advance_to_unit(arena, &"player_0"), "turn queue should contain player_0 for lifecycle fixture")
 	var active_button := _skill_button(arena, &"shield_bash")
 	var passive_button := _skill_button(arena, &"frontline_guard")
 	_expect(is_instance_valid(active_button) and is_instance_valid(passive_button), "lifecycle skill buttons should exist")
@@ -257,7 +257,7 @@ func _test_tooltip_lifecycle_and_non_actionability() -> void:
 	_emit_skill_hover(passive_button, true)
 	await process_frame
 	_expect(tooltip.visible and _tooltip_text(arena)[0] == "Frontline Guard", "duplicate enter should be safe")
-	arena.inspect_unit(&"player_4")
+	_expect(_advance_to_unit(arena, &"player_4"), "turn queue should contain player_4 for lifecycle fixture")
 	_expect(not tooltip.visible, "character change should hide tooltip")
 	var player_four_button := _skill_button(arena, &"quick_strike")
 	_emit_skill_hover(player_four_button, true)
@@ -331,6 +331,16 @@ func _test_tooltip_placement_and_event_guards() -> void:
 	_expect(not tooltip.visible, "freed anchor should not restore tooltip")
 	arena.queue_free()
 	await process_frame
+
+
+func _advance_to_unit(arena: BattleArena, unit_id: StringName) -> bool:
+	var queue_size: int = arena.get_turn_queue().size()
+	for _step: int in queue_size:
+		var current := arena.get_current_unit()
+		if is_instance_valid(current) and current.unit_id == unit_id:
+			return true
+		arena.advance_turn()
+	return false
 
 
 func _snapshot_hp(arena: BattleArena) -> Dictionary:

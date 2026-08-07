@@ -198,12 +198,29 @@ func get_inspected_unit_id() -> StringName:
 
 
 func inspect_unit(unit_id: StringName) -> void:
-	var unit := get_unit_by_id(unit_id)
-	if not is_instance_valid(unit):
+	var current_unit := get_current_unit()
+	if (
+		_battle_outcome != BattleOutcome.Type.IN_PROGRESS
+		or not is_instance_valid(current_unit)
+	):
 		_clear_skill_inspector()
 		return
-	_selected_skill_id = &""
-	_inspected_unit_id = unit.unit_id
+	if unit_id != current_unit.unit_id or _inspected_unit_id == current_unit.unit_id:
+		return
+	_sync_skill_inspector_to_current_turn()
+
+
+func _sync_skill_inspector_to_current_turn() -> void:
+	var current_unit := get_current_unit()
+	if (
+		_battle_outcome != BattleOutcome.Type.IN_PROGRESS
+		or not is_instance_valid(current_unit)
+	):
+		_clear_skill_inspector()
+		return
+	if _inspected_unit_id != current_unit.unit_id:
+		_selected_skill_id = &""
+	_inspected_unit_id = current_unit.unit_id
 	_refresh_skill_inspector()
 
 
@@ -939,7 +956,7 @@ func _refresh_context() -> void:
 func _refresh_turn_ui() -> void:
 	_round_label.text = "Round %d" % round_number
 	_render_units()
-	_refresh_skill_inspector()
+	_sync_skill_inspector_to_current_turn()
 	_refresh_result_ui()
 	if is_battle_complete():
 		_current_unit_label.text = BattleOutcome.get_display_text(_battle_outcome)
