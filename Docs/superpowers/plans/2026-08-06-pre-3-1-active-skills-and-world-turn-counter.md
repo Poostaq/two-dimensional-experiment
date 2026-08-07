@@ -727,6 +727,13 @@ Report branch and `HEAD`, design/plan paths, changed production/test files, focu
 
 Use `superpowers:finishing-a-development-branch` and ask the user to choose local merge, push/PR, keep branch, or discard. Do not merge, push, delete, or restore/drop the preserved stash without the user's explicit selection.
 
+## As-built reconciliation
+
+- AC2.6 and AC2.7 use `_advance_to_unit`, a behaviorally identical bounded, asserted helper to the planned `_advance_until_current`; the naming difference is accepted.
+- AC2.8 retains its direct inspect call because the `configure_units` speeds already make `player_ui` current. The call is therefore a redundant no-op, the suite remains green, and no helper is needed.
+- Battle synchronization intentionally supersedes the planned snippet: rejected or repeated inspect inputs are no-ops; authoritative `_refresh_turn_ui` calls always refresh presentation; selection resets only when ownership changes; tooltip cleanup flows through `_refresh_skill_inspector -> _clear_skill_rows -> _hide_skill_tooltip`; and presentation synchronization does not reset the transaction, preserving the existing revision and revalidation lifecycle as authoritative.
+- Runtime warnings at `character_skill.gd:132`, `character_skill.gd:202`, and `character_skill.gd:245` for shadowed `effect`, plus `battle_unit_state.gd:45` for int-as-enum, are pre-existing debt from older commits. They are parser/runtime nonblocking and excluded from this feature's scope.
+
 ## Plan self-review
 
 - Approved scope maps to Tasks 2-6; no save persistence, new turn rules, or HUD redesign is included.
