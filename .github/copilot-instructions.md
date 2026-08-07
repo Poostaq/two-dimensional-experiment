@@ -256,7 +256,7 @@ Forbidden:
 - Use small, well-named functions
 
 <!-- GODOTIQ RULES START -->
-<!-- godotiq-rules-version: 0.5.15 -->
+<!-- godotiq-rules-version: 0.5.16 -->
 # GodotIQ — Core Rules
 
 You have GodotIQ MCP tools (`godotiq_*`). ALWAYS prefer them over raw file operations on Godot files.
@@ -266,15 +266,6 @@ You have GodotIQ MCP tools (`godotiq_*`). ALWAYS prefer them over raw file opera
 - **DO NOT** hand-calculate positions or guess scales — `placement` / `suggest_scale` return validated suggestions.
 - **DO NOT** build the world in code: terrain, structures and decorations belong in `.tscn` via `build_scene`/`node_ops`; only game logic belongs in scripts.
 - **DO NOT** write `.tscn`/`.gd` behind a running editor with native file tools — GodotIQ's write tools detect the editor and route safely; raw writes risk stale-buffer overwrites and UID corruption.
-
-## Branch and Commit Workflow
-
-When starting code work, agents must first update the default integration branch from origin, then create a dedicated task branch for the change.
-
-- Use `main` in this repository; use `master` only in repositories where that is the default integration branch.
-- Do not carry unrelated local changes onto the task branch. Stash or use an isolated worktree when needed.
-- Commit the completed code change on the task branch with only relevant files staged.
-- Push the branch when the user asks for remote handoff or review.
 
 ## Mandatory Workflows
 
