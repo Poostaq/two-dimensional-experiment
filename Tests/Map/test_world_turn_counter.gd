@@ -22,8 +22,16 @@ func _run() -> void:
 
 func _test_turn_counter_starts_at_zero() -> void:
 	var world := await _instantiate_world()
-	_assert(_counter_text(world) == "Turns: 0", "initial zero text",
-		"new world must render zero successful moves")
+	var label := world.get_node_or_null("%TurnCounterLabel") as Label
+	var layout_matches := is_instance_valid(label) \
+		and label.text == "Turns: 0" \
+		and label.offset_left == 16.0 \
+		and label.offset_top == 16.0 \
+		and label.offset_right == 136.0 \
+		and label.offset_bottom == 48.0 \
+		and label.get_theme_font_size("font_size") == 22
+	_assert(layout_matches, "initial zero scene contract",
+		"label must render Turns: 0 at offsets 16,16,136,48 with font size 22")
 	_free_world(world)
 
 
