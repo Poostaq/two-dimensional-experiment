@@ -161,21 +161,25 @@ func _test_persistent_inspector_scene_contract() -> void:
 func _test_neutral_and_populated_inspection() -> void:
 	var arena := await _instantiate_arena()
 	var prompt := arena.get_node_or_null("%SkillInspectorPromptLabel") as Label
-	var neutral: bool = arena.call("get_inspected_unit_id") == &"" and prompt.visible
-	arena.call("inspect_unit", &"player_4")
+	var current := arena.call("get_current_unit") as BattleUnitState
+	var locked: bool = is_instance_valid(current)
+	locked = locked and arena.call("get_inspected_unit_id") == current.unit_id and not prompt.visible
+	_assert(_advance_to_unit(arena, &"player_4"), "Player 4 fixture arrival", "turn queue must contain player_4")
 	var rows := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	var populated := (arena.get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Player Back 2"
 	populated = populated and (arena.get_node_or_null("%SkillInspectorCountLabel") as Label).text == "Skills: 4/4"
 	populated = populated and rows.get_child_count() == 4
-	arena.call("inspect_unit", &"enemy_0")
-	populated = populated and (arena.get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Enemy Front 1"
-	_assert(neutral and populated, "Neutral and populated inspection", "both sides must render from neutral state")
+	_free_arena(arena)
+	arena = await _instantiate_arena()
+	_assert(_advance_to_unit(arena, &"enemy_0"), "Enemy 0 fixture arrival", "turn queue must contain enemy_0")
+	var enemy_populated := (arena.get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Enemy Front 1"
+	_assert(locked and populated and enemy_populated, "Locked and populated inspection", "fresh current-unit fixtures on both sides must render without a neutral state")
 	_free_arena(arena)
 
 
 func _test_zero_skill_and_empty_slot_behavior() -> void:
 	var arena := await _instantiate_arena()
-	arena.call("inspect_unit", &"player_1")
+	_assert(_advance_to_unit(arena, &"player_1"), "Player 1 fixture arrival", "turn queue must contain player_1")
 	var before: StringName = arena.call("get_inspected_unit_id")
 	var empty_event := InputEventMouseButton.new()
 	empty_event.button_index = MOUSE_BUTTON_LEFT
@@ -191,11 +195,11 @@ func _test_zero_skill_and_empty_slot_behavior() -> void:
 
 func _test_reconfiguration_clears_inspection() -> void:
 	var arena := await _instantiate_arena()
-	arena.call("inspect_unit", &"player_4")
+	_assert(_advance_to_unit(arena, &"player_4"), "Reconfiguration fixture arrival", "turn queue must contain player_4")
 	arena.call("configure_units", _typed_units([BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]))
-	_assert(arena.call("get_inspected_unit_id") == &""
-		and (arena.get_node_or_null("%SkillInspectorPromptLabel") as Label).visible,
-		"Reconfiguration clears inspection", "reused arenas must return to neutral")
+	_assert(arena.call("get_inspected_unit_id") == &"fresh"
+		and not (arena.get_node_or_null("%SkillInspectorPromptLabel") as Label).visible,
+		"Reconfiguration locks current inspection", "reused arenas must inspect the newly configured current unit")
 	_free_arena(arena)
 
 
@@ -203,21 +207,23 @@ func _test_retained_defeat_updates_status() -> void:
 	var arena := await _instantiate_arena()
 	var player := BattleUnitState.new(&"player", "Player", BattleUnitState.Side.PLAYER, 0, 9)
 	var enemy_skills: Array[CharacterSkill] = [_test_skill(&"brace", "Brace", CharacterSkill.Kind.PASSIVE)]
-	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 8, 20, enemy_skills)
-	enemy.current_hp = 6
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 10, 20, enemy_skills)
 	arena.call("configure_units", _typed_units([player, enemy]))
-	arena.call("inspect_unit", &"enemy")
-	arena.call("perform_debug_damage")
-	_assert(arena.call("get_inspected_unit_id") == &"enemy"
+	arena.call("select_skill", &"brace")
+	enemy.current_hp = 0
+	arena.call("_refresh_turn_ui")
+	_assert(not arena.call("is_battle_complete")
+		and arena.call("get_inspected_unit_id") == &"enemy"
+		and arena.call("get_selected_skill_id") == &"brace"
 		and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
 		and (arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 1,
-		"Retained defeat updates status", "defeated retained units keep rows and show Defeated")
+		"Current defeat retains locked inspection", "a defeated current unit must retain its locked inspection and selection")
 	_free_arena(arena)
 
 
 func _test_four_skill_tile_contract() -> void:
 	var arena := await _instantiate_arena()
-	arena.call("inspect_unit", &"player_4")
+	_assert(_advance_to_unit(arena, &"player_4"), "Four-skill fixture arrival", "turn queue must contain player_4")
 	var skills := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	var expected := [
 		[&"quick_strike", "1", "Quick Strike", "Active"],
@@ -241,7 +247,7 @@ func _test_four_skill_tile_contract() -> void:
 
 func _test_non_actionable_skill_selection() -> void:
 	var arena := await _instantiate_arena()
-	arena.call("inspect_unit", &"player_4")
+	_assert(_advance_to_unit(arena, &"player_4"), "Selection fixture arrival", "turn queue must contain player_4")
 	var before_round: int = arena.round_number
 	var before_current: BattleUnitState = arena.call("get_current_unit")
 	var before_hp: Array[int] = []
@@ -269,22 +275,23 @@ func _test_skill_selection_lifecycle_and_viewport() -> void:
 	root.size = Vector2i(1152, 648)
 	await process_frame
 	var arena := await _instantiate_arena()
-	arena.call("inspect_unit", &"player_4")
+	_assert(_advance_to_unit(arena, &"player_4"), "Lifecycle player fixture arrival", "turn queue must contain player_4")
 	arena.call("select_skill", &"rally")
-	arena.call("inspect_unit", &"enemy_0")
+	_assert(_advance_to_unit(arena, &"enemy_0"), "Lifecycle enemy fixture arrival", "turn queue must contain enemy_0")
 	var changed_character_clears: bool = arena.call("get_selected_skill_id") == &""
 	arena.call("select_skill", &"savage_blow")
 	var enemy := arena.call("get_unit_by_id", &"enemy_0") as BattleUnitState
 	enemy.current_hp = 0
 	arena.call("_refresh_turn_ui")
-	var retained: bool = arena.call("get_selected_skill_id") == &"savage_blow"
-	retained = retained and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
-	retained = retained and (arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 2
+	var defeated_retains: bool = not arena.call("is_battle_complete")
+	defeated_retains = defeated_retains and arena.call("get_selected_skill_id") == &"savage_blow"
+	defeated_retains = defeated_retains and arena.call("get_inspected_unit_id") == &"enemy_0"
+	defeated_retains = defeated_retains and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
 	arena.call("configure_units", _typed_units([BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]))
-	var cleared: bool = arena.call("get_inspected_unit_id") == &"" and arena.call("get_selected_skill_id") == &""
+	var cleared: bool = arena.call("get_inspected_unit_id") == &"fresh" and arena.call("get_selected_skill_id") == &""
 	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control
-	_assert(changed_character_clears and retained and cleared and battle_log.position.y + battle_log.size.y <= 648.0,
-		"Skill selection lifecycle and viewport", "character changes clear selection, retained defeat preserves it, and reconfigure clears it")
+	_assert(changed_character_clears and defeated_retains and cleared and battle_log.position.y + battle_log.size.y <= 648.0,
+		"Skill selection lifecycle and viewport", "turn changes and reconfigure clear selection while current defeat retains it")
 	_free_arena(arena)
 
 
@@ -292,13 +299,23 @@ func _test_four_skill_layout_fits_viewport() -> void:
 	root.size = Vector2i(1152, 648)
 	await process_frame
 	var arena := await _instantiate_arena()
-	arena.call("inspect_unit", &"player_4")
+	_assert(_advance_to_unit(arena, &"player_4"), "Layout fixture arrival", "turn queue must contain player_4")
 	await process_frame
 	var main_vbox := arena.get_node_or_null("Margin/VBox") as Control
 	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control
 	_assert(main_vbox.size.y <= 648.0 and battle_log.position.y + battle_log.size.y <= 648.0,
 		"Four-skill layout fits viewport", "VBox %.1f, log bottom %.1f must be <= 648" % [main_vbox.size.y, battle_log.position.y + battle_log.size.y])
 	_free_arena(arena)
+
+
+func _advance_to_unit(arena: BattleArena, unit_id: StringName) -> bool:
+	var queue_size: int = (arena.get_turn_queue() as Array).size()
+	for _step: int in queue_size:
+		var current := arena.get_current_unit() as BattleUnitState
+		if is_instance_valid(current) and current.unit_id == unit_id:
+			return true
+		arena.advance_turn()
+	return false
 
 
 func _typed_units(values: Array) -> Array[BattleUnitState]:
