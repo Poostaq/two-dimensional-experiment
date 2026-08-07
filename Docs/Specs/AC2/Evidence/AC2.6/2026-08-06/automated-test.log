@@ -1,12 +1,12 @@
 Pre-3.1 Active Skills and World Turn Counter - Automated Evidence
 Verification date: 2026-08-06
-Tested implementation SHA: 3617001fa11ce905679b590d56b63ce9ae265a8a
+Tested implementation SHA: cc6afb26466f7ab6b9554ed4d0b1e018dd1837ad
 Branch: feat/pre-3-1-active-skills-turn-counter
 
 SHA gate
 Command: git rev-parse HEAD
-Result: 3617001fa11ce905679b590d56b63ce9ae265a8a; exit 0
-Command: git merge-base --is-ancestor 3617001fa11ce905679b590d56b63ce9ae265a8a HEAD
+Result: cc6afb26466f7ab6b9554ed4d0b1e018dd1837ad; exit 0
+Command: git merge-base --is-ancestor cc6afb26466f7ab6b9554ed4d0b1e018dd1837ad HEAD
 Result: exit 0
 
 GodotIQ project gates (fresh against the SHA above)
@@ -16,6 +16,12 @@ Command: validate(target="project", detail="brief")
 Result: 45 scripts and 4 scenes checked; 0 errors, 0 warnings, 2 informational findings; PASS
 Command: check_errors(scope="project")
 Result: 45 scripts checked; 0 parser/compile errors; PASS
+Pre-existing nonblocking editor warnings (separate from validation/parser/runtime errors):
+- `res://Scripts/Battle/character_skill.gd:132`: `The local function parameter "effect" is shadowing an already-declared variable at line 85 in the current class.`
+- `res://Scripts/Battle/character_skill.gd:202`: `The local function parameter "effect" is shadowing an already-declared variable at line 85 in the current class.`
+- `res://Scripts/Battle/character_skill.gd:245`: `The local function parameter "effect" is shadowing an already-declared variable at line 85 in the current class.`
+- `res://Scripts/Battle/battle_unit_state.gd:45`: `The integer 0 is being used where an enum value is expected. If this is intended, cast the integer to the enum type.`
+Provenance: `git blame` attributes the three `character_skill.gd` lines to commit `a6e4634` and `battle_unit_state.gd:45` to commit `4123215`; both predate this feature. Validation errors, parser/compile errors, runtime errors, and script errors remain 0.
 Command: signal_map(scope="all", find="all", detail="normal")
 Result: 7 signals defined, 21 emissions, 25 connections; PASS with unchanged baseline orphans battle_completed and hover_changed.
 Signal delta: baseline 7 defined / 20 emissions / 25 connections -> current 7 / 21 / 25. The single additional emission is the focused test's explicit built-in gui_input emission in Tests/Battle/test_active_turn_skill_lock.gd; it is test interaction plumbing, not a new project-defined signal or orphan.
@@ -105,9 +111,9 @@ Runtime readiness and UI verification
 Command: verify_project_runs(scene="main", check_scope="project", stop_after=false, settle_seconds=2, error_limit=50, fail_on_warnings=false)
 Result: PASS; project preflight 0 errors; main scene started; runtime attached; 0 runtime errors and 0 script errors.
 Command: ui_map(detail="normal", include_invisible=true, max_depth=8)
-Result: TurnCounterLabel visible with text "Turns: 0" and top-left rect [16,16,116,44]; no undersized touch targets.
+Result: TurnCounterLabel visible with text "Turns: 0", top-left rect [16,16,136,48], size [120,32], and font size 22; readable with no overlap and no undersized touch targets.
 Command: explore(scene="res://Scenes/game_world.tscn", mode="tour", max_areas=1, screenshots_per_area=1, scale=0.25, quality=0.3)
-Result: 1/1 area and screenshot captured; the world map rendered and the counter appeared at the viewport top-left.
+Result: 1/1 area and screenshot captured; the world map rendered and the 22 px counter appeared readable at the viewport top-left without overlap.
 Command: read_debug_console(limit=50, clear=false, include_runtime=true, include_script=true)
 Result: 0 runtime errors, 0 script errors, 0 total entries; PASS.
 Command: run(action="stop")
