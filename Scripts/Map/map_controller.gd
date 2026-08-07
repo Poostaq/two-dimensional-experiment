@@ -20,6 +20,7 @@ const SUDDEN_DEATH_MOVE_THRESHOLD := 15
 @onready var _player_marker: Node2D = $MapRoot/PlayerMarker
 @onready var _boss_marker: Node2D = $MapRoot/BossMarker
 @onready var _ui_layer: CanvasLayer = $UI
+@onready var _turn_counter_label: Label = %TurnCounterLabel
 
 var player_coord: Vector2i = Vector2i.ZERO
 var boss_coord: Vector2i = Vector2i.ZERO
@@ -50,6 +51,7 @@ func _ready() -> void:
 
 	_build_tiles()
 	_refresh_visual_state()
+	_refresh_turn_counter()
 
 
 func set_run_id(value: String) -> void:
@@ -62,6 +64,7 @@ func set_run_id(value: String) -> void:
 	player_coord = _model.get_start_coord()
 	boss_coord = _model.get_boss_coord()
 	move_count = 0
+	_refresh_turn_counter()
 	_sudden_death_active = false
 	encounter_types = _model.get_encounter_types_for_run(run_id)
 	_refresh_visual_state()
@@ -145,6 +148,7 @@ func request_move(destination: Vector2i) -> bool:
 
 	player_coord = destination
 	move_count += 1
+	_refresh_turn_counter()
 	_refresh_visual_state()
 
 	if player_coord == boss_coord:
@@ -185,6 +189,10 @@ func _build_tiles() -> void:
 		tile.configure(coord)
 		tile.tile_selected.connect(_on_tile_selected)
 		_tiles[coord] = tile
+
+
+func _refresh_turn_counter() -> void:
+	_turn_counter_label.text = "Turns: %d" % move_count
 
 
 func _refresh_visual_state() -> void:
