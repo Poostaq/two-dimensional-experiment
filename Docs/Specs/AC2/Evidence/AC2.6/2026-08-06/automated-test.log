@@ -1,0 +1,127 @@
+Pre-3.1 Active Skills and World Turn Counter - Automated Evidence
+Verification date: 2026-08-06
+Tested implementation SHA: 3617001fa11ce905679b590d56b63ce9ae265a8a
+Branch: feat/pre-3-1-active-skills-turn-counter
+
+SHA gate
+Command: git rev-parse HEAD
+Result: 3617001fa11ce905679b590d56b63ce9ae265a8a; exit 0
+Command: git merge-base --is-ancestor 3617001fa11ce905679b590d56b63ce9ae265a8a HEAD
+Result: exit 0
+
+GodotIQ project gates (fresh against the SHA above)
+Command: project_summary(detail="brief")
+Result: TwoDimensionExploration, Godot 4, 4 scenes, 45 scripts, 6 assets; PASS
+Command: validate(target="project", detail="brief")
+Result: 45 scripts and 4 scenes checked; 0 errors, 0 warnings, 2 informational findings; PASS
+Command: check_errors(scope="project")
+Result: 45 scripts checked; 0 parser/compile errors; PASS
+Command: signal_map(scope="all", find="all", detail="normal")
+Result: 7 signals defined, 21 emissions, 25 connections; PASS with unchanged baseline orphans battle_completed and hover_changed.
+Signal delta: baseline 7 defined / 20 emissions / 25 connections -> current 7 / 21 / 25. The single additional emission is the focused test's explicit built-in gui_input emission in Tests/Battle/test_active_turn_skill_lock.gd; it is test interaction plumbing, not a new project-defined signal or orphan.
+
+Signal baseline provenance:
+- Task 1 command: `signal_map(scope="all", find="orphans", detail="brief")`
+- Task 1 result: 7 signals defined / 20 emissions / 25 connections; orphans `battle_completed`, `hover_changed`.
+- Task 7/8 command: `signal_map(scope="all", find="orphans", detail="brief")`
+- Task 7/8 result: 7 signals defined / 21 emissions / 25 connections; orphans `battle_completed`, `hover_changed`.
+- Interpretation: the orphan set is unchanged. The +1 emission is the focused test's explicit emission of the built-in `gui_input` signal; no project-defined signal or connection was added.
+
+Exact test command shape from the approved plan
+  godot --headless --path . --script res://<runner>.gd
+Resolved executable/wrapper used on Windows to capture both streams without deadlocking on expected rejection-path stderr:
+  System.Diagnostics.Process with FileName="D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe", Arguments="--headless --path . --script <resource_path>", UseShellExecute=false, RedirectStandardOutput=true, RedirectStandardError=true, and concurrent ReadToEndAsync() for stdout/stderr.
+Discovery command:
+  @(Get-ChildItem Tests/Battle -Filter 'test_*.gd' -File; Get-ChildItem Tests/Map -Filter 'test_*.gd' -File) | Sort-Object FullName
+Discovery result: 23 runners.
+
+Literal executable discovery/value and PowerShell wrapper used for the final aggregate run:
+```powershell
+Get-Process | Where-Object { $_.ProcessName -like '*Godot*' } | Select-Object ProcessName,Path
+$godot_exe = 'D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe'
+$repo = (Get-Location).Path
+$test_scripts = @(
+    Get-ChildItem -LiteralPath 'Tests/Battle' -Filter 'test_*.gd' -File
+    Get-ChildItem -LiteralPath 'Tests/Map' -Filter 'test_*.gd' -File
+) | Sort-Object FullName
+$bad = 0
+foreach ($test_script in $test_scripts) {
+    $resource_path = 'res://' + $test_script.FullName.Substring($repo.Length + 1).Replace('\', '/')
+    $start_info = [System.Diagnostics.ProcessStartInfo]::new()
+    $start_info.FileName = $godot_exe
+    $start_info.Arguments = "--headless --path . --script $resource_path"
+    $start_info.WorkingDirectory = $repo
+    $start_info.UseShellExecute = $false
+    $start_info.RedirectStandardOutput = $true
+    $start_info.RedirectStandardError = $true
+    $process = [System.Diagnostics.Process]::new()
+    $process.StartInfo = $start_info
+    [void]$process.Start()
+    $stdout_task = $process.StandardOutput.ReadToEndAsync()
+    $stderr_task = $process.StandardError.ReadToEndAsync()
+    $process.WaitForExit()
+    [System.Threading.Tasks.Task]::WaitAll(@($stdout_task, $stderr_task))
+    $lines = @(($stdout_task.Result + "`n" + $stderr_task.Result) -split "`r?`n" | Where-Object { $_ })
+    $pass_signatures = @($lines | Where-Object { $_ -match 'PASS|tests passed' })
+    $failed_markers = @($lines | Where-Object { $_ -match 'FAILED:' })
+    if ($process.ExitCode -ne 0 -or $pass_signatures.Count -lt 1 -or $failed_markers.Count -ne 0) { $bad++ }
+}
+if ($test_scripts.Count -ne 23 -or $bad -ne 0) { exit 1 }
+exit 0
+```
+The shell execution containing this loop used a 180000 ms outer timeout. The earlier sequential-stream wrapper used a 240000 ms outer timeout, reached it while AC2.6 filled stderr with expected push_error diagnostics, and was terminated. Recovery verified the exact headless child command with `Get-CimInstance Win32_Process`; terminating the timed-out wrapper also ended that child. A guarded fallback was prepared to kill only the matching headless AC2.6 PID (`Stop-Process -Id <pid> -Force`) and found no surviving matching process. The concurrent wrapper above then completed normally. `AGGREGATE_EXIT=0`: 23 runners, 23 PASS signatures, 0 failing runners, and 0 `FAILED:` markers.
+
+Runner results
+01 | res://Tests/Battle/test_ac2_2_speed_order.gd | exit 0 | AC2.2 speed order tests: PASS (12/12) | FAILED: 0
+02 | res://Tests/Battle/test_ac2_3_damage_defeat_log.gd | exit 0 | AC2.3 damage and battle log tests: PASS (18/18) | FAILED: 0
+03 | res://Tests/Battle/test_ac2_4_battle_results.gd | exit 0 | AC2.4 battle result tests: PASS (9/9) | FAILED: 0
+04 | res://Tests/Battle/test_ac2_5_reward_selection.gd | exit 0 | AC2.5 reward selection tests: PASS (15/15) | FAILED: 0
+05 | res://Tests/Battle/test_ac2_6_character_skills.gd | exit 0 | AC2.6 character skill tests: PASS (19/19) | FAILED: 0
+06 | res://Tests/Battle/test_ac2_7_skill_preview.gd | exit 0 | AC2.7 tests passed | FAILED: 0
+07 | res://Tests/Battle/test_ac2_8_skill_arena.gd | exit 0 | AC2.8 skill arena tests: PASS | FAILED: 0
+08 | res://Tests/Battle/test_ac2_8_skill_lifecycle.gd | exit 0 | AC2.8 skill lifecycle tests: PASS | FAILED: 0
+09 | res://Tests/Battle/test_ac2_8_skill_scene.gd | exit 0 | AC2.8 skill scene tests: PASS | FAILED: 0
+10 | res://Tests/Battle/test_ac2_8_skill_targeting.gd | exit 0 | AC2.8 skill targeting tests: PASS | FAILED: 0
+11 | res://Tests/Battle/test_ac2_8_skill_transaction.gd | exit 0 | AC2.8 skill transaction tests: PASS | FAILED: 0
+12 | res://Tests/Battle/test_active_turn_skill_lock.gd | exit 0 | Active-turn skill lock tests: PASS (5/5) | FAILED: 0
+13 | res://Tests/Map/test_ac1_1_runtime_step_counts.gd | exit 0 | AC1.1 runtime step-count check: PASS (8/8) | FAILED: 0
+14 | res://Tests/Map/test_ac1_2_encounter_determinism.gd | exit 0 | AC1.2 encounter determinism tests: PASS (6/6) | FAILED: 0
+15 | res://Tests/Map/test_ac1_2_hex_tile_view_states.gd | exit 0 | AC1.2 hex tile view state tests: PASS (1/1) | FAILED: 0
+16 | res://Tests/Map/test_ac1_2_runtime_encounter_layout.gd | exit 0 | AC1.2 runtime encounter layout tests: PASS (5/5) | FAILED: 0
+17 | res://Tests/Map/test_ac1_3_mouse_navigation.gd | exit 0 | AC1.3 mouse navigation tests: PASS (7/7) | FAILED: 0
+18 | res://Tests/Map/test_ac1_4_encounter_overlay.gd | exit 0 | AC1.4 encounter overlay tests: PASS (6/6) | FAILED: 0
+19 | res://Tests/Map/test_ac1_5_sudden_death.gd | exit 0 | AC1.5 sudden death tests: PASS (13/13) | FAILED: 0
+20 | res://Tests/Map/test_ac2_1_battle_arena.gd | exit 0 | AC2.1 battle arena tests: PASS (11/11) | FAILED: 0
+21 | res://Tests/Map/test_hex_map_model.gd | exit 0 | AC1.1 map logic tests: PASS (7/7) | FAILED: 0
+22 | res://Tests/Map/test_map_controller_runtime.gd | exit 0 | AC1.1 runtime map controller tests: PASS (8/8) | FAILED: 0
+23 | res://Tests/Map/test_world_turn_counter.gd | exit 0 | World turn counter tests: PASS (4/4) | FAILED: 0
+Aggregate: exit 0; 23/23 runners PASS; 0 FAILED: markers.
+Focused aggregate: Active-turn skill lock 5/5; World turn counter 4/4.
+
+Expected rejection-path diagnostics
+The passing negative-path suites intentionally call push_error while proving invalid data is rejected: AC2.6 character skills emitted 6 ERROR lines, AC2.7 skill preview emitted 4, and AC2.8 skill targeting emitted 3. Each runner exited 0, emitted its PASS signature, and emitted no FAILED: line. These expected diagnostics are assertion stimuli, not suite failures.
+
+Runtime readiness and UI verification
+Command: verify_project_runs(scene="main", check_scope="project", stop_after=false, settle_seconds=2, error_limit=50, fail_on_warnings=false)
+Result: PASS; project preflight 0 errors; main scene started; runtime attached; 0 runtime errors and 0 script errors.
+Command: ui_map(detail="normal", include_invisible=true, max_depth=8)
+Result: TurnCounterLabel visible with text "Turns: 0" and top-left rect [16,16,116,44]; no undersized touch targets.
+Command: explore(scene="res://Scenes/game_world.tscn", mode="tour", max_areas=1, screenshots_per_area=1, scale=0.25, quality=0.3)
+Result: 1/1 area and screenshot captured; the world map rendered and the counter appeared at the viewport top-left.
+Command: read_debug_console(limit=50, clear=false, include_runtime=true, include_script=true)
+Result: 0 runtime errors, 0 script errors, 0 total entries; PASS.
+Command: run(action="stop")
+Result: stopped.
+
+Literal Task 8 evidence consistency command from the approved plan:
+```powershell
+$evidence = 'Docs/Specs/AC2/Evidence/AC2.6/2026-08-06'
+$sha = (Get-Content -Raw "$evidence/implementation-link.txt").Trim()
+$auto = Get-Content -Raw "$evidence/automated-test.log"
+$manual = Get-Content -Raw "$evidence/manual-runtime-check.md"
+if (-not $auto.Contains($sha) -or -not $manual.Contains($sha)) { throw 'Evidence SHA mismatch' }
+foreach ($scenario in 'B1','B2','B3','B4','B5','B6','M1','M2','M3','M4') {
+    if (-not $manual.Contains("$scenario | PASS")) { throw "Missing manual PASS: $scenario" }
+}
+```
+CONSISTENCY_EXIT=0
