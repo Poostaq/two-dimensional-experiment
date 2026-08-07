@@ -1,5 +1,5 @@
 <!-- GODOTIQ RULES START -->
-<!-- godotiq-rules-version: 0.5.15 -->
+<!-- godotiq-rules-version: 0.5.16 -->
 # GodotIQ — Core Rules
 
 You have GodotIQ MCP tools (`godotiq_*`). ALWAYS prefer them over raw file operations on Godot files.
