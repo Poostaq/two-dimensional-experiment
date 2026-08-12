@@ -49,6 +49,7 @@ const SKILL_TOOLTIP_ANCHOR_GAP: float = 8.0
 @onready var _skill_tooltip_targeting_label: Label = %SkillTooltipTargetingLabel
 @onready var _skill_tooltip_requirements_label: Label = %SkillTooltipRequirementsLabel
 @onready var _skill_tooltip_cooldown_label: Label = %SkillTooltipCooldownLabel
+@onready var _skill_tooltip_combo_label: Label = %SkillTooltipComboLabel
 @onready var _skill_action_region: VBoxContainer = %SkillActionRegion
 @onready var _skill_action_message_label: Label = %SkillActionMessageLabel
 @onready var _skill_action_summary_label: Label = %SkillActionSummaryLabel
@@ -78,6 +79,11 @@ var _hovered_skill_button: Button
 var _skill_tooltip_generation: int = 0
 var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
+
+
+func _exit_tree() -> void:
+	_skill_transaction.reset()
+	_clear_committed_action_history()
 
 
 func _ready() -> void:
@@ -122,7 +128,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_hovered_log_index = -1
 	_transient_log_entry = null
 	_battle_log_entries.clear()
-	_battle_action_log_entries.clear()
+	_clear_committed_action_history()
 	if is_node_ready():
 		_clear_log_controls()
 		_clear_all_damage_feedback()
@@ -149,8 +155,15 @@ func get_battle_log_entries() -> Array[BattleLogEntry]:
 	return _battle_log_entries.duplicate()
 
 
-func get_battle_action_log_entries() -> Array[BattleActionLogEntry]:
-	return _battle_action_log_entries.duplicate()
+func _clear_committed_action_history() -> void:
+	_battle_action_log_entries.clear()
+
+
+func get_committed_action_history_snapshot() -> Array[BattleActionLogEntry]:
+	var snapshot: Array[BattleActionLogEntry] = []
+	for entry: BattleActionLogEntry in _battle_action_log_entries:
+		snapshot.append(entry.duplicate_entry())
+	return snapshot
 
 
 func get_battle_outcome() -> BattleOutcome.Type:
@@ -259,7 +272,8 @@ func preview_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
 		current.unit_id if is_instance_valid(current) else &"",
 		is_battle_complete(),
 		round_number,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	_skill_transaction.preview(evaluation)
 	_render_skill_transaction()
@@ -302,7 +316,8 @@ func notify_authoritative_battle_change(increment_revision: bool = true) -> void
 		round_number,
 		_skill_transaction.locked_target_ids,
 		_battle_revision,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	if validation.accepted:
 		_skill_transaction.battle_revision = _battle_revision
@@ -327,7 +342,8 @@ func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
 		current.unit_id if is_instance_valid(current) else &"",
 		is_battle_complete(),
 		round_number,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	var generation: int = _skill_transaction.preview(evaluation)
 	if not _skill_transaction.begin_targeting(generation):
@@ -386,7 +402,8 @@ func confirm_skill_action() -> bool:
 		round_number,
 		_skill_transaction.locked_target_ids,
 		_skill_transaction.battle_revision,
-		_battle_revision
+		_battle_revision,
+		get_committed_action_history_snapshot()
 	)
 	if not _skill_transaction.complete_confirmation(validation, generation):
 		_render_skill_transaction()
@@ -444,7 +461,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		return false
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
-		if not is_instance_valid(target) or not target.is_active() or int(operation.get("amount", 0)) <= 0:
+		if not is_instance_valid(target) or not target.is_active() or int(operation.get(&"total_requested_damage", 0)) <= 0:
 			return false
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
@@ -453,13 +470,18 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	_action_in_progress = true
 	var action_round: int = round_number
 	var action_damage_results: Array[BattleDamageResult] = []
+	var action_base_damage_by_target: Dictionary[StringName, int] = {}
+	var action_combo_bonus_damage_by_target: Dictionary[StringName, int] = {}
 	var action_speed_target_ids: Array[StringName] = []
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
+		var target_id: StringName = operation[&"target_id"]
+		action_base_damage_by_target[target_id] = int(operation[&"base_damage"])
+		action_combo_bonus_damage_by_target[target_id] = int(operation[&"combo_bonus_damage"])
 		var result: BattleDamageResult = BattleDamageResolver.apply_damage(
 			actor,
 			target,
-			int(operation["amount"])
+			int(operation[&"total_requested_damage"])
 		)
 		if not is_instance_valid(result):
 			_action_in_progress = false
@@ -497,10 +519,14 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_battle_action_log_entries.size() + 1,
 		action_round,
 		plan.actor_id,
+		actor.side,
 		plan.skill_id,
 		plan.target_ids,
 		action_damage_results,
-		action_speed_target_ids
+		action_base_damage_by_target,
+		action_combo_bonus_damage_by_target,
+		action_speed_target_ids,
+		_action_has_combo_bonus(action_combo_bonus_damage_by_target)
 	)
 	_battle_action_log_entries.append(action_entry)
 	_battle_revision += 1
@@ -512,6 +538,13 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	_action_in_progress = false
 	_refresh_turn_ui()
 	return true
+
+
+func _action_has_combo_bonus(bonus_by_target: Dictionary[StringName, int]) -> bool:
+	for bonus: int in bonus_by_target.values():
+		if bonus > 0:
+			return true
+	return false
 
 
 func _render_skill_transaction() -> void:
@@ -533,6 +566,7 @@ func _render_skill_transaction() -> void:
 			continue
 		var unit_id: StringName = slot.get_meta("unit_id", &"")
 		var role: StringName = roles.get(unit_id, &"")
+		slot.set_meta("target_indicator_role", role)
 		overlay.visible = not role.is_empty()
 		var tint: TextureRect = _get_or_create_indicator_tint(overlay)
 		if role.is_empty():
@@ -546,7 +580,10 @@ func _render_skill_transaction() -> void:
 func _indicator_style(role: StringName) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
 	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var is_combo: bool = role in [&"combo_ready", &"combo_ready_locked"]
 	var border_color := Color(0.95, 0.2, 0.2, 1.0) if is_invalid else Color(0.25, 0.95, 0.45, 1.0)
+	if is_combo:
+		border_color = Color(1.0, 0.72, 0.18, 1.0)
 	style.border_color = border_color
 	style.set_border_width_all(3)
 	style.bg_color = Color.TRANSPARENT
@@ -581,12 +618,17 @@ func _update_indicator_tint(tint: TextureRect, role: StringName) -> void:
 		&"invalid_preview",
 		&"invalid_hover",
 		&"locked",
+		&"combo_ready",
+		&"combo_ready_locked",
 	]
 	tint.visible = has_tint
 	if not has_tint:
 		return
 	var is_invalid: bool = role in [&"invalid_preview", &"invalid_hover"]
+	var is_combo: bool = role in [&"combo_ready", &"combo_ready_locked"]
 	var tint_color := Color(0.95, 0.2, 0.2, 0.16) if is_invalid else Color(0.25, 0.95, 0.45, 0.16)
+	if is_combo:
+		tint_color = Color(1.0, 0.72, 0.18, 0.14)
 	var gradient := Gradient.new()
 	gradient.offsets = PackedFloat32Array([0.0, 0.7, 1.0])
 	gradient.colors = PackedColorArray([
@@ -729,6 +771,7 @@ func _create_skill(
 	var cooldown_mode: CharacterSkill.CooldownMode = CharacterSkill.CooldownMode.NONE
 	var cooldown_actions: int = 0
 	var unavailable_through_round: int = 0
+	var combo_definition: RefCounted = null
 	match id:
 		&"shield_bash":
 			targeting_mode = CharacterSkill.TargetingMode.FREE
@@ -754,6 +797,14 @@ func _create_skill(
 			target_rule = CharacterSkill.TargetRule.SELECT_ONE
 			mechanical_effect = CharacterSkill.Effect.DAMAGE
 			effect_magnitude = 5
+			var condition_script: Script = load("res://Scripts/Battle/combo_condition.gd")
+			var effect_script: Script = load("res://Scripts/Battle/combo_bonus_effect.gd")
+			var definition_script: Script = load("res://Scripts/Battle/combo_definition.gd")
+			combo_definition = definition_script.create(
+				[condition_script.create(0)],
+				[effect_script.create(0, 3)],
+				"+3 damage if another ally damaged this target with a skill this round."
+			)
 		&"rally":
 			target_side = CharacterSkill.TargetSide.ALLY
 			target_rule = CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES
@@ -798,7 +849,8 @@ func _create_skill(
 		effect_duration_mode,
 		cooldown_mode,
 		cooldown_actions,
-		unavailable_through_round
+		unavailable_through_round,
+		combo_definition
 	)
 
 
@@ -1106,6 +1158,11 @@ func _on_skill_button_mouse_entered(skill: CharacterSkill, button: Button) -> vo
 	_skill_tooltip_targeting_label.text = "Targeting: %s" % skill.targeting_text
 	_skill_tooltip_requirements_label.text = "Requirements: %s" % skill.requirements_text
 	_skill_tooltip_cooldown_label.text = "Cooldown: %s" % skill.cooldown_text
+	_skill_tooltip_combo_label.visible = is_instance_valid(skill.combo_definition)
+	_skill_tooltip_combo_label.text = (
+		"Combo: %s" % skill.combo_definition.description_text
+		if is_instance_valid(skill.combo_definition) else ""
+	)
 	_skill_tooltip_panel.visible = true
 	_skill_tooltip_panel.reset_size()
 	preview_skill_action(_inspected_unit_id, skill.skill_id)
@@ -1165,8 +1222,8 @@ func _hide_skill_tooltip() -> void:
 	_skill_tooltip_targeting_label.text = ""
 	_skill_tooltip_requirements_label.text = ""
 	_skill_tooltip_cooldown_label.text = ""
-
-
+	_skill_tooltip_combo_label.text = ""
+	_skill_tooltip_combo_label.visible = false
 
 
 func _clear_skill_inspector() -> void:
@@ -1304,6 +1361,7 @@ func _on_advance_debug_pressed() -> void:
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
 	_skill_transaction.reset()
+	_clear_committed_action_history()
 	_render_skill_transaction()
 	_clear_reward_ui()
 	call_deferred("_emit_exit_requested")

@@ -58,8 +58,8 @@ func _test_typed_mechanical_contract_exists() -> void:
 		if method.get("name", "") == "is_valid_mechanical_definition":
 			validator_arg_count = (method.get("args", []) as Array).size()
 	_expect(
-		create_arg_count == 18,
-		"CharacterSkill.create must accept preview plus eleven mechanical fields."
+		create_arg_count == 19,
+		"CharacterSkill.create must accept preview, mechanical fields, and combo metadata."
 	)
 	_expect(
 		validator_arg_count == 12,
@@ -263,6 +263,7 @@ func _test_structured_rules_contract_exists() -> void:
 
 
 func _test_target_evaluation_and_confirmation() -> void:
+	var empty_history: Array[BattleActionLogEntry] = []
 	var arena := (load(ARENA_PATH) as PackedScene).instantiate() as BattleArena
 	get_root().add_child(arena)
 	await process_frame
@@ -274,7 +275,7 @@ func _test_target_evaluation_and_confirmation() -> void:
 	var enemy_defeated := BattleUnitState.new(&"enemy_defeated", "Enemy Defeated", BattleUnitState.Side.ENEMY, 1, 2)
 	enemy_defeated.current_hp = 0
 	var units: Array[BattleUnitState] = [actor, ally, enemy_front, enemy_defeated]
-	var evaluation := BattleSkillRules.evaluate_targets(actor, shield, units, actor.unit_id, false, 1, 7)
+	var evaluation := BattleSkillRules.evaluate_targets(actor, shield, units, actor.unit_id, false, 1, 7, empty_history)
 	_expect(evaluation.can_start, "Front-row Shield Bash must be startable by the current player actor.")
 	_expect(evaluation.valid_target_ids == [&"enemy_front"], "Free targeting must report exact active-enemy candidates.")
 	_expect(evaluation.invalid_targets.has(&"enemy_defeated"), "Free targeting must report defeated enemies as invalid.")
@@ -282,24 +283,32 @@ func _test_target_evaluation_and_confirmation() -> void:
 	_expect(evaluation.affected_target_ids.is_empty(), "Free targeting must not pre-lock affected targets.")
 	_expect(evaluation.battle_revision == 7, "Target evaluation must capture battle revision.")
 	var selected_ids: Array[StringName] = [&"enemy_front"]
-	var accepted := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, selected_ids, 7, 7)
+	var accepted := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, selected_ids, 7, 7, empty_history)
 	_expect(accepted.accepted and accepted.effect_plan != null, "Valid free-target confirmation must return an effect plan.")
-	_expect(accepted.effect_plan.damage_operations == [{"target_id": &"enemy_front", "amount": 7}], "Shield Bash must plan exact damage.")
+	_expect(
+		accepted.effect_plan.damage_operations == [{
+			&"target_id": &"enemy_front",
+			&"base_damage": 7,
+			&"combo_bonus_damage": 0,
+			&"total_requested_damage": 7,
+		}],
+		"Shield Bash must plan exact base damage without combo bonus."
+	)
 	_expect(accepted.effect_plan.cooldown_actions == 1 and accepted.effect_plan.advance_turn, "Shield Bash plan must apply cooldown and advance once.")
 	var defeated_ids: Array[StringName] = [&"enemy_defeated"]
-	var rejected := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, defeated_ids, 7, 7)
+	var rejected := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, defeated_ids, 7, 7, empty_history)
 	_expect(not rejected.accepted and rejected.effect_plan == null, "Invalid confirmation must not return an effect plan.")
 	_expect(rejected.reason.code == SkillActionReason.Code.TARGET_DEFEATED, "Invalid confirmation must preserve exact target reason.")
-	var stale := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, selected_ids, 7, 8)
+	var stale := BattleSkillRules.validate_confirmation(actor, shield, units, actor.unit_id, false, 1, selected_ids, 7, 8, empty_history)
 	_expect(not stale.accepted and stale.reason.code == SkillActionReason.Code.REVISION_MISMATCH, "Revision mismatch must reject confirmation as stale.")
 	_expect(stale.reason.message == "Battle state changed. Review this skill again.", "Stale rejection message must be exact.")
 	var quick_step := _find_fixture_skill(arena, &"quick_step")
 	var quick_roster: Array[CharacterSkill] = [quick_step]
 	var quick_actor := BattleUnitState.new(&"quick_actor", "Quick Actor", BattleUnitState.Side.PLAYER, 4, 10, 20, quick_roster)
 	var quick_units: Array[BattleUnitState] = [quick_actor, ally, enemy_front]
-	var quick_eval := BattleSkillRules.evaluate_targets(quick_actor, quick_step, quick_units, quick_actor.unit_id, false, 1, 9)
+	var quick_eval := BattleSkillRules.evaluate_targets(quick_actor, quick_step, quick_units, quick_actor.unit_id, false, 1, 9, empty_history)
 	_expect(quick_eval.affected_target_ids == [&"quick_actor"], "Quick Step must predefine self.")
-	var quick_validation := BattleSkillRules.validate_confirmation(quick_actor, quick_step, quick_units, quick_actor.unit_id, false, 1, quick_eval.affected_target_ids, 9, 9)
+	var quick_validation := BattleSkillRules.validate_confirmation(quick_actor, quick_step, quick_units, quick_actor.unit_id, false, 1, quick_eval.affected_target_ids, 9, 9, empty_history)
 	_expect(quick_validation.accepted and quick_validation.effect_plan.speed_operations.size() == 1, "Quick Step must create one Speed operation.")
 	_expect(quick_validation.effect_plan.speed_operations[0].get("expiry") == BattleUnitState.ModifierExpiry.NEXT_ACTION, "Quick Step must use next-action expiry.")
 	var shadow := _find_fixture_skill(arena, &"shadow_lunge")
@@ -307,9 +316,9 @@ func _test_target_evaluation_and_confirmation() -> void:
 	var shadow_actor := BattleUnitState.new(&"shadow_actor", "Shadow Actor", BattleUnitState.Side.PLAYER, 4, 10, 20, shadow_roster)
 	var enemy_back := BattleUnitState.new(&"enemy_back", "Enemy Back", BattleUnitState.Side.ENEMY, 5, 1)
 	var shadow_units: Array[BattleUnitState] = [shadow_actor, enemy_front, enemy_back]
-	var round_one := BattleSkillRules.evaluate_targets(shadow_actor, shadow, shadow_units, shadow_actor.unit_id, false, 1, 10)
+	var round_one := BattleSkillRules.evaluate_targets(shadow_actor, shadow, shadow_units, shadow_actor.unit_id, false, 1, 10, empty_history)
 	_expect(not round_one.can_start and round_one.blocking_reason.code == SkillActionReason.Code.PRE_USE_COOLDOWN, "Shadow Lunge must be blocked during round 1.")
-	var round_two := BattleSkillRules.evaluate_targets(shadow_actor, shadow, shadow_units, shadow_actor.unit_id, false, 2, 11)
+	var round_two := BattleSkillRules.evaluate_targets(shadow_actor, shadow, shadow_units, shadow_actor.unit_id, false, 2, 11, empty_history)
 	_expect(round_two.can_start and round_two.affected_target_ids == [&"enemy_back"], "Shadow Lunge must lock deterministic farthest enemy from round 2.")
 	arena.queue_free()
 	await process_frame

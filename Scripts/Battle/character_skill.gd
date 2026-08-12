@@ -103,6 +103,9 @@ var cooldown_actions: int:
 var unavailable_through_round: int:
 	get:
 		return _unavailable_through_round
+var combo_definition: RefCounted:
+	get:
+		return _combo_definition.duplicate_definition() if is_instance_valid(_combo_definition) else null
 
 var _skill_id: StringName = &""
 var _display_name: String = ""
@@ -122,6 +125,7 @@ var _effect_duration_mode: EffectDuration = EffectDuration.NONE
 var _cooldown_mode: CooldownMode = CooldownMode.NONE
 var _cooldown_actions: int = 0
 var _unavailable_through_round: int = 0
+var _combo_definition: RefCounted = null
 var _is_valid: bool = false
 
 
@@ -143,7 +147,8 @@ func _init(
 	effect_duration_mode_value: int = EffectDuration.NONE,
 	cooldown_mode_value: int = CooldownMode.NONE,
 	cooldown_actions_value: int = 0,
-	unavailable_through_round_value: int = 0
+	unavailable_through_round_value: int = 0,
+	combo_definition_value: RefCounted = null
 ) -> void:
 	if not is_valid_definition(id, name, skill_kind, effect, targeting, requirements, cooldown):
 		push_error("CharacterSkill requires non-blank identity, preview fields, and a valid kind.")
@@ -158,6 +163,14 @@ func _init(
 		effect_value = Effect.DAMAGE if skill_kind == Kind.ACTIVE else Effect.NONE
 	if effect_magnitude_value < 0:
 		effect_magnitude_value = 1 if skill_kind == Kind.ACTIVE else 0
+	if is_instance_valid(combo_definition_value) and (
+		combo_definition_value.get_script().resource_path != "res://Scripts/Battle/combo_definition.gd"
+		or not combo_definition_value.is_valid()
+		or skill_kind != Kind.ACTIVE
+		or target_rule_value != TargetRule.SELECT_ONE
+	):
+		push_error("CharacterSkill combo definitions require an active single-target skill.")
+		return
 	if not is_valid_mechanical_definition(
 		skill_kind,
 		targeting_mode_value,
@@ -192,6 +205,11 @@ func _init(
 	_cooldown_mode = cooldown_mode_value as CooldownMode
 	_cooldown_actions = cooldown_actions_value
 	_unavailable_through_round = unavailable_through_round_value
+	_combo_definition = (
+		combo_definition_value.duplicate_definition()
+		if is_instance_valid(combo_definition_value)
+		else null
+	)
 	_is_valid = true
 
 
@@ -213,7 +231,8 @@ static func create(
 	effect_duration_mode_value: int = EffectDuration.NONE,
 	cooldown_mode_value: int = CooldownMode.NONE,
 	cooldown_actions_value: int = 0,
-	unavailable_through_round_value: int = 0
+	unavailable_through_round_value: int = 0,
+	combo_definition_value: RefCounted = null
 ) -> CharacterSkill:
 	var skill: CharacterSkill = CharacterSkill.new(
 		id,
@@ -233,7 +252,8 @@ static func create(
 		effect_duration_mode_value,
 		cooldown_mode_value,
 		cooldown_actions_value,
-		unavailable_through_round_value
+		unavailable_through_round_value,
+		combo_definition_value
 	)
 	return skill if skill.is_valid() else null
 
@@ -367,6 +387,11 @@ func mechanical_definition() -> Dictionary:
 		"cooldown_mode": _cooldown_mode,
 		"cooldown_actions": _cooldown_actions,
 		"unavailable_through_round": _unavailable_through_round,
+		"combo_definition": (
+			_combo_definition.duplicate_definition()
+			if is_instance_valid(_combo_definition)
+			else null
+		),
 	}
 
 
@@ -395,5 +420,6 @@ func duplicate_skill() -> CharacterSkill:
 		_effect_duration_mode,
 		_cooldown_mode,
 		_cooldown_actions,
-		_unavailable_through_round
+		_unavailable_through_round,
+		_combo_definition
 	)

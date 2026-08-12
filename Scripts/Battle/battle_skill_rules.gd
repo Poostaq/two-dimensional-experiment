@@ -11,7 +11,8 @@ static func evaluate_targets(
 	current_actor_id: StringName,
 	battle_complete: bool,
 	round_number: int,
-	battle_revision: int
+	battle_revision: int,
+	history_snapshot: Array[BattleActionLogEntry]
 ) -> SkillTargetEvaluation:
 	var reason: SkillActionReason = _evaluate_actor_and_skill(
 		actor, skill, current_actor_id, battle_complete, round_number
@@ -36,6 +37,26 @@ static func evaluate_targets(
 					)
 		else:
 			affected_ids = _predefined_targets(actor, skill, units)
+	var combo_ready_ids: Array[StringName] = []
+	var combo_bonus_by_target: Dictionary[StringName, int] = {}
+	if is_instance_valid(skill) and is_instance_valid(skill.combo_definition):
+		var combo_rules: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+		var combo_candidate_ids: Array[StringName] = (
+			valid_ids if skill.targeting_mode == CharacterSkill.TargetingMode.FREE else affected_ids
+		)
+		for candidate_id: StringName in combo_candidate_ids:
+			var candidate_ids: Array[StringName] = [candidate_id]
+			var combo_evaluation: RefCounted = combo_rules.evaluate(
+				skill.combo_definition, actor, candidate_ids, round_number, history_snapshot
+			)
+			if not combo_evaluation.activated:
+				continue
+			var bonus_total: int = 0
+			for operation: Dictionary in combo_evaluation.bonus_operations:
+				bonus_total += int(operation[&"magnitude"])
+			if bonus_total > 0:
+				combo_ready_ids.append(candidate_id)
+				combo_bonus_by_target[candidate_id] = bonus_total
 	if (
 		reason.code == SkillActionReason.Code.NONE
 		and skill.targeting_mode == CharacterSkill.TargetingMode.PREDEFINED
@@ -56,7 +77,10 @@ static func evaluate_targets(
 		valid_ids,
 		invalid_targets,
 		affected_ids,
-		battle_revision
+		battle_revision,
+		combo_ready_ids,
+		combo_bonus_by_target,
+		skill.effect_magnitude if is_instance_valid(skill) else 0
 	)
 
 
@@ -69,7 +93,8 @@ static func validate_confirmation(
 	round_number: int,
 	proposed_target_ids: Array[StringName],
 	expected_revision: int,
-	current_revision: int
+	current_revision: int,
+	history_snapshot: Array[BattleActionLogEntry]
 ) -> SkillConfirmationValidation:
 	if expected_revision != current_revision:
 		return _rejected(
@@ -91,7 +116,8 @@ static func validate_confirmation(
 		current_actor_id,
 		battle_complete,
 		round_number,
-		current_revision
+		current_revision,
+		history_snapshot
 	)
 	if not evaluation.can_start:
 		return _rejected(
@@ -133,12 +159,28 @@ static func validate_confirmation(
 		accepted_ids = evaluation.affected_target_ids.duplicate()
 	var damage_operations: Array[Dictionary] = []
 	var speed_operations: Array[Dictionary] = []
+	var combo_bonus_by_target: Dictionary[StringName, int] = {}
+	if is_instance_valid(skill.combo_definition):
+		var combo_rules: Script = load("res://Scripts/Battle/battle_combo_rules.gd")
+		var combo_evaluation: RefCounted = combo_rules.evaluate(
+			skill.combo_definition, actor, accepted_ids, round_number, history_snapshot
+		)
+		if combo_evaluation.activated:
+			for operation: Dictionary in combo_evaluation.bonus_operations:
+				for target_id: StringName in operation[&"target_ids"]:
+					combo_bonus_by_target[target_id] = (
+						combo_bonus_by_target.get(target_id, 0) + int(operation[&"magnitude"])
+					)
 	match skill.effect:
 		CharacterSkill.Effect.DAMAGE:
 			for target_id: StringName in accepted_ids:
 				damage_operations.append({
-					"target_id": target_id,
-					"amount": skill.effect_magnitude,
+					&"target_id": target_id,
+					&"base_damage": skill.effect_magnitude,
+					&"combo_bonus_damage": combo_bonus_by_target.get(target_id, 0),
+					&"total_requested_damage": (
+						skill.effect_magnitude + combo_bonus_by_target.get(target_id, 0)
+					),
 				})
 		CharacterSkill.Effect.SPEED_BOOST:
 			var expiry: BattleUnitState.ModifierExpiry = (
@@ -155,7 +197,7 @@ static func validate_confirmation(
 					"duration": skill.effect_duration,
 					"applied_round": round_number,
 				})
-	var plan: SkillEffectPlan = SkillEffectPlan.new(
+	var plan: SkillEffectPlan = SkillEffectPlan.create(
 		actor.unit_id,
 		skill.skill_id,
 		accepted_ids,

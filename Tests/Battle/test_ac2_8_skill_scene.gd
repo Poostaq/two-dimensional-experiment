@@ -10,6 +10,7 @@ func _init() -> void:
 	root.add_child(arena)
 	_test_action_region(arena)
 	_test_target_overlays(arena)
+	_test_combo_tooltip_row(arena)
 	arena.queue_free()
 	if failures.is_empty():
 		print("AC2.8 skill scene tests: PASS")
@@ -45,6 +46,18 @@ func _test_target_overlays(arena: Control) -> void:
 		_expect(overlay.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Target overlays must ignore mouse input.")
 		_expect(not overlay.visible, "Target overlays must be hidden initially.")
 		_expect(overlay.get_parent() is PanelContainer, "Target overlays must be owned by formation slots.")
+
+
+func _test_combo_tooltip_row(arena: Control) -> void:
+	var combo_label: Label = arena.get_node_or_null("%SkillTooltipComboLabel")
+	_expect(is_instance_valid(combo_label), "SkillTooltipComboLabel must be scene-owned.")
+	if is_instance_valid(combo_label):
+		_expect(not combo_label.visible, "Combo tooltip row must be hidden initially.")
+		_expect(combo_label.text.is_empty(), "Hidden Combo tooltip row must start empty.")
+		_expect(
+			combo_label.custom_minimum_size.x >= 260.0,
+			"Combo tooltip row must reserve readable wrapping width."
+		)
 
 
 func _expect(condition: bool, message: String) -> void:
