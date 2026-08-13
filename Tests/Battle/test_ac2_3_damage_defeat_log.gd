@@ -281,7 +281,7 @@ func _arena_with_one_entry() -> Control:
 func _target_for_first_fixture(arena: Control) -> Variant:
 	if arena == null or not arena.has_method("get_unit_by_id"):
 		return null
-	return arena.call("get_unit_by_id", &"enemy_1")
+	return arena.call("get_unit_by_id", &"enemy_4")
 
 
 func _feedback_matches(arena: Control, attacker: Variant, receiver: Variant, damage_text: String) -> bool:

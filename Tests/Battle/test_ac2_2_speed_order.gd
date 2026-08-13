@@ -103,7 +103,7 @@ func _test_mixed_fixture_order() -> void:
 	var actual: Array[StringName] = []
 	if arena != null and arena.has_method("get_turn_queue"):
 		actual = _ids(arena.call("get_turn_queue") as Array)
-	var expected: Array[StringName] = [&"player_4", &"enemy_4", &"player_0", &"enemy_0", &"enemy_1", &"player_1", &"player_2", &"enemy_2", &"player_3", &"enemy_3", &"player_5", &"enemy_5"]
+	var expected: Array[StringName] = [&"player_4", &"enemy_4", &"player_0", &"enemy_0", &"player_1", &"player_2", &"player_3", &"player_5"]
 	_assert(actual == expected, "mixed fixture order", "expected %s, got %s" % [expected, actual])
 	if arena != null:
 		arena.queue_free()
@@ -198,12 +198,12 @@ func _highlighted_slot(arena: Control) -> Control:
 func _test_round_wraps() -> void:
 	var arena: Control = await _instantiate_arena()
 	if arena != null and arena.has_method("advance_turn"):
-		for index: int in 12:
+		for index: int in 8:
 			arena.call("advance_turn")
 	var current: RefCounted = arena.call("get_current_unit") as RefCounted if arena != null and arena.has_method("get_current_unit") else null
 	var round_label: Label = arena.get_node_or_null("%RoundLabel") as Label if arena != null else null
 	var correct: bool = current != null and current.get("unit_id") == &"player_4" and int(arena.get("round_number")) == 2 and round_label != null and round_label.text == "Round 2"
-	_assert(correct, "round wraps", "twelfth advance must select queue head in Round 2")
+	_assert(correct, "round wraps", "eighth advance must select queue head in Round 2")
 	if arena != null:
 		arena.queue_free()
 

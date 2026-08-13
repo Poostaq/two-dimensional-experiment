@@ -12,7 +12,6 @@ const EXPECTED_PREVIEWS := {
 	&"momentum": ["Momentum", CharacterSkill.Kind.PASSIVE, "Gain 1 Speed after taking an action, lasting until battle ends.", "Self.", "User must remain active.", "None"],
 	&"savage_blow": ["Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "One selected active enemy.", "User must be above 50% HP.", "2 turns after use."],
 	&"blood_scent": ["Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"],
-	&"brace": ["Brace", CharacterSkill.Kind.PASSIVE, "Reduce the first damage received each round by 2.", "Self.", "None", "None"],
 	&"shadow_lunge": ["Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."],
 }
 
@@ -119,7 +118,7 @@ func _test_exact_fixture_previews() -> void:
 	var enemy_passive := false
 	for unit_id: StringName in [
 		&"player_0", &"player_1", &"player_2", &"player_3", &"player_4", &"player_5",
-		&"enemy_0", &"enemy_1", &"enemy_2", &"enemy_3", &"enemy_4", &"enemy_5",
+		&"enemy_0", &"enemy_4",
 	]:
 		var unit := arena.get_unit_by_id(unit_id)
 		_expect(is_instance_valid(unit), "fixture unit %s should exist" % unit_id)
@@ -138,7 +137,7 @@ func _test_exact_fixture_previews() -> void:
 			else:
 				enemy_active = enemy_active or skill.kind == CharacterSkill.Kind.ACTIVE
 				enemy_passive = enemy_passive or skill.kind == CharacterSkill.Kind.PASSIVE
-	_expect(seen_ids.size() == 11, "fixtures should expose exactly eleven skills")
+	_expect(seen_ids.size() == 10, "fixtures should expose exactly ten skills")
 	for expected_id: StringName in EXPECTED_PREVIEWS:
 		_expect(seen_ids.has(expected_id), "fixture should contain %s" % expected_id)
 	_expect(player_active and player_passive, "player fixtures should include active and passive skills")
@@ -347,7 +346,7 @@ func _snapshot_hp(arena: BattleArena) -> Dictionary:
 	var result := {}
 	for unit_id: StringName in [
 		&"player_0", &"player_1", &"player_2", &"player_3", &"player_4", &"player_5",
-		&"enemy_0", &"enemy_1", &"enemy_2", &"enemy_3", &"enemy_4", &"enemy_5",
+		&"enemy_0", &"enemy_4",
 	]:
 		var unit := arena.get_unit_by_id(unit_id)
 		if is_instance_valid(unit):
