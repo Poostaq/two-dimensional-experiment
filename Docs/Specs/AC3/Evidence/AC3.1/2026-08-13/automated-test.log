@@ -1,6 +1,6 @@
 AC3.1 automated verification
 Date: 2026-08-13
-Implementation commit: 26d3eeff95ebd1ba1194471585d43367878ee8e0
+Implementation commit: 5fe7f16a1e653ccdb7992496b286ce20e72cf4f1
 Godot: 4.7.1.stable.steam.a13da4feb
 
 PASS
@@ -19,9 +19,9 @@ Exit: 0
 Signature: AC2.5 reward selection tests: PASS (16/16)
 
 PASS
-Command: run every Tests/**/test_*.gd headless runner in sorted order and stop on non-zero exit
+Command: run every Tests/**/test_*.gd headless runner in sorted order; fail on non-zero exit or a FAILED marker
 Exit: 0
-Result: every discovered runner exited 0.
+Result: FULL_CORPUS_PASS=26.
 Note: existing rejection tests intentionally print push_error diagnostics for invalid fixture inputs.
 
 PASS
@@ -40,6 +40,6 @@ PASS
 GodotIQ: run(action="play") -> verify_project_runs(scene="main", check_scope="project", stop_after=false) -> read_debug_console()
 Result: main scene started; 0 failing runtime or script-console entries.
 
-BLOCKED
-GodotIQ live UI input verification
-Result: the bridge reported successful mouse commands but the Node2D map tiles exposed no interactive UI controls and move_count remained 0. Automated real-scene integration coverage passed, but this is not substituted for the manual observation.
+PASS
+GodotIQ live runtime verification
+Result: used MapController.request_move(), the public movement boundary, to reach Combat encounters because Node2D map-tile discovery is outside AC3.1 and remains unsupported by ui_map. From each encounter onward, GodotIQ drove the real Enter Battle, debug combat, reward selection, confirmation, and next-fight UI. Live state inspection confirmed the three starters, Scout recruitment, next-fight order and fresh state, duplicate filtering, full-roster filtering, and preservation of money/item rewards. The final debugger capture contained 0 runtime and 0 script errors. See manual-runtime-check.md for binary observations.

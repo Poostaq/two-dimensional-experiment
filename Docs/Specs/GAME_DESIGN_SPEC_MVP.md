@@ -193,7 +193,7 @@
 - [x] AC2.9 — Skills grant combo bonuses only when their specific combo conditions are met
 
 ### Unit Management
-- [ ] AC3.1 — Player can acquire a unit from a valid run-based source if roster < 6
+- [x] AC3.1 — Player can acquire a unit from a valid run-based source if roster < 6
 - [ ] AC3.2 — If the roster is already full at 6 characters, the player must dismiss one character before acquiring a new one
 - [ ] AC3.3 — Player can freely rearrange the active party before and after fights through a party-management interface
 - [ ] AC3.4 — Character progression follows the unit's defined model, such as level-up growth, class evolution, or permanent upgrade progression
