@@ -748,15 +748,9 @@ func _create_debug_units() -> Array[BattleUnitState]:
 			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "One selected active enemy.", "User must be above 50% HP.", "2 turns after use."),
 			_create_skill(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"),
 		])),
-		BattleUnitState.new(&"enemy_1", "Enemy Front 2", BattleUnitState.Side.ENEMY, 1, 7),
-		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6, 20, _skill_roster([
-			_create_skill(&"brace", "Brace", CharacterSkill.Kind.PASSIVE, "Reduce the first damage received each round by 2.", "Self.", "None", "None"),
-		])),
-		BattleUnitState.new(&"enemy_3", "Enemy Back 1", BattleUnitState.Side.ENEMY, 3, 4),
 		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([
 			_create_skill(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."),
 		])),
-		BattleUnitState.new(&"enemy_5", "Enemy Back 3", BattleUnitState.Side.ENEMY, 5, 2),
 	]
 
 

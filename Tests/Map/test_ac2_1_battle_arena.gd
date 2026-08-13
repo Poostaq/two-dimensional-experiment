@@ -3,7 +3,7 @@ extends SceneTree
 
 const GAME_WORLD_PATH := "res://Scenes/game_world.tscn"
 const BATTLE_ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 11
+const EXPECTED_TEST_COUNT := 12
 
 var _failures: Array[String] = []
 
@@ -16,6 +16,7 @@ func _run() -> void:
 	_test_player_side_has_six_slots()
 	_test_enemy_side_has_six_slots()
 	_test_slot_indices_are_unique()
+	_test_default_enemy_fixture_has_front_and_back()
 	await _test_combat_enters_battle()
 	await _test_boss_enters_battle()
 	_test_safe_cannot_enter_battle()
@@ -92,6 +93,34 @@ func _test_slot_indices_are_unique() -> void:
 			indices.sort()
 			_assert(indices == [0, 1, 2, 3, 4, 5], "slot indices are unique", "%s returned %s" % [method_name, indices])
 		arena.queue_free()
+
+
+func _test_default_enemy_fixture_has_front_and_back() -> void:
+	var arena := _instantiate_arena()
+	var enemy_units: Array[BattleUnitState] = []
+	for unit: BattleUnitState in arena.call("get_turn_queue"):
+		if unit.side == BattleUnitState.Side.ENEMY:
+			enemy_units.append(unit)
+	var enemy_ids: Array[StringName] = []
+	var enemy_slots: Array[int] = []
+	for unit: BattleUnitState in enemy_units:
+		enemy_ids.append(unit.unit_id)
+		enemy_slots.append(unit.slot_index)
+	enemy_slots.sort()
+	var unoccupied_count := 0
+	for slot: Control in arena.call("get_enemy_slots"):
+		if String(slot.get_meta("unit_id", &"")).is_empty():
+			unoccupied_count += 1
+	_assert(
+		enemy_ids.size() == 2
+		and enemy_ids.has(&"enemy_0")
+		and enemy_ids.has(&"enemy_4")
+		and enemy_slots == [0, 4]
+		and unoccupied_count == 4,
+		"default enemy fixture has front and back",
+		"expected enemy_0/slot 0, enemy_4/slot 4, and four unoccupied slots; got IDs=%s slots=%s unoccupied=%d" % [enemy_ids, enemy_slots, unoccupied_count]
+	)
+	arena.queue_free()
 
 
 func _test_combat_enters_battle() -> void:
