@@ -1,0 +1,149 @@
+[gd_scene format=3 uid="uid://bjwr1q47evey8"]
+
+[ext_resource type="Script" uid="uid://2qls4om1ty0n" path="res://Scripts/Party/party_management.gd" id="1_o43hy"]
+[ext_resource type="Script" uid="uid://dvbds7p0j5i2e" path="res://Scripts/Party/party_slot.gd" id="2_5ipkp"]
+
+[node name="PartyManagement" type="Control" unique_id=1790832150]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_o43hy")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1289794476]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.035, 0.055, 0.09, 1)
+
+[node name="Margin" type="MarginContainer" parent="." unique_id=981913725]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Margin" unique_id=151989023]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="Margin/VBox" unique_id=1999565320]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Margin/VBox/Header" unique_id=464453827]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Manage Party"
+
+[node name="ReturnToMapButton" type="Button" parent="Margin/VBox/Header" unique_id=543416926]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+text = "Return to Map"
+
+[node name="InstructionLabel" type="Label" parent="Margin/VBox" unique_id=1466274666]
+layout_mode = 2
+text = "Drag characters between formation slots. Front row is nearest the enemy."
+
+[node name="Formation" type="HBoxContainer" parent="Margin/VBox" unique_id=687447378]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="BackColumn" type="VBoxContainer" parent="Margin/VBox/Formation" unique_id=1245532733]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="BackLabel" type="Label" parent="Margin/VBox/Formation/BackColumn" unique_id=279952383]
+layout_mode = 2
+text = "BACK ROW"
+
+[node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formation/BackColumn" unique_id=1039610585]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formation/BackColumn" unique_id=365836686]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formation/BackColumn" unique_id=155469664]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="FrontColumn" type="VBoxContainer" parent="Margin/VBox/Formation" unique_id=1920114373]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FrontLabel" type="Label" parent="Margin/VBox/Formation/FrontColumn" unique_id=1569199971]
+layout_mode = 2
+text = "FRONT ROW · NEAREST ENEMY"
+
+[node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formation/FrontColumn" unique_id=1757801926]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formation/FrontColumn" unique_id=210757567]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formation/FrontColumn" unique_id=120121588]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="PendingRecruitRegion" type="VBoxContainer" parent="Margin/VBox" unique_id=120729252]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="PendingHeading" type="Label" parent="Margin/VBox/PendingRecruitRegion" unique_id=1529332758]
+layout_mode = 2
+text = "PLACE NEW RECRUIT"
+
+[node name="PendingRecruitCard" type="PanelContainer" parent="Margin/VBox/PendingRecruitRegion" unique_id=2090424877]
+unique_name_in_owner = true
+layout_mode = 2
+script = ExtResource("2_5ipkp")
+
+[node name="CancelPlacementButton" type="Button" parent="Margin/VBox/PendingRecruitRegion" unique_id=984752417]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 48)
+layout_mode = 2
+text = "Cancel"
+
+[node name="DetailsPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1187123846]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="DetailsHBox" type="HBoxContainer" parent="Margin/VBox/DetailsPanel" unique_id=997597347]
+layout_mode = 2
+
+[node name="StatsBox" type="VBoxContainer" parent="Margin/VBox/DetailsPanel/DetailsHBox" unique_id=490355851]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+
+[node name="DetailsNameLabel" type="Label" parent="Margin/VBox/DetailsPanel/DetailsHBox/StatsBox" unique_id=1330512981]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DetailsHpLabel" type="Label" parent="Margin/VBox/DetailsPanel/DetailsHBox/StatsBox" unique_id=1541988866]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DetailsSpeedLabel" type="Label" parent="Margin/VBox/DetailsPanel/DetailsHBox/StatsBox" unique_id=1545590311]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SkillsContainer" type="VBoxContainer" parent="Margin/VBox/DetailsPanel/DetailsHBox" unique_id=1137020162]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
