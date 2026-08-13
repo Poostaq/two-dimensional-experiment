@@ -297,7 +297,7 @@ func _filter_eligible_reward_options(
 		if option.kind != BattleRewardOption.Kind.RECRUITMENT:
 			eligible.append(option)
 			continue
-		var recruit := RunCharacterCatalog.create_for_reward(option.reward_id)
+		var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
 		if is_instance_valid(recruit) and roster.can_add(recruit.character_id):
 			eligible.append(option)
 	return eligible
@@ -306,7 +306,7 @@ func _filter_eligible_reward_options(
 func _on_reward_confirmed(option: BattleRewardOption) -> void:
 	if not is_instance_valid(option) or option.kind != BattleRewardOption.Kind.RECRUITMENT:
 		return
-	var recruit := RunCharacterCatalog.create_for_reward(option.reward_id)
+	var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
 	if not is_instance_valid(recruit):
 		return
 	_run_roster.try_add(recruit)
