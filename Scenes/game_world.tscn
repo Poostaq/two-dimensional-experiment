@@ -28,3 +28,11 @@ offset_right = 136.0
 offset_bottom = 48.0
 theme_override_font_sizes/font_size = 22
 text = "Turns: 0"
+
+[node name="ManagePartyButton" type="Button" parent="UI" unique_id=1422311441]
+unique_name_in_owner = true
+offset_left = 16.0
+offset_top = 56.0
+offset_right = 176.0
+offset_bottom = 104.0
+text = "Manage Party"

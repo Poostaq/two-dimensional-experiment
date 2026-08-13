@@ -77,19 +77,6 @@ func try_add_at(character: RunCharacter, slot_index: int) -> AddResult:
 	return AddResult.ADDED
 
 
-func try_add(character: RunCharacter) -> AddResult:
-	if not is_instance_valid(character) or character.character_id.is_empty():
-		return AddResult.INVALID
-	if has_character(character.character_id):
-		return AddResult.DUPLICATE
-	if is_full():
-		return AddResult.FULL
-	for slot_index: int in MAX_ROSTER_SIZE:
-		if not is_instance_valid(_slots[slot_index]):
-			return try_add_at(character, slot_index)
-	return AddResult.FULL
-
-
 func try_move(
 	source_slot: int,
 	destination_slot: int,

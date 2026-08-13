@@ -85,15 +85,15 @@ func _test_roster_initialization() -> void:
 
 func _test_valid_add() -> void:
 	var roster := RunRoster.new()
-	var result := roster.try_add(RunCharacterCatalog.create_for_reward(&"combat_recruit_scout"))
+	var result := roster.try_add_at(RunCharacterCatalog.create_for_reward(&"combat_recruit_scout"), 3)
 	_expect(result == RunRoster.AddResult.ADDED, "eligible Scout is added")
 	_expect(roster.size() == 4 and roster.has_character(&"scout"), "successful add mutates once")
 
 
 func _test_duplicate_rejection() -> void:
 	var roster := RunRoster.new()
-	roster.try_add(RunCharacterCatalog.create_for_reward(&"combat_recruit_scout"))
-	var result := roster.try_add(RunCharacterCatalog.create_for_reward(&"combat_recruit_scout"))
+	roster.try_add_at(RunCharacterCatalog.create_for_reward(&"combat_recruit_scout"), 3)
+	var result := roster.try_add_at(RunCharacterCatalog.create_for_reward(&"combat_recruit_scout"), 4)
 	_expect(result == RunRoster.AddResult.DUPLICATE, "duplicate is rejected")
 	_expect(roster.size() == 4 and not roster.can_add(&"scout"), "duplicate does not mutate roster")
 
@@ -108,15 +108,15 @@ func _test_full_rejection() -> void:
 		RunCharacter.new(&"f", "F", 1, 10, []),
 	]
 	var roster := RunRoster.new(starters)
-	var result := roster.try_add(RunCharacter.new(&"g", "G", 1, 10, []))
+	var result := roster.try_add_at(RunCharacter.new(&"g", "G", 1, 10, []), 0)
 	_expect(roster.is_full(), "six-character roster is full")
 	_expect(result == RunRoster.AddResult.FULL and roster.size() == 6, "full roster rejects seventh")
 
 
 func _test_invalid_rejection() -> void:
 	var roster := RunRoster.new()
-	_expect(roster.try_add(null) == RunRoster.AddResult.INVALID, "null character is invalid")
-	_expect(roster.try_add(RunCharacter.new(&"", "Invalid", 1, 10, [])) == RunRoster.AddResult.INVALID, "empty ID is invalid")
+	_expect(roster.try_add_at(null, 3) == RunRoster.AddResult.INVALID, "null character is invalid")
+	_expect(roster.try_add_at(RunCharacter.new(&"", "Invalid", 1, 10, []), 3) == RunRoster.AddResult.INVALID, "empty ID is invalid")
 	_expect(roster.size() == 3, "invalid characters do not mutate roster")
 
 
