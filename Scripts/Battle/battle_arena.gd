@@ -73,6 +73,8 @@ var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
 var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
 var _reward_confirmation_latched: bool = false
+var _configured_reward_options: Array[BattleRewardOption] = []
+var _has_configured_reward_options: bool = false
 var _inspected_unit_id: StringName = &""
 var _selected_skill_id: StringName = &""
 var _hovered_skill_button: Button
@@ -110,12 +112,19 @@ func _ready() -> void:
 
 
 func configure(coordinate: Vector2i, type: String) -> void:
+	_configured_reward_options.clear()
+	_has_configured_reward_options = false
 	if type != HexMapModel.ENCOUNTER_COMBAT and type != HexMapModel.ENCOUNTER_BOSS:
 		return
 	encounter_coordinate = coordinate
 	encounter_type = type
 	if is_node_ready():
 		_refresh_context()
+
+
+func configure_reward_options(options: Array[BattleRewardOption]) -> void:
+	_configured_reward_options = options.duplicate()
+	_has_configured_reward_options = true
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
@@ -876,7 +885,11 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 
 func _show_victory_rewards() -> void:
 	_clear_reward_ui()
-	_reward_options = BattleRewardCatalog.get_options_for(encounter_type)
+	_reward_options = (
+		_configured_reward_options.duplicate()
+		if _has_configured_reward_options
+		else BattleRewardCatalog.get_options_for(encounter_type)
+	)
 	_reward_overlay.visible = true
 	_reward_panel.visible = true
 	_reward_heading_label.text = "%s Rewards" % encounter_type.capitalize()

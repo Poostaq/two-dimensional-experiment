@@ -3,7 +3,7 @@ extends SceneTree
 
 const CATALOG_PATH := "res://Scripts/Battle/battle_reward_catalog.gd"
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 15
+const EXPECTED_TEST_COUNT := 16
 
 var _failures: Array[String] = []
 var _catalog_script: GDScript
@@ -24,6 +24,7 @@ func _run() -> void:
 	await _test_reward_ui_starts_hidden()
 	await _test_combat_victory_shows_options()
 	await _test_boss_victory_shows_options()
+	await _test_configured_reward_options_are_defensive()
 	await _test_defeat_never_shows_rewards()
 	await _test_selection_replaces_and_gates_confirm()
 	await _test_confirm_emits_ordered_once_and_cleans()
@@ -106,6 +107,26 @@ func _test_boss_victory_shows_options() -> void:
 		_panel(arena).visible and options.size() == 3 and options[0].reward_id == &"boss_recruit_champion",
 		"Boss victory shows options",
 		"expected visible Boss rewards"
+	)
+	_free_arena(arena)
+
+
+func _test_configured_reward_options_are_defensive() -> void:
+	var arena := await _instantiate_arena()
+	arena.call("configure", Vector2i.ZERO, "combat")
+	var eligible: Array[BattleRewardOption] = [
+		BattleRewardOption.new(&"combat_money_100", BattleRewardOption.Kind.MONEY, "100 Money", "Take 100 money for this run."),
+		BattleRewardOption.new(&"combat_supply_cache", BattleRewardOption.Kind.ITEM, "Supply Cache", "Take supplies."),
+	]
+	arena.call("configure_reward_options", eligible)
+	eligible.clear()
+	arena.call("configure_units", _victory_units())
+	arena.call("perform_debug_damage")
+	var options := arena.call("get_reward_options") as Array
+	_assert(
+		_signature(options).map(func(row: Array) -> StringName: return row[0]) == [&"combat_money_100", &"combat_supply_cache"],
+		"Configured reward options are defensive",
+		"arena must use only the injected options and isolate the source array"
 	)
 	_free_arena(arena)
 
