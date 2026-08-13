@@ -128,8 +128,8 @@ func _test_exact_debug_fixtures() -> void:
 		&"player_0": [[&"shield_bash", 0], [&"frontline_guard", 1]], &"player_1": [],
 		&"player_2": [[&"quick_step", 0]], &"player_3": [],
 		&"player_4": [[&"quick_strike", 0], [&"rally", 0], [&"evasion", 1], [&"momentum", 1]], &"player_5": [],
-		&"enemy_0": [[&"savage_blow", 0], [&"blood_scent", 1]], &"enemy_1": [],
-		&"enemy_2": [[&"brace", 1]], &"enemy_3": [], &"enemy_4": [[&"shadow_lunge", 0]], &"enemy_5": [],
+		&"enemy_0": [[&"savage_blow", 0], [&"blood_scent", 1]],
+		&"enemy_4": [[&"shadow_lunge", 0]],
 	}
 	var actual: Dictionary = {}
 	for unit_id: StringName in expected:
@@ -138,7 +138,7 @@ func _test_exact_debug_fixtures() -> void:
 			actual[unit_id] = _skill_signature(unit.skills)
 		else:
 			actual[unit_id] = null
-	_assert(actual == expected, "Exact debug fixtures", "all twelve fixture rosters must match")
+	_assert(actual == expected, "Exact debug fixtures", "six player and two enemy fixture rosters must match")
 	_free_arena(arena)
 
 

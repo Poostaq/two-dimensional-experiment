@@ -34,6 +34,7 @@ var _encounter_overlay_scene: PackedScene
 var _battle_arena_scene: PackedScene
 var _active_encounter_overlay: EncounterOverlay
 var _active_battle: BattleArena
+var _run_roster: RunRoster = RunRoster.new()
 var _sudden_death_active: bool = false
 var _tiles: Dictionary = {}
 
@@ -56,6 +57,7 @@ func _ready() -> void:
 
 func set_run_id(value: String) -> void:
 	run_id = DEFAULT_RUN_ID if value.is_empty() else value
+	_run_roster = RunRoster.new()
 	if _model == null:
 		return
 
@@ -68,6 +70,10 @@ func set_run_id(value: String) -> void:
 	_sudden_death_active = false
 	encounter_types = _model.get_encounter_types_for_run(run_id)
 	_refresh_visual_state()
+
+
+func get_run_roster_snapshot() -> Array[RunCharacter]:
+	return _run_roster.get_characters()
 
 
 func get_encounter_layout() -> Dictionary:
@@ -262,10 +268,48 @@ func _on_battle_requested(coordinate: Vector2i, encounter_type: String) -> void:
 		return
 
 	battle.configure(coordinate, encounter_type)
+	battle.reward_confirmed.connect(Callable(self, "_on_reward_confirmed"))
 	battle.exit_requested.connect(Callable(self, "exit_active_battle"), CONNECT_ONE_SHOT)
 	_active_battle = battle
 	_ui_layer.add_child(battle)
+	var units := _run_roster.create_battle_units()
+	for unit: BattleUnitState in battle.get_turn_queue():
+		if unit.side == BattleUnitState.Side.ENEMY:
+			units.append(unit)
+	battle.configure_units(units)
+	battle.configure_reward_options(_get_eligible_reward_options(encounter_type))
 	close_active_encounter()
+
+
+func _get_eligible_reward_options(event_type: String) -> Array[BattleRewardOption]:
+	return _filter_eligible_reward_options(
+		BattleRewardCatalog.get_options_for(event_type),
+		_run_roster
+	)
+
+
+func _filter_eligible_reward_options(
+	options: Array[BattleRewardOption],
+	roster: RunRoster
+) -> Array[BattleRewardOption]:
+	var eligible: Array[BattleRewardOption] = []
+	for option: BattleRewardOption in options:
+		if option.kind != BattleRewardOption.Kind.RECRUITMENT:
+			eligible.append(option)
+			continue
+		var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
+		if is_instance_valid(recruit) and roster.can_add(recruit.character_id):
+			eligible.append(option)
+	return eligible
+
+
+func _on_reward_confirmed(option: BattleRewardOption) -> void:
+	if not is_instance_valid(option) or option.kind != BattleRewardOption.Kind.RECRUITMENT:
+		return
+	var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
+	if not is_instance_valid(recruit):
+		return
+	_run_roster.try_add(recruit)
 
 
 func _get_tile_state_for_encounter(coord: Vector2i) -> String:

@@ -73,6 +73,8 @@ var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
 var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
 var _reward_confirmation_latched: bool = false
+var _configured_reward_options: Array[BattleRewardOption] = []
+var _has_configured_reward_options: bool = false
 var _inspected_unit_id: StringName = &""
 var _selected_skill_id: StringName = &""
 var _hovered_skill_button: Button
@@ -110,12 +112,19 @@ func _ready() -> void:
 
 
 func configure(coordinate: Vector2i, type: String) -> void:
+	_configured_reward_options.clear()
+	_has_configured_reward_options = false
 	if type != HexMapModel.ENCOUNTER_COMBAT and type != HexMapModel.ENCOUNTER_BOSS:
 		return
 	encounter_coordinate = coordinate
 	encounter_type = type
 	if is_node_ready():
 		_refresh_context()
+
+
+func configure_reward_options(options: Array[BattleRewardOption]) -> void:
+	_configured_reward_options = options.duplicate()
+	_has_configured_reward_options = true
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
@@ -739,15 +748,9 @@ func _create_debug_units() -> Array[BattleUnitState]:
 			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "One selected active enemy.", "User must be above 50% HP.", "2 turns after use."),
 			_create_skill(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"),
 		])),
-		BattleUnitState.new(&"enemy_1", "Enemy Front 2", BattleUnitState.Side.ENEMY, 1, 7),
-		BattleUnitState.new(&"enemy_2", "Enemy Front 3", BattleUnitState.Side.ENEMY, 2, 6, 20, _skill_roster([
-			_create_skill(&"brace", "Brace", CharacterSkill.Kind.PASSIVE, "Reduce the first damage received each round by 2.", "Self.", "None", "None"),
-		])),
-		BattleUnitState.new(&"enemy_3", "Enemy Back 1", BattleUnitState.Side.ENEMY, 3, 4),
 		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([
 			_create_skill(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."),
 		])),
-		BattleUnitState.new(&"enemy_5", "Enemy Back 3", BattleUnitState.Side.ENEMY, 5, 2),
 	]
 
 
@@ -876,7 +879,11 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 
 func _show_victory_rewards() -> void:
 	_clear_reward_ui()
-	_reward_options = BattleRewardCatalog.get_options_for(encounter_type)
+	_reward_options = (
+		_configured_reward_options.duplicate()
+		if _has_configured_reward_options
+		else BattleRewardCatalog.get_options_for(encounter_type)
+	)
 	_reward_overlay.visible = true
 	_reward_panel.visible = true
 	_reward_heading_label.text = "%s Rewards" % encounter_type.capitalize()
