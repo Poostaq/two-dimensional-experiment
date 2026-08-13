@@ -1,0 +1,4 @@
+Branch: feat/ac3-3-party-management
+Implementation commit: 6c7398c926d753be880d849f9008b705ca3e4f13
+Design: Docs/superpowers/specs/2026-08-13-ac3-3-party-management-design.md
+Plan: Docs/superpowers/plans/2026-08-13-ac3-3-party-management.md

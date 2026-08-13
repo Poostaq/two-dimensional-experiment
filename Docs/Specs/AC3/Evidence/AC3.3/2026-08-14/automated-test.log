@@ -1,0 +1,23 @@
+AC3.3 automated verification — 2026-08-14
+Implementation commit: 6c7398c926d753be880d849f9008b705ca3e4f13
+
+Focused acceptance runners:
+- Tests/Run/test_ac3_3_party_formation.gd: PASS (24/24)
+- Tests/UI/test_ac3_3_party_management.gd: PASS (19/19)
+- Tests/Map/test_ac3_3_party_management_integration.gd: PASS (12/12)
+
+Compatibility runners:
+- Tests/Run/test_ac3_1_run_roster.gd: PASS (13/13)
+- Tests/Map/test_ac3_1_recruitment_integration.gd: PASS (7/7)
+- Tests/Battle/test_ac2_5_reward_selection.gd: PASS (17/17)
+
+Full repository corpus:
+- Discovered: 29 GDScript test runners
+- Explicit PASS output: 29
+- Failure/parser/script-error markers: 0
+
+GodotIQ project gates:
+- Script compilation: PASS (62 scripts, 0 errors)
+- Main-scene startup: PASS
+- Runtime/script debug-console errors: 0
+- Project validation: 0 errors; one pre-existing type-hint warning and two pre-existing orphan-signal informational findings
