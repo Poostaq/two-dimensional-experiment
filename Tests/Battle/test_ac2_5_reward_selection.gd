@@ -3,12 +3,13 @@ extends SceneTree
 
 const CATALOG_PATH := "res://Scripts/Battle/battle_reward_catalog.gd"
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 16
+const EXPECTED_TEST_COUNT := 17
 
 var _failures: Array[String] = []
 var _catalog_script: GDScript
 var _signal_events: Array[String] = []
 var _confirmed_reward_id: StringName = &""
+var _placement_reward_id: StringName = &""
 
 
 func _initialize() -> void:
@@ -28,6 +29,7 @@ func _run() -> void:
 	await _test_defeat_never_shows_rewards()
 	await _test_selection_replaces_and_gates_confirm()
 	await _test_confirm_emits_ordered_once_and_cleans()
+	await _test_recruitment_confirmation_suspends_until_completed()
 	await _test_debug_exit_cleans_without_reward()
 	await _test_reconfigure_clears_reward_state()
 	await _test_unsupported_victory_shows_empty_state()
@@ -176,6 +178,38 @@ func _test_confirm_emits_ordered_once_and_cleans() -> void:
 	_free_arena(arena)
 
 
+func _test_recruitment_confirmation_suspends_until_completed() -> void:
+	var arena := await _victory_arena("combat")
+	_reset_signal_capture()
+	arena.connect("recruitment_placement_requested", _on_recruitment_placement_requested)
+	arena.reward_confirmed.connect(_on_reward_confirmed)
+	arena.exit_requested.connect(_on_exit_requested)
+	arena.call("select_reward", &"combat_recruit_scout")
+	var selected: BattleRewardOption = arena.call("get_selected_reward")
+	arena.call("confirm_reward_selection")
+	var suspended: bool = (
+		_signal_events == ["placement"]
+		and _placement_reward_id == &"combat_recruit_scout"
+		and arena.call("get_selected_reward") == selected
+		and not (arena.get_node_or_null("%RewardOverlay") as Control).visible
+	)
+	arena.call("restore_pending_recruitment", selected)
+	var restored: bool = (
+		(arena.get_node_or_null("%RewardOverlay") as Control).visible
+		and arena.call("get_selected_reward") == selected
+	)
+	arena.call("confirm_reward_selection")
+	arena.call("complete_pending_recruitment", selected)
+	arena.call("complete_pending_recruitment", selected)
+	_assert(
+		suspended and restored
+		and _signal_events == ["placement", "placement", "reward", "exit"],
+		"Recruitment confirmation suspends until completed",
+		"placement must restore without mutation and complete reward/exit exactly once"
+	)
+	_free_arena(arena)
+
+
 func _test_debug_exit_cleans_without_reward() -> void:
 	var arena := await _victory_arena("combat")
 	_reset_signal_capture()
@@ -318,6 +352,12 @@ func _signature(options: Array) -> Array:
 func _reset_signal_capture() -> void:
 	_signal_events.clear()
 	_confirmed_reward_id = &""
+	_placement_reward_id = &""
+
+
+func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
+	_signal_events.append("placement")
+	_placement_reward_id = option.reward_id
 
 
 func _on_reward_confirmed(option: BattleRewardOption) -> void:

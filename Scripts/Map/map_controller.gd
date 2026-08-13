@@ -5,6 +5,7 @@ const HEX_MAP_MODEL_PATH := "res://Scripts/Map/hex_map_model.gd"
 const TILE_SCENE_PATH := "res://Scenes/map_hex_tile.tscn"
 const ENCOUNTER_OVERLAY_SCENE_PATH := "res://Scenes/encounter_overlay.tscn"
 const BATTLE_ARENA_SCENE_PATH := "res://Scenes/battle_arena.tscn"
+const PARTY_MANAGEMENT_SCENE_PATH := "res://Scenes/party_management.tscn"
 const TILE_RADIUS := 38.0
 const TILE_SPACING := 1.08
 const TILE_STATE_DEFAULT := "default"
@@ -21,6 +22,7 @@ const SUDDEN_DEATH_MOVE_THRESHOLD := 15
 @onready var _boss_marker: Node2D = $MapRoot/BossMarker
 @onready var _ui_layer: CanvasLayer = $UI
 @onready var _turn_counter_label: Label = %TurnCounterLabel
+@onready var _manage_party_button: Button = %ManagePartyButton
 
 var player_coord: Vector2i = Vector2i.ZERO
 var boss_coord: Vector2i = Vector2i.ZERO
@@ -32,8 +34,12 @@ var _model: HexMapModel
 var _tile_scene: PackedScene
 var _encounter_overlay_scene: PackedScene
 var _battle_arena_scene: PackedScene
+var _party_management_scene: PackedScene
 var _active_encounter_overlay: EncounterOverlay
 var _active_battle: BattleArena
+var _active_party_management: PartyManagement
+var _pending_recruitment_option: BattleRewardOption
+var _pending_recruit: RunCharacter
 var _run_roster: RunRoster = RunRoster.new()
 var _sudden_death_active: bool = false
 var _tiles: Dictionary = {}
@@ -45,6 +51,8 @@ func _ready() -> void:
 	_tile_scene = load(TILE_SCENE_PATH) as PackedScene
 	_encounter_overlay_scene = load(ENCOUNTER_OVERLAY_SCENE_PATH) as PackedScene
 	_battle_arena_scene = load(BATTLE_ARENA_SCENE_PATH) as PackedScene
+	_party_management_scene = load(PARTY_MANAGEMENT_SCENE_PATH) as PackedScene
+	_manage_party_button.pressed.connect(open_party_management)
 
 	player_coord = _model.get_start_coord()
 	boss_coord = _model.get_boss_coord()
@@ -53,6 +61,7 @@ func _ready() -> void:
 	_build_tiles()
 	_refresh_visual_state()
 	_refresh_turn_counter()
+	_refresh_manage_party_button()
 
 
 func set_run_id(value: String) -> void:
@@ -62,7 +71,9 @@ func set_run_id(value: String) -> void:
 		return
 
 	close_active_encounter()
+	close_party_management()
 	exit_active_battle()
+	_clear_pending_recruitment()
 	player_coord = _model.get_start_coord()
 	boss_coord = _model.get_boss_coord()
 	move_count = 0
@@ -74,6 +85,58 @@ func set_run_id(value: String) -> void:
 
 func get_run_roster_snapshot() -> Array[RunCharacter]:
 	return _run_roster.get_characters()
+
+
+func get_run_formation_snapshot() -> Array[RunCharacter]:
+	return _run_roster.get_slot_snapshot()
+
+
+func has_active_party_management() -> bool:
+	return is_instance_valid(_active_party_management)
+
+
+func get_active_party_management() -> PartyManagement:
+	return _active_party_management if has_active_party_management() else null
+
+
+func open_party_management() -> void:
+	if has_active_party_management() or has_active_encounter() or has_active_battle():
+		return
+	if not is_instance_valid(_party_management_scene) or not is_instance_valid(_ui_layer):
+		return
+	var party := _party_management_scene.instantiate() as PartyManagement
+	if not is_instance_valid(party):
+		return
+	_active_party_management = party
+	_ui_layer.add_child(party)
+	party.configure_normal(_run_roster.get_slot_snapshot())
+	party.move_requested.connect(_on_party_move_requested)
+	party.close_requested.connect(close_party_management, CONNECT_ONE_SHOT)
+	_refresh_manage_party_button()
+
+
+func close_party_management() -> void:
+	if not has_active_party_management():
+		_active_party_management = null
+		_refresh_manage_party_button()
+		return
+	var party := _active_party_management
+	_active_party_management = null
+	if party.get_parent() != null:
+		party.get_parent().remove_child(party)
+	party.queue_free()
+	_refresh_manage_party_button()
+
+
+func _on_party_move_requested(
+	source_slot: int,
+	destination_slot: int,
+	expected_character_id: StringName
+) -> void:
+	if not has_active_party_management() or is_instance_valid(_pending_recruit):
+		return
+	_run_roster.try_move(source_slot, destination_slot, expected_character_id)
+	_active_party_management.refresh_slots(_run_roster.get_slot_snapshot())
 
 
 func get_encounter_layout() -> Dictionary:
@@ -118,6 +181,7 @@ func close_active_encounter() -> void:
 	if overlay.get_parent() != null:
 		overlay.get_parent().remove_child(overlay)
 	overlay.queue_free()
+	_refresh_manage_party_button()
 
 
 func has_active_battle() -> bool:
@@ -138,6 +202,8 @@ func exit_active_battle() -> void:
 	if battle.get_parent() != null:
 		battle.get_parent().remove_child(battle)
 	battle.queue_free()
+	_clear_pending_recruitment()
+	_refresh_manage_party_button()
 
 
 func try_move_by_offset(offset: Vector2i) -> bool:
@@ -145,7 +211,7 @@ func try_move_by_offset(offset: Vector2i) -> bool:
 
 
 func request_move(destination: Vector2i) -> bool:
-	if has_active_encounter() or has_active_battle():
+	if has_active_encounter() or has_active_battle() or has_active_party_management():
 		return false
 	if not _model.is_valid_coord(destination):
 		return false
@@ -245,6 +311,7 @@ func _open_encounter(destination: Vector2i, encounter_type: String) -> void:
 	overlay.close_requested.connect(Callable(self, "close_active_encounter"), CONNECT_ONE_SHOT)
 	overlay.battle_requested.connect(Callable(self, "_on_battle_requested"))
 	_ui_layer.add_child(overlay)
+	_refresh_manage_party_button()
 
 
 func _on_battle_requested(coordinate: Vector2i, encounter_type: String) -> void:
@@ -269,6 +336,7 @@ func _on_battle_requested(coordinate: Vector2i, encounter_type: String) -> void:
 
 	battle.configure(coordinate, encounter_type)
 	battle.reward_confirmed.connect(Callable(self, "_on_reward_confirmed"))
+	battle.recruitment_placement_requested.connect(Callable(self, "_on_recruitment_reward_placement_requested"))
 	battle.exit_requested.connect(Callable(self, "exit_active_battle"), CONNECT_ONE_SHOT)
 	_active_battle = battle
 	_ui_layer.add_child(battle)
@@ -303,13 +371,80 @@ func _filter_eligible_reward_options(
 	return eligible
 
 
-func _on_reward_confirmed(option: BattleRewardOption) -> void:
-	if not is_instance_valid(option) or option.kind != BattleRewardOption.Kind.RECRUITMENT:
+func _on_reward_confirmed(_option: BattleRewardOption) -> void:
+	pass
+
+
+func _on_recruitment_reward_placement_requested(option: BattleRewardOption) -> void:
+	if (
+		not has_active_battle()
+		or has_active_party_management()
+		or is_instance_valid(_pending_recruit)
+		or not is_instance_valid(option)
+		or option.kind != BattleRewardOption.Kind.RECRUITMENT
+	):
 		return
 	var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
-	if not is_instance_valid(recruit):
+	if not is_instance_valid(recruit) or not _run_roster.can_add(recruit.character_id):
+		_active_battle.restore_pending_recruitment(option)
 		return
-	_run_roster.try_add(recruit)
+	_pending_recruitment_option = option
+	_pending_recruit = recruit
+	var party: PartyManagement = _party_management_scene.instantiate() as PartyManagement
+	if not is_instance_valid(party):
+		_active_battle.restore_pending_recruitment(option)
+		_clear_pending_recruitment()
+		return
+	_active_party_management = party
+	_ui_layer.add_child(party)
+	party.configure_placement(_run_roster.get_slot_snapshot(), recruit)
+	party.placement_requested.connect(_on_recruitment_placement_requested)
+	party.placement_cancelled.connect(_on_recruitment_placement_cancelled, CONNECT_ONE_SHOT)
+	_refresh_manage_party_button()
+
+
+func _on_recruitment_placement_requested(
+	destination_slot: int,
+	expected_character_id: StringName
+) -> void:
+	if (
+		not has_active_party_management()
+		or not has_active_battle()
+		or not is_instance_valid(_pending_recruit)
+		or _pending_recruit.character_id != expected_character_id
+	):
+		return
+	var result: RunRoster.AddResult = _run_roster.try_add_at(_pending_recruit, destination_slot)
+	if result != RunRoster.AddResult.ADDED:
+		_active_party_management.refresh_slots(_run_roster.get_slot_snapshot())
+		return
+	var option: BattleRewardOption = _pending_recruitment_option
+	close_party_management()
+	_clear_pending_recruitment()
+	_active_battle.complete_pending_recruitment(option)
+
+
+func _on_recruitment_placement_cancelled() -> void:
+	if not is_instance_valid(_pending_recruitment_option):
+		return
+	var option: BattleRewardOption = _pending_recruitment_option
+	close_party_management()
+	_clear_pending_recruitment()
+	if has_active_battle():
+		_active_battle.restore_pending_recruitment(option)
+
+
+func _clear_pending_recruitment() -> void:
+	_pending_recruitment_option = null
+	_pending_recruit = null
+
+
+func _refresh_manage_party_button() -> void:
+	if not is_instance_valid(_manage_party_button):
+		return
+	_manage_party_button.disabled = (
+		has_active_encounter() or has_active_battle() or has_active_party_management()
+	)
 
 
 func _get_tile_state_for_encounter(coord: Vector2i) -> String:

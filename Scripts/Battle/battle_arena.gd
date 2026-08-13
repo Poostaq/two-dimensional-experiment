@@ -4,6 +4,7 @@ extends Control
 signal exit_requested
 signal battle_completed(outcome: BattleOutcome.Type)
 signal reward_confirmed(option: BattleRewardOption)
+signal recruitment_placement_requested(option: BattleRewardOption)
 
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
@@ -72,6 +73,7 @@ var _action_in_progress: bool = false
 var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
 var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
+var _pending_recruitment_option: BattleRewardOption
 var _reward_confirmation_latched: bool = false
 var _configured_reward_options: Array[BattleRewardOption] = []
 var _has_configured_reward_options: bool = false
@@ -204,15 +206,58 @@ func select_reward(reward_id: StringName) -> void:
 func confirm_reward_selection() -> void:
 	if (
 		_reward_confirmation_latched
+		or is_instance_valid(_pending_recruitment_option)
 		or _battle_outcome != BattleOutcome.Type.VICTORY
 		or not is_instance_valid(_selected_reward)
 	):
 		return
+	if _selected_reward.kind == BattleRewardOption.Kind.RECRUITMENT:
+		_pending_recruitment_option = _selected_reward
+		_suspend_reward_ui()
+		recruitment_placement_requested.emit(_pending_recruitment_option)
+		return
+	_complete_reward(_selected_reward)
+
+
+func restore_pending_recruitment(option: BattleRewardOption) -> void:
+	if (
+		not is_instance_valid(option)
+		or not is_instance_valid(_pending_recruitment_option)
+		or option != _pending_recruitment_option
+		or _reward_confirmation_latched
+	):
+		return
+	_pending_recruitment_option = null
+	if is_node_ready():
+		_reward_overlay.visible = true
+		_reward_panel.visible = true
+		_refresh_reward_selection_ui()
+
+
+func complete_pending_recruitment(option: BattleRewardOption) -> void:
+	if (
+		not is_instance_valid(option)
+		or not is_instance_valid(_pending_recruitment_option)
+		or option != _pending_recruitment_option
+		or _reward_confirmation_latched
+	):
+		return
+	_pending_recruitment_option = null
+	_complete_reward(option)
+
+
+func _complete_reward(option: BattleRewardOption) -> void:
 	_reward_confirmation_latched = true
-	var confirmed_reward := _selected_reward
 	_clear_reward_ui(false)
-	reward_confirmed.emit(confirmed_reward)
+	reward_confirmed.emit(option)
 	exit_requested.emit()
+
+
+func _suspend_reward_ui() -> void:
+	if not is_node_ready():
+		return
+	_reward_overlay.visible = false
+	_reward_panel.visible = false
 
 
 func get_inspected_unit_id() -> StringName:
@@ -913,6 +958,7 @@ func _refresh_reward_selection_ui() -> void:
 func _clear_reward_ui(reset_latch: bool = true) -> void:
 	if reset_latch:
 		_reward_confirmation_latched = false
+	_pending_recruitment_option = null
 	_selected_reward = null
 	_reward_options.clear()
 	if not is_node_ready():

@@ -16,7 +16,7 @@ func _run() -> void:
 	if is_instance_valid(world):
 		_test_initial_roster(world)
 		_test_initial_rewards_are_eligible(world)
-		_test_recruitment_applies_once(world)
+		await _test_recruitment_applies_once(world)
 		_test_duplicate_reward_is_filtered(world)
 		_test_full_roster_filters_recruitment(world)
 		_test_run_reset_restores_starters(world)
@@ -55,14 +55,15 @@ func _test_initial_rewards_are_eligible(world: MapController) -> void:
 
 
 func _test_recruitment_applies_once(world: MapController) -> void:
-	var option := BattleRewardCatalog.get_options_for("combat")[0]
-	world.call("_on_reward_confirmed", option)
-	world.call("_on_reward_confirmed", option)
+	await _place_recruit(world, 5)
+	world.call("_on_recruitment_placement_requested", 5, &"scout")
 	var roster := world.call("get_run_roster_snapshot") as Array
+	var formation: Array[RunCharacter] = world.call("get_run_formation_snapshot")
 	_assert(
-		_character_ids(roster) == [&"player_0", &"player_1", &"player_2", &"scout"],
+		_character_ids(roster) == [&"player_0", &"player_1", &"player_2", &"scout"]
+		and formation[5].character_id == &"scout",
 		"Recruitment applies once",
-		"confirmed Scout must append exactly once"
+		"placed Scout must be added exactly once in the chosen slot"
 	)
 
 
@@ -103,10 +104,7 @@ func _test_run_reset_restores_starters(world: MapController) -> void:
 
 
 func _test_battle_uses_roster(world: MapController) -> void:
-	world.call(
-		"_on_reward_confirmed",
-		BattleRewardCatalog.get_options_for("combat")[0]
-	)
+	await _place_recruit(world, 4)
 	world.call("_open_encounter", Vector2i(1, 0), "combat")
 	var overlay := world.get_active_encounter()
 	if is_instance_valid(overlay):
@@ -123,10 +121,26 @@ func _test_battle_uses_roster(world: MapController) -> void:
 		if player_ids_by_slot.has(slot_index):
 			player_ids.append(player_ids_by_slot[slot_index])
 	_assert(
-		player_ids == [&"player_0", &"player_1", &"player_2", &"scout"],
+		player_ids == [&"player_0", &"player_1", &"player_2", &"scout"]
+		and player_ids_by_slot.get(4, &"") == &"scout",
 		"Next battle roster",
-		"next battle must use the updated run roster in order; got %s" % [player_ids]
+		"next battle must use Scout in chosen slot 4; got %s" % [player_ids_by_slot]
 	)
+
+
+func _place_recruit(world: MapController, destination_slot: int) -> void:
+	world.call("_open_encounter", Vector2i(1, 0), "combat")
+	if world.has_active_encounter():
+		world.call("_on_battle_requested", Vector2i(1, 0), "combat")
+	await process_frame
+	var option := BattleRewardCatalog.get_options_for("combat")[0]
+	world.call("_on_recruitment_reward_placement_requested", option)
+	await process_frame
+	world.call("_on_recruitment_placement_requested", destination_slot, &"scout")
+	await process_frame
+	if world.has_active_battle():
+		world.exit_active_battle()
+	await process_frame
 
 
 func _character_ids(characters: Array) -> Array[StringName]:
