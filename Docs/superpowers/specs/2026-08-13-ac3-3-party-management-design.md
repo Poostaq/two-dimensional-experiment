@@ -43,7 +43,34 @@ The new party-management scene owns presentation and transient interaction only.
 
 ## RunRoster contract
 
-`RunRoster` stores exactly six slot entries. Its contracts include:
+`RunRoster` stores exactly six entries in `_slots: Array[RunCharacter]`. The array always has length `MAX_ROSTER_SIZE`; an empty position is represented by `null`. No sentinel `RunCharacter` or compacted index is permitted.
+
+A fresh run preserves AC3.1 starter order by placing `player_0`, `player_1`, and `player_2` in slots 0, 1, and 2 respectively; slots 3, 4, and 5 are `null`.
+
+The AC3.3 public API is:
+
+```gdscript
+enum AddResult { ADDED, INVALID, DUPLICATE, FULL, INVALID_SLOT, OCCUPIED }
+enum MoveResult { MOVED, SWAPPED, INVALID_SLOT, EMPTY_SOURCE, STALE_SOURCE, SAME_SLOT }
+
+func size() -> int
+func is_full() -> bool
+func has_character(character_id: StringName) -> bool
+func can_add(character_id: StringName) -> bool
+func can_add_at(character_id: StringName, slot_index: int) -> bool
+func try_add_at(character: RunCharacter, slot_index: int) -> AddResult
+func try_move(source_slot: int, destination_slot: int, expected_character_id: StringName) -> MoveResult
+func get_character_at(slot_index: int) -> RunCharacter
+func get_slot_snapshot() -> Array[RunCharacter]
+func get_characters() -> Array[RunCharacter]
+func create_battle_units() -> Array[BattleUnitState]
+```
+
+`get_character_at()` returns `null` for an invalid or empty slot. `get_slot_snapshot()` returns a six-entry defensive array including `null` entries. `get_characters()` remains a compatibility API and returns only occupied characters in ascending slot order. `create_battle_units()` keeps its existing signature but assigns each unit the source slot index rather than a compacted array index.
+
+The compact `try_add(character)` API is removed. Every production and test caller migrates to `try_add_at(character, slot_index)`, making placement explicit. The existing AC3.1 integration handler that immediately calls `try_add()` is replaced by the pending-placement transaction. AC3.1 tests that fill a roster directly use explicit empty indices. `MapController.get_run_roster_snapshot()` remains as a compatibility occupied-character snapshot, while the party interface receives a new `get_run_formation_snapshot()` six-slot snapshot.
+
+The resulting contracts are:
 
 - A defensive six-slot formation snapshot that preserves empty positions.
 - An occupied-character snapshot for membership-oriented consumers.
@@ -61,6 +88,8 @@ Existing AC3.1 behavior changes only where necessary: a normal eligible recruit 
 The world map exposes a persistent `Manage Party` button. It is usable only when no encounter, battle, or party-management overlay is active. Activating it opens the full-screen scene while preserving map and run state underneath.
 
 The formation contains two clearly labeled columns: three back-row slots and three front-row slots nearest the enemy. Each occupied card shows identity, relevant summary information, and a green HP bar with numeric current and maximum HP along its bottom edge. Empty slots remain visible as drop targets.
+
+For this slice, run characters do not yet own persistent between-battle damage; AC3.8 owns recovery behavior. Party management therefore renders each card's HP as `max_hp / max_hp` from `RunCharacter.max_hp`. It must not reuse stale `BattleUnitState.current_hp`. The details panel shows the authoritative fields available on `RunCharacter`: display name, maximum HP, base speed, and its zero-to-four character-specific skills. Power, defense, race, class, equipment, and progression fields are not fabricated; later criteria may extend the panel when those fields become authoritative.
 
 Clicking an occupied card selects it and reveals a details panel below the formation with identity, core stats, and up to four inspectable character-specific skills. With no selection, the details panel is completely hidden. Empty slots cannot be selected.
 
@@ -87,6 +116,38 @@ Only empty formation slots are valid targets. Until a valid drop succeeds:
 A valid drop asks `MapController` to add the resolved fresh recruit to that exact empty slot. On success, the transaction latches once, battle cleanup runs, and the player returns to the map. The next battle places the recruit in the chosen semantic slot.
 
 `Cancel` clears pending placement and returns to the unchanged battle reward interface with its recruitment option still selectable. Invalid, outside, occupied-slot, repeated, stale, duplicate, or capacity-invalid placement attempts leave both roster and reward state unchanged. Closing, scene teardown, battle teardown, or run reset cannot preserve a pending recruit.
+
+## Concrete scene and transaction interfaces
+
+`PartyManagement` exposes two configuration methods and four typed intent signals:
+
+```gdscript
+signal move_requested(source_slot: int, destination_slot: int, expected_character_id: StringName)
+signal placement_requested(destination_slot: int, expected_character_id: StringName)
+signal close_requested
+signal placement_cancelled
+
+func configure_normal(slots: Array[RunCharacter]) -> void
+func configure_placement(slots: Array[RunCharacter], pending_recruit: RunCharacter) -> void
+func refresh_slots(slots: Array[RunCharacter]) -> void
+```
+
+`BattleArena` changes recruitment confirmation at one explicit seam:
+
+```gdscript
+signal recruitment_placement_requested(option: BattleRewardOption)
+
+func restore_pending_recruitment(option: BattleRewardOption) -> void
+func complete_pending_recruitment(option: BattleRewardOption) -> void
+```
+
+When `confirm_reward_selection()` receives a selected recruitment option, it emits `recruitment_placement_requested` and hides or suspends the reward overlay without setting `_reward_confirmation_latched`, emitting `reward_confirmed`, emitting `exit_requested`, or clearing the selected option. Non-recruitment rewards retain the current completion path.
+
+`MapController` is the sole owner of the pending recruit across the placement transaction through `_pending_recruitment_option: BattleRewardOption` and `_pending_recruit: RunCharacter`. On `recruitment_placement_requested`, it rejects a second transaction, resolves a fresh catalog character, stores both fields, and opens `PartyManagement.configure_placement()`. It owns all placement revalidation and roster mutation.
+
+On `placement_cancelled`, `MapController` closes the party scene, clears both pending fields, and calls `BattleArena.restore_pending_recruitment(option)`, which restores the unchanged reward overlay and selected option. On a successful `placement_requested`, `MapController` calls `RunRoster.try_add_at()`, closes and clears placement state, then calls `BattleArena.complete_pending_recruitment(option)`. That method revalidates the exact selected option, latches once, emits the existing `reward_confirmed` signal for compatibility, and emits the existing exit request in its established order. A rejected placement refreshes the party scene and leaves the transaction open.
+
+`exit_active_battle()`, `set_run_id()`, party-scene teardown, and unexpected battle-tree exit all call one idempotent `MapController._clear_pending_recruitment()` boundary. Unexpected teardown clears state without applying a character. Only explicit Cancel restores reward UI because there may be no live arena during other teardown paths.
 
 ## AC3.2 reuse boundary
 
@@ -149,6 +210,14 @@ Focused real-scene tests verify:
 - Drag start restrictions, valid-target feedback, swap/move requests, failed-drop cleanup, and post-success refresh.
 - Placement-mode pending card, empty-only targets, locked existing members, and Cancel behavior.
 
+The focused runner paths are fixed as:
+
+```text
+Tests/Run/test_ac3_3_party_formation.gd
+Tests/UI/test_ac3_3_party_management.gd
+Tests/Map/test_ac3_3_party_management_integration.gd
+```
+
 ### Integration and regression automation
 
 Map/battle integration tests verify:
@@ -180,4 +249,33 @@ Win a supported battle, select recruitment, cancel placement once, then reopen p
 | Cancel recruitment placement | Integration/runtime | Reward restoration assertions plus pointer check | Roster unchanged and reward choices restored |
 | Defensive behavior | Logic/integration | Invalid/stale/repeated operation matrix | Every rejected path is mutation-free |
 
-AC3.3 is complete only when focused domain, scene, and integration tests pass; the full test corpus passes; GodotIQ project validation, parser/error, and signal checks pass; runtime behavior and visual layout are recorded; AC3.1 documentation reflects explicit recruitment placement; and matching evidence artifacts identify the tested implementation commit.
+## Authority and completion evidence
+
+No separate roadmap or migration-matrix artifact exists in this repository. The authority chain for this slice is therefore explicit and limited to:
+
+1. `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` for canonical AC3.1/AC3.3 requirements and status.
+2. This approved AC3.3 design for behavior and boundaries.
+3. `Docs/superpowers/plans/2026-08-13-ac3-3-party-management.md` for executable migration steps and file ownership.
+4. Focused tests and current GodotIQ/runtime outputs for verification.
+5. Evidence files tied to one tested implementation commit.
+
+Completion evidence is written exactly to:
+
+```text
+Docs/Specs/AC3/Evidence/AC3.3/2026-08-13/automated-test.log
+Docs/Specs/AC3/Evidence/AC3.3/2026-08-13/manual-runtime-check.md
+Docs/Specs/AC3/Evidence/AC3.3/2026-08-13/implementation-link.txt
+Docs/Specs/AC3/Evidence/AC3.1/2026-08-13/ac3-3-placement-amendment.md
+```
+
+The automated log records focused runner commands and PASS signatures, full-corpus results, GodotIQ validation/error/signal results, and the runtime gate. The manual record uses binary PASS/FAIL/BLOCKED entries for map-button gating, hidden initial details, click inspection, HP presentation, occupied swap, empty-slot move, close/reopen selection cleanup, pre/post-fight persistence, recruitment cancellation, chosen-slot recruitment, and runtime health. The implementation link contains the full tested implementation commit SHA; all three files must name that same commit.
+
+Only after every gate passes may implementation change AC3.3 from `[ ]` to `[x]` and replace its manual-only verification row in `GAME_DESIGN_SPEC_MVP.md` with exactly:
+
+```markdown
+| `AC3.3` | Automated and manual runtime check | Run `Tests/Run/test_ac3_3_party_formation.gd`, `Tests/UI/test_ac3_3_party_management.gd`, and `Tests/Map/test_ac3_3_party_management_integration.gd` to verify fixed six-slot formation storage, exact battle slot conversion, immediate drag-to-swap and drag-to-empty movement, defensive rejection, map-button gating, click inspection, selection cleanup, and cancellable chosen-slot recruitment. Then use the persistent Manage Party button before and after fights, inspect a character, rearrange occupied and empty slots with real pointer input, reopen with no selection, and confirm the next battle uses the exact formation. Finally cancel one recruitment placement without mutation, place the recruit into a chosen empty slot, and confirm the following battle uses that slot. |
+```
+
+AC3.1 remains checked, but its verification row is updated to include the AC3.3 integration runner's pending-placement, cancellation, and chosen-slot cases. The dated `ac3-3-placement-amendment.md` records that the original AC3.1 implementation evidence proved automatic slot population before AC3.3 and that current regression evidence supersedes only that placement mechanism; historical logs are not overwritten. AC3.2 remains unchecked.
+
+AC3.3 is complete only when focused domain, scene, and integration tests pass; the full test corpus passes; GodotIQ project validation, parser/error, and signal checks pass; runtime behavior and visual layout are recorded; AC3.1 documentation reflects explicit recruitment placement; the canonical AC3.3 checkbox and row are updated only after success; and all matching evidence artifacts identify the same tested implementation commit. Any missing capability or FAIL/BLOCKED item keeps AC3.3 unchecked.
