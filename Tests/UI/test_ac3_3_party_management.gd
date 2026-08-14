@@ -2,12 +2,13 @@ class_name Ac3_3PartyManagementTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/party_management.tscn"
-const EXPECTED_TEST_COUNT := 19
+const EXPECTED_TEST_COUNT := 31
 
 var _failures: Array[String] = []
 var _assertions: int = 0
 var _move_events: Array[Variant] = []
 var _placement_events: Array[Variant] = []
+var _replacement_events: Array[Variant] = []
 var _closed: bool = false
 var _cancelled: bool = false
 
@@ -35,6 +36,7 @@ func _run() -> void:
 
 	party.connect("move_requested", _on_move_requested)
 	party.connect("placement_requested", _on_placement_requested)
+	party.connect("replacement_requested", _on_replacement_requested)
 	party.connect("close_requested", _on_close_requested)
 	party.connect("placement_cancelled", _on_placement_cancelled)
 
@@ -65,6 +67,39 @@ func _run() -> void:
 	party.call("request_placement_cancel")
 	_expect(_cancelled, "placement cancel emits")
 
+	var full_slots: Array[RunCharacter] = []
+	for slot_index: int in 6:
+		full_slots.append(_character(StringName("full_%d" % slot_index), "Full %d" % slot_index))
+	_cancelled = false
+	_expect(PartyManagement.Mode.REPLACEMENT == 2, "replacement mode is a stable typed enum")
+	party.call("configure_replacement", full_slots, scout)
+	await process_frame
+	_expect((party.get_node("%PendingRecruitRegion") as Control).visible, "replacement shows pending recruit")
+	_expect((party.get_node("%CancelPlacementButton") as Button).text == "Cancel Replacement", "replacement labels cancel action")
+	_expect((party.get_node("Margin/VBox/InstructionLabel") as Label).text.contains("replace"), "replacement explains destructive drop")
+	party.call("select_character", 0, full_slots[0].character_id)
+	_expect((party.get_node("%DetailsPanel") as Control).visible, "replacement permits target inspection")
+	party.call("request_move", 0, 1, full_slots[0].character_id)
+	_expect(_move_events.size() == 1, "replacement blocks existing-member movement")
+	party.call("request_placement", 0, scout.character_id)
+	_expect(_placement_events.size() == 1, "replacement does not emit empty-slot placement")
+	party.call("request_replacement", 0, full_slots[0].character_id, scout.character_id)
+	_expect(
+		_replacement_events.size() == 1
+		and _replacement_events[0] == [0, full_slots[0].character_id, scout.character_id],
+		"replacement emits exact target and recruit identities"
+	)
+	party.call("request_replacement", 0, &"stale", scout.character_id)
+	party.call("request_replacement", 0, full_slots[0].character_id, &"wrong")
+	party.call("request_replacement", -1, full_slots[0].character_id, scout.character_id)
+	_expect(_replacement_events.size() == 1, "invalid and stale replacement requests are rejected")
+	party.call("request_placement_cancel")
+	_expect(_cancelled and not (party.get_node("%DetailsPanel") as Control).visible, "replacement cancel clears details and emits")
+	party.call("configure_normal", slots)
+	await process_frame
+	_expect(not (party.get_node("%PendingRecruitRegion") as Control).visible, "normal reconfiguration clears replacement presentation")
+	_expect((party.get_node("%ReturnToMapButton") as Control).visible, "normal mode retains Return to Map")
+
 	party.queue_free()
 	await process_frame
 	_finish()
@@ -76,6 +111,19 @@ func _on_move_requested(source_slot: int, destination_slot: int, character_id: S
 
 func _on_placement_requested(destination_slot: int, character_id: StringName) -> void:
 	_placement_events.append([destination_slot, character_id])
+
+
+func _on_replacement_requested(
+	destination_slot: int,
+	expected_character_id: StringName,
+	expected_recruit_id: StringName
+) -> void:
+	_replacement_events.append([destination_slot, expected_character_id, expected_recruit_id])
+
+
+func _character(id: StringName, display_name: String) -> RunCharacter:
+	var skills: Array[CharacterSkill] = []
+	return RunCharacter.new(id, display_name, 5, 20, skills)
 
 
 func _on_close_requested() -> void:

@@ -13,6 +13,7 @@ const EMPTY_COLOR := Color(0.10, 0.13, 0.18)
 const CARD_COLOR := Color(0.12, 0.16, 0.22)
 const SELECTED_COLOR := Color(0.23, 0.51, 0.96)
 const DROP_COLOR := Color(0.96, 0.75, 0.18)
+const REPLACEMENT_DROP_COLOR := Color(0.88, 0.23, 0.23)
 
 var slot_index: int = -1
 var character: RunCharacter
@@ -21,6 +22,7 @@ var accepts_existing: bool = false
 var accepts_pending: bool = false
 var selected: bool = false
 var drop_highlighted: bool = false
+var pending_replaces: bool = false
 
 
 func _ready() -> void:
@@ -35,13 +37,15 @@ func configure(
 	value: RunCharacter,
 	can_drag: bool,
 	can_accept_existing: bool,
-	can_accept_pending: bool
+	can_accept_pending: bool,
+	pending_will_replace: bool = false
 ) -> void:
 	slot_index = index
 	character = value
 	drag_enabled = can_drag
 	accepts_existing = can_accept_existing
 	accepts_pending = can_accept_pending
+	pending_replaces = pending_will_replace
 	mouse_default_cursor_shape = (
 		Control.CURSOR_DRAG if drag_enabled and is_instance_valid(character)
 		else Control.CURSOR_POINTING_HAND
@@ -63,7 +67,8 @@ func set_selected(value: bool) -> void:
 func _draw() -> void:
 	var background := CARD_COLOR if is_instance_valid(character) else EMPTY_COLOR
 	draw_rect(Rect2(Vector2.ZERO, size), background, true)
-	var border_color := DROP_COLOR if drop_highlighted else SELECTED_COLOR if selected else Color(0.29, 0.35, 0.44)
+	var highlighted_color := REPLACEMENT_DROP_COLOR if pending_replaces else DROP_COLOR
+	var border_color := highlighted_color if drop_highlighted else SELECTED_COLOR if selected else Color(0.29, 0.35, 0.44)
 	draw_rect(Rect2(Vector2.ONE, size - Vector2(2.0, 2.0)), border_color, false, 2.0)
 	if not is_instance_valid(character):
 		draw_string(ThemeDB.fallback_font, Vector2(12.0, 34.0), "Empty Slot %d" % slot_index, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 16, Color(0.62, 0.67, 0.75))
@@ -108,8 +113,6 @@ func _can_drop_data(_at_position: Vector2, data: Variant) -> bool:
 		return false
 	var pending := bool(data.get("pending", false))
 	var accepted := accepts_pending and pending or accepts_existing and not pending
-	if pending and is_instance_valid(character):
-		accepted = false
 	drop_highlighted = accepted
 	queue_redraw()
 	return accepted

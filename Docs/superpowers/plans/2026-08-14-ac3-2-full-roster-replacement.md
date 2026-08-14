@@ -235,7 +235,7 @@ Expected: the existing `InstructionLabel`, `PendingRecruitRegion`, pending card,
 
 - [ ] **Step 2: Write failing scene-contract tests**
 
-Increase `EXPECTED_TEST_COUNT` from `19` to `30`. Add:
+Increase `EXPECTED_TEST_COUNT` from `19` to `31`. Add a static enum assertion plus the replacement checks below:
 
 ```gdscript
 var _replacement_events: Array[Variant] = []
@@ -503,7 +503,7 @@ Then run:
 godot --headless --path . --script res://Tests/UI/test_ac3_3_party_management.gd
 ```
 
-Expected: `AC3.3 party management tests: PASS (30/30)` with normal, placement, and replacement assertions all passing.
+Expected: `AC3.3 party management tests: PASS (31/31)` with normal, placement, and replacement assertions all passing.
 
 - [ ] **Step 7: Commit the shared UI change**
 
