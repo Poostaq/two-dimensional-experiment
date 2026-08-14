@@ -1,7 +1,7 @@
 class_name Ac3_3PartyFormationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 24
+const EXPECTED_TEST_COUNT := 36
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -48,6 +48,52 @@ func _run() -> void:
 
 	_expect(roster.try_add_at(_character(&"fifth", "Fifth"), 3) == RunRoster.AddResult.ADDED and roster.try_add_at(_character(&"sixth", "Sixth"), 5) == RunRoster.AddResult.ADDED and roster.is_full(), "explicit additions reach full capacity")
 
+	var replacement := _character(&"replacement", "Replacement")
+	_expect(
+		roster.try_replace_at(replacement, 4, &"player_0") == RunRoster.ReplaceResult.REPLACED,
+		"full roster replacement succeeds"
+	)
+	_expect(roster.size() == 6, "replacement preserves size six")
+	_expect(roster.get_character_at(4) == replacement, "replacement preserves target slot")
+	_expect(not roster.has_character(&"player_0") and roster.has_character(&"replacement"), "replacement updates membership")
+	_expect(_unit_id_at(roster.create_battle_units(), 4) == &"replacement", "battle conversion uses replaced slot")
+
+	var replaced_snapshot := roster.get_slot_snapshot()
+	_expect(
+		roster.try_replace_at(_character(&"invalid_slot", "Invalid"), -1, &"replacement") == RunRoster.ReplaceResult.INVALID_SLOT
+		and _same_slots(replaced_snapshot, roster.get_slot_snapshot()),
+		"invalid replacement slot is mutation-free"
+	)
+	_expect(
+		roster.try_replace_at(null, 4, &"replacement") == RunRoster.ReplaceResult.INVALID_RECRUIT
+		and _same_slots(replaced_snapshot, roster.get_slot_snapshot()),
+		"invalid recruit is mutation-free"
+	)
+	_expect(
+		roster.try_replace_at(_character(&"player_1", "Duplicate"), 4, &"replacement") == RunRoster.ReplaceResult.DUPLICATE
+		and _same_slots(replaced_snapshot, roster.get_slot_snapshot()),
+		"duplicate replacement is mutation-free"
+	)
+	_expect(
+		roster.try_replace_at(_character(&"stale", "Stale"), 4, &"player_0") == RunRoster.ReplaceResult.STALE_TARGET
+		and _same_slots(replaced_snapshot, roster.get_slot_snapshot()),
+		"stale target is mutation-free"
+	)
+	_expect(
+		roster.try_replace_at(replacement, 4, &"replacement") == RunRoster.ReplaceResult.DUPLICATE
+		and _same_slots(replaced_snapshot, roster.get_slot_snapshot()),
+		"repeated replacement is mutation-free"
+	)
+
+	var non_full := RunRoster.new()
+	var non_full_before := non_full.get_slot_snapshot()
+	_expect(
+		non_full.try_replace_at(_character(&"early", "Early"), 0, &"player_0") == RunRoster.ReplaceResult.NOT_FULL
+		and _same_slots(non_full_before, non_full.get_slot_snapshot()),
+		"non-full roster replacement is rejected"
+	)
+	_expect(not roster.has_character(&"player_0"), "dismissed character is absent and may be eligible later")
+
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -81,6 +127,22 @@ func _unit_slots(units: Array[BattleUnitState]) -> Array[int]:
 	for unit: BattleUnitState in units:
 		result.append(unit.slot_index)
 	return result
+
+
+func _unit_id_at(units: Array[BattleUnitState], slot_index: int) -> StringName:
+	for unit: BattleUnitState in units:
+		if unit.slot_index == slot_index:
+			return unit.unit_id
+	return &""
+
+
+func _same_slots(left: Array[RunCharacter], right: Array[RunCharacter]) -> bool:
+	if left.size() != right.size():
+		return false
+	for slot_index: int in left.size():
+		if left[slot_index] != right[slot_index]:
+			return false
+	return true
 
 
 func _expect(condition: bool, message: String) -> void:

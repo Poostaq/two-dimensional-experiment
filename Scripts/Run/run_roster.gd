@@ -19,6 +19,16 @@ enum MoveResult {
 	SAME_SLOT,
 }
 
+enum ReplaceResult {
+	REPLACED,
+	INVALID_RECRUIT,
+	DUPLICATE,
+	NOT_FULL,
+	INVALID_SLOT,
+	EMPTY_TARGET,
+	STALE_TARGET,
+}
+
 const MAX_ROSTER_SIZE := 6
 
 var _slots: Array[RunCharacter] = []
@@ -75,6 +85,28 @@ func try_add_at(character: RunCharacter, slot_index: int) -> AddResult:
 		return AddResult.OCCUPIED
 	_slots[slot_index] = character
 	return AddResult.ADDED
+
+
+func try_replace_at(
+	recruit: RunCharacter,
+	slot_index: int,
+	expected_character_id: StringName
+) -> ReplaceResult:
+	if not is_instance_valid(recruit) or recruit.character_id.is_empty():
+		return ReplaceResult.INVALID_RECRUIT
+	if not _is_valid_slot(slot_index):
+		return ReplaceResult.INVALID_SLOT
+	if not is_full():
+		return ReplaceResult.NOT_FULL
+	var target: RunCharacter = _slots[slot_index]
+	if not is_instance_valid(target):
+		return ReplaceResult.EMPTY_TARGET
+	if target.character_id != expected_character_id:
+		return ReplaceResult.STALE_TARGET
+	if has_character(recruit.character_id):
+		return ReplaceResult.DUPLICATE
+	_slots[slot_index] = recruit
+	return ReplaceResult.REPLACED
 
 
 func try_move(
