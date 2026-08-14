@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "race-class-designer",
+  "display_name": "Race and Class Designer",
+  "description": "Designs coherent fantasy races, class archetypes, role balance, progression hooks, and party identity before implementation.",
+  "write_policy": "read_only",
+  "capabilities": ["repo.read", "repo.search", "planning.track"],
+  "skills": ["project-stage-audit", "spec-to-test-traceability", "reverse-document-system"]
+}

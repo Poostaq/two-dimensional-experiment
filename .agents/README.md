@@ -27,6 +27,8 @@ python tools/agent_port.py check
 ## Active Agents (2D Game)
 
 - **Gameplay Systems Designer** — Define core loop, mechanics, rules
+- **Race and Class Designer** — Define races, class fantasy, party role balance, progression hooks
+- **Skill and Progression Designer** — Define abilities, passives, resource economy, and leveling design
 - **Godot Implementation** — Code gameplay, scenes, scripts
 - **Spec Validation** — Review design specs
 - **Godot Architecture Reviewer** — Check system ownership & boundaries

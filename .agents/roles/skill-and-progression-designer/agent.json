@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "skill-and-progression-designer",
+  "display_name": "Skill and Progression Designer",
+  "description": "Designs active skills, passive traits, progression ladders, and class identity so abilities feel coherent, readable, and balanced.",
+  "write_policy": "read_only",
+  "capabilities": ["repo.read", "repo.search", "planning.track"],
+  "skills": ["project-stage-audit", "spec-to-test-traceability", "reverse-document-system"]
+}
