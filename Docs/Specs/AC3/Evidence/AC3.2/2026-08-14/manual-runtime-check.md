@@ -2,19 +2,19 @@
 
 Date: 2026-08-14
 Implementation commit: `172fdaf5ec5a9e0de5287a3d6ba671a39279c827`
+Viewport: 1152×648
 
 - Main scene starts with zero runtime or script-console errors: PASS.
-- Full-roster reward visibility through focused real-scene integration: PASS (automated runtime scene).
-- Replacement mode opens without early roster mutation: PASS (automated runtime scene).
-- Cancel restores the selected reward with unchanged formation: PASS (automated runtime scene).
-- Atomic replacement preserves size six and the exact target slot: PASS (automated runtime scene).
-- Stale, repeated, and unexpected-teardown requests remain mutation-free: PASS (automated runtime scene).
-- Next battle uses the recruit in the exact replaced semantic slot: PASS (automated runtime scene).
-- Real-pointer replacement flow at 1152×648: BLOCKED.
-- Visual tour of replacement instructions, pending card, six occupied targets, details, destructive feedback, and Cancel: BLOCKED.
+- A valid recruit remains visible and selectable after a Boss victory with a six-member roster: PASS.
+- Confirming the recruit opens replacement mode without mutating the roster: PASS.
+- Replacement instructions, the pending Champion card, six occupied targets, details panel, destructive target feedback, and Cancel all fit without clipping or overlap: PASS.
+- Clicking an occupied member displays the expected name, HP, speed, and readable details: PASS.
+- Clicking Cancel closes replacement mode, restores the selected reward, and leaves formation unchanged: PASS.
+- Reopening replacement and dragging Champion onto occupied semantic slot 1 through real viewport input completes one atomic replacement: PASS.
+- Replacement mode and the completed battle close after the successful request: PASS.
+- The next battle opens with Champion in exact semantic slot 1; the inspector reports `Champion`, speed `9`, and HP `24/24`: PASS.
+- No runtime or script errors were reported during the flow: PASS.
 
-Blocker:
+Fixture note: the live content cannot naturally reach six unique members, so a temporary GodotIQ-injected runtime fixture added two uniquely identified characters for this check. It exercised the normal production UI and controller paths, was removed before final verification, and was not committed.
 
-Current content has three starters plus only two distinct recruitable characters (Scout and Champion), while duplicate character IDs are rejected. A six-member roster is therefore not naturally reachable in the live run. The intended GodotIQ in-memory fixture path was unavailable because `godotiq_exec(context="game")` timed out after a stop/play handshake retry, including on a trivial query. No project file or persistent debug-only content was added to bypass this gate.
-
-Result: BLOCKED. AC3.2 remains unchecked until the two blocked runtime/visual checks pass against the tested implementation.
+Result: PASS. All AC3.2 automated, pointer-interaction, visual, cancellation, replacement, and next-battle gates passed.

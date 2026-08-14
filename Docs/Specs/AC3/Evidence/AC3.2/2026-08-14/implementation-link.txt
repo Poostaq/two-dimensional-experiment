@@ -3,4 +3,4 @@ AC3.2 tested implementation
 Branch: feat/ac3-2-full-roster-replacement
 Implementation commit: 172fdaf5ec5a9e0de5287a3d6ba671a39279c827
 
-Status: Automated implementation gates pass; manual full-roster pointer/visual verification is blocked and AC3.2 remains unchecked.
+Status: PASS — automated, real-pointer, visual, cancel/restoration, exact-slot replacement, next-battle, and runtime-error gates are complete. AC3.2 is checked in the canonical MVP specification.
