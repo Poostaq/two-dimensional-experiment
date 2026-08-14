@@ -801,12 +801,16 @@ git commit -m "feat: require replacement for full roster recruits"
 Run every `Tests/**/*.gd` runner without writing a helper file:
 
 ```powershell
+$godotExe = 'D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe'
+$workspacePath = (Get-Location).Path
 $testFiles = Get-ChildItem -Path Tests -Recurse -Filter '*.gd' | Sort-Object FullName
 $failed = @()
 foreach ($testFile in $testFiles) {
-  $relative = [IO.Path]::GetRelativePath((Get-Location).Path, $testFile.FullName) -replace '\\','/'
-  & godot --headless --path . --script ("res://" + $relative)
-  if ($LASTEXITCODE -ne 0) { $failed += $relative }
+  $relative = $testFile.FullName.Substring($workspacePath.Length + 1).Replace('\','/')
+  $output = & $godotExe --headless --quit-after 1200 --path . --script ("res://" + $relative) 2>&1 | Out-String
+  $hasPass = $output -match '(?i)PASS|tests passed'
+  $hasFailure = $output -match 'SCRIPT ERROR|Parse Error|FAILED:|expected \d+ assertions, ran'
+  if (-not $hasPass -or $hasFailure) { $failed += $relative }
 }
 if ($failed.Count -gt 0) { throw "Failed runners: $($failed -join ', ')" }
 ```

@@ -17,18 +17,16 @@ This is the living register for deliberately deferred product decisions. A quest
   - How are identical copies distinguished in dismissal and party-management interfaces?
   - Can a reward offer a character already owned, and if so, is it a new unit, an upgrade, or a conversion into another resource?
 
-### TC-002 — How should full-roster recruitment integrate with AC3.2?
-
-- **Raised during:** AC3.1 run-roster recruitment design.
-- **Current rule:** At six roster members, recruitment options are omitted; money and item rewards remain available. AC3.1 provides no dismissal prompt.
-- **Decision needed by:** AC3.2 design.
-- **Questions to resolve:**
-  - Should a full-roster victory show recruitment as an option that opens a replacement flow, or use a separate recruitment event?
-  - Can the player cancel replacement and return to the other reward choices?
-  - When is the old character removed relative to adding the recruit so the roster never enters an invalid state?
-  - What happens to the dismissed character's equipment, progression, and other owned state?
-  - Does dismissing a character make that character eligible to be recruited again later in the same run?
-
 ## Resolved questions
 
 Move an entry here when the project lead makes a durable decision. Record the decision date, affected acceptance criteria, and the specification or implementation link that made it authoritative.
+
+### TC-002 — Full-roster recruitment uses atomic replacement
+
+- **Resolved:** 2026-08-14 for AC3.2.
+- Valid recruitment remains in the normal reward catalog at roster size six.
+- Confirm opens `PartyManagement.Mode.REPLACEMENT`; Cancel restores the unchanged reward choices.
+- Any occupied member, including a starter, may be replaced through one atomic roster mutation.
+- The dismissed character may be recruited again later when no copy is currently owned.
+- Equipment and progression cleanup remain deferred until those systems own authoritative run state.
+- **Authority:** `Docs/superpowers/specs/2026-08-14-ac3-2-full-roster-replacement-design.md`.

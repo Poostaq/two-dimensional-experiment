@@ -1,0 +1,32 @@
+AC3.2 automated verification — 2026-08-14
+Implementation commit: 172fdaf5ec5a9e0de5287a3d6ba671a39279c827
+
+Focused acceptance runners:
+- Tests/Run/test_ac3_3_party_formation.gd: PASS (36/36)
+- Tests/UI/test_ac3_3_party_management.gd: PASS (31/31)
+- Tests/Map/test_ac3_1_recruitment_integration.gd: PASS (8/8)
+- Tests/Map/test_ac3_3_party_management_integration.gd: PASS (24/24)
+
+Compatibility runner:
+- Tests/Battle/test_ac2_5_reward_selection.gd: PASS (17/17)
+
+Full repository corpus:
+- Discovered: 29 GDScript test runners
+- Explicit PASS output: 29
+- Failure/parser/script-error markers: 0
+- Negative-validation runners intentionally emitted domain validation errors while reporting PASS; no SCRIPT ERROR, parse error, failed assertion, or assertion-count mismatch occurred.
+
+GodotIQ project gates:
+- Script compilation: PASS (62 scripts, 0 errors)
+- Main-scene startup: PASS
+- Runtime/script debug-console errors during startup: 0
+- Project validation: 0 errors; one pre-existing type-hint warning, two pre-existing orphan-signal informational findings, and one validator-only unused-signal informational finding for `replacement_requested`.
+- Signal graph: `replacement_requested` is connected by `MapController`; the only reported orphans are the two pre-existing `battle_completed` and `hover_changed` signals.
+
+Runtime fixture tooling:
+- GodotIQ Play attached successfully.
+- `godotiq_exec(context="game")` timed out after a stop/play handshake retry, including for a trivial current-scene query.
+- Normal game content currently exposes only Scout and Champion recruitment; with three starters and duplicate rejection, a six-member roster is not reachable through current live content.
+- Automated real-scene and map/battle integration coverage therefore passes, but the manual full-roster pointer/visual gate remains BLOCKED.
+
+Completion status: BLOCKED — do not check AC3.2 until the manual full-roster interaction and visual gate can execute.
