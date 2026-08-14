@@ -2,7 +2,7 @@ class_name Ac3_3PartyManagementIntegrationTests
 extends SceneTree
 
 const GAME_WORLD_PATH := "res://Scenes/game_world.tscn"
-const EXPECTED_TEST_COUNT := 12
+const EXPECTED_TEST_COUNT := 24
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -63,6 +63,62 @@ func _run() -> void:
 		"placement cancellation clears UI without roster mutation"
 	)
 	world.exit_active_battle()
+
+	var roster: RunRoster = world.get("_run_roster") as RunRoster
+	_expect(roster.try_add_at(_character(&"fourth", "Fourth"), 0) == RunRoster.AddResult.ADDED, "fixture fills empty slot 0")
+	_expect(roster.try_add_at(_character(&"fifth", "Fifth"), 3) == RunRoster.AddResult.ADDED, "fixture fills empty slot 3")
+	_expect(roster.try_add_at(_character(&"sixth", "Sixth"), 4) == RunRoster.AddResult.ADDED and roster.is_full(), "fixture reaches capacity")
+
+	world.call("_open_encounter", Vector2i(1, 0), "boss")
+	world.call("_on_battle_requested", Vector2i(1, 0), "boss")
+	await process_frame
+	var active_battle := world.call("get_active_battle") as BattleArena
+	active_battle.call("_complete_battle", BattleOutcome.Type.VICTORY)
+	var champion_option := _find_reward(active_battle.get_reward_options(), &"boss_recruit_champion")
+	_expect(is_instance_valid(champion_option), "full roster retains valid recruitment reward")
+	active_battle.select_reward(champion_option.reward_id)
+	active_battle.confirm_reward_selection()
+	await process_frame
+	var replacement_party: PartyManagement = world.call("get_active_party_management")
+	_expect(is_instance_valid(replacement_party) and replacement_party.get("_mode") == PartyManagement.Mode.REPLACEMENT, "capacity opens replacement mode")
+	var before_replace: Array[RunCharacter] = world.call("get_run_formation_snapshot")
+	replacement_party.call("request_placement_cancel")
+	await process_frame
+	_expect(not world.call("has_active_party_management") and _same_slots(before_replace, world.call("get_run_formation_snapshot")), "replacement cancel restores without mutation")
+
+	active_battle.confirm_reward_selection()
+	await process_frame
+	var teardown_party: PartyManagement = world.call("get_active_party_management")
+	teardown_party.queue_free()
+	await process_frame
+	_expect(
+		not world.call("has_active_party_management") and not is_instance_valid(world.get("_pending_recruit")),
+		"unexpected replacement teardown clears pending state without mutation"
+	)
+
+	active_battle.restore_pending_recruitment(champion_option)
+	active_battle.confirm_reward_selection()
+	await process_frame
+	replacement_party = world.call("get_active_party_management")
+	replacement_party.call("request_replacement", 1, before_replace[1].character_id, &"champion")
+	await process_frame
+	var after_replace: Array[RunCharacter] = world.call("get_run_formation_snapshot")
+	_expect(after_replace[1].character_id == &"champion" and roster.size() == 6, "replacement commits at exact slot")
+	_expect(not roster.has_character(before_replace[1].character_id), "dismissed character leaves membership")
+	world.call("_on_recruitment_replacement_requested", 1, before_replace[1].character_id, &"champion")
+	_expect(_same_slots(after_replace, world.call("get_run_formation_snapshot")), "repeated stale replacement cannot mutate")
+	_expect(not world.call("has_active_party_management"), "successful replacement closes party management")
+	world.call("_open_encounter", Vector2i(1, 0), "combat")
+	world.call("_on_battle_requested", Vector2i(1, 0), "combat")
+	await process_frame
+	var next_battle := world.call("get_active_battle") as BattleArena
+	var next_slot_id: StringName = &""
+	for unit: BattleUnitState in next_battle.get_turn_queue():
+		if unit.side == BattleUnitState.Side.PLAYER and unit.slot_index == 1:
+			next_slot_id = unit.unit_id
+	_expect(next_slot_id == &"champion", "next battle preserves the replaced semantic slot")
+	world.exit_active_battle()
+
 	world.call("set_run_id", "reset-check")
 	var reset: Array[RunCharacter] = world.call("get_run_formation_snapshot")
 	_expect(reset[0].character_id == &"player_0" and reset[3] == null, "run reset restores starter formation")
@@ -71,6 +127,27 @@ func _run() -> void:
 	world.queue_free()
 	await process_frame
 	_finish()
+
+
+func _character(id: StringName, display_name: String) -> RunCharacter:
+	var skills: Array[CharacterSkill] = []
+	return RunCharacter.new(id, display_name, 5, 20, skills)
+
+
+func _find_reward(options: Array[BattleRewardOption], reward_id: StringName) -> BattleRewardOption:
+	for option: BattleRewardOption in options:
+		if option.reward_id == reward_id:
+			return option
+	return null
+
+
+func _same_slots(left: Array[RunCharacter], right: Array[RunCharacter]) -> bool:
+	if left.size() != right.size():
+		return false
+	for slot_index: int in left.size():
+		if left[slot_index] != right[slot_index]:
+			return false
+	return true
 
 
 func _expect(condition: bool, message: String) -> void:

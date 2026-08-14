@@ -577,7 +577,7 @@ Add the same typed `_character()` helper used by the other focused tests. Update
 
 - [ ] **Step 3: Add failing full transaction integration coverage**
 
-Increase `Tests/Map/test_ac3_3_party_management_integration.gd` from `12` to `23` assertions. Before run reset, build capacity through the public pending-placement seam, then exercise full replacement:
+Increase `Tests/Map/test_ac3_3_party_management_integration.gd` from `12` to `24` assertions. Before run reset, build capacity through the public pending-placement seam, then exercise full replacement and unexpected teardown cleanup:
 
 ```gdscript
 	# Fill the three remaining slots with unique characters through the roster test seam.
@@ -776,7 +776,7 @@ godot --headless --path . --script res://Tests/UI/test_ac3_3_party_management.gd
 godot --headless --path . --script res://Tests/Run/test_ac3_3_party_formation.gd
 ```
 
-Expected: AC3.1 `PASS (8/8)`, AC3.3 integration `PASS (23/23)`, and all three regression runners PASS with their updated exact counts.
+Expected: AC3.1 `PASS (8/8)`, AC3.3 integration `PASS (24/24)`, and all three regression runners PASS with their updated exact counts.
 
 - [ ] **Step 9: Commit the integration change**
 

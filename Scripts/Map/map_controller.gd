@@ -366,7 +366,11 @@ func _filter_eligible_reward_options(
 			eligible.append(option)
 			continue
 		var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
-		if is_instance_valid(recruit) and roster.can_add(recruit.character_id):
+		if (
+			is_instance_valid(recruit)
+			and not recruit.character_id.is_empty()
+			and not roster.has_character(recruit.character_id)
+		):
 			eligible.append(option)
 	return eligible
 
@@ -385,7 +389,11 @@ func _on_recruitment_reward_placement_requested(option: BattleRewardOption) -> v
 	):
 		return
 	var recruit: RunCharacter = RunCharacterCatalog.create_for_reward(option.reward_id)
-	if not is_instance_valid(recruit) or not _run_roster.can_add(recruit.character_id):
+	if (
+		not is_instance_valid(recruit)
+		or recruit.character_id.is_empty()
+		or _run_roster.has_character(recruit.character_id)
+	):
 		_active_battle.restore_pending_recruitment(option)
 		return
 	_pending_recruitment_option = option
@@ -397,9 +405,14 @@ func _on_recruitment_reward_placement_requested(option: BattleRewardOption) -> v
 		return
 	_active_party_management = party
 	_ui_layer.add_child(party)
-	party.configure_placement(_run_roster.get_slot_snapshot(), recruit)
 	party.placement_requested.connect(_on_recruitment_placement_requested)
+	party.replacement_requested.connect(_on_recruitment_replacement_requested)
 	party.placement_cancelled.connect(_on_recruitment_placement_cancelled, CONNECT_ONE_SHOT)
+	party.tree_exited.connect(_on_transaction_party_tree_exited.bind(party), CONNECT_ONE_SHOT)
+	if _run_roster.is_full():
+		party.configure_replacement(_run_roster.get_slot_snapshot(), recruit)
+	else:
+		party.configure_placement(_run_roster.get_slot_snapshot(), recruit)
 	_refresh_manage_party_button()
 
 
@@ -424,6 +437,33 @@ func _on_recruitment_placement_requested(
 	_active_battle.complete_pending_recruitment(option)
 
 
+func _on_recruitment_replacement_requested(
+	destination_slot: int,
+	expected_character_id: StringName,
+	expected_recruit_id: StringName
+) -> void:
+	if (
+		not has_active_party_management()
+		or not has_active_battle()
+		or not is_instance_valid(_pending_recruit)
+		or _pending_recruit.character_id != expected_recruit_id
+	):
+		return
+	var result: RunRoster.ReplaceResult = _run_roster.try_replace_at(
+		_pending_recruit,
+		destination_slot,
+		expected_character_id
+	)
+	if result != RunRoster.ReplaceResult.REPLACED:
+		_active_party_management.refresh_slots(_run_roster.get_slot_snapshot())
+		return
+	var option: BattleRewardOption = _pending_recruitment_option
+	close_party_management()
+	_clear_pending_recruitment()
+	if has_active_battle():
+		_active_battle.complete_pending_recruitment(option)
+
+
 func _on_recruitment_placement_cancelled() -> void:
 	if not is_instance_valid(_pending_recruitment_option):
 		return
@@ -432,6 +472,14 @@ func _on_recruitment_placement_cancelled() -> void:
 	_clear_pending_recruitment()
 	if has_active_battle():
 		_active_battle.restore_pending_recruitment(option)
+
+
+func _on_transaction_party_tree_exited(party: PartyManagement) -> void:
+	if _active_party_management != party:
+		return
+	_active_party_management = null
+	_clear_pending_recruitment()
+	_refresh_manage_party_button()
 
 
 func _clear_pending_recruitment() -> void:

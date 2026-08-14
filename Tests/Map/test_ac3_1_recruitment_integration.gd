@@ -2,7 +2,7 @@ class_name Ac3_1RecruitmentIntegrationTests
 extends SceneTree
 
 const GAME_WORLD_PATH := "res://Scenes/game_world.tscn"
-const EXPECTED_TEST_COUNT := 7
+const EXPECTED_TEST_COUNT := 8
 
 var _failures: Array[String] = []
 
@@ -18,7 +18,7 @@ func _run() -> void:
 		_test_initial_rewards_are_eligible(world)
 		await _test_recruitment_applies_once(world)
 		_test_duplicate_reward_is_filtered(world)
-		_test_full_roster_filters_recruitment(world)
+		_test_full_roster_keeps_valid_recruitment(world)
 		_test_run_reset_restores_starters(world)
 		await _test_battle_uses_roster(world)
 		world.queue_free()
@@ -76,7 +76,7 @@ func _test_duplicate_reward_is_filtered(world: MapController) -> void:
 	)
 
 
-func _test_full_roster_filters_recruitment(world: MapController) -> void:
+func _test_full_roster_keeps_valid_recruitment(world: MapController) -> void:
 	var full: Array[RunCharacter] = []
 	for index: int in RunRoster.MAX_ROSTER_SIZE:
 		full.append(RunCharacter.new(StringName("full_%d" % index), "Full %d" % index, 1, 10, []))
@@ -87,9 +87,32 @@ func _test_full_roster_filters_recruitment(world: MapController) -> void:
 		full_roster
 	) as Array
 	_assert(
-		_reward_ids(options) == [&"boss_money_250", &"boss_rare_relic"],
-		"Full roster filtering",
-		"full roster must omit recruitment while preserving other rewards"
+		_reward_ids(options) == [&"boss_recruit_champion", &"boss_money_250", &"boss_rare_relic"],
+		"Full roster recruitment eligibility",
+		"valid Champion recruitment must remain beside other rewards at capacity"
+	)
+
+	var returning_members: Array[RunCharacter] = [
+		RunCharacterCatalog.create_for_reward(&"boss_recruit_champion"),
+		_character(&"return_1", "Return 1"),
+		_character(&"return_2", "Return 2"),
+		_character(&"return_3", "Return 3"),
+		_character(&"return_4", "Return 4"),
+		_character(&"return_5", "Return 5"),
+	]
+	var returning_roster := RunRoster.new(returning_members)
+	var scout := RunCharacterCatalog.create_for_reward(&"combat_recruit_scout")
+	var replaced := returning_roster.try_replace_at(scout, 0, &"champion")
+	var returning_options := world.call(
+		"_filter_eligible_reward_options",
+		BattleRewardCatalog.get_options_for("boss"),
+		returning_roster
+	) as Array
+	_assert(
+		replaced == RunRoster.ReplaceResult.REPLACED
+		and _reward_ids(returning_options).has(&"boss_recruit_champion"),
+		"Dismissed character eligibility",
+		"dismissed Champion must become eligible when no copy remains"
 	)
 
 
@@ -141,6 +164,11 @@ func _place_recruit(world: MapController, destination_slot: int) -> void:
 	if world.has_active_battle():
 		world.exit_active_battle()
 	await process_frame
+
+
+func _character(id: StringName, display_name: String) -> RunCharacter:
+	var skills: Array[CharacterSkill] = []
+	return RunCharacter.new(id, display_name, 5, 20, skills)
 
 
 func _character_ids(characters: Array) -> Array[StringName]:
