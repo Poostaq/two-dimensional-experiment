@@ -19,7 +19,7 @@
 
 - [ ] **Step 1: Rewrite the keyword canon**
 
-Keep exactly Bleed, Poison, Stun, Advantage, and Leech. For each keyword, state trigger, duration unit, cap, reapplication, invalid interaction, cleanup boundary, tooltip pattern, and log pattern. Remove the Ignite section and comparisons. Use the approved values in `Docs/superpowers/specs/2026-08-16-race-class-skill-design.md`.
+Keep exactly Armor, Bleed, Poison, Stun, Advantage, and Leech. For each keyword, state trigger, duration unit or persistence, cap, reapplication, invalid interaction, cleanup boundary, tooltip pattern, and log pattern. Remove the Ignite section and comparisons. Use the approved values in `Docs/superpowers/specs/2026-08-16-race-class-skill-design.md`.
 
 - [ ] **Step 2: Document the six-slot movement ring**
 
@@ -39,7 +39,7 @@ rg -ni "ignite" Docs/Mechanics Docs/Races
 rg -n "Move 1|Move 2|Move 3|atomic|three Active|one Passive" Docs/Mechanics
 ```
 
-Expected: five keyword headings; no Ignite result in canonical mechanics or race documents; movement and four-skill rules present.
+Expected: six keyword headings; no Ignite result in canonical mechanics or race documents; movement and four-skill rules present.
 
 - [ ] **Step 5: Commit canonical mechanics**
 
@@ -99,7 +99,7 @@ git commit -m "docs: complete goblin class roster"
 
 - [ ] **Step 1: Author Orc identity and classes**
 
-Use the approved contact/lane-dominance identity. Author Iron Tusk Vanguard `30/5/2/5`, Bonebreaker Reaver `26/8/4/2`, Bloodbanner Captain `28/5/3/4`, Chainwarden `27/4/4/4`, War Drummer `24/4/5/3`, and Siegebreaker `25/8/2/3`. Limit Stun to Chainwarden and at most one Vanguard skill; other control uses contact, Guard, anti-movement, or conditions.
+Use the approved contact/lane-dominance identity. Author Iron Tusk Vanguard `30/5/2/5`, Bonebreaker Reaver `26/8/4/2`, Bloodbanner Captain `28/5/3/4`, Chainwarden `27/4/4/4`, War Drummer `24/4/5/3`, and Siegebreaker `25/8/2/3`. Tough Orc front liners use Armor and no Orc skill uses Bleed. Limit Stun to Chainwarden; other control uses Armor, direct damage, movement, cooldowns, or requirements.
 
 - [ ] **Step 2: Author Werewolf identity and classes**
 
@@ -158,7 +158,7 @@ Create rows for race identity, six classes, four skills, keyword consistency, st
 
 - [ ] **Step 2: Record current versus desired implementation**
 
-List current support for four-skill rosters, Active/Passive kinds, damage, Speed boosts, requirements, cooldowns, combos, atomic confirmation, history, and queue rebuilding. List missing Power/Defense, healing, statuses, Leech, Guard, ring rotation, cleanse, and passive trigger support as implementation dependencies rather than claiming runtime completion.
+List current support for four-skill rosters, Active/Passive kinds, damage, Speed boosts, requirements, cooldowns, combos, atomic confirmation, history, and queue rebuilding. List missing Power/Defense, Armor, statuses, Leech, ring rotation, and passive trigger support as implementation dependencies rather than claiming runtime completion.
 
 - [ ] **Step 3: Run the full documentation audit**
 

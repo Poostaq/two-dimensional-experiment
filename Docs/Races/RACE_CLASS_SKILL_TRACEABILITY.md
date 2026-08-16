@@ -12,7 +12,7 @@ This matrix verifies documentary readiness for the five core races, 30 implement
 | RD-2 | Each race has exactly six distinct classes | `Docs/Races/*/Classes.md` | Five files each contain six numbered class headings; uniqueness summaries identify different jobs and signature mechanics | Complete |
 | RD-3 | Each class has exactly four authored skills | All five `Classes.md`; `Docs/Mechanics/SkillAuthoringContract.md` | Each class file contains 24 Active/Passive skill rows; total is 120 | Complete |
 | RD-3A | Skills specify trigger, duration, stacks/refresh, cooldown, failure, UI, AI, and counterplay | Class-file inheritance preambles and every skill row | Shared defaults explicitly set unlisted fields to `None`; every row states record, effect/lifecycle, failure/AI/counterplay, tooltip, and log | Complete |
-| RD-4 | Keyword usage is race-consistent and readable | `Docs/Mechanics/SkillKeywords.md`; race profiles and skill rows | Six canonical headings; tooltip/log patterns; assigned race profiles; class wording references canonical behavior | In revision |
+| RD-4 | Keyword usage is race-consistent and readable | `Docs/Mechanics/SkillKeywords.md`; race profiles and skill rows | Six canonical headings; tooltip/log patterns; assigned race profiles; class wording references canonical behavior | Complete |
 | RD-5 | Stats stay inside race ranges and support roles | Baseline guide stat bands and 30 class headers | Automated range audit plus class role/weakness review | Complete |
 | RD-6 | Three synergies and two counters per race | Five `Lore.md` files | Every file contains three numbered positive synergies and two numbered counterplay cases | Complete |
 | RD-7 | Goblins remain unique tempo/disruption glue | Goblin identity safeguard, guide guardrails, all role summaries | At least four Goblin kits use sequencing/setup; non-Goblin setup is gated by race identity and no other race exceeds two coalition-setup kits | Complete |
@@ -74,6 +74,7 @@ Implementation tests must cover:
 
 - apply, cap, reapply, expire, source defeat, target defeat, and battle teardown for every status;
 - no mutation on preview, cancellation, rejection, stale confirmation, or invalid path;
+- Armor addition, cap 10, post-Defense consumption, partial absorption, full absorption, status-damage exclusion, and battle teardown;
 - clockwise and counterclockwise Move 1-3, both Move 3 paths, partial occupancy, full occupancy, defeat-created empty slots, and exact shift order;
 - exact tooltip and log snapshots for every effect family;
 - Stun Guard and boss resistance;

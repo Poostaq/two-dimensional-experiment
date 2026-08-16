@@ -30,7 +30,7 @@ Lizardmen select one stat axis, apply Poison, constrain options, and win through
 
 ## Positive Synergies
 
-1. **Iron Tusk Vanguard + Venom Saurian:** Orc Guard buys rounds for Power Poison while reduced retaliation preserves the line.
+1. **Iron Tusk Vanguard + Venom Saurian:** Orc Armor buys rounds for Power Poison while reduced retaliation preserves the line.
 2. **Mire Spitter + Moonfang Skirmisher:** Speed Poison delays prey and makes pursuit order predictable.
 3. **Mobcaller + Fang Alchemist:** Goblin distinct-attacker sequencing converts Defense Poison into several meaningful hits.
 

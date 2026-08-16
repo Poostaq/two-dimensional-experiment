@@ -34,5 +34,5 @@ Werewolves identify wounded targets, pursue them, execute, and recover through d
 
 ## Counterplay
 
-1. **Threshold denial:** Guard, shields, and healing keep targets above half HP and disable execution skills.
+1. **Threshold denial:** Defense and Armor prevent targets from crossing below half HP and disable execution skills.
 2. **Peel:** Forced rotation changes the path between hunters and Bleeding prey.

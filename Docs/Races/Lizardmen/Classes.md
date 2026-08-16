@@ -79,4 +79,4 @@ All skills inherit shared mechanics. `CD N` is post-use cooldown in successful o
 | Mire Spitter | Tempo controller | Speed Poison |
 | Fang Alchemist | Anti-armor utility | Defense Poison |
 | Reed Ambusher | Positional striker | Stillness into Move 3 |
-| Sunscale Warder | Mitigation support | Shared shields |
+| Sunscale Warder | Armor support | Shared Armor |

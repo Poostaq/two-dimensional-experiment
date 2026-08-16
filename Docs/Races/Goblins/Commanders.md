@@ -10,7 +10,7 @@ A commander retains the base class's four-slot limit. One class skill is replace
 
 ## Banner Holder
 
-**Slot:** Signature Passive replacing Pack Wall. **Trigger:** Start of Brakka's eligible action. **Guard:** Once per round.
+**Slot:** Signature Passive replacing Pack Wall. **Trigger:** Start of Brakka's eligible action. **Limit:** Once per round.
 
 - Grant Advantage to the next active ally in unresolved action order that owns at least one currently legal Active skill with an Advantage rider.
 - Brakka spends no action on the trigger.

@@ -10,7 +10,7 @@ The design is based on `Docs/Races/MONSTER_RACE_DESIGN_GUIDE_INITIAL_DRAFT.md`. 
 
 ## Documentation Architecture
 
-- `Docs/Mechanics/SkillKeywords.md` is the canonical source for Bleed, Poison, Stun, Advantage, and Leech.
+- `Docs/Mechanics/SkillKeywords.md` is the canonical source for Armor, Bleed, Poison, Stun, Advantage, and Leech.
 - `Docs/Mechanics/FormationMovement.md` defines the six-slot ring, movement ranges, path selection, and atomic character shifting.
 - `Docs/Mechanics/SkillAuthoringContract.md` defines the four-skill package, required skill fields, timing language, progression, formulas, and lifecycle rules.
 - `Docs/Races/<Race>/Lore.md` owns the race fantasy, visual read, culture, mechanical promise, strengths, weaknesses, synergies, and counterplay.
