@@ -10,10 +10,10 @@ All skills inherit the shared mechanics contract. `CD N` is post-use cooldown in
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
-| Brace Line | Active Opener; defense; self and ring-neighbor ally; front half; CD 1 | Self +2 Defense and Guard ally until round end; reapply refreshes, no stack | Reject no neighbor; AI protects threatened ally; counter with area/status damage | Tooltip: `Gain 2 Defense and Guard a neighboring ally until round end.` Log: `<actor> braced the line for <ally>.` |
-| Shield Ram | Active Converter; offense/control; neighboring enemy; CD 2 | Deal 100% Power and rotate target Move 1; if target was movement-locked, deal 140% instead | Reject illegal path; AI chooses contact-preserving path; counter by creating safe rotation | Tooltip: `Deal 100% Power and move an enemy 1; deal 140% if movement-locked.` Log: `<actor> rammed <target> for <damage> and moved it 1.` |
-| Hold the Gap | Active Pivot; control; self and two ring-neighbor enemy slots; CD 4 | For 2 rounds, enemies leaving either threatened neighbor voluntarily take 80% Power; non-stack, refresh | Reject no active threatened enemy; AI uses on two contacts; counter by forced movement or ranged actions | Tooltip: `For 2 rounds, enemies leaving your neighboring slots take 80% Power.` Log: `<actor> held the gap around <slots>.` |
-| Unbroken Contact | Passive Signature; defense; first round-end while neighboring an enemy | Gain +1 Defense next round, max one; once/round; Aggressive next attack +1 Power, Protective Defense +2 | No contact, no trigger; AI maintains neighbor; counter by rotating Orc away | Tooltip: `Once per round, maintain enemy contact to gain 1 Defense next round.` Log: `<actor> maintained contact and gained <bonus> Defense.` |
+| Brace Line | Active Opener; Armor; self and ring-neighbor ally; front half; CD 1 | Self and ally each gain 4 Armor, additive to cap 10 | Reject no neighbor or both pools full; AI protects threatened ally; counter with status or repeated damage | Tooltip: `You and a neighboring ally each gain 4 Armor.` Log: `<actor> braced with <ally>; both gained 4 Armor.` |
+| Shield Ram | Active Converter; offense/control; neighboring enemy; CD 2 | Deal 100% Power and rotate target Move 1; Advantage rider deals 140% | Reject illegal path; AI chooses contact-preserving path; counter by changing occupancy | Tooltip: `Deal 100% Power and move an enemy 1; with Advantage, deal 140%.` Log: `<actor> rammed <target> for <damage> and moved it 1.` |
+| Hold the Gap | Active Pivot; Armor; self and both ring-neighbor allies; CD 4 | Each legal target gains 5 Armor, additive to cap 10 | Reject fewer than two targets able to gain Armor; AI fortifies a full line; counter with status damage | Tooltip: `You and both neighboring allies each gain 5 Armor.` Log: `<actor> held the gap; <targets> gained 5 Armor.` |
+| Unbroken Contact | Passive Signature; Armor; round end while neighboring an enemy | Gain 2 Armor; once per round | No enemy neighbor, no trigger; AI maintains contact; counter by rotating Orc away | Tooltip: `Once per round, end beside an enemy to gain 2 Armor.` Log: `<actor>'s contact granted 2 Armor.` |
 
 ## Class 2: Bonebreaker Reaver
 
@@ -21,10 +21,10 @@ All skills inherit the shared mechanics contract. `CD N` is post-use cooldown in
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
-| Open Wound | Active Opener; offense/Bleed; one enemy; CD 1 | Deal 100% Power; apply 1 Bleed for 2 target actions, max 3/refresh canon | Reject inactive target; AI prefers unbled; counter with Cleanse | Tooltip: `Deal 100% Power and apply 1 Bleed for 2 actions.` Log: `<actor> opened <target>'s wound for <damage>.` |
-| Break Formation | Active Converter; offense; moved, movement-locked, or Stunned enemy; CD 2 | Deal 150% Power; Advantage rider ignores 1 Defense | Reject without condition; AI targets lowest effective Defense; counter by avoiding control state | Tooltip: `Deal 150% Power to a moved, locked, or Stunned enemy.` Log: `<actor> broke <target>'s formation for <damage>.` |
-| Execution Swing | Active Pivot; offense/capstone; enemy below half HP; front half; CD 4 | Deal 200% Power; no duration/stack | Reject threshold/position; AI uses when lethal; counter with Guard/healing/rotation | Tooltip: `From the front, deal 200% Power to an enemy below half HP.` Log: `<actor> executed a swing on <target> for <damage>.` |
-| No Escape | Passive Signature; offense; first attack each round against controlled enemy | +1 Power for attack; once/round; Aggressive +2, Protective gain +1 Defense through next action | No moved/locked/Stunned target, no trigger; AI follows controller; counter by cleansing/rotating | Tooltip: `Once per round, gain 1 Power against a controlled enemy.` Log: `<actor>'s No Escape added <bonus> Power against <target>.` |
+| Crushing Entry | Active Opener; offense/control; neighboring enemy; CD 1 | Deal 100% Power and rotate target Move 1 | Reject no legal path; AI moves target into Orc contact; counter by changing occupancy | Tooltip: `Deal 100% Power and move a neighboring enemy 1.` Log: `<actor> crushed into <target> for <damage> and moved it 1.` |
+| Break Formation | Active Converter; offense; enemy forcibly moved or Stunned this round; CD 2 | Deal 150% Power; Advantage rider deals 180% | Reject without condition; AI follows controller; counter by preventing movement/Stun | Tooltip: `Deal 150% Power to an enemy moved or Stunned this round.` Log: `<actor> broke <target>'s formation for <damage>.` |
+| Execution Swing | Active Pivot; offense/capstone; enemy below half HP; front half; CD 4 | Deal 200% Power, ignoring Armor | Reject threshold/position; AI uses when lethal; counter with Defense or rotation | Tooltip: `From the front, deal 200% Power to an enemy below half HP, ignoring Armor.` Log: `<actor> executed a swing on <target> for <damage>.` |
+| No Escape | Passive Signature; Armor; first attack each round against a moved or Stunned enemy | Gain 2 Armor after the attack; once per round | No qualifying enemy, no trigger; AI follows control; counter by denying setup | Tooltip: `Once per round after attacking a moved or Stunned enemy, gain 2 Armor.` Log: `<actor>'s No Escape granted 2 Armor.` |
 
 ## Class 3: Bloodbanner Captain
 
@@ -32,21 +32,21 @@ All skills inherit the shared mechanics contract. `CD N` is post-use cooldown in
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
-| Plant Banner | Active Opener; support; self plus ring neighbors; CD 2 | Allies gain +1 Power and Defense for 2 rounds; one source, refresh not stack | Reject no ally; AI catches two allies; counter by rotating formation apart | Tooltip: `Neighboring allies gain 1 Power and Defense for 2 rounds.` Log: `<actor> planted the banner for <allies>.` |
-| Rally Strike | Active Converter; offense/support; one enemy and one buffed ally; CD 2 | Deal 90% Power; chosen Plant Banner ally gains +1 Defense until next action | Reject no buffed ally; AI protects exposed ally; counter by dispelling Banner | Tooltip: `Deal 90% Power; a Banner ally gains 1 Defense until its next action.` Log: `<actor> rallied <ally> while striking <target> for <damage>.` |
-| Last Standard | Active Pivot; defense/capstone; all allies below half HP; CD 5 | All active allies gain a 3-damage shield and movement-lock immunity for current round; non-stack | Reject unless at least two allies below half; AI uses under collapse; counter by delaying burst or status damage | Tooltip: `If two allies are below half HP, shield all allies for 3 this round.` Log: `<actor> raised the Last Standard for <allies>.` |
-| Discipline of the Line | Passive Signature; support; first ally ending an action beside Captain each round | Ally +1 Defense until next action; once/round; Aggressive also +1 Power, Protective lasts 2 actions | No neighbor, no trigger; AI anchors center; counter by forced rotation | Tooltip: `Once per round, an ally acting beside you gains 1 Defense until its next action.` Log: `<actor> disciplined <ally>'s position.` |
+| Plant Banner | Active Opener; Armor/support; self plus ring neighbors; CD 2 | Each legal target gains 3 Armor | Reject no ally able to gain Armor; AI catches two allies; counter with status damage | Tooltip: `You and neighboring allies each gain 3 Armor.` Log: `<actor> planted the banner; <targets> gained 3 Armor.` |
+| Rally Strike | Active Converter; offense/Armor; one enemy and one ally; CD 2 | Deal 90% Power; chosen ally gains 3 Armor; Advantage rider grants 5 | Reject no ally able to gain Armor; AI protects threatened ally; counter by focusing elsewhere | Tooltip: `Deal 90% Power and grant an ally 3 Armor; with Advantage, grant 5.` Log: `<actor> struck <target> and granted <ally> <amount> Armor.` |
+| Last Standard | Active Pivot; Armor/capstone; all allies; two below half HP; CD 5 | Every active ally gains 5 Armor | Reject unless two allies are below half; AI uses under collapse; counter with status damage | Tooltip: `If two allies are below half HP, all allies gain 5 Armor.` Log: `<actor> raised the Last Standard; <allies> gained 5 Armor.` |
+| Discipline of the Line | Passive Signature; Armor; first ally ending an action beside Captain each round | That ally gains 2 Armor; once per round | No neighbor able to gain Armor, no trigger; AI anchors center; counter by rotation | Tooltip: `Once per round, an ally ending beside you gains 2 Armor.` Log: `<actor>'s discipline granted <ally> 2 Armor.` |
 
 ## Class 4: Chainwarden
 
-**Role:** Anti-mobility controller. **Rhythm:** Mark movement, drag target, spend one Stun window. **Weakness:** Long cooldowns and Stun Guard. **Stats:** 27 Health, 4 Power, 4 Speed, 4 Defense.
+**Role:** Forced-movement controller. **Rhythm:** Move a target, drag it farther, spend one Stun window. **Weakness:** Long cooldowns and Stun Guard. **Stats:** 27 Health, 4 Power, 4 Speed, 4 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
-| Chain Mark | Active Opener; control; one enemy; CD 1 | Mark 2 rounds; voluntary movement range -1, min 0; one/source, refresh | Reject equal longer mark; AI marks mobile enemy; counter with Cleanse/forced move | Tooltip: `Mark an enemy for 2 rounds, reducing voluntary Move by 1.` Log: `<actor> chained <target>'s movement.` |
-| Yank Back | Active Converter; control/offense; marked enemy; CD 3 | Rotate target up to Move 2, then deal 80% Power; mark remains | Reject no mark/path; AI pulls into Orc contact; counter by path disruption | Tooltip: `Move a Chain-Marked enemy up to 2, then deal 80% Power.` Log: `<actor> yanked <target> along <path> for <damage>.` |
-| Lockdown | Active Pivot; Stun; one enemy moved this round without Stun Guard; front half; CD 5 | Apply canonical Stun; non-stack/no refresh; cleanup canon | Reject boss immunity, Guard, no movement, position; AI targets imminent actor; counter with Stun Guard/Cleanse immunity | Tooltip: `Stun one enemy moved this round; it later gains Stun Guard.` Log: `<actor> locked down <target>.` |
-| Short Leash | Passive Signature; control; first marked enemy movement each round | After movement, rotate Warden Move 1 toward its new slot if legal; once/round; Aggressive deal 50% Power, Protective +1 Defense | No legal self path, no move; AI marks reachable target; counter by choosing unsafe pursuit path | Tooltip: `Once per round after a marked enemy moves, move 1 toward it.` Log: `<actor>'s Short Leash followed <target>.` |
+| Chain Lash | Active Opener; control/offense; one enemy; CD 1 | Deal 70% Power and rotate target Move 1 | Reject no path; AI moves mobile enemy; counter by changing occupancy | Tooltip: `Deal 70% Power and move an enemy 1.` Log: `<actor> lashed <target> for <damage> and moved it 1.` |
+| Yank Back | Active Converter; control/offense; enemy moved this round; CD 3 | Rotate target Move 2, then deal 100% Power | Reject no prior movement/path; AI pulls into Orc contact; counter by preventing first movement | Tooltip: `Move an already-moved enemy 2, then deal 100% Power.` Log: `<actor> yanked <target> along <path> for <damage>.` |
+| Lockdown | Active Pivot; Stun; enemy moved this round without Stun Guard; front half; CD 5 | Apply canonical Stun | Reject boss immunity, Stun Guard, no movement, or position; AI targets imminent actor; counter with Stun Guard | Tooltip: `Stun one enemy moved this round.` Log: `<actor> locked down <target>.` |
+| Short Leash | Passive Signature; movement; first enemy forcibly moved each round | Rotate Warden Move 1 toward its new slot if legal; once per round | No legal self path, no trigger; AI follows reachable target; counter by choosing the other path | Tooltip: `Once per round after an enemy is forcibly moved, move 1 toward it.` Log: `<actor>'s Short Leash moved it 1 toward <target>.` |
 
 ## Class 5: War Drummer
 
@@ -54,29 +54,29 @@ All skills inherit the shared mechanics contract. `CD N` is post-use cooldown in
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
-| Marching Beat | Active Opener; support; self and ring neighbors; CD 2 | +1 Speed for current round; one source, refresh; unresolved queue rebuild | Reject no unresolved ally; AI uses early; counter by separating or Speed Poison | Tooltip: `You and neighboring allies gain 1 Speed for this round.` Log: `<actor> set a Marching Beat for <allies>.` |
-| Crushing Cadence | Active Converter; offense; enemy hit by ally this round; CD 2 | Deal 120% Power; if actor has Marching Beat, deal 140% | Reject no prior hit; AI follows ally; counter by spreading targets | Tooltip: `Deal 120% Power after an ally hits the target; 140% while Marching.` Log: `<actor> struck <target> on cadence for <damage>.` |
-| War Tempo | Active Pivot; support/capstone; all unresolved allies; CD 5 | +2 Speed for current round; does not stack with itself, refresh; rebuild unresolved queue | Reject no unresolved ally; AI uses before slow allies; counter by acting first or Speed Poison | Tooltip: `Unresolved allies gain 2 Speed for this round.` Log: `<actor> raised War Tempo for <allies>.` |
-| Keep the Measure | Passive Signature; support; second adjacent allied committed action each round | Drummer gains +1 Power next action; once/round; Aggressive +2, Protective neighbors +1 Defense current round | Fewer than two adjacent actions, no trigger; AI stays central; counter by rotation | Tooltip: `Once per round after two neighboring allies act, gain 1 Power next action.` Log: `<actor> kept the measure and gained <bonus> Power.` |
+| Marching Beat | Active Opener; Advantage/support; one ally; CD 2 | Grant chosen ally Advantage | Reject no eligible rider; AI chooses unresolved ally; counter by forcing expiry | Tooltip: `Grant one eligible ally Advantage until round end.` Log: `<actor>'s Marching Beat granted <ally> Advantage.` |
+| Crushing Cadence | Active Converter; offense; enemy hit by ally this round; CD 2 | Deal 120% Power; Advantage rider deals 150% | Reject no prior hit; AI follows ally; counter by spreading targets | Tooltip: `After an ally hits, deal 120% Power; with Advantage, deal 150%.` Log: `<actor> struck <target> on cadence for <damage>.` |
+| War Tempo | Active Pivot; Armor/support; all allies; CD 5 | Each active ally gains 3 Armor | Reject fewer than two allies able to gain Armor; AI uses before retaliation; counter with status damage | Tooltip: `All active allies gain 3 Armor.` Log: `<actor> raised War Tempo; <allies> gained 3 Armor.` |
+| Keep the Measure | Passive Signature; Armor; second neighboring allied action each round | Drummer gains 3 Armor; once per round | Fewer than two neighboring actions, no trigger; AI stays central; counter by rotation | Tooltip: `Once per round after two neighboring allies act, gain 3 Armor.` Log: `<actor> kept the measure and gained 3 Armor.` |
 
 ## Class 6: Siegebreaker
 
-**Role:** Anti-Defense heavy striker. **Rhythm:** Test armor, sunder it, finish under contact. **Weakness:** Slowest Orc and easy to rotate away. **Stats:** 25 Health, 8 Power, 2 Speed, 3 Defense.
+**Role:** Anti-Armor heavy striker. **Rhythm:** Test Armor, break its remaining points, finish under contact. **Weakness:** Slowest Orc and easy to rotate away. **Stats:** 25 Health, 8 Power, 2 Speed, 3 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
-| Test the Guard | Active Opener; offense/debuff; one neighboring enemy; CD 1 | Deal 110% Power; apply Sunder -1 Defense for 2 rounds; max 1/source, refresh | Reject no neighbor; AI picks high Defense; counter with rotation/Cleanse | Tooltip: `Deal 110% Power and reduce Defense by 1 for 2 rounds.` Log: `<actor> tested <target>'s guard for <damage>.` |
-| Sunder | Active Converter; offense/debuff; Sundered enemy; CD 3 | Deal 140% Power; increase this source's penalty to -2 and refresh 2 rounds, cap -2 | Reject no source Sunder; AI focuses same target; counter by Cleanse/Guard | Tooltip: `Deal 140% Power and deepen your Sunder to 2 Defense for 2 rounds.` Log: `<actor> sundered <target> for <damage>; Defense -2.` |
-| Demolishing Blow | Active Pivot; offense/capstone; neighboring Sundered enemy; CD 5 | Deal 210% Power, then remove this source's Sunder | Reject no contact/Sunder; AI seeks lethal; counter by rotation or shield | Tooltip: `Deal 210% Power to a neighboring Sundered enemy, then remove Sunder.` Log: `<actor> demolished <target> for <damage>.` |
-| Weight Behind It | Passive Signature; offense; first consecutive-round attack on same enemy | Ignore 1 Defense; once/round; Aggressive ignore 2, Protective gain +1 Defense through action | Target changed/no prior-round contact, no trigger; AI persists; counter by rotating target | Tooltip: `Once per round, repeated contact with the same enemy ignores 1 Defense.` Log: `<actor> put its weight behind the blow, ignoring <amount> Defense.` |
+| Test the Plate | Active Opener; offense/Armor; neighboring enemy; CD 1 | Remove up to 2 enemy Armor, then deal 110% Power | Reject no neighbor; AI targets highest Armor; counter by rotating target | Tooltip: `Remove up to 2 Armor, then deal 110% Power.` Log: `<actor> broke <removed> Armor and hit <target> for <damage>.` |
+| Crack Armor | Active Converter; offense/Armor; enemy that lost Armor this round; CD 3 | Remove up to 3 Armor, then deal 140% Power; Advantage rider removes up to 5 | Reject no prior Armor loss; AI focuses armored target; counter by spending Armor earlier | Tooltip: `After Armor is lost, remove up to 3 more and deal 140% Power.` Log: `<actor> cracked <removed> Armor and dealt <damage> to <target>.` |
+| Demolishing Blow | Active Pivot; offense/capstone; neighboring enemy; CD 5 | Deal 210% Power, ignoring Armor | Reject no contact; AI seeks lethal armored target; counter with Defense or rotation | Tooltip: `Deal 210% Power to a neighboring enemy, ignoring Armor.` Log: `<actor> demolished <target> for <damage>.` |
+| Weight Behind It | Passive Signature; Armor; first consecutive-round attack on same enemy | Gain 3 Armor after attack; once per round | Target changed/no prior-round attack, no trigger; AI persists; counter by rotating target | Tooltip: `Once per round after attacking the same enemy in consecutive rounds, gain 3 Armor.` Log: `<actor>'s weight granted 3 Armor.` |
 
 ## Role Summary
 
 | Class | Primary job | Signature mechanic |
 |---|---|---|
 | Iron Tusk Vanguard | Anchor | Contact protection |
-| Bonebreaker Reaver | Bruiser | Controlled-target payoff |
-| Bloodbanner Captain | Support | Formation durability |
-| Chainwarden | Controller | Movement mark and bounded Stun |
+| Bonebreaker Reaver | Bruiser | Moved/Stunned-target payoff |
+| Bloodbanner Captain | Support | Group Armor |
+| Chainwarden | Controller | Forced movement and bounded Stun |
 | War Drummer | Cadence support | Local unresolved Speed |
-| Siegebreaker | Specialist striker | Non-Poison Defense sunder |
+| Siegebreaker | Specialist striker | Armor destruction and bypass |
