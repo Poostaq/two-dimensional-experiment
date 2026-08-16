@@ -19,10 +19,10 @@ A coordinated warband of dangerous, imperfect species wins through timing, press
 | Race | Mechanical promise | Primary profile | Weakness |
 |---|---|---|---|
 | Goblins | Create openings that other allies convert | Advantage, sequencing, disruption | Low durability and poor isolated trades |
-| Orcs | Break enemy plans after establishing contact | Lane control, bounded Stun, physical pressure | Slow tempo and vulnerability to kiting |
+| Orcs | Break enemy plans after establishing contact | Armor, lane control, bounded Stun | Slow tempo and vulnerability to kiting |
 | Werewolves | Punish wounded targets and recover through offense | Leech, execution, Bleed tracking | Weak when denied wounded targets or pursuit |
 | Lizardmen | Make enemy actions less effective over time | Single-axis Poison and patient control | Vulnerable before attrition ramps |
-| Harpies | Decide who is exposed through formation rotation | Move, isolation, conditional Advantage | Fragile in static or prolonged trades |
+| Harpies | Change ring relationships through formation rotation | Move 1-3 and movement-gated Advantage | Fragile in static or prolonged trades |
 
 ## Six Classes Per Race
 
@@ -50,7 +50,7 @@ Race class documents assign exact templates inside these bands. A defensive Gobl
 
 1. At least four Goblin kits use sequencing or coalition setup; no other race exceeds two.
 2. Goblins grant Advantage through initiative and ally order. Harpies grant it only after successful movement, exposure, or isolation.
-3. Stun is single-target, guarded against repetition, and available to no more than two Orc classes.
+3. Tough Orc front liners use Armor rather than Bleed; Stun is single-target, guarded against repetition, and available to no more than two Orc classes.
 4. Every Poison skill declares exactly one weakened axis.
 5. Leech is offense-dependent recovery and does not replace dedicated protection.
 6. Bleed remains shared physical pressure, not a complete race identity.

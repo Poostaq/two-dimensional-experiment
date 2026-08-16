@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document is the canonical contract for named combat keywords. Race and class documents may assign these keywords, but they must not redefine them. Formation movement and unnamed effects such as Guard or Cleanse are documented in `FormationMovement.md` and `SkillAuthoringContract.md`.
+This document is the canonical contract for named combat keywords. Race and class documents may assign these keywords, but they must not redefine them. Formation movement is documented separately in `FormationMovement.md`. Class skills may use direct damage, formation movement, cooldowns and requirements, plus only the mechanics defined here.
 
 ## Shared Rules
 
@@ -13,6 +13,19 @@ This document is the canonical contract for named combat keywords. Race and clas
 - Durations use `committed action`, `next eligible action`, or `round`, never bare `turn`.
 - Effective Power and Speed cannot fall below 1. Effective Defense cannot fall below 0.
 - A tooltip states application, trigger, duration, cap, and reapplication behavior. A log entry identifies source, target, result, stacks, and remaining duration.
+
+## Armor
+
+Armor is a consumable pool of damage prevention.
+
+- **Application:** Add the stated number of Armor points to the target's current pool.
+- **Resolution:** After Defense reduces a direct-damage hit, spend one Armor point for each remaining damage point prevented.
+- **Persistence:** Unspent Armor remains until consumed or battle end.
+- **Stacking:** Armor adds to a maximum pool of 10.
+- **Exclusions:** Armor does not prevent Bleed, Poison, self-paid HP costs, or effects explicitly declared to ignore Armor.
+- **Zero damage:** A fully absorbed hit deals zero HP damage but still counts as a direct hit.
+- **Tooltip pattern:** `Gain <amount> Armor. Each Armor prevents 1 direct damage after Defense and is consumed.`
+- **Log pattern:** `<target>'s Armor prevented <prevented> damage; <remaining> Armor remains.`
 
 ## Bleed
 
@@ -77,7 +90,7 @@ Leech is offense-dependent recovery, not general healing.
 
 - **Application:** A direct offensive skill declares a Leech ratio from 25% through 40% unless a capstone explicitly permits 50%.
 - **Healing:** `floor(actual direct HP damage * ratio)`, with a minimum of 1 only when actual damage is greater than zero.
-- **Damage basis:** Use applied damage after Defense and exclude overkill, Guard absorption, status damage, reflected damage, and counter damage.
+- **Damage basis:** Use applied HP damage after Defense and Armor and exclude overkill, status damage, reflected damage, and counter damage.
 - **Timing:** Resolve after all direct damage from the skill and before final battle-result evaluation.
 - **Limits:** Healing cannot exceed missing HP. A defeated actor receives no Leech healing.
 - **Multi-target skills:** Sum eligible actual damage, then apply the ratio once unless the skill explicitly declares a per-target cap.
@@ -87,7 +100,7 @@ Leech is offense-dependent recovery, not general healing.
 ## Race Profiles
 
 - Goblins: Advantage primary; Bleed secondary on physical opportunists.
-- Orcs: Stun is bounded to specialist control; Bleed is secondary physical pressure.
+- Orcs: Armor primary for front liners; Stun is bounded to specialist control. Bleed is not part of the Orc profile.
 - Werewolves: Leech primary; Bleed secondary for tracking and wounded-target play.
 - Lizardmen: Poison primary; Advantage secondary only through degradation-based ally setup.
 - Harpies: formation movement is primary; Advantage follows successful exposure or isolation; Bleed is limited to one physical branch.

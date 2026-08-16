@@ -12,7 +12,7 @@ This matrix verifies documentary readiness for the five core races, 30 implement
 | RD-2 | Each race has exactly six distinct classes | `Docs/Races/*/Classes.md` | Five files each contain six numbered class headings; uniqueness summaries identify different jobs and signature mechanics | Complete |
 | RD-3 | Each class has exactly four authored skills | All five `Classes.md`; `Docs/Mechanics/SkillAuthoringContract.md` | Each class file contains 24 Active/Passive skill rows; total is 120 | Complete |
 | RD-3A | Skills specify trigger, duration, stacks/refresh, cooldown, failure, UI, AI, and counterplay | Class-file inheritance preambles and every skill row | Shared defaults explicitly set unlisted fields to `None`; every row states record, effect/lifecycle, failure/AI/counterplay, tooltip, and log | Complete |
-| RD-4 | Keyword usage is race-consistent and readable | `Docs/Mechanics/SkillKeywords.md`; race profiles and skill rows | Five canonical headings; tooltip/log patterns; assigned race profiles; class wording references canonical behavior | Complete |
+| RD-4 | Keyword usage is race-consistent and readable | `Docs/Mechanics/SkillKeywords.md`; race profiles and skill rows | Six canonical headings; tooltip/log patterns; assigned race profiles; class wording references canonical behavior | In revision |
 | RD-5 | Stats stay inside race ranges and support roles | Baseline guide stat bands and 30 class headers | Automated range audit plus class role/weakness review | Complete |
 | RD-6 | Three synergies and two counters per race | Five `Lore.md` files | Every file contains three numbered positive synergies and two numbered counterplay cases | Complete |
 | RD-7 | Goblins remain unique tempo/disruption glue | Goblin identity safeguard, guide guardrails, all role summaries | At least four Goblin kits use sequencing/setup; non-Goblin setup is gated by race identity and no other race exceeds two coalition-setup kits | Complete |
@@ -35,7 +35,7 @@ This matrix verifies documentary readiness for the five core races, 30 implement
 | Race | Owned design space | Explicit exclusions |
 |---|---|---|
 | Goblins | Early sequencing, broadly accessible Advantage, coalition action order | Movement cannot isolate better than Harpies; low fair-trade power |
-| Orcs | Contact, Guard, anti-movement, specialist Stun | No broad initiative theft; no routine multi-target Stun |
+| Orcs | Contact, consumable Armor, specialist Stun | No Bleed profile, broad initiative theft, or routine multi-target Stun |
 | Werewolves | Wounded thresholds, pursuit, direct-damage Leech | No conventional healer; status damage cannot Leech |
 | Lizardmen | Long attrition and one-axis Poison planning | One skill cannot weaken several axes; axes never merge |
 | Harpies | Move 2-3 rotation, changed neighbors, exposure/isolation | Advantage requires successful hostile movement or isolation |
@@ -59,13 +59,12 @@ GodotIQ inspection of `CharacterSkill`, `BattleSkillRules`, and `BattleUnitState
 The design is ready for implementation planning, but runtime work must add:
 
 1. Power and Defense fields and the approved damage formula.
-2. Direct healing and actual-damage-based Leech.
+2. Consumable Armor and actual-damage-based Leech.
 3. Typed status ownership, snapshots, caps, refresh, expiry, and battle cleanup.
 4. Bleed, Poison, Stun, Stun Guard, and Advantage behavior.
 5. Six-slot ring path calculation, selected direction, atomic occupied-path rotation, and two-unit swap distinction.
-6. Guard, shields, Cleanse, Exposed, Isolated, movement lock, marks, and temporary Power/Defense changes.
-7. Passive trigger ordering and recursion guards.
-8. Status-aware previews, tooltip generation, combat logs, AI eligibility, save boundaries, and tests.
+6. Passive trigger ordering and recursion guards.
+7. Status-aware previews, tooltip generation, combat logs, AI eligibility, save boundaries, and tests.
 
 These are declared dependencies, not hidden assumptions or claims about current behavior.
 
@@ -73,7 +72,7 @@ These are declared dependencies, not hidden assumptions or claims about current 
 
 Implementation tests must cover:
 
-- apply, cap, reapply, expire, Cleanse, source defeat, target defeat, and battle teardown for every status;
+- apply, cap, reapply, expire, source defeat, target defeat, and battle teardown for every status;
 - no mutation on preview, cancellation, rejection, stale confirmation, or invalid path;
 - clockwise and counterclockwise Move 1-3, both Move 3 paths, partial occupancy, full occupancy, defeat-created empty slots, and exact shift order;
 - exact tooltip and log snapshots for every effect family;

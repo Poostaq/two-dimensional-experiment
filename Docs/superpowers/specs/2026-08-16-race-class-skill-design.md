@@ -25,9 +25,9 @@ Shared rules are referenced from race documents instead of being redefined in th
 |---|---|---|
 | Goblins | Tempo, disruption, and coalition sequencing | Scrapshield Bruiser, Wirefang Skirmisher, Snarewright, Scrapbroker, Shivrunner, Mobcaller |
 | Orcs | Contact, lane dominance, and bounded interruption | Iron Tusk Vanguard, Bonebreaker Reaver, Bloodbanner Captain, Chainwarden, War Drummer, Siegebreaker |
-| Werewolves | Wounded-target hunting and aggressive recovery | Moonfang Skirmisher, Pack Howler, Bloodtrail Stalker, Duskhide Ravager, Den Warden, Moonblood Seer |
+| Werewolves | Wounded-target hunting and offense-driven recovery | Moonfang Skirmisher, Pack Howler, Bloodtrail Stalker, Duskhide Ravager, Den Warden, Moonblood Seer |
 | Lizardmen | Patient attrition and single-axis toxin planning | Venom Saurian, Scale Sentinel, Mire Spitter, Fang Alchemist, Reed Ambusher, Sunscale Warder |
-| Harpies | Exposure, isolation, and formation disruption | Talon Duelist, Storm Siren, Gale Scout, Skyhook Raider, Nestguard, Carrion Cantor |
+| Harpies | Long-range ring movement and formation disruption | Talon Duelist, Storm Siren, Gale Scout, Skyhook Raider, Nestguard, Carrion Cantor |
 
 No two classes within one race may share the same combination of primary job, tactical rhythm, and signature mechanic.
 
@@ -38,13 +38,14 @@ Every class has exactly four character-specific skills: three Active skills and 
 Progression uses three tiers:
 
 1. Tier 1 unlocks the Opener and Converter so the class identity works immediately.
-2. Tier 2 selects one of two mutually exclusive passive variants, aggressive or protective. The selection is reversible between battles.
+2. Tier 2 unlocks the class's single Signature Passive.
 3. Tier 3 unlocks the Pivot and one cross-race upgrade to an existing skill.
 
 No new mana or race-specific resource system is part of the initial roster. Cooldowns, position, health thresholds, statuses, and party sequencing provide the action economy.
 
 ## Canonical Mechanics
 
+- **Armor:** A consumable pool; after Defense, each Armor point prevents 1 direct damage and is spent. Unused points persist until consumed or battle end.
 - **Bleed:** Triggers after the affected unit commits an action, lasts two affected-unit actions by default, has a maximum of three stacks, and gains one stack plus refreshed duration when reapplied.
 - **Poison:** Triggers at round end, lasts three rounds by default, has a maximum of three stacks, and reduces exactly one declared axis: Power, Defense, or Speed.
 - **Stun:** Skips the next eligible action, cannot stack or refresh, and grants Stun Guard until the target completes its next action. A class has at most one single-target Stun skill with cooldown 4-5 and another requirement.
@@ -79,7 +80,7 @@ Every movement skill declares the moving side, maximum range, path ownership, an
 
 Direct physical damage is `max(1, ceil(Power * skill multiplier) - effective Defense)`. Effective Power and Speed have a floor of 1; effective Defense has a floor of 0. Healing is capped at missing HP.
 
-Resolution order is fresh validation, target and path lock, direct damage, movement or Guard, status application, Leech or healing, cooldown application, authoritative log/history commit, defeat/result evaluation, action advancement, then applicable status ticks.
+Resolution order is fresh validation, target and path lock, direct damage through Defense then Armor, movement, keyword application or consumption, Leech, cooldown application, authoritative log/history commit, defeat/result evaluation, action advancement, then applicable status ticks.
 
 Durations never use bare `turn`. Skill text uses `committed action`, `next eligible action`, or `round`.
 
@@ -98,7 +99,7 @@ Durations never use bare `turn`. Skill text uses `committed action`, `next eligi
 
 The current runtime supports four character skills, Active and Passive kinds, damage, temporary Speed boosts, positional and health requirements, cooldowns, atomic confirmation, generic combos, action history, and unresolved-queue rebuilding.
 
-Implementation still requires typed support for Power and Defense resolution, healing and Leech, general status ownership and lifecycle, Bleed, Poison, Stun, Advantage, forced movement and path rotation, Guard, cleanse, passive trigger ordering and recursion guards, and status-aware previews, tooltips, logs, and AI validation.
+Implementation still requires typed support for Power and Defense resolution, Armor, Leech, general status ownership and lifecycle, Bleed, Poison, Stun, Advantage, forced movement and path rotation, passive trigger ordering and recursion guards, and status-aware previews, tooltips, logs, and AI validation.
 
 ## Acceptance Criteria
 
