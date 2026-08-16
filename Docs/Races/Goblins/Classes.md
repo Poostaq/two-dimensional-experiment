@@ -6,7 +6,7 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 
 ## Class 1: Scrapshield Bruiser
 
-**Role:** Nuisance anchor and adjacent protector. **Rhythm:** Claim a front slot, protect a neighbor, then drag an enemy into an allied conversion. **Weakness:** Lowest Goblin tempo and limited damage. **Stats:** Health 20, Power 4, Speed 7, Defense 2.
+**Role:** Nuisance anchor and adjacent protector. **Rhythm:** Claim a front slot, protect a neighbor, then drag an enemy into an allied conversion. **Weakness:** Lowest Goblin tempo and limited damage. **Stats:** 20 Health, 4 Power, 7 Speed, 2 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
@@ -17,7 +17,7 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 
 ## Class 2: Wirefang Skirmisher
 
-**Role:** Fast setup striker. **Rhythm:** Rotate into position, grant Advantage, then exploit a later opening. **Weakness:** Extremely fragile. **Stats:** Health 14, Power 6, Speed 10, Defense 0.
+**Role:** Fast setup striker. **Rhythm:** Rotate into position, grant Advantage, then exploit a later opening. **Weakness:** Extremely fragile. **Stats:** 14 Health, 6 Power, 10 Speed, 0 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
@@ -28,7 +28,7 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 
 ## Class 3: Snarewright
 
-**Role:** Movement controller. **Rhythm:** Mark a path, punish rotation, and hand the displaced target to an ally. **Weakness:** Low direct output when enemies stay still. **Stats:** Health 16, Power 4, Speed 9, Defense 1.
+**Role:** Movement controller. **Rhythm:** Mark a path, punish rotation, and hand the displaced target to an ally. **Weakness:** Low direct output when enemies stay still. **Stats:** 16 Health, 4 Power, 9 Speed, 1 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
@@ -39,7 +39,7 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 
 ## Class 4: Scrapbroker
 
-**Role:** Utility support and debuff relief. **Rhythm:** Identify a weakness, reinforce a converter, then repair disruption. **Weakness:** Lowest Goblin Power. **Stats:** Health 18, Power 3, Speed 8, Defense 1.
+**Role:** Utility support and debuff relief. **Rhythm:** Identify a weakness, reinforce a converter, then repair disruption. **Weakness:** Lowest Goblin Power. **Stats:** 18 Health, 3 Power, 8 Speed, 1 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
@@ -50,7 +50,7 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 
 ## Class 5: Shivrunner
 
-**Role:** Opportunistic Bleed finisher. **Rhythm:** Cut after an ally, relocate, then cash in Bleed. **Weakness:** Lowest Health and no Defense. **Stats:** Health 12, Power 7, Speed 10, Defense 0.
+**Role:** Opportunistic Bleed finisher. **Rhythm:** Cut after an ally, relocate, then cash in Bleed. **Weakness:** Lowest Health and no Defense. **Stats:** 12 Health, 7 Power, 10 Speed, 0 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
@@ -61,7 +61,7 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 
 ## Class 6: Mobcaller
 
-**Role:** Coalition coordinator. **Rhythm:** Nominate a target, accumulate distinct allied pressure, then reposition the team. **Weakness:** Requires several surviving allies. **Stats:** Health 17, Power 4, Speed 9, Defense 1.
+**Role:** Coalition coordinator. **Rhythm:** Nominate a target, accumulate distinct allied pressure, then reposition the team. **Weakness:** Requires several surviving allies. **Stats:** 17 Health, 4 Power, 9 Speed, 1 Defense.
 
 | Skill | Record | Effect and lifecycle | Failure, AI, counterplay | UI text |
 |---|---|---|---|---|
@@ -80,4 +80,3 @@ All skills inherit `Docs/Mechanics/SkillAuthoringContract.md` and keyword rules.
 | Scrapbroker | Utility support | Flexible buff and Cleanse | Emergency Parts heals a second ring neighbor for 25% Power |
 | Shivrunner | Finisher | Prior-ally and Bleed payoff | Collect the Cut preserves Bleed when a different race applied it |
 | Mobcaller | Coalition support | Distinct-attacker scaling | Louder Together uses its stronger variant for different-race allies |
-

@@ -78,11 +78,11 @@ Run:
 
 ```powershell
 rg -n "^## Class [1-6]:" Docs/Races/Goblins/Classes.md
-rg -n "^### Skill [1-4]:" Docs/Races/Goblins/Classes.md
+rg -n "^\| [^|]+ \| (Active|Passive)" Docs/Races/Goblins/Classes.md
 rg -ni "ignite|kobold|gnoll" Docs/Races/Goblins Docs/Races/MONSTER_RACE_DESIGN_GUIDE_INITIAL_DRAFT.md
 ```
 
-Expected: six class headings, 24 skill headings, and no stale race or Ignite references.
+Expected: six class headings, 24 authored skill rows, and no stale race or Ignite references.
 
 ```powershell
 git add Docs/Races/MONSTER_RACE_DESIGN_GUIDE_INITIAL_DRAFT.md Docs/Races/Goblins
@@ -167,7 +167,7 @@ $raceFiles = Get-ChildItem Docs/Races -Recurse -Filter Classes.md
 $raceFiles.Count
 foreach ($file in $raceFiles) {
     $classes = (Select-String -Path $file.FullName -Pattern '^## Class [1-6]:' -AllMatches).Count
-    $skills = (Select-String -Path $file.FullName -Pattern '^### Skill [1-4]:' -AllMatches).Count
+    $skills = (Select-String -Path $file.FullName -Pattern '^\| [^|]+ \| (Active|Passive)' -AllMatches).Count
     "{0}: classes={1}, skills={2}" -f $file.FullName, $classes, $skills
 }
 rg -ni "ignite" Docs/Mechanics Docs/Races
