@@ -91,4 +91,3 @@ Leech is offense-dependent recovery, not general healing.
 - Werewolves: Leech primary; Bleed secondary for tracking and wounded-target play.
 - Lizardmen: Poison primary; Advantage secondary only through degradation-based ally setup.
 - Harpies: formation movement is primary; Advantage follows successful exposure or isolation; Bleed is limited to one physical branch.
-

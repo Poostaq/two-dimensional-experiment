@@ -40,4 +40,3 @@ Harpies produce the strongest forced movement. They rotate occupied paths, chang
 
 1. **Anti-movement:** Movement locks reject Harpy paths before their damage, exposure, Advantage, and cooldown resolve.
 2. **Prolonged pressure:** Guarded formations, area damage, and repeated direct trades exploit Harpy durability once Pivot cooldowns begin.
-

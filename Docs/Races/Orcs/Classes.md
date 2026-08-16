@@ -80,4 +80,3 @@ All skills inherit the shared mechanics contract. `CD N` is post-use cooldown in
 | Chainwarden | Controller | Movement mark and bounded Stun |
 | War Drummer | Cadence support | Local unresolved Speed |
 | Siegebreaker | Specialist striker | Non-Poison Defense sunder |
-

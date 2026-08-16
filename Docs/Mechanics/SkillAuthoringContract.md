@@ -71,4 +71,3 @@ Tier upgrades add no skill slots. The initial roster uses no mana or race-specif
 Current runtime support includes four-skill rosters, Active/Passive kinds, damage, Speed boosts, positional and health requirements, cooldowns, atomic confirmation, generic combos, history, and unresolved-queue rebuilding.
 
 Dependencies still needed are Power/Defense resolution, healing, general statuses, Bleed, Poison, Stun, Advantage, Leech, ring rotation, Guard, Cleanse, passive ordering, and status-aware preview, tooltip, log, and AI rules. Class documents describe desired behavior and do not imply these already exist.
-

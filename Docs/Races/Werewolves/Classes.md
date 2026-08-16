@@ -80,4 +80,3 @@ All skills inherit the shared mechanics contract. `CD N` is post-use cooldown in
 | Duskhide Ravager | Sustain bruiser | Self-risk Leech |
 | Den Warden | Protector | Interception without healing |
 | Moonblood Seer | Predictive support | Wounded-threshold omen |
-

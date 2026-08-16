@@ -31,4 +31,3 @@ A commander retains the base class's four-slot limit. One class skill is replace
 ## Party Function
 
 Brakka is a front-line anchor and coalition tempo setter. Replacing Pack Wall reduces automatic neighbor protection, so she remains meaningfully less defensive than a standard Scrapshield Bruiser while improving mixed-race sequencing.
-

@@ -80,4 +80,3 @@ All skills inherit shared mechanics and the Exposed/Isolated definitions in `Lor
 | Skyhook Raider | Extractor | Isolated target payoff |
 | Nestguard | Protector | Rescue swap and Guard |
 | Carrion Cantor | Pressure support | Narrow physical Bleed branch |
-

@@ -48,4 +48,3 @@ Goblins act early, alter sequencing, create Advantage, and turn allied follow-up
 ## Identity Safeguard
 
 Wirefang Skirmisher, Snarewright, Scrapbroker, and Mobcaller all contain explicit sequencing or coalition setup. Shivrunner also rewards a prior allied action. No non-Goblin race may exceed two such kits, ensuring Goblins remain the coalition's tempo/disruption glue.
-

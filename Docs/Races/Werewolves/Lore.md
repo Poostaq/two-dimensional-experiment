@@ -36,4 +36,3 @@ Werewolves identify wounded targets, pursue them, execute, and recover through d
 
 1. **Threshold denial:** Guard, shields, and healing keep targets above half HP and disable execution skills.
 2. **Peel:** Forced rotation and movement locks separate hunters from marked or Bleeding prey.
-

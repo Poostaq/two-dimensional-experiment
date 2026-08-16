@@ -38,4 +38,3 @@ Lizardmen select one stat axis, apply Poison, constrain options, and win through
 
 1. **Early burst:** Focus the toxin specialist before the second and third stack create efficiency.
 2. **Cleanse and axis switching:** Remove the invested axis, then force the Lizardman to rebuild rather than letting several axes merge.
-

@@ -53,4 +53,3 @@ The successful rotation is one atomic transition and one logical history record.
 ## Skill Authoring Requirements
 
 Every movement effect declares mover, affected side, maximum Move 1-3, direction choice, rotation or swap semantics, whether secondary effects evaluate before or after movement, failure text, and combat-log text.
-

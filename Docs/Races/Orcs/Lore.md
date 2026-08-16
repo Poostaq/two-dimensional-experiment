@@ -38,4 +38,3 @@ Orc status comes from responsibility under pressure. Mechanically, they establis
 
 1. **Kiting:** Repeated ring rotation and Speed control prevent Orcs from maintaining the same target.
 2. **Control resistance:** Stun Guard, Cleanse, and movement immunity break the Chainwarden's decisive window.
-

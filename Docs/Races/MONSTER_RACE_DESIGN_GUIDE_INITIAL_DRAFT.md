@@ -81,4 +81,3 @@ Every class uses the common three-tier ladder and exactly four class skills defi
 ## Alternate Race Concepts
 
 Minotaurs, Insectoids, Naga, Demonkin, and Ratkin remain possible future races. They receive no reserved keyword until a later design establishes a distinct mechanic that does not duplicate the core five.
-
