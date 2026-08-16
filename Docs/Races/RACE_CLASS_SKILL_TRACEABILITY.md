@@ -83,4 +83,3 @@ Implementation tests must cover:
 - Poison axis separation, floors, queue rebuild, and source snapshots;
 - Passive once guards and recursion prevention;
 - all 30 templates and 120 skills loading into four-slot character definitions.
-
