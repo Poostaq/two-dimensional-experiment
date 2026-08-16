@@ -26,7 +26,7 @@ Lizardmen select one stat axis, apply Poison, constrain options, and win through
 
 - Slow kill speed before stacks accumulate.
 - Early burst can remove the applier before conversion.
-- Cleanse sharply reduces invested value.
+- Defeating a toxin source early sharply reduces invested value.
 
 ## Positive Synergies
 
@@ -37,4 +37,4 @@ Lizardmen select one stat axis, apply Poison, constrain options, and win through
 ## Counterplay
 
 1. **Early burst:** Focus the toxin specialist before the second and third stack create efficiency.
-2. **Cleanse and axis switching:** Remove the invested axis, then force the Lizardman to rebuild rather than letting several axes merge.
+2. **Axis switching:** Pressure a different stat axis than the Lizardman prepared to exploit, preventing one plan from converting every stack.

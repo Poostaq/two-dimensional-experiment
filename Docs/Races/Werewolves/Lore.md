@@ -24,15 +24,15 @@ Werewolves identify wounded targets, pursue them, execute, and recover through d
 
 - Low Defense and risky commitment.
 - Protection and healing can deny wounded thresholds.
-- Rotation, movement locks, and peel break pursuit.
+- Hostile rotation and changed occupancy break pursuit.
 
 ## Positive Synergies
 
 1. **Wirefang Skirmisher + Moonfang Skirmisher:** Advantage turns Moonfang Finish into a stronger execution window.
 2. **Venom Saurian + Duskhide Ravager:** Power Poison lowers retaliation while the Ravager sustains through direct damage.
-3. **Gale Scout + Bloodtrail Stalker:** Successful isolation grants Advantage and lets Follow the Trail reach the exposed target.
+3. **Gale Scout + Bloodtrail Stalker:** Successful forced movement grants Advantage and lets Follow the Trail reach the displaced target.
 
 ## Counterplay
 
 1. **Threshold denial:** Guard, shields, and healing keep targets above half HP and disable execution skills.
-2. **Peel:** Forced rotation and movement locks separate hunters from marked or Bleeding prey.
+2. **Peel:** Forced rotation changes the path between hunters and Bleeding prey.
