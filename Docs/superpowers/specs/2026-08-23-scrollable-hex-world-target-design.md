@@ -214,9 +214,22 @@ world.sudden_death_active
 - For generator version `1`, loading then serializing without mutation must reproduce byte-identical `canonical_plan_utf8`.
 - A save with a supported older generator version loads its stored complete plan through that version's read-only parser; it is not regenerated or silently upgraded with newer generation rules.
 - A save whose generator version has no supported parser fails atomically with `WORLD_VERSION_UNSUPPORTED`, remains unmodified, and returns to the save-selection or pre-run surface with copyable diagnostics.
-- A pre-cutover 25-cell save has no 217-cell canonical plan. During the migration compatibility window, it loads only through the frozen legacy world path and may finish as a legacy run; it cannot be converted in place to radius 8.
-- The migration specification must declare the compatibility-window end. After that version, selecting a legacy save returns `LEGACY_WORLD_SAVE_UNSUPPORTED` without modifying or deleting the file.
+- A pre-cutover 25-cell save has no 217-cell canonical plan. Before the production cutover commit, it remains owned exclusively by the frozen 25-cell production path; it cannot be converted in place to radius 8.
+- The migration authority defines a zero-duration post-cutover compatibility window: legacy loading ends at the exact production cutover commit `C`. In `C` and every descendant, selecting a recognized 25-cell save returns `LEGACY_WORLD_SAVE_UNSUPPORTED` without modifying or deleting the file.
 - No load failure may replace, truncate, migrate, or delete the source save automatically.
+
+### Canonical world failure taxonomy
+
+The following codes are disjoint and no adapter may substitute one for another:
+
+| Code | Exact trigger | Required boundary behavior |
+|---|---|---|
+| `WORLD_CONSTRAINT_UNSATISFIABLE` | A supported Generator configuration completes deterministic exhaustive search without a valid full plan | Return generation failure atomically; publish no plan |
+| `WORLD_GENERATION_INTERNAL_ERROR` | An unexpected exception or invariant failure occurs inside generation or its run-start boundary | Convert at the boundary; preserve diagnostic cause outside release UI; publish no plan |
+| `WORLD_VERSION_UNSUPPORTED` | A structurally recognized canonical-world save declares a generator version for which the build has no read-only parser | Reject load atomically; do not regenerate, upgrade, or mutate the save |
+| `LEGACY_WORLD_SAVE_UNSUPPORTED` | A structurally recognized pre-cutover 25-cell save lacks the canonical world-plan contract | Reject load atomically; do not reinterpret it as a Generator-version failure |
+
+Dispatch order is structural envelope recognition, legacy-format recognition, generator-version dispatch, stored-plan validation, and only then run restoration. A recognized legacy envelope always maps to `LEGACY_WORLD_SAVE_UNSUPPORTED`; a recognized canonical-world envelope with an unavailable parser always maps to `WORLD_VERSION_UNSUPPORTED`. Neither load failure converts to a generation failure because generation is not invoked. Constraint failures convert to `WORLD_GENERATION_INTERNAL_ERROR` only when an unexpected implementation fault prevents the declared deterministic result; a valid unsatisfiable result retains `WORLD_CONSTRAINT_UNSATISFIABLE`. Malformed or unrecognized general save envelopes remain owned by the future run-save specification and may not be mislabeled as any of these four world failures.
 
 ## Encounter and terrain layers
 
