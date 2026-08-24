@@ -1,0 +1,27 @@
+{
+  "implementation_sha": "033c38bee8acf572920f562373c6bd7af80d8c7b",
+  "validate": {
+    "target": "project",
+    "files_checked": 77,
+    "scenes_checked": 5,
+    "errors": 0,
+    "warnings": 8,
+    "info": 3
+  },
+  "check_errors": {
+    "scope": "project",
+    "scripts_checked": 77,
+    "total": 0
+  },
+  "orphan_signal_audit": {
+    "defined": 15,
+    "emissions": 29,
+    "connections": 48,
+    "pre_existing_orphans": [
+      "battle_completed",
+      "hover_changed"
+    ],
+    "generator_v1_orphans": []
+  },
+  "result": "PASS_WITH_PRE_EXISTING_WARNINGS"
+}

@@ -1,0 +1,8 @@
+IMPLEMENTATION_SHA 033c38bee8acf572920f562373c6bd7af80d8c7b
+RUN res://Tests/WorldMap/test_generator_v1_fixture_integrity.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() ??? debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_generator_v1_fixture_integrity
+EXIT 0
