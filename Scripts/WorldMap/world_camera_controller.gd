@@ -44,6 +44,11 @@ func pan_by(pointer_delta: Vector2) -> void:
 	_clamp_position()
 
 
+func center_on(world_position: Vector2) -> void:
+	position = world_position
+	_clamp_position()
+
+
 func begin_drag(pointer_position: Vector2) -> void:
 	_dragging = true
 	_last_drag_position = pointer_position

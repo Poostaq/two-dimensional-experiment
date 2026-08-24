@@ -2,7 +2,7 @@ class_name WorldCameraControllerTests
 extends SceneTree
 
 const SCRIPT_PATH := "res://Scripts/WorldMap/world_camera_controller.gd"
-const EXPECTED_TEST_COUNT := 21
+const EXPECTED_TEST_COUNT := 23
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -81,7 +81,13 @@ func _run() -> void:
 		release.pressed = false
 		release.position = motion.position
 		camera.call("_unhandled_input", release)
-		_expect(not bool(camera.call("is_dragging")), "left-button release ends drag")
+	_expect(not bool(camera.call("is_dragging")), "left-button release ends drag")
+
+	var has_center_api := camera.has_method("center_on")
+	_expect(has_center_api, "camera exposes initial-focus centering")
+	if has_center_api:
+		camera.call("center_on", Vector2(120.0, -80.0))
+		_expect(camera.position == Vector2(120.0, -80.0), "camera centers on an in-bounds player position")
 
 	camera.queue_free()
 	await process_frame

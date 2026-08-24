@@ -89,6 +89,10 @@ func get_camera_footprint() -> PackedVector2Array:
 	return _camera_footprint.points.duplicate()
 
 
+func get_plan_instance_id() -> int:
+	return _plan.get_instance_id() if is_instance_valid(_plan) else 0
+
+
 func _add_cell(coord: Vector2i, data: Dictionary) -> void:
 	var cell := Polygon2D.new()
 	cell.name = "Cell_%d_%d" % [coord.x, coord.y]
