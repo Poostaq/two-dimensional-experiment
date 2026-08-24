@@ -1,0 +1,36 @@
+TEST Tests/Save/test_world_save_codec_v1.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_save_codec_v1
+TEST Tests/Save/test_world_save_store.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_save_store
+TEST Tests/Run/test_world_run_start_service.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_start_service
+TEST Tests/Run/test_world_headless_failure.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_headless_failure
+TEST Tests/Run/test_world_headless_exit_process.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_headless_exit_process
+TEST Tests/UI/test_world_generation_failure_overlay.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World generation failure overlay tests: PASS (12/12)

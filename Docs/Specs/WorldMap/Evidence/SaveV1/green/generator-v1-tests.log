@@ -1,0 +1,42 @@
+TEST res://Tests/WorldMap/test_generator_v1_fixture_author.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_generator_v1_fixture_author
+TEST res://Tests/WorldMap/test_generator_v1_fixture_integrity.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_generator_v1_fixture_integrity
+TEST res://Tests/WorldMap/test_hex_world_generator_v1.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_hex_world_generator_v1
+TEST res://Tests/WorldMap/test_hex_world_geometry.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_hex_world_geometry
+TEST res://Tests/WorldMap/test_world_constraint_solver_v1.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_constraint_solver_v1
+TEST res://Tests/WorldMap/test_world_plan_codec_v1.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_plan_codec_v1
+TEST res://Tests/WorldMap/test_world_priority_v1.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_priority_v1

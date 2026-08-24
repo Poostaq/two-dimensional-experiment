@@ -1,0 +1,5 @@
+exit=70
+stdout_length=0
+stderr_lines=1
+exact=True
+stderr={"event":"world_generation_failed","code":"WORLD_CONSTRAINT_UNSATISFIABLE","seed_hex":"696d706f737369626c65","generator_version":1,"namespace":"town","constraint":"town_count=7,min_distance=4,radius=2","build_version":"dev-test"}
