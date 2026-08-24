@@ -2,7 +2,7 @@ class_name WorldCellViewTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_cell_view.tscn"
-const EXPECTED_TEST_COUNT := 22
+const EXPECTED_TEST_COUNT := 37
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -49,6 +49,29 @@ func _run() -> void:
 	_expect(float(cell.call("marker_plate_diameter", flat_width, point_height)) == 36.0, "marker plate uses ceil 44 percent of smaller dimension")
 	_expect(is_equal_approx(float(cell.call("marker_silhouette_diameter", flat_width, point_height)), 30.4), "marker silhouette uses 38 percent maximum")
 	_expect(float(cell.call("marker_outline_width")) >= 2.0, "marker plate has contrasting two-pixel outline")
+
+	var road_edges: Array[Vector2i] = [Vector2i(1, 0)]
+	cell.call("configure", Vector2i(2, -1), "Combat", "forest", road_edges, true)
+	_expect((cell.get_node("TerrainLayer/ForestFill") as Polygon2D).visible, "forest terrain is shown independently")
+	_expect((cell.get_node("TownLayer/Buildings") as Node2D).visible, "town buildings are shown")
+	_expect(cell.get_node("RoadLayer/RoadLines").get_child_count() == 1, "one road corridor is drawn for one edge")
+	_expect((cell.get_node("EncounterBase/Fill") as Polygon2D).color != Color("526b5b"), "encounter base remains independently configurable")
+	cell.call("set_highlighted", true)
+	_expect((cell.get_node("HighlightLayer/Outline") as Line2D).visible, "highlight layer can be enabled")
+	cell.call("set_highlighted", false)
+	_expect(not (cell.get_node("HighlightLayer/Outline") as Line2D).visible, "highlight layer can be cleared")
+	cell.call("set_party_marker", "player")
+	_expect((cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).visible, "player icon is visible")
+	_expect((cell.get_node("MarkerLayer/Plate") as Polygon2D).visible, "player readability plate is visible")
+	_expect((cell.get_node("ContextLayer/PartyLabel") as Label).text == "P", "player has a non-color label")
+	_expect((cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).modulate == Color("55d879"), "player icon is green")
+	cell.call("set_party_marker", "boss")
+	_expect((cell.get_node("ContextLayer/PartyLabel") as Label).text == "B", "boss has a non-color label")
+	_expect((cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).modulate == Color("ef5b62"), "boss icon is red")
+	cell.call("set_party_marker", "")
+	_expect(not (cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).visible, "empty marker hides the icon")
+	_expect(not (cell.get_node("MarkerLayer/Plate") as Polygon2D).visible, "empty marker hides the plate")
+	_expect(not (cell.get_node("ContextLayer/PartyLabel") as Label).visible, "empty marker hides the label")
 
 	cell.queue_free()
 	await process_frame
