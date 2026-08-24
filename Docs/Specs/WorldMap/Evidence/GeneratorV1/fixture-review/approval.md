@@ -1,0 +1,7 @@
+# Generator V1 Golden Corpus Approval
+
+fixture_commit=5eedfb1d1ccd91d687e761cae6659724655b618f
+manifest_sha256=daa1d8e435d7287ce67d1182b703f60ebcedfac2c94f519b436acd0189f27507
+reviewer=project-lead
+reviewed_at=2026-08-24T16:51:05.4984285+02:00
+status=APPROVED
