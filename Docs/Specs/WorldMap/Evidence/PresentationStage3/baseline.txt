@@ -1,0 +1,15 @@
+Stage 3 world-presentation baseline
+date: 2026-08-24
+branch: feat/world-presentation-stage3
+integration base main SHA: 203248307dbd8cb29cb240f48363b692afa39df2
+plan commit SHA: 9c050b0cf5acc3e627ba4a1c7ad65b938c6c9ebb
+
+Frozen production boundary SHA-256:
+4506304315bd40c10f26c3dfb3aee50d3765df2684867822b829179071140bfd  Scenes/game_world.tscn
+405adb18ba54cd0c8e4c46011bfd247a006d9411647f46610ec85b5df8a63f74  Scripts/Map/map_controller.gd
+fc8b695adbc2bb87c577c383369127f1cbdc8e39b1116dd0b1fc672aca69adee  Docs/Specs/WorldMap/Evidence/GeneratorV1/baseline/frozen-tests.sha256
+
+Dirty-worktree exclusions preserved and not staged:
+.github/agents/race-class-designer.agent.md
+Tests/Battle/test_active_turn_skill_lock.gd.uid
+Tests/Map/test_world_turn_counter.gd.uid
