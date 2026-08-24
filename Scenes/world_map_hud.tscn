@@ -1,0 +1,210 @@
+[gd_scene format=3 uid="uid://cs1abrmsf7038"]
+
+[ext_resource type="Script" uid="uid://bafv0exjvtm8l" path="res://Scripts/UI/world_map_hud.gd" id="1_i3n5l"]
+
+[node name="WorldMapHud" type="Control" unique_id=1281155808]
+custom_minimum_size = Vector2(1152, 648)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+mouse_filter = 2
+script = ExtResource("1_i3n5l")
+
+[node name="TopBar" type="ColorRect" parent="." unique_id=1845964855]
+layout_mode = 0
+offset_left = 176.0
+offset_top = 16.0
+offset_right = 976.0
+offset_bottom = 86.0
+mouse_filter = 2
+color = Color(0.035, 0.05, 0.08, 0.94)
+
+[node name="MoveCountLabel" type="Label" parent="." unique_id=1394513421]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 220.0
+offset_top = 30.0
+offset_right = 440.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 18
+text = "MOVES 0 / 30"
+vertical_alignment = 1
+
+[node name="RemainingLabel" type="Label" parent="." unique_id=1216186221]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 450.0
+offset_top = 30.0
+offset_right = 730.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(0.89411765, 0.69411767, 0.37254903, 1)
+theme_override_font_sizes/font_size = 18
+text = "30 MOVES UNTIL BOSS ACTIVATES"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BossStateLabel" type="Label" parent="." unique_id=359263425]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 750.0
+offset_top = 30.0
+offset_right = 930.0
+offset_bottom = 62.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 18
+text = "BOSS DORMANT"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="FormationPanel" type="ColorRect" parent="." unique_id=701097960]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 450.0
+offset_right = 380.0
+offset_bottom = 628.0
+mouse_filter = 2
+color = Color(0.035, 0.05, 0.08, 0.96)
+
+[node name="BackLineLabel" type="Label" parent="." unique_id=303085498]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 38.0
+offset_top = 462.0
+offset_right = 180.0
+offset_bottom = 486.0
+theme_override_colors/font_color = Color(0.89411765, 0.69411767, 0.37254903, 1)
+theme_override_font_sizes/font_size = 13
+text = "BACK LINE"
+horizontal_alignment = 1
+
+[node name="FrontLineLabel" type="Label" parent="." unique_id=1230947819]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 462.0
+offset_right = 342.0
+offset_bottom = 486.0
+theme_override_colors/font_color = Color(0.89411765, 0.69411767, 0.37254903, 1)
+theme_override_font_sizes/font_size = 13
+text = "FRONT LINE"
+horizontal_alignment = 1
+
+[node name="BackSlot0" type="Label" parent="." unique_id=733662818]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 38.0
+offset_top = 492.0
+offset_right = 180.0
+offset_bottom = 526.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 13
+text = "Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackSlot1" type="Label" parent="." unique_id=2126783333]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 38.0
+offset_top = 532.0
+offset_right = 180.0
+offset_bottom = 566.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 13
+text = "Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackSlot2" type="Label" parent="." unique_id=860522246]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 38.0
+offset_top = 572.0
+offset_right = 180.0
+offset_bottom = 606.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 13
+text = "Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FrontSlot0" type="Label" parent="." unique_id=930114738]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 492.0
+offset_right = 342.0
+offset_bottom = 526.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 13
+text = "Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FrontSlot1" type="Label" parent="." unique_id=179321153]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 532.0
+offset_right = 342.0
+offset_bottom = 566.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 13
+text = "Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FrontSlot2" type="Label" parent="." unique_id=683978543]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 200.0
+offset_top = 572.0
+offset_right = 342.0
+offset_bottom = 606.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 13
+text = "Empty"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ContextBar" type="ColorRect" parent="." unique_id=413926584]
+layout_mode = 0
+offset_left = 400.0
+offset_top = 536.0
+offset_right = 1132.0
+offset_bottom = 628.0
+mouse_filter = 2
+color = Color(0.035, 0.05, 0.08, 0.96)
+
+[node name="InstructionLabel" type="Label" parent="." unique_id=1065664409]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 424.0
+offset_top = 548.0
+offset_right = 834.0
+offset_bottom = 576.0
+theme_override_colors/font_color = Color(0.92941177, 0.94509804, 0.96862745, 1)
+theme_override_font_sizes/font_size = 16
+text = "Inspect a neighbouring hex."
+
+[node name="ContextLabel" type="Label" parent="." unique_id=1984312921]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 424.0
+offset_top = 584.0
+offset_right = 874.0
+offset_bottom = 610.0
+theme_override_colors/font_color = Color(0.6, 0.654902, 0.7294118, 1)
+theme_override_font_sizes/font_size = 14
+text = "Safe"
+
+[node name="ManagePartyButton" type="Button" parent="." unique_id=184575882]
+unique_name_in_owner = true
+layout_mode = 0
+offset_left = 932.0
+offset_top = 556.0
+offset_right = 1102.0
+offset_bottom = 604.0
+text = "Manage Party"
