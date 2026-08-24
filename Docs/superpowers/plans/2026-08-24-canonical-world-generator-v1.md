@@ -49,6 +49,7 @@ The current files below are read-only during this plan:
 | File | Single responsibility |
 |---|---|
 | `Tools/WorldMap/generator_v1_fixture_author.gd` | Explicit developer-only corpus authoring; never called by production tests |
+| `Tests/WorldMap/test_generator_v1_fixture_author.gd` | Published five-seed summary contract and unsatisfiable authoring case |
 | `Tests/WorldMap/test_world_priority_v1.gd` | Payload, seed hex, FNV vectors, unsigned ordering |
 | `Tests/WorldMap/test_hex_world_geometry.gd` | 217-cell geometry and canonical order |
 | `Tests/WorldMap/test_world_constraint_solver_v1.gd` | Town/forest constraints, stable output, unsatisfiable result |
@@ -412,20 +413,30 @@ git commit -m "feat: add canonical world plan codec"
 
 **Files:**
 - Create: `Tools/WorldMap/generator_v1_fixture_author.gd`
+- Create: `Tests/WorldMap/test_generator_v1_fixture_author.gd`
+- Create: `Docs/Specs/WorldMap/Evidence/GeneratorV1/red/fixture-author-red.log`
 - Create: all remaining files under `Tests/Fixtures/WorldMap/GeneratorV1/`
 - Create: files under `Docs/Specs/WorldMap/Evidence/GeneratorV1/fixture-review/`
 
-- [ ] **Step 1: Implement the developer-only fixture author**
+- [ ] **Step 1: Write and verify the failing authoring-contract test**
+
+Write `test_generator_v1_fixture_author.gd` first. It calls `build_plan()` for all five published seeds, asserts the exact town-coordinate and forest-size tables, and asserts the radius-2 injected configuration returns `WORLD_CONSTRAINT_UNSATISFIABLE`, namespace `town`, and no plan. Run it with the waited Godot helper and capture exit `1` caused only by the missing author script in `red/fixture-author-red.log`.
+
+- [ ] **Step 2: Implement the developer-only fixture author**
 
 The tool independently executes the target's fixed order: radius-8 enumeration; fixed starts; town include-first backtracking; coordinate-ordered MST; indexed forest-size hash and outer backtracking; encounter hash classification preserving the current 40% Safe rule while forcing start/towns Safe and boss Boss; validation; serialization. It accepts only `--output-dir` and `--verify-summaries`; it refuses to write outside a path ending in `Tests/Fixtures/WorldMap/GeneratorV1`.
 
 Use namespaces `town`, `road`, `forest-size`, `forest-frontier`, and `encounter`. Non-indexed priorities use `i=-1`; cluster operations use the cluster index. Encounter classification is `safe` when the unsigned `encounter` priority modulo 100 is below 40, otherwise `combat`, before forced overrides.
 
-- [ ] **Step 2: Validate the authoring script**
+- [ ] **Step 3: Validate the authoring script**
 
 Use GodotIQ per-file validation and compilation checks.
 
-- [ ] **Step 3: Generate the corpus once**
+- [ ] **Step 4: Run the authoring-contract test GREEN**
+
+Run `test_generator_v1_fixture_author.gd` with the waited helper. Expected: exit `0` and all five summaries match before any fixture is written.
+
+- [ ] **Step 5: Generate the corpus once**
 
 ```powershell
 $fixtureDir = 'Tests/Fixtures/WorldMap/GeneratorV1'
@@ -435,11 +446,11 @@ if ($authorExit -ne 0) { throw 'Fixture authoring failed' }
 
 Expected: five complete `.world` files match every published town coordinate and forest-size vector; the unsatisfiable JSON is copied exactly; `corpus_manifest.json` contains byte lengths, SHA-256 values, and required counts.
 
-- [ ] **Step 4: Record independent review material**
+- [ ] **Step 6: Record independent review material**
 
 Write the exact author command to `fixture-author-command.txt`. Run `git diff --no-index -- NUL <fixture>` equivalents or `git diff --word-diff=porcelain` against any prior reviewed corpus and store the normalized output in `corpus-diff.txt`. Hash every fixture in filename order into `fixture-hashes.sha256`.
 
-- [ ] **Step 5: Commit the fixture candidate**
+- [ ] **Step 7: Commit the fixture candidate**
 
 ```powershell
 git add Tools/WorldMap/generator_v1_fixture_author.gd Tests/Fixtures/WorldMap/GeneratorV1 Docs/Specs/WorldMap/Evidence/GeneratorV1/fixture-review
@@ -447,7 +458,7 @@ git commit -m "test: add Generator V1 golden corpus candidate"
 $fixtureCommit = git rev-parse HEAD
 ```
 
-- [ ] **Step 6: Obtain project-lead fixture approval**
+- [ ] **Step 8: Obtain project-lead fixture approval**
 
 Pause execution and present the manifest, corpus summaries, diff, hashes, and full `$fixtureCommit` for review. After explicit approval, use `apply_patch` to create `approval.md` with these exact keys and actual values:
 
@@ -461,7 +472,7 @@ status=APPROVED
 
 Production Generator V1 implementation cannot begin before this record exists.
 
-- [ ] **Step 7: Commit the approval record**
+- [ ] **Step 9: Commit the approval record**
 
 ```powershell
 git add Docs/Specs/WorldMap/Evidence/GeneratorV1/fixture-review/approval.md

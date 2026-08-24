@@ -1,0 +1,19 @@
+RUN res://Tests/WorldMap/test_generator_v1_fixture_author.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() ??? debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: Attempt to open script 'res://Tools/WorldMap/generator_v1_fixture_author.gd' resulted in error 'File not found'.
+   at: load_source_code (modules/gdscript/gdscript.cpp:1139)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_generator_v1_fixture_author.gd:41)
+ERROR: Failed loading resource: res://Tools/WorldMap/generator_v1_fixture_author.gd.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_generator_v1_fixture_author.gd:41)
+ERROR: Generator V1 fixture author is missing
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_generator_v1_fixture_author.gd:99)
+       [1] _run (res://Tests/WorldMap/test_generator_v1_fixture_author.gd:43)
+EXIT 1
