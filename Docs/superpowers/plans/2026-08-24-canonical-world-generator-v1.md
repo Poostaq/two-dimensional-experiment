@@ -209,14 +209,33 @@ $frozen = @(
   'Tests/Run/test_ac3_1_run_roster.gd',
   'Tests/Run/test_ac3_3_party_formation.gd'
 )
-$frozen | Get-FileHash -Algorithm SHA256 | Sort-Object Path | ForEach-Object {
-  '{0}  {1}' -f $_.Hash.ToLowerInvariant(), (Resolve-Path -Relative $_.Path).Replace('\','/')
-} | Set-Content -Encoding utf8NoBOM 'Docs/Specs/WorldMap/Evidence/GeneratorV1/baseline/frozen-tests.sha256'
+$hashItems = foreach ($path in $frozen) {
+  $hash = Get-FileHash -LiteralPath $path -Algorithm SHA256
+  [PSCustomObject]@{ Path = $path.Replace('\','/'); Hash = $hash.Hash.ToLowerInvariant() }
+}
+$hashLines = $hashItems | Sort-Object Path | ForEach-Object { '{0}  {1}' -f $_.Hash, $_.Path }
+Set-Content -LiteralPath 'Docs/Specs/WorldMap/Evidence/GeneratorV1/baseline/frozen-tests.sha256' -Value $hashLines -Encoding Ascii
 ```
 
 Expected: 15 stable SHA-256 records.
 
 - [ ] **Step 4: Run the frozen suite**
+
+The Steam Godot executable is a Windows GUI-subsystem binary, so direct PowerShell invocation returns before the test finishes. Use this waited helper for every headless script in this plan:
+
+```powershell
+function Invoke-GodotScript {
+  param([string[]]$GodotArgs, [string]$LogPath)
+  $stdout = Join-Path $env:TEMP 'twde-godot.stdout.log'
+  $stderr = Join-Path $env:TEMP 'twde-godot.stderr.log'
+  Remove-Item -LiteralPath $stdout,$stderr -ErrorAction SilentlyContinue
+  $process = Start-Process -FilePath $godotExe -ArgumentList $GodotArgs -WorkingDirectory (Get-Location) -WindowStyle Hidden -RedirectStandardOutput $stdout -RedirectStandardError $stderr -Wait -PassThru
+  $lines = (Get-Content -LiteralPath $stdout,$stderr)
+  if ($LogPath) { Add-Content -LiteralPath $LogPath -Value $lines }
+  Remove-Item -LiteralPath $stdout,$stderr -ErrorAction SilentlyContinue
+  return $process.ExitCode
+}
+```
 
 Use the discovered Godot executable path in `$godotExe`, then:
 
@@ -224,8 +243,10 @@ Use the discovered Godot executable path in `$godotExe`, then:
 $log = 'Docs/Specs/WorldMap/Evidence/GeneratorV1/baseline/frozen-legacy.log'
 Remove-Item -LiteralPath $log -ErrorAction SilentlyContinue
 foreach ($test in $frozen) {
-  & $godotExe --headless --path . --script ("res://" + $test.Replace('\','/')) *>> $log
-  if ($LASTEXITCODE -ne 0) { throw "Frozen test failed: $test" }
+  Add-Content -LiteralPath $log -Value "RUN $test"
+  $exitCode = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script',("res://" + $test.Replace('\','/'))) -LogPath $log
+  Add-Content -LiteralPath $log -Value "EXIT $exitCode"
+  if ($exitCode -ne 0) { throw "Frozen test failed: $test" }
 }
 ```
 
@@ -272,10 +293,10 @@ Assert exactly 217 unique radius-8 cells, first coordinate `(-8, 0)`, last `(8, 
 - [ ] **Step 4: Run both tests and preserve RED evidence**
 
 ```powershell
-& $godotExe --headless --path . --script res://Tests/WorldMap/test_world_priority_v1.gd *> Docs/Specs/WorldMap/Evidence/GeneratorV1/red/priority-red.log
-if ($LASTEXITCODE -eq 0) { throw 'Priority test unexpectedly passed before implementation' }
-& $godotExe --headless --path . --script res://Tests/WorldMap/test_hex_world_geometry.gd *> Docs/Specs/WorldMap/Evidence/GeneratorV1/red/geometry-red.log
-if ($LASTEXITCODE -eq 0) { throw 'Geometry test unexpectedly passed before implementation' }
+$priorityExit = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script','res://Tests/WorldMap/test_world_priority_v1.gd') -LogPath 'Docs/Specs/WorldMap/Evidence/GeneratorV1/red/priority-red.log'
+if ($priorityExit -eq 0) { throw 'Priority test unexpectedly passed before implementation' }
+$geometryExit = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script','res://Tests/WorldMap/test_hex_world_geometry.gd') -LogPath 'Docs/Specs/WorldMap/Evidence/GeneratorV1/red/geometry-red.log'
+if ($geometryExit -eq 0) { throw 'Geometry test unexpectedly passed before implementation' }
 ```
 
 Expected: both fail because their production scripts do not exist.
@@ -326,10 +347,10 @@ Run GodotIQ validation and error checks for this script only.
 - [ ] **Step 6: Run both GREEN tests**
 
 ```powershell
-& $godotExe --headless --path . --script res://Tests/WorldMap/test_world_priority_v1.gd
-if ($LASTEXITCODE -ne 0) { throw 'Priority GREEN failed' }
-& $godotExe --headless --path . --script res://Tests/WorldMap/test_hex_world_geometry.gd
-if ($LASTEXITCODE -ne 0) { throw 'Geometry GREEN failed' }
+$priorityExit = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script','res://Tests/WorldMap/test_world_priority_v1.gd') -LogPath ''
+if ($priorityExit -ne 0) { throw 'Priority GREEN failed' }
+$geometryExit = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script','res://Tests/WorldMap/test_hex_world_geometry.gd') -LogPath ''
+if ($geometryExit -ne 0) { throw 'Geometry GREEN failed' }
 ```
 
 Expected: both exit `0`.
@@ -381,8 +402,8 @@ For each script, run GodotIQ `validate(detail="brief")` followed by `check_error
 - [ ] **Step 6: Run codec GREEN and commit**
 
 ```powershell
-& $godotExe --headless --path . --script res://Tests/WorldMap/test_world_plan_codec_v1.gd
-if ($LASTEXITCODE -ne 0) { throw 'Codec GREEN failed' }
+$codecExit = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script','res://Tests/WorldMap/test_world_plan_codec_v1.gd') -LogPath ''
+if ($codecExit -ne 0) { throw 'Codec GREEN failed' }
 git add Scripts/WorldMap/world_generation_error.gd Scripts/WorldMap/world_plan.gd Scripts/WorldMap/world_plan_codec_v1.gd Tests/WorldMap/test_world_plan_codec_v1.gd Docs/Specs/WorldMap/Evidence/GeneratorV1/red/codec-red.log
 git commit -m "feat: add canonical world plan codec"
 ```
@@ -408,8 +429,8 @@ Use GodotIQ per-file validation and compilation checks.
 
 ```powershell
 $fixtureDir = 'Tests/Fixtures/WorldMap/GeneratorV1'
-& $godotExe --headless --path . --script res://Tools/WorldMap/generator_v1_fixture_author.gd -- --output-dir $fixtureDir --verify-summaries
-if ($LASTEXITCODE -ne 0) { throw 'Fixture authoring failed' }
+$authorExit = Invoke-GodotScript -GodotArgs @('--headless','--path','.', '--script','res://Tools/WorldMap/generator_v1_fixture_author.gd','--','--output-dir',$fixtureDir,'--verify-summaries') -LogPath ''
+if ($authorExit -ne 0) { throw 'Fixture authoring failed' }
 ```
 
 Expected: five complete `.world` files match every published town coordinate and forest-size vector; the unsatisfiable JSON is copied exactly; `corpus_manifest.json` contains byte lengths, SHA-256 values, and required counts.
