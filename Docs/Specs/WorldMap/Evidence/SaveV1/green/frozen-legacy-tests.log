@@ -1,0 +1,102 @@
+TEST Tests/Map/test_ac1_1_runtime_step_counts.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+start: player_coord=(0, 0) move_count=0
+boss objective: player_coord=(0, 0) move_count=0
+valid move 1: player_coord=(0, 1) move_count=1
+valid move 2: player_coord=(0, 2) move_count=2
+valid move 3: player_coord=(0, 3) move_count=3
+valid move 4: player_coord=(0, 4) move_count=4
+valid move 5: player_coord=(1, 4) move_count=5
+invalid non-adjacent move 1: player_coord=(1, 4) move_count=5
+invalid non-adjacent move 2: player_coord=(1, 4) move_count=5
+continued move 1: player_coord=(2, 4) move_count=6
+continued move 2: player_coord=(3, 4) move_count=7
+continued move 3: player_coord=(4, 4) move_count=8
+AC1.1 runtime step-count check: PASS (8/8)
+TEST Tests/Map/test_ac1_2_encounter_determinism.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.2 encounter determinism tests: PASS (6/6)
+TEST Tests/Map/test_ac1_2_hex_tile_view_states.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.2 hex tile view state tests: PASS (1/1)
+TEST Tests/Map/test_ac1_2_runtime_encounter_layout.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.2 runtime encounter layout tests: PASS (5/5)
+TEST Tests/Map/test_ac1_3_mouse_navigation.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.3 mouse navigation tests: PASS (7/7)
+TEST Tests/Map/test_ac1_4_encounter_overlay.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.4 encounter overlay tests: PASS (6/6)
+TEST Tests/Map/test_ac1_5_sudden_death.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.5 sudden death tests: PASS (13/13)
+TEST Tests/Map/test_ac2_1_battle_arena.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC2.1 battle arena tests: PASS (12/12)
+TEST Tests/Map/test_ac3_1_recruitment_integration.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC3.1 recruitment integration tests: PASS (8/8)
+TEST Tests/Map/test_ac3_3_party_management_integration.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC3.3 party management integration tests: PASS (24/24)
+TEST Tests/Map/test_hex_map_model.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.1 map logic tests: PASS (7/7)
+TEST Tests/Map/test_map_controller_runtime.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC1.1 runtime map controller tests: PASS (8/8)
+TEST Tests/Map/test_world_turn_counter.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World turn counter tests: PASS (4/4)
+TEST Tests/Run/test_ac3_1_run_roster.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+AC3.1 run roster tests: PASS (13/13)
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+TEST Tests/Run/test_ac3_3_party_formation.gd EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC3.3 party formation tests: PASS (36/36)

@@ -1,0 +1,20 @@
+GodotIQ project validation
+date: 2026-08-24
+project scripts checked: 90
+project scenes checked: 6
+convention errors: 0
+parser/compiler errors: 0
+main scene runtime verdict: PASS
+main scene runtime errors after clean launch: 0
+main scene script errors after clean launch: 0
+
+Known non-blocking validation findings:
+- 13 pre-existing/project warnings and 5 informational items.
+- The reusable, intentionally unintegrated overlay signals return_requested and diagnostics_copied are reported as orphan informational items until the later production integration slice.
+- The temporary visual-preview warning was cleared before the clean main-scene runtime check; the clean launch captured no debug entries.
+
+Visual verification:
+- 1152x648 game viewport, captured at 0.5 scale.
+- Full-screen dimmer covers the viewport.
+- Failure panel is centered and fully visible.
+- Exact failure message, Copy Diagnostics action, and Return action are readable.

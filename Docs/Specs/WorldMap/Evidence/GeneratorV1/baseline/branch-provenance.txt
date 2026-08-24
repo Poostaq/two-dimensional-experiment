@@ -1,0 +1,5 @@
+branch=feat/world-generator-v1
+upstream=origin/main
+base_sha=41504697011bece55d56ffff90053d211054abe9
+target_design=Docs/superpowers/specs/2026-08-23-scrollable-hex-world-target-design.md
+migration_authority=Docs/superpowers/specs/2026-08-23-25-to-217-hex-world-migration-design.md

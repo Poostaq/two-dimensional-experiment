@@ -1,0 +1,4 @@
+branch=feat/world-save-run-start
+upstream_base=feat/world-generator-v1
+parent_sha=14f360c137d72d0da06bba75b12a9a4511f150b0
+verification=waited Godot execution of every Tests/WorldMap/*.gd script

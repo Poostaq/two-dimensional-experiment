@@ -1,0 +1,17 @@
+{
+	"radius": 2,
+	"town_count": 7,
+	"town_min_distance": 4,
+	"start": [
+		-2,
+		0
+	],
+	"boss": [
+		2,
+		0
+	],
+	"expected_code": "WORLD_CONSTRAINT_UNSATISFIABLE",
+	"expected_namespace": "town",
+	"expected_published_cells": 0,
+	"expected_save_mutation": false
+}
