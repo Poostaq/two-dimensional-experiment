@@ -1,0 +1,120 @@
+{
+	"generator_version": 1,
+	"fixtures": [
+		{
+			"artifact": "empty-seed.world",
+			"seed_text": "",
+			"seed_hex": "64656661756c742d72756e",
+			"byte_length": 6369,
+			"sha256": "3f391332653788d2f3ecdeae198b2e95837432ea99ce1a2cab4b0c5cd9fdc954",
+			"cell_count": 217,
+			"town_count": 7,
+			"road_edge_count": 6,
+			"cluster_count": 10,
+			"forest_sizes": [
+				3,
+				5,
+				7,
+				6,
+				5,
+				5,
+				5,
+				6,
+				7,
+				3
+			]
+		},
+		{
+			"artifact": "golden-alpha.world",
+			"seed_text": "golden-alpha",
+			"seed_hex": "676f6c64656e2d616c706861",
+			"byte_length": 6355,
+			"sha256": "40dab575bfb3c2c965a147be0359116a0b57f8b91adca935b2f1997f18a6c6c2",
+			"cell_count": 217,
+			"town_count": 7,
+			"road_edge_count": 6,
+			"cluster_count": 10,
+			"forest_sizes": [
+				5,
+				6,
+				3,
+				7,
+				4,
+				6,
+				5,
+				7,
+				4,
+				5
+			]
+		},
+		{
+			"artifact": "golden-beta.world",
+			"seed_text": "golden-beta",
+			"seed_hex": "676f6c64656e2d62657461",
+			"byte_length": 6278,
+			"sha256": "4f46ee030197322875b68296fc4d94e76d7b0b3f5424f2ffe801901e1789e262",
+			"cell_count": 217,
+			"town_count": 7,
+			"road_edge_count": 6,
+			"cluster_count": 10,
+			"forest_sizes": [
+				3,
+				4,
+				4,
+				5,
+				6,
+				7,
+				5,
+				4,
+				4,
+				5
+			]
+		},
+		{
+			"artifact": "town-road-01.world",
+			"seed_text": "town-road-01",
+			"seed_hex": "746f776e2d726f61642d3031",
+			"byte_length": 6470,
+			"sha256": "3c8271e0907e5c46a4561f807d7a87e8009c04806068b11a31adee56526419fd",
+			"cell_count": 217,
+			"town_count": 7,
+			"road_edge_count": 6,
+			"cluster_count": 10,
+			"forest_sizes": [
+				7,
+				6,
+				5,
+				5,
+				5,
+				4,
+				7,
+				6,
+				7,
+				6
+			]
+		},
+		{
+			"artifact": "unicode-lodz.world",
+			"seed_text": "unicode-łódź",
+			"seed_hex": "756e69636f64652dc582c3b364c5ba",
+			"byte_length": 6376,
+			"sha256": "7f6ec3a6e4da3bf52a93bbf2708a5b3227177a3f250d40b3ff46b127d9f65b1b",
+			"cell_count": 217,
+			"town_count": 7,
+			"road_edge_count": 6,
+			"cluster_count": 10,
+			"forest_sizes": [
+				6,
+				6,
+				4,
+				7,
+				4,
+				5,
+				6,
+				5,
+				4,
+				6
+			]
+		}
+	]
+}

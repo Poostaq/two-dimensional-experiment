@@ -1,0 +1,1600 @@
+NEW GENERATOR V1 CORPUS CANDIDATE
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\corpus_manifest.json" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\corpus_manifest.json"
+new file mode 100644
+index 0000000..8878e9c
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\corpus_manifest.json"
+@@ -0,0 +1,120 @@
++{
++	"generator_version": 1,
++	"fixtures": [
++		{
++			"artifact": "empty-seed.world",
++			"seed_text": "",
++			"seed_hex": "64656661756c742d72756e",
++			"byte_length": 6369,
++			"sha256": "3f391332653788d2f3ecdeae198b2e95837432ea99ce1a2cab4b0c5cd9fdc954",
++			"cell_count": 217,
++			"town_count": 7,
++			"road_edge_count": 6,
++			"cluster_count": 10,
++			"forest_sizes": [
++				3,
++				5,
++				7,
++				6,
++				5,
++				5,
++				5,
++				6,
++				7,
++				3
++			]
++		},
++		{
++			"artifact": "golden-alpha.world",
++			"seed_text": "golden-alpha",
++			"seed_hex": "676f6c64656e2d616c706861",
++			"byte_length": 6355,
++			"sha256": "40dab575bfb3c2c965a147be0359116a0b57f8b91adca935b2f1997f18a6c6c2",
++			"cell_count": 217,
++			"town_count": 7,
++			"road_edge_count": 6,
++			"cluster_count": 10,
++			"forest_sizes": [
++				5,
++				6,
++				3,
++				7,
++				4,
++				6,
++				5,
++				7,
++				4,
++				5
++			]
++		},
++		{
++			"artifact": "golden-beta.world",
++			"seed_text": "golden-beta",
++			"seed_hex": "676f6c64656e2d62657461",
++			"byte_length": 6278,
++			"sha256": "4f46ee030197322875b68296fc4d94e76d7b0b3f5424f2ffe801901e1789e262",
++			"cell_count": 217,
++			"town_count": 7,
++			"road_edge_count": 6,
++			"cluster_count": 10,
++			"forest_sizes": [
++				3,
++				4,
++				4,
++				5,
++				6,
++				7,
++				5,
++				4,
++				4,
++				5
++			]
++		},
++		{
++			"artifact": "town-road-01.world",
++			"seed_text": "town-road-01",
++			"seed_hex": "746f776e2d726f61642d3031",
++			"byte_length": 6470,
++			"sha256": "3c8271e0907e5c46a4561f807d7a87e8009c04806068b11a31adee56526419fd",
++			"cell_count": 217,
++			"town_count": 7,
++			"road_edge_count": 6,
++			"cluster_count": 10,
++			"forest_sizes": [
++				7,
++				6,
++				5,
++				5,
++				5,
++				4,
++				7,
++				6,
++				7,
++				6
++			]
++		},
++		{
++			"artifact": "unicode-lodz.world",
++			"seed_text": "unicode-??d?",
++			"seed_hex": "756e69636f64652dc582c3b364c5ba",
++			"byte_length": 6376,
++			"sha256": "7f6ec3a6e4da3bf52a93bbf2708a5b3227177a3f250d40b3ff46b127d9f65b1b",
++			"cell_count": 217,
++			"town_count": 7,
++			"road_edge_count": 6,
++			"cluster_count": 10,
++			"forest_sizes": [
++				6,
++				6,
++				4,
++				7,
++				4,
++				5,
++				6,
++				5,
++				4,
++				6
++			]
++		}
++	]
++}
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\empty-seed.world" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\empty-seed.world"
+new file mode 100644
+index 0000000..0d4fa23
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\empty-seed.world"
+@@ -0,0 +1,279 @@
++TWDE-WORLD,1
++seed,64656661756c742d72756e
++start,-8,0
++boss,8,0
++cell,-8,0,safe,plain,-1
++cell,-8,1,combat,forest,-1
++cell,-8,2,safe,forest,-1
++cell,-8,3,combat,forest,-1
++cell,-8,4,safe,forest,-1
++cell,-8,5,safe,forest,-1
++cell,-8,6,combat,forest,-1
++cell,-8,7,combat,forest,-1
++cell,-8,8,safe,plain,-1
++cell,-7,-1,combat,plain,-1
++cell,-7,0,combat,forest,-1
++cell,-7,1,safe,plain,-1
++cell,-7,2,combat,plain,-1
++cell,-7,3,combat,plain,-1
++cell,-7,4,safe,forest,-1
++cell,-7,5,safe,forest,-1
++cell,-7,6,combat,plain,-1
++cell,-7,7,combat,plain,-1
++cell,-7,8,safe,plain,-1
++cell,-6,-2,safe,forest,-1
++cell,-6,-1,combat,forest,-1
++cell,-6,0,safe,plain,0
++cell,-6,1,combat,forest,-1
++cell,-6,2,combat,forest,-1
++cell,-6,3,combat,forest,-1
++cell,-6,4,safe,plain,1
++cell,-6,5,combat,forest,-1
++cell,-6,6,safe,forest,-1
++cell,-6,7,safe,forest,-1
++cell,-6,8,safe,plain,2
++cell,-5,-3,combat,forest,-1
++cell,-5,-2,combat,forest,-1
++cell,-5,-1,combat,forest,-1
++cell,-5,0,combat,forest,-1
++cell,-5,1,safe,forest,-1
++cell,-5,2,safe,forest,-1
++cell,-5,3,combat,forest,-1
++cell,-5,4,combat,forest,-1
++cell,-5,5,combat,forest,-1
++cell,-5,6,safe,forest,-1
++cell,-5,7,safe,forest,-1
++cell,-5,8,combat,forest,-1
++cell,-4,-4,combat,forest,-1
++cell,-4,-3,safe,forest,-1
++cell,-4,-2,safe,forest,-1
++cell,-4,-1,combat,forest,-1
++cell,-4,0,combat,forest,-1
++cell,-4,1,safe,forest,-1
++cell,-4,2,combat,forest,-1
++cell,-4,3,combat,forest,-1
++cell,-4,4,combat,plain,-1
++cell,-4,5,combat,plain,-1
++cell,-4,6,safe,plain,-1
++cell,-4,7,combat,plain,-1
++cell,-4,8,safe,plain,-1
++cell,-3,-5,combat,plain,-1
++cell,-3,-4,safe,plain,-1
++cell,-3,-3,combat,plain,-1
++cell,-3,-2,safe,plain,-1
++cell,-3,-1,combat,plain,-1
++cell,-3,0,safe,plain,-1
++cell,-3,1,combat,plain,-1
++cell,-3,2,safe,plain,-1
++cell,-3,3,safe,plain,-1
++cell,-3,4,safe,plain,-1
++cell,-3,5,safe,plain,-1
++cell,-3,6,combat,plain,-1
++cell,-3,7,combat,plain,-1
++cell,-3,8,combat,plain,-1
++cell,-2,-6,combat,plain,-1
++cell,-2,-5,combat,plain,-1
++cell,-2,-4,safe,plain,-1
++cell,-2,-3,combat,plain,-1
++cell,-2,-2,combat,plain,-1
++cell,-2,-1,safe,plain,-1
++cell,-2,0,combat,plain,-1
++cell,-2,1,combat,plain,-1
++cell,-2,2,safe,plain,-1
++cell,-2,3,safe,plain,-1
++cell,-2,4,combat,plain,-1
++cell,-2,5,combat,plain,-1
++cell,-2,6,combat,plain,-1
++cell,-2,7,safe,plain,-1
++cell,-2,8,safe,plain,-1
++cell,-1,-7,combat,plain,-1
++cell,-1,-6,combat,plain,-1
++cell,-1,-5,safe,plain,-1
++cell,-1,-4,safe,plain,3
++cell,-1,-3,safe,plain,-1
++cell,-1,-2,safe,plain,-1
++cell,-1,-1,combat,plain,-1
++cell,-1,0,combat,plain,-1
++cell,-1,1,combat,plain,-1
++cell,-1,2,safe,plain,-1
++cell,-1,3,safe,plain,-1
++cell,-1,4,safe,plain,-1
++cell,-1,5,safe,plain,-1
++cell,-1,6,safe,plain,-1
++cell,-1,7,combat,plain,-1
++cell,-1,8,safe,plain,-1
++cell,0,-8,combat,plain,-1
++cell,0,-7,combat,plain,-1
++cell,0,-6,combat,plain,-1
++cell,0,-5,safe,plain,-1
++cell,0,-4,safe,plain,-1
++cell,0,-3,combat,plain,-1
++cell,0,-2,combat,plain,-1
++cell,0,-1,combat,plain,-1
++cell,0,0,safe,plain,-1
++cell,0,1,safe,plain,-1
++cell,0,2,combat,forest,-1
++cell,0,3,combat,plain,-1
++cell,0,4,combat,plain,-1
++cell,0,5,safe,plain,-1
++cell,0,6,safe,plain,-1
++cell,0,7,combat,plain,-1
++cell,0,8,combat,plain,-1
++cell,1,-8,combat,plain,-1
++cell,1,-7,safe,plain,-1
++cell,1,-6,safe,plain,-1
++cell,1,-5,combat,plain,-1
++cell,1,-4,combat,plain,-1
++cell,1,-3,combat,plain,-1
++cell,1,-2,combat,plain,-1
++cell,1,-1,safe,plain,-1
++cell,1,0,combat,forest,-1
++cell,1,1,safe,forest,-1
++cell,1,2,combat,plain,-1
++cell,1,3,combat,plain,-1
++cell,1,4,combat,plain,-1
++cell,1,5,combat,plain,-1
++cell,1,6,safe,plain,-1
++cell,1,7,combat,plain,-1
++cell,2,-8,safe,plain,-1
++cell,2,-7,combat,plain,-1
++cell,2,-6,combat,plain,-1
++cell,2,-5,safe,plain,-1
++cell,2,-4,combat,plain,-1
++cell,2,-3,combat,plain,-1
++cell,2,-2,safe,plain,-1
++cell,2,-1,combat,plain,-1
++cell,2,0,safe,plain,-1
++cell,2,1,safe,plain,-1
++cell,2,2,combat,plain,-1
++cell,2,3,combat,plain,-1
++cell,2,4,safe,plain,-1
++cell,2,5,combat,plain,-1
++cell,2,6,safe,plain,-1
++cell,3,-8,combat,plain,-1
++cell,3,-7,safe,plain,-1
++cell,3,-6,combat,plain,-1
++cell,3,-5,safe,plain,4
++cell,3,-4,safe,plain,-1
++cell,3,-3,safe,plain,-1
++cell,3,-2,safe,plain,-1
++cell,3,-1,safe,plain,5
++cell,3,0,safe,plain,-1
++cell,3,1,safe,plain,-1
++cell,3,2,combat,plain,-1
++cell,3,3,combat,plain,-1
++cell,3,4,safe,plain,6
++cell,3,5,combat,plain,-1
++cell,4,-8,combat,plain,-1
++cell,4,-7,safe,plain,-1
++cell,4,-6,combat,plain,-1
++cell,4,-5,combat,plain,-1
++cell,4,-4,combat,plain,-1
++cell,4,-3,combat,plain,-1
++cell,4,-2,combat,plain,-1
++cell,4,-1,combat,forest,-1
++cell,4,0,combat,forest,-1
++cell,4,1,combat,forest,-1
++cell,4,2,safe,forest,-1
++cell,4,3,safe,forest,-1
++cell,4,4,safe,forest,-1
++cell,5,-8,combat,plain,-1
++cell,5,-7,safe,forest,-1
++cell,5,-6,combat,forest,-1
++cell,5,-5,combat,forest,-1
++cell,5,-4,combat,plain,-1
++cell,5,-3,combat,plain,-1
++cell,5,-2,combat,plain,-1
++cell,5,-1,combat,plain,-1
++cell,5,0,safe,plain,-1
++cell,5,1,safe,plain,-1
++cell,5,2,combat,plain,-1
++cell,5,3,combat,plain,-1
++cell,6,-8,combat,plain,-1
++cell,6,-7,combat,plain,-1
++cell,6,-6,safe,forest,-1
++cell,6,-5,combat,plain,-1
++cell,6,-4,combat,plain,-1
++cell,6,-3,combat,plain,-1
++cell,6,-2,combat,plain,-1
++cell,6,-1,safe,plain,-1
++cell,6,0,combat,plain,-1
++cell,6,1,combat,plain,-1
++cell,6,2,safe,plain,-1
++cell,7,-8,safe,plain,-1
++cell,7,-7,combat,plain,-1
++cell,7,-6,combat,forest,-1
++cell,7,-5,safe,plain,-1
++cell,7,-4,combat,plain,-1
++cell,7,-3,combat,plain,-1
++cell,7,-2,safe,plain,-1
++cell,7,-1,combat,plain,-1
++cell,7,0,combat,plain,-1
++cell,7,1,combat,plain,-1
++cell,8,-8,safe,plain,-1
++cell,8,-7,combat,plain,-1
++cell,8,-6,combat,plain,-1
++cell,8,-5,combat,plain,-1
++cell,8,-4,safe,plain,-1
++cell,8,-3,safe,plain,-1
++cell,8,-2,combat,plain,-1
++cell,8,-1,combat,plain,-1
++cell,8,0,boss,plain,-1
++road,-6,0,-6,4
++road,-6,0,-1,-4
++road,-6,4,-6,8
++road,-1,-4,3,-5
++road,3,-5,3,-1
++road,3,-1,3,4
++forest,0,-5,2
++forest,0,-5,3
++forest,0,-4,1
++forest,1,-8,1
++forest,1,-8,2
++forest,1,-7,0
++forest,1,-6,-2
++forest,1,-6,-1
++forest,2,-5,-3
++forest,2,-5,-2
++forest,2,-5,-1
++forest,2,-4,-4
++forest,2,-4,-3
++forest,2,-4,-2
++forest,2,-4,-1
++forest,3,-6,1
++forest,3,-6,2
++forest,3,-6,3
++forest,3,-5,0
++forest,3,-5,1
++forest,3,-4,0
++forest,4,-8,3
++forest,4,-8,4
++forest,4,-8,5
++forest,4,-8,6
++forest,4,-8,7
++forest,5,5,-7
++forest,5,5,-6
++forest,5,5,-5
++forest,5,6,-6
++forest,5,7,-6
++forest,6,-7,4
++forest,6,-7,5
++forest,6,-6,5
++forest,6,-6,6
++forest,6,-6,7
++forest,7,4,-1
++forest,7,4,0
++forest,7,4,1
++forest,7,4,2
++forest,7,4,3
++forest,7,4,4
++forest,8,-5,4
++forest,8,-5,5
++forest,8,-5,6
++forest,8,-5,7
++forest,8,-5,8
++forest,8,-4,2
++forest,8,-4,3
++forest,9,0,2
++forest,9,1,0
++forest,9,1,1
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\fnv_vectors.json" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\fnv_vectors.json"
+new file mode 100644
+index 0000000..f29711d
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\fnv_vectors.json"
+@@ -0,0 +1,17 @@
++[
++  {
++    "payload": "twde-wg|v=1|seed=64656661756c742d72756e|ns=town|i=-1|q=-8|r=0",
++    "unsigned_decimal": 1594024070,
++    "hexadecimal": "0x5f02e086"
++  },
++  {
++    "payload": "twde-wg|v=1|seed=676f6c64656e2d616c706861|ns=town|i=-1|q=0|r=0",
++    "unsigned_decimal": 3643676249,
++    "hexadecimal": "0xd92e1659"
++  },
++  {
++    "payload": "twde-wg|v=1|seed=756e69636f64652dc582c3b364c5ba|ns=forest-size|i=3|q=0|r=0",
++    "unsigned_decimal": 2873815939,
++    "hexadecimal": "0xab4af383"
++  }
++]
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\golden-alpha.world" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\golden-alpha.world"
+new file mode 100644
+index 0000000..7d4c275
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\golden-alpha.world"
+@@ -0,0 +1,279 @@
++TWDE-WORLD,1
++seed,676f6c64656e2d616c706861
++start,-8,0
++boss,8,0
++cell,-8,0,safe,plain,-1
++cell,-8,1,combat,forest,-1
++cell,-8,2,combat,forest,-1
++cell,-8,3,combat,plain,-1
++cell,-8,4,combat,plain,-1
++cell,-8,5,safe,plain,-1
++cell,-8,6,safe,plain,-1
++cell,-8,7,combat,plain,-1
++cell,-8,8,combat,plain,-1
++cell,-7,-1,combat,plain,-1
++cell,-7,0,combat,forest,-1
++cell,-7,1,safe,plain,-1
++cell,-7,2,safe,plain,-1
++cell,-7,3,combat,plain,-1
++cell,-7,4,combat,plain,-1
++cell,-7,5,combat,plain,-1
++cell,-7,6,safe,plain,-1
++cell,-7,7,safe,plain,-1
++cell,-7,8,safe,plain,-1
++cell,-6,-2,combat,forest,-1
++cell,-6,-1,safe,forest,-1
++cell,-6,0,combat,plain,-1
++cell,-6,1,combat,plain,-1
++cell,-6,2,combat,plain,-1
++cell,-6,3,combat,plain,-1
++cell,-6,4,combat,plain,-1
++cell,-6,5,combat,plain,-1
++cell,-6,6,safe,plain,-1
++cell,-6,7,safe,plain,-1
++cell,-6,8,safe,plain,-1
++cell,-5,-3,combat,plain,-1
++cell,-5,-2,combat,plain,-1
++cell,-5,-1,safe,plain,-1
++cell,-5,0,combat,plain,-1
++cell,-5,1,combat,plain,-1
++cell,-5,2,safe,plain,-1
++cell,-5,3,combat,plain,-1
++cell,-5,4,combat,plain,-1
++cell,-5,5,safe,plain,-1
++cell,-5,6,combat,plain,-1
++cell,-5,7,combat,plain,-1
++cell,-5,8,safe,plain,-1
++cell,-4,-4,safe,plain,-1
++cell,-4,-3,safe,plain,-1
++cell,-4,-2,safe,plain,-1
++cell,-4,-1,combat,plain,-1
++cell,-4,0,safe,plain,0
++cell,-4,1,combat,plain,-1
++cell,-4,2,combat,plain,-1
++cell,-4,3,combat,plain,-1
++cell,-4,4,safe,plain,1
++cell,-4,5,combat,forest,-1
++cell,-4,6,combat,forest,-1
++cell,-4,7,safe,forest,-1
++cell,-4,8,combat,forest,-1
++cell,-3,-5,combat,plain,-1
++cell,-3,-4,combat,plain,-1
++cell,-3,-3,combat,plain,-1
++cell,-3,-2,combat,plain,-1
++cell,-3,-1,safe,plain,-1
++cell,-3,0,combat,plain,-1
++cell,-3,1,combat,plain,-1
++cell,-3,2,combat,plain,-1
++cell,-3,3,safe,plain,-1
++cell,-3,4,combat,plain,-1
++cell,-3,5,combat,plain,-1
++cell,-3,6,safe,forest,-1
++cell,-3,7,safe,forest,-1
++cell,-3,8,combat,forest,-1
++cell,-2,-6,combat,plain,-1
++cell,-2,-5,safe,plain,-1
++cell,-2,-4,safe,plain,-1
++cell,-2,-3,combat,plain,-1
++cell,-2,-2,safe,plain,-1
++cell,-2,-1,safe,plain,-1
++cell,-2,0,combat,plain,-1
++cell,-2,1,safe,plain,-1
++cell,-2,2,combat,plain,-1
++cell,-2,3,combat,forest,-1
++cell,-2,4,safe,forest,-1
++cell,-2,5,safe,forest,-1
++cell,-2,6,combat,forest,-1
++cell,-2,7,combat,forest,-1
++cell,-2,8,combat,forest,-1
++cell,-1,-7,combat,forest,-1
++cell,-1,-6,combat,forest,-1
++cell,-1,-5,safe,forest,-1
++cell,-1,-4,combat,forest,-1
++cell,-1,-3,combat,forest,-1
++cell,-1,-2,combat,plain,-1
++cell,-1,-1,safe,plain,-1
++cell,-1,0,safe,plain,-1
++cell,-1,1,combat,plain,-1
++cell,-1,2,combat,plain,-1
++cell,-1,3,safe,plain,-1
++cell,-1,4,safe,forest,-1
++cell,-1,5,safe,forest,-1
++cell,-1,6,combat,forest,-1
++cell,-1,7,combat,forest,-1
++cell,-1,8,combat,plain,-1
++cell,0,-8,safe,plain,-1
++cell,0,-7,safe,plain,-1
++cell,0,-6,safe,plain,-1
++cell,0,-5,combat,plain,-1
++cell,0,-4,combat,plain,-1
++cell,0,-3,combat,plain,-1
++cell,0,-2,combat,plain,-1
++cell,0,-1,combat,plain,-1
++cell,0,0,safe,plain,-1
++cell,0,1,combat,plain,-1
++cell,0,2,combat,plain,-1
++cell,0,3,safe,plain,-1
++cell,0,4,safe,plain,-1
++cell,0,5,safe,plain,-1
++cell,0,6,combat,plain,-1
++cell,0,7,combat,plain,-1
++cell,0,8,combat,plain,-1
++cell,1,-8,safe,plain,-1
++cell,1,-7,combat,plain,-1
++cell,1,-6,combat,plain,-1
++cell,1,-5,safe,plain,-1
++cell,1,-4,safe,plain,-1
++cell,1,-3,combat,plain,-1
++cell,1,-2,combat,plain,-1
++cell,1,-1,safe,plain,-1
++cell,1,0,combat,plain,-1
++cell,1,1,safe,plain,-1
++cell,1,2,safe,plain,2
++cell,1,3,safe,plain,-1
++cell,1,4,combat,plain,-1
++cell,1,5,combat,plain,-1
++cell,1,6,safe,plain,3
++cell,1,7,safe,plain,-1
++cell,2,-8,safe,plain,-1
++cell,2,-7,combat,plain,-1
++cell,2,-6,combat,plain,-1
++cell,2,-5,safe,plain,-1
++cell,2,-4,safe,plain,-1
++cell,2,-3,safe,plain,4
++cell,2,-2,safe,forest,-1
++cell,2,-1,safe,forest,-1
++cell,2,0,combat,forest,-1
++cell,2,1,combat,forest,-1
++cell,2,2,combat,forest,-1
++cell,2,3,safe,forest,-1
++cell,2,4,combat,plain,-1
++cell,2,5,combat,plain,-1
++cell,2,6,safe,plain,-1
++cell,3,-8,safe,plain,5
++cell,3,-7,combat,forest,-1
++cell,3,-6,safe,forest,-1
++cell,3,-5,safe,forest,-1
++cell,3,-4,safe,forest,-1
++cell,3,-3,safe,forest,-1
++cell,3,-2,safe,forest,-1
++cell,3,-1,combat,plain,-1
++cell,3,0,safe,plain,-1
++cell,3,1,combat,plain,-1
++cell,3,2,combat,plain,-1
++cell,3,3,safe,plain,-1
++cell,3,4,combat,plain,-1
++cell,3,5,combat,plain,-1
++cell,4,-8,combat,plain,-1
++cell,4,-7,safe,plain,-1
++cell,4,-6,combat,plain,-1
++cell,4,-5,safe,plain,-1
++cell,4,-4,safe,plain,-1
++cell,4,-3,combat,plain,-1
++cell,4,-2,combat,plain,-1
++cell,4,-1,safe,plain,-1
++cell,4,0,combat,plain,-1
++cell,4,1,safe,plain,-1
++cell,4,2,combat,plain,-1
++cell,4,3,combat,plain,-1
++cell,4,4,safe,plain,-1
++cell,5,-8,safe,plain,-1
++cell,5,-7,safe,plain,-1
++cell,5,-6,safe,forest,-1
++cell,5,-5,combat,plain,-1
++cell,5,-4,combat,plain,-1
++cell,5,-3,combat,forest,-1
++cell,5,-2,safe,forest,-1
++cell,5,-1,combat,plain,-1
++cell,5,0,combat,plain,-1
++cell,5,1,combat,plain,-1
++cell,5,2,safe,plain,-1
++cell,5,3,safe,plain,-1
++cell,6,-8,safe,plain,-1
++cell,6,-7,combat,plain,-1
++cell,6,-6,combat,forest,-1
++cell,6,-5,combat,forest,-1
++cell,6,-4,safe,forest,-1
++cell,6,-3,safe,forest,-1
++cell,6,-2,combat,forest,-1
++cell,6,-1,combat,plain,-1
++cell,6,0,safe,plain,-1
++cell,6,1,combat,plain,-1
++cell,6,2,combat,plain,-1
++cell,7,-8,combat,forest,-1
++cell,7,-7,combat,forest,-1
++cell,7,-6,safe,plain,-1
++cell,7,-5,safe,plain,-1
++cell,7,-4,combat,plain,-1
++cell,7,-3,combat,forest,-1
++cell,7,-2,combat,forest,-1
++cell,7,-1,safe,plain,-1
++cell,7,0,safe,plain,-1
++cell,7,1,safe,plain,-1
++cell,8,-8,safe,forest,-1
++cell,8,-7,safe,plain,-1
++cell,8,-6,safe,plain,-1
++cell,8,-5,combat,plain,-1
++cell,8,-4,combat,plain,-1
++cell,8,-3,combat,plain,-1
++cell,8,-2,safe,plain,6
++cell,8,-1,combat,plain,-1
++cell,8,0,boss,plain,-1
++road,-4,0,-4,4
++road,-4,4,1,2
++road,1,2,1,6
++road,1,2,2,-3
++road,1,2,8,-2
++road,2,-3,3,-8
++forest,0,-8,1
++forest,0,-8,2
++forest,0,-7,0
++forest,0,-6,-2
++forest,0,-6,-1
++forest,1,5,-3
++forest,1,5,-2
++forest,1,6,-3
++forest,1,6,-2
++forest,1,7,-3
++forest,1,7,-2
++forest,2,7,-8
++forest,2,7,-7
++forest,2,8,-8
++forest,3,-3,8
++forest,3,-2,3
++forest,3,-2,4
++forest,3,-2,5
++forest,3,-2,6
++forest,3,-2,7
++forest,3,-2,8
++forest,4,-1,4
++forest,4,-1,5
++forest,4,-1,6
++forest,4,-1,7
++forest,5,-4,5
++forest,5,-4,6
++forest,5,-4,7
++forest,5,-4,8
++forest,5,-3,6
++forest,5,-3,7
++forest,6,3,-7
++forest,6,3,-6
++forest,6,3,-5
++forest,6,3,-4
++forest,6,3,-3
++forest,7,2,-2
++forest,7,2,-1
++forest,7,2,0
++forest,7,2,1
++forest,7,2,2
++forest,7,2,3
++forest,7,3,-2
++forest,8,5,-6
++forest,8,6,-6
++forest,8,6,-5
++forest,8,6,-4
++forest,9,-1,-7
++forest,9,-1,-6
++forest,9,-1,-5
++forest,9,-1,-4
++forest,9,-1,-3
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\golden-beta.world" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\golden-beta.world"
+new file mode 100644
+index 0000000..4fed3e5
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\golden-beta.world"
+@@ -0,0 +1,274 @@
++TWDE-WORLD,1
++seed,676f6c64656e2d62657461
++start,-8,0
++boss,8,0
++cell,-8,0,safe,plain,-1
++cell,-8,1,safe,plain,-1
++cell,-8,2,combat,plain,-1
++cell,-8,3,combat,plain,-1
++cell,-8,4,safe,plain,-1
++cell,-8,5,safe,plain,-1
++cell,-8,6,combat,plain,-1
++cell,-8,7,combat,plain,-1
++cell,-8,8,combat,plain,-1
++cell,-7,-1,combat,plain,-1
++cell,-7,0,combat,plain,-1
++cell,-7,1,combat,plain,-1
++cell,-7,2,safe,plain,-1
++cell,-7,3,safe,plain,-1
++cell,-7,4,combat,plain,-1
++cell,-7,5,combat,plain,-1
++cell,-7,6,combat,plain,-1
++cell,-7,7,combat,plain,-1
++cell,-7,8,safe,plain,-1
++cell,-6,-2,combat,plain,-1
++cell,-6,-1,combat,plain,-1
++cell,-6,0,combat,plain,-1
++cell,-6,1,safe,plain,-1
++cell,-6,2,safe,plain,-1
++cell,-6,3,combat,plain,-1
++cell,-6,4,safe,plain,-1
++cell,-6,5,safe,plain,-1
++cell,-6,6,combat,plain,-1
++cell,-6,7,combat,plain,-1
++cell,-6,8,safe,plain,-1
++cell,-5,-3,combat,forest,-1
++cell,-5,-2,safe,forest,-1
++cell,-5,-1,safe,plain,0
++cell,-5,0,safe,plain,-1
++cell,-5,1,combat,plain,-1
++cell,-5,2,combat,plain,-1
++cell,-5,3,combat,plain,-1
++cell,-5,4,combat,plain,-1
++cell,-5,5,safe,plain,-1
++cell,-5,6,safe,plain,-1
++cell,-5,7,combat,plain,-1
++cell,-5,8,combat,plain,-1
++cell,-4,-4,safe,plain,-1
++cell,-4,-3,safe,forest,-1
++cell,-4,-2,combat,forest,-1
++cell,-4,-1,combat,forest,-1
++cell,-4,0,combat,plain,-1
++cell,-4,1,combat,plain,-1
++cell,-4,2,safe,plain,-1
++cell,-4,3,safe,plain,-1
++cell,-4,4,safe,plain,-1
++cell,-4,5,safe,plain,-1
++cell,-4,6,combat,plain,-1
++cell,-4,7,combat,plain,-1
++cell,-4,8,combat,plain,-1
++cell,-3,-5,combat,forest,-1
++cell,-3,-4,combat,forest,-1
++cell,-3,-3,safe,forest,-1
++cell,-3,-2,safe,forest,-1
++cell,-3,-1,combat,forest,-1
++cell,-3,0,combat,plain,-1
++cell,-3,1,safe,plain,-1
++cell,-3,2,combat,plain,-1
++cell,-3,3,combat,plain,-1
++cell,-3,4,combat,plain,-1
++cell,-3,5,combat,plain,-1
++cell,-3,6,safe,plain,-1
++cell,-3,7,combat,plain,-1
++cell,-3,8,combat,plain,-1
++cell,-2,-6,combat,plain,-1
++cell,-2,-5,safe,plain,-1
++cell,-2,-4,safe,plain,-1
++cell,-2,-3,combat,plain,-1
++cell,-2,-2,combat,plain,-1
++cell,-2,-1,combat,plain,-1
++cell,-2,0,combat,plain,-1
++cell,-2,1,safe,plain,-1
++cell,-2,2,safe,plain,-1
++cell,-2,3,combat,plain,-1
++cell,-2,4,combat,plain,-1
++cell,-2,5,combat,plain,-1
++cell,-2,6,safe,forest,-1
++cell,-2,7,safe,forest,-1
++cell,-2,8,combat,forest,-1
++cell,-1,-7,safe,plain,-1
++cell,-1,-6,safe,plain,-1
++cell,-1,-5,combat,plain,-1
++cell,-1,-4,combat,plain,-1
++cell,-1,-3,combat,plain,-1
++cell,-1,-2,safe,plain,-1
++cell,-1,-1,combat,plain,-1
++cell,-1,0,combat,plain,-1
++cell,-1,1,combat,plain,-1
++cell,-1,2,combat,plain,-1
++cell,-1,3,safe,plain,-1
++cell,-1,4,combat,plain,-1
++cell,-1,5,safe,plain,-1
++cell,-1,6,safe,plain,-1
++cell,-1,7,safe,plain,-1
++cell,-1,8,safe,plain,-1
++cell,0,-8,combat,plain,-1
++cell,0,-7,safe,plain,-1
++cell,0,-6,safe,plain,-1
++cell,0,-5,combat,plain,-1
++cell,0,-4,combat,plain,-1
++cell,0,-3,safe,plain,-1
++cell,0,-2,combat,plain,-1
++cell,0,-1,combat,plain,-1
++cell,0,0,combat,plain,-1
++cell,0,1,combat,plain,-1
++cell,0,2,safe,plain,-1
++cell,0,3,combat,plain,-1
++cell,0,4,combat,plain,-1
++cell,0,5,safe,plain,-1
++cell,0,6,combat,plain,-1
++cell,0,7,combat,plain,-1
++cell,0,8,safe,plain,-1
++cell,1,-8,safe,plain,1
++cell,1,-7,safe,forest,-1
++cell,1,-6,combat,forest,-1
++cell,1,-5,combat,forest,-1
++cell,1,-4,combat,forest,-1
++cell,1,-3,combat,plain,-1
++cell,1,-2,safe,plain,2
++cell,1,-1,combat,plain,-1
++cell,1,0,safe,plain,-1
++cell,1,1,safe,plain,-1
++cell,1,2,combat,forest,-1
++cell,1,3,safe,plain,3
++cell,1,4,safe,plain,-1
++cell,1,5,combat,plain,-1
++cell,1,6,combat,plain,-1
++cell,1,7,safe,plain,4
++cell,2,-8,combat,plain,-1
++cell,2,-7,safe,plain,-1
++cell,2,-6,combat,plain,-1
++cell,2,-5,combat,forest,-1
++cell,2,-4,safe,forest,-1
++cell,2,-3,combat,forest,-1
++cell,2,-2,combat,forest,-1
++cell,2,-1,safe,forest,-1
++cell,2,0,combat,plain,-1
++cell,2,1,safe,plain,-1
++cell,2,2,safe,forest,-1
++cell,2,3,combat,forest,-1
++cell,2,4,combat,forest,-1
++cell,2,5,combat,forest,-1
++cell,2,6,safe,forest,-1
++cell,3,-8,safe,plain,-1
++cell,3,-7,safe,forest,-1
++cell,3,-6,safe,forest,-1
++cell,3,-5,combat,forest,-1
++cell,3,-4,combat,forest,-1
++cell,3,-3,combat,plain,-1
++cell,3,-2,safe,plain,-1
++cell,3,-1,combat,plain,-1
++cell,3,0,safe,plain,-1
++cell,3,1,combat,plain,-1
++cell,3,2,combat,forest,-1
++cell,3,3,safe,forest,-1
++cell,3,4,safe,forest,-1
++cell,3,5,safe,forest,-1
++cell,4,-8,combat,plain,-1
++cell,4,-7,combat,plain,-1
++cell,4,-6,safe,plain,-1
++cell,4,-5,safe,plain,-1
++cell,4,-4,combat,plain,-1
++cell,4,-3,combat,plain,-1
++cell,4,-2,combat,plain,-1
++cell,4,-1,safe,plain,-1
++cell,4,0,combat,forest,-1
++cell,4,1,combat,forest,-1
++cell,4,2,safe,plain,-1
++cell,4,3,safe,plain,-1
++cell,4,4,safe,plain,-1
++cell,5,-8,safe,plain,-1
++cell,5,-7,combat,forest,-1
++cell,5,-6,combat,plain,-1
++cell,5,-5,combat,forest,-1
++cell,5,-4,safe,forest,-1
++cell,5,-3,safe,forest,-1
++cell,5,-2,safe,forest,-1
++cell,5,-1,combat,forest,-1
++cell,5,0,safe,plain,-1
++cell,5,1,safe,plain,-1
++cell,5,2,safe,plain,-1
++cell,5,3,combat,plain,-1
++cell,6,-8,combat,forest,-1
++cell,6,-7,combat,forest,-1
++cell,6,-6,combat,forest,-1
++cell,6,-5,safe,plain,-1
++cell,6,-4,combat,plain,-1
++cell,6,-3,combat,plain,-1
++cell,6,-2,combat,plain,-1
++cell,6,-1,safe,plain,-1
++cell,6,0,safe,plain,-1
++cell,6,1,combat,plain,-1
++cell,6,2,combat,plain,-1
++cell,7,-8,safe,plain,5
++cell,7,-7,safe,plain,-1
++cell,7,-6,safe,plain,-1
++cell,7,-5,combat,plain,-1
++cell,7,-4,safe,plain,6
++cell,7,-3,safe,plain,-1
++cell,7,-2,combat,plain,-1
++cell,7,-1,combat,plain,-1
++cell,7,0,combat,plain,-1
++cell,7,1,combat,plain,-1
++cell,8,-8,safe,plain,-1
++cell,8,-7,combat,plain,-1
++cell,8,-6,safe,plain,-1
++cell,8,-5,safe,plain,-1
++cell,8,-4,combat,plain,-1
++cell,8,-3,safe,plain,-1
++cell,8,-2,safe,plain,-1
++cell,8,-1,combat,plain,-1
++cell,8,0,boss,plain,-1
++road,-5,-1,1,-2
++road,1,-8,1,-2
++road,1,-8,7,-8
++road,1,-2,1,3
++road,1,3,1,7
++road,7,-8,7,-4
++forest,0,-2,6
++forest,0,-2,7
++forest,0,-2,8
++forest,1,1,-7
++forest,1,1,-6
++forest,1,1,-5
++forest,1,1,-4
++forest,2,3,-7
++forest,2,3,-6
++forest,2,3,-5
++forest,2,3,-4
++forest,3,1,2
++forest,3,2,2
++forest,3,3,2
++forest,3,4,0
++forest,3,4,1
++forest,4,-5,-3
++forest,4,-5,-2
++forest,4,-4,-3
++forest,4,-3,-5
++forest,4,-3,-4
++forest,4,-3,-3
++forest,5,2,3
++forest,5,2,4
++forest,5,2,5
++forest,5,2,6
++forest,5,3,3
++forest,5,3,4
++forest,5,3,5
++forest,6,2,-5
++forest,6,2,-4
++forest,6,2,-3
++forest,6,2,-2
++forest,6,2,-1
++forest,7,5,-4
++forest,7,5,-3
++forest,7,5,-2
++forest,7,5,-1
++forest,8,-4,-2
++forest,8,-4,-1
++forest,8,-3,-2
++forest,8,-3,-1
++forest,9,5,-7
++forest,9,5,-5
++forest,9,6,-8
++forest,9,6,-7
++forest,9,6,-6
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\town-road-01.world" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\town-road-01.world"
+new file mode 100644
+index 0000000..d7d6b21
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\town-road-01.world"
+@@ -0,0 +1,285 @@
++TWDE-WORLD,1
++seed,746f776e2d726f61642d3031
++start,-8,0
++boss,8,0
++cell,-8,0,safe,plain,-1
++cell,-8,1,combat,plain,-1
++cell,-8,2,combat,forest,-1
++cell,-8,3,combat,forest,-1
++cell,-8,4,combat,plain,-1
++cell,-8,5,combat,plain,-1
++cell,-8,6,combat,plain,-1
++cell,-8,7,safe,plain,-1
++cell,-8,8,combat,plain,-1
++cell,-7,-1,safe,forest,-1
++cell,-7,0,safe,forest,-1
++cell,-7,1,safe,forest,-1
++cell,-7,2,combat,forest,-1
++cell,-7,3,combat,plain,-1
++cell,-7,4,combat,plain,-1
++cell,-7,5,combat,plain,-1
++cell,-7,6,combat,plain,-1
++cell,-7,7,combat,plain,-1
++cell,-7,8,combat,plain,-1
++cell,-6,-2,combat,forest,-1
++cell,-6,-1,combat,plain,-1
++cell,-6,0,safe,forest,-1
++cell,-6,1,safe,forest,-1
++cell,-6,2,combat,forest,-1
++cell,-6,3,safe,plain,0
++cell,-6,4,safe,plain,-1
++cell,-6,5,combat,plain,-1
++cell,-6,6,combat,plain,-1
++cell,-6,7,safe,plain,1
++cell,-6,8,combat,plain,-1
++cell,-5,-3,safe,plain,-1
++cell,-5,-2,safe,forest,-1
++cell,-5,-1,combat,plain,-1
++cell,-5,0,combat,plain,-1
++cell,-5,1,combat,plain,-1
++cell,-5,2,safe,plain,-1
++cell,-5,3,combat,plain,-1
++cell,-5,4,combat,plain,-1
++cell,-5,5,combat,plain,-1
++cell,-5,6,safe,plain,-1
++cell,-5,7,safe,plain,-1
++cell,-5,8,safe,plain,-1
++cell,-4,-4,combat,plain,-1
++cell,-4,-3,safe,plain,-1
++cell,-4,-2,safe,plain,-1
++cell,-4,-1,combat,plain,-1
++cell,-4,0,safe,plain,-1
++cell,-4,1,safe,plain,-1
++cell,-4,2,combat,plain,-1
++cell,-4,3,combat,plain,-1
++cell,-4,4,combat,plain,-1
++cell,-4,5,safe,plain,-1
++cell,-4,6,safe,plain,-1
++cell,-4,7,combat,plain,-1
++cell,-4,8,combat,forest,-1
++cell,-3,-5,combat,plain,-1
++cell,-3,-4,combat,plain,-1
++cell,-3,-3,combat,plain,-1
++cell,-3,-2,safe,plain,2
++cell,-3,-1,safe,plain,-1
++cell,-3,0,combat,plain,-1
++cell,-3,1,combat,plain,-1
++cell,-3,2,combat,forest,-1
++cell,-3,3,safe,forest,-1
++cell,-3,4,safe,forest,-1
++cell,-3,5,combat,forest,-1
++cell,-3,6,combat,forest,-1
++cell,-3,7,combat,forest,-1
++cell,-3,8,safe,plain,3
++cell,-2,-6,combat,forest,-1
++cell,-2,-5,combat,plain,-1
++cell,-2,-4,combat,plain,-1
++cell,-2,-3,combat,plain,-1
++cell,-2,-2,combat,plain,-1
++cell,-2,-1,safe,plain,-1
++cell,-2,0,combat,plain,-1
++cell,-2,1,combat,plain,-1
++cell,-2,2,safe,forest,-1
++cell,-2,3,combat,forest,-1
++cell,-2,4,combat,forest,-1
++cell,-2,5,combat,forest,-1
++cell,-2,6,safe,forest,-1
++cell,-2,7,safe,forest,-1
++cell,-2,8,safe,forest,-1
++cell,-1,-7,safe,forest,-1
++cell,-1,-6,safe,forest,-1
++cell,-1,-5,combat,forest,-1
++cell,-1,-4,combat,forest,-1
++cell,-1,-3,safe,plain,-1
++cell,-1,-2,combat,plain,-1
++cell,-1,-1,combat,plain,-1
++cell,-1,0,combat,plain,-1
++cell,-1,1,safe,plain,-1
++cell,-1,2,combat,plain,-1
++cell,-1,3,combat,plain,-1
++cell,-1,4,safe,plain,-1
++cell,-1,5,safe,plain,-1
++cell,-1,6,combat,plain,-1
++cell,-1,7,combat,plain,-1
++cell,-1,8,combat,plain,-1
++cell,0,-8,combat,plain,-1
++cell,0,-7,combat,plain,-1
++cell,0,-6,safe,plain,-1
++cell,0,-5,combat,plain,-1
++cell,0,-4,combat,forest,-1
++cell,0,-3,combat,forest,-1
++cell,0,-2,combat,forest,-1
++cell,0,-1,safe,forest,-1
++cell,0,0,combat,forest,-1
++cell,0,1,safe,forest,-1
++cell,0,2,safe,plain,4
++cell,0,3,combat,plain,-1
++cell,0,4,safe,plain,-1
++cell,0,5,safe,plain,-1
++cell,0,6,combat,plain,-1
++cell,0,7,combat,plain,-1
++cell,0,8,combat,plain,-1
++cell,1,-8,combat,forest,-1
++cell,1,-7,safe,forest,-1
++cell,1,-6,combat,plain,-1
++cell,1,-5,combat,plain,-1
++cell,1,-4,safe,forest,-1
++cell,1,-3,combat,forest,-1
++cell,1,-2,combat,forest,-1
++cell,1,-1,safe,forest,-1
++cell,1,0,safe,plain,-1
++cell,1,1,combat,plain,-1
++cell,1,2,combat,plain,-1
++cell,1,3,safe,plain,-1
++cell,1,4,combat,plain,-1
++cell,1,5,combat,plain,-1
++cell,1,6,safe,plain,-1
++cell,1,7,safe,plain,-1
++cell,2,-8,combat,forest,-1
++cell,2,-7,combat,forest,-1
++cell,2,-6,safe,forest,-1
++cell,2,-5,safe,forest,-1
++cell,2,-4,combat,plain,-1
++cell,2,-3,combat,plain,-1
++cell,2,-2,combat,plain,-1
++cell,2,-1,safe,forest,-1
++cell,2,0,combat,plain,-1
++cell,2,1,combat,plain,-1
++cell,2,2,safe,plain,-1
++cell,2,3,safe,plain,-1
++cell,2,4,safe,plain,-1
++cell,2,5,safe,plain,-1
++cell,2,6,combat,plain,-1
++cell,3,-8,safe,plain,-1
++cell,3,-7,safe,plain,-1
++cell,3,-6,combat,plain,-1
++cell,3,-5,combat,plain,-1
++cell,3,-4,combat,plain,-1
++cell,3,-3,safe,plain,-1
++cell,3,-2,safe,plain,-1
++cell,3,-1,combat,plain,-1
++cell,3,0,safe,plain,-1
++cell,3,1,combat,plain,-1
++cell,3,2,combat,plain,-1
++cell,3,3,combat,plain,-1
++cell,3,4,safe,plain,-1
++cell,3,5,safe,plain,-1
++cell,4,-8,safe,plain,-1
++cell,4,-7,combat,forest,-1
++cell,4,-6,combat,forest,-1
++cell,4,-5,combat,forest,-1
++cell,4,-4,combat,forest,-1
++cell,4,-3,safe,forest,-1
++cell,4,-2,safe,forest,-1
++cell,4,-1,combat,plain,-1
++cell,4,0,safe,plain,-1
++cell,4,1,combat,plain,-1
++cell,4,2,combat,plain,-1
++cell,4,3,combat,plain,-1
++cell,4,4,safe,plain,-1
++cell,5,-8,combat,plain,-1
++cell,5,-7,combat,plain,-1
++cell,5,-6,combat,plain,-1
++cell,5,-5,safe,plain,-1
++cell,5,-4,combat,plain,-1
++cell,5,-3,combat,plain,-1
++cell,5,-2,combat,plain,-1
++cell,5,-1,safe,plain,-1
++cell,5,0,combat,plain,-1
++cell,5,1,safe,plain,-1
++cell,5,2,combat,plain,-1
++cell,5,3,combat,plain,-1
++cell,6,-8,safe,forest,-1
++cell,6,-7,combat,forest,-1
++cell,6,-6,combat,forest,-1
++cell,6,-5,safe,plain,5
++cell,6,-4,safe,plain,-1
++cell,6,-3,combat,plain,-1
++cell,6,-2,safe,plain,-1
++cell,6,-1,safe,plain,6
++cell,6,0,combat,plain,-1
++cell,6,1,safe,plain,-1
++cell,6,2,combat,plain,-1
++cell,7,-8,combat,plain,-1
++cell,7,-7,safe,forest,-1
++cell,7,-6,combat,plain,-1
++cell,7,-5,combat,plain,-1
++cell,7,-4,combat,plain,-1
++cell,7,-3,combat,plain,-1
++cell,7,-2,combat,plain,-1
++cell,7,-1,combat,plain,-1
++cell,7,0,safe,plain,-1
++cell,7,1,safe,plain,-1
++cell,8,-8,safe,forest,-1
++cell,8,-7,safe,plain,-1
++cell,8,-6,combat,plain,-1
++cell,8,-5,combat,plain,-1
++cell,8,-4,safe,plain,-1
++cell,8,-3,safe,plain,-1
++cell,8,-2,safe,plain,-1
++cell,8,-1,combat,plain,-1
++cell,8,0,boss,plain,-1
++road,-6,3,-6,7
++road,-6,3,-3,-2
++road,-6,3,0,2
++road,-6,7,-3,8
++road,0,2,6,-1
++road,6,-5,6,-1
++forest,0,0,0
++forest,0,0,1
++forest,0,1,-4
++forest,0,1,-3
++forest,0,1,-2
++forest,0,1,-1
++forest,0,2,-1
++forest,1,-8,2
++forest,1,-8,3
++forest,1,-7,2
++forest,1,-6,0
++forest,1,-6,1
++forest,1,-6,2
++forest,2,6,-8
++forest,2,6,-7
++forest,2,6,-6
++forest,2,7,-7
++forest,2,8,-8
++forest,3,-2,-6
++forest,3,-1,-7
++forest,3,-1,-6
++forest,3,-1,-5
++forest,3,-1,-4
++forest,4,-7,-1
++forest,4,-7,0
++forest,4,-7,1
++forest,4,-6,-2
++forest,4,-5,-2
++forest,5,0,-4
++forest,5,0,-3
++forest,5,0,-2
++forest,5,0,-1
++forest,6,-2,2
++forest,6,-2,3
++forest,6,-2,4
++forest,6,-2,5
++forest,6,-2,6
++forest,6,-2,7
++forest,6,-2,8
++forest,7,4,-7
++forest,7,4,-6
++forest,7,4,-5
++forest,7,4,-4
++forest,7,4,-3
++forest,7,4,-2
++forest,8,-4,8
++forest,8,-3,2
++forest,8,-3,3
++forest,8,-3,4
++forest,8,-3,5
++forest,8,-3,6
++forest,8,-3,7
++forest,9,1,-8
++forest,9,1,-7
++forest,9,2,-8
++forest,9,2,-7
++forest,9,2,-6
++forest,9,2,-5
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\unicode-lodz.world" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\unicode-lodz.world"
+new file mode 100644
+index 0000000..093755c
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\unicode-lodz.world"
+@@ -0,0 +1,280 @@
++TWDE-WORLD,1
++seed,756e69636f64652dc582c3b364c5ba
++start,-8,0
++boss,8,0
++cell,-8,0,safe,plain,-1
++cell,-8,1,safe,forest,-1
++cell,-8,2,combat,forest,-1
++cell,-8,3,safe,plain,0
++cell,-8,4,safe,forest,-1
++cell,-8,5,combat,plain,-1
++cell,-8,6,combat,plain,-1
++cell,-8,7,safe,plain,1
++cell,-8,8,combat,plain,-1
++cell,-7,-1,safe,forest,-1
++cell,-7,0,combat,forest,-1
++cell,-7,1,combat,plain,-1
++cell,-7,2,combat,forest,-1
++cell,-7,3,safe,forest,-1
++cell,-7,4,combat,plain,-1
++cell,-7,5,combat,plain,-1
++cell,-7,6,safe,plain,-1
++cell,-7,7,safe,plain,-1
++cell,-7,8,safe,plain,-1
++cell,-6,-2,combat,forest,-1
++cell,-6,-1,combat,forest,-1
++cell,-6,0,safe,forest,-1
++cell,-6,1,combat,forest,-1
++cell,-6,2,combat,forest,-1
++cell,-6,3,safe,forest,-1
++cell,-6,4,combat,plain,-1
++cell,-6,5,combat,plain,-1
++cell,-6,6,safe,plain,-1
++cell,-6,7,safe,plain,-1
++cell,-6,8,combat,plain,-1
++cell,-5,-3,combat,forest,-1
++cell,-5,-2,safe,forest,-1
++cell,-5,-1,safe,plain,2
++cell,-5,0,combat,plain,-1
++cell,-5,1,combat,plain,-1
++cell,-5,2,safe,plain,-1
++cell,-5,3,combat,plain,-1
++cell,-5,4,safe,plain,-1
++cell,-5,5,combat,plain,-1
++cell,-5,6,safe,plain,-1
++cell,-5,7,safe,plain,-1
++cell,-5,8,safe,plain,-1
++cell,-4,-4,safe,plain,-1
++cell,-4,-3,combat,forest,-1
++cell,-4,-2,combat,forest,-1
++cell,-4,-1,safe,forest,-1
++cell,-4,0,combat,forest,-1
++cell,-4,1,combat,plain,-1
++cell,-4,2,combat,plain,-1
++cell,-4,3,safe,plain,-1
++cell,-4,4,safe,plain,-1
++cell,-4,5,combat,plain,-1
++cell,-4,6,combat,plain,-1
++cell,-4,7,combat,plain,-1
++cell,-4,8,safe,plain,-1
++cell,-3,-5,combat,plain,-1
++cell,-3,-4,safe,plain,-1
++cell,-3,-3,safe,plain,-1
++cell,-3,-2,combat,plain,-1
++cell,-3,-1,combat,plain,-1
++cell,-3,0,safe,plain,-1
++cell,-3,1,combat,plain,-1
++cell,-3,2,combat,plain,-1
++cell,-3,3,combat,plain,-1
++cell,-3,4,safe,forest,-1
++cell,-3,5,safe,forest,-1
++cell,-3,6,combat,forest,-1
++cell,-3,7,combat,forest,-1
++cell,-3,8,combat,plain,-1
++cell,-2,-6,safe,plain,-1
++cell,-2,-5,safe,plain,-1
++cell,-2,-4,combat,plain,-1
++cell,-2,-3,combat,plain,-1
++cell,-2,-2,combat,plain,-1
++cell,-2,-1,safe,plain,-1
++cell,-2,0,safe,plain,-1
++cell,-2,1,safe,plain,-1
++cell,-2,2,combat,plain,-1
++cell,-2,3,safe,plain,-1
++cell,-2,4,combat,plain,-1
++cell,-2,5,safe,plain,-1
++cell,-2,6,combat,plain,-1
++cell,-2,7,combat,plain,-1
++cell,-2,8,combat,plain,-1
++cell,-1,-7,safe,plain,-1
++cell,-1,-6,safe,plain,-1
++cell,-1,-5,combat,plain,-1
++cell,-1,-4,combat,plain,-1
++cell,-1,-3,safe,plain,-1
++cell,-1,-2,combat,plain,-1
++cell,-1,-1,combat,plain,-1
++cell,-1,0,safe,plain,-1
++cell,-1,1,safe,forest,-1
++cell,-1,2,combat,plain,-1
++cell,-1,3,combat,plain,-1
++cell,-1,4,safe,plain,-1
++cell,-1,5,combat,plain,-1
++cell,-1,6,combat,plain,-1
++cell,-1,7,safe,plain,-1
++cell,-1,8,combat,plain,-1
++cell,0,-8,safe,plain,3
++cell,0,-7,safe,plain,-1
++cell,0,-6,combat,plain,-1
++cell,0,-5,combat,plain,-1
++cell,0,-4,safe,plain,-1
++cell,0,-3,combat,plain,-1
++cell,0,-2,combat,plain,-1
++cell,0,-1,safe,plain,-1
++cell,0,0,combat,plain,-1
++cell,0,1,combat,forest,-1
++cell,0,2,safe,forest,-1
++cell,0,3,safe,forest,-1
++cell,0,4,combat,plain,-1
++cell,0,5,combat,plain,-1
++cell,0,6,safe,plain,-1
++cell,0,7,combat,plain,-1
++cell,0,8,safe,plain,-1
++cell,1,-8,combat,plain,-1
++cell,1,-7,combat,plain,-1
++cell,1,-6,combat,plain,-1
++cell,1,-5,safe,forest,-1
++cell,1,-4,safe,forest,-1
++cell,1,-3,safe,forest,-1
++cell,1,-2,combat,forest,-1
++cell,1,-1,combat,forest,-1
++cell,1,0,combat,plain,-1
++cell,1,1,combat,plain,-1
++cell,1,2,safe,plain,4
++cell,1,3,safe,plain,-1
++cell,1,4,combat,plain,-1
++cell,1,5,combat,plain,-1
++cell,1,6,safe,plain,5
++cell,1,7,safe,plain,-1
++cell,2,-8,combat,forest,-1
++cell,2,-7,combat,forest,-1
++cell,2,-6,combat,forest,-1
++cell,2,-5,combat,forest,-1
++cell,2,-4,safe,forest,-1
++cell,2,-3,safe,plain,-1
++cell,2,-2,combat,plain,-1
++cell,2,-1,combat,forest,-1
++cell,2,0,combat,plain,-1
++cell,2,1,combat,plain,-1
++cell,2,2,combat,plain,-1
++cell,2,3,safe,plain,-1
++cell,2,4,safe,plain,-1
++cell,2,5,combat,plain,-1
++cell,2,6,combat,plain,-1
++cell,3,-8,safe,plain,-1
++cell,3,-7,combat,plain,-1
++cell,3,-6,combat,plain,-1
++cell,3,-5,combat,plain,-1
++cell,3,-4,safe,plain,-1
++cell,3,-3,safe,plain,-1
++cell,3,-2,combat,plain,-1
++cell,3,-1,combat,plain,-1
++cell,3,0,combat,plain,-1
++cell,3,1,combat,plain,-1
++cell,3,2,safe,plain,-1
++cell,3,3,combat,forest,-1
++cell,3,4,combat,forest,-1
++cell,3,5,combat,forest,-1
++cell,4,-8,safe,forest,-1
++cell,4,-7,safe,plain,-1
++cell,4,-6,safe,forest,-1
++cell,4,-5,combat,forest,-1
++cell,4,-4,combat,plain,-1
++cell,4,-3,combat,plain,-1
++cell,4,-2,safe,plain,-1
++cell,4,-1,combat,plain,-1
++cell,4,0,safe,plain,-1
++cell,4,1,combat,plain,-1
++cell,4,2,combat,plain,-1
++cell,4,3,safe,plain,-1
++cell,4,4,safe,forest,-1
++cell,5,-8,safe,forest,-1
++cell,5,-7,combat,forest,-1
++cell,5,-6,combat,plain,-1
++cell,5,-5,safe,plain,-1
++cell,5,-4,safe,plain,-1
++cell,5,-3,combat,plain,-1
++cell,5,-2,combat,plain,-1
++cell,5,-1,combat,plain,-1
++cell,5,0,combat,plain,-1
++cell,5,1,combat,plain,-1
++cell,5,2,combat,plain,-1
++cell,5,3,safe,plain,-1
++cell,6,-8,safe,plain,-1
++cell,6,-7,combat,plain,-1
++cell,6,-6,safe,plain,-1
++cell,6,-5,safe,plain,-1
++cell,6,-4,combat,plain,-1
++cell,6,-3,safe,plain,-1
++cell,6,-2,safe,plain,-1
++cell,6,-1,combat,plain,-1
++cell,6,0,combat,plain,-1
++cell,6,1,safe,plain,6
++cell,6,2,combat,plain,-1
++cell,7,-8,safe,plain,-1
++cell,7,-7,combat,plain,-1
++cell,7,-6,combat,plain,-1
++cell,7,-5,safe,plain,-1
++cell,7,-4,safe,plain,-1
++cell,7,-3,combat,plain,-1
++cell,7,-2,safe,plain,-1
++cell,7,-1,safe,plain,-1
++cell,7,0,safe,forest,-1
++cell,7,1,safe,forest,-1
++cell,8,-8,combat,plain,-1
++cell,8,-7,safe,plain,-1
++cell,8,-6,combat,plain,-1
++cell,8,-5,combat,plain,-1
++cell,8,-4,safe,forest,-1
++cell,8,-3,combat,forest,-1
++cell,8,-2,combat,forest,-1
++cell,8,-1,safe,forest,-1
++cell,8,0,boss,plain,-1
++road,-8,3,-8,7
++road,-8,3,-5,-1
++road,-8,3,1,2
++road,-5,-1,0,-8
++road,1,2,1,6
++road,1,2,6,1
++forest,0,1,-5
++forest,0,1,-4
++forest,0,1,-3
++forest,0,1,-2
++forest,0,1,-1
++forest,0,2,-1
++forest,1,-6,-2
++forest,1,-6,-1
++forest,1,-6,0
++forest,1,-6,1
++forest,1,-6,2
++forest,1,-6,3
++forest,2,-1,1
++forest,2,0,1
++forest,2,0,2
++forest,2,0,3
++forest,3,-8,1
++forest,3,-8,2
++forest,3,-8,4
++forest,3,-7,-1
++forest,3,-7,0
++forest,3,-7,2
++forest,3,-7,3
++forest,4,-3,4
++forest,4,-3,5
++forest,4,-3,6
++forest,4,-3,7
++forest,5,2,-8
++forest,5,2,-7
++forest,5,2,-6
++forest,5,2,-5
++forest,5,2,-4
++forest,6,7,0
++forest,6,7,1
++forest,6,8,-4
++forest,6,8,-3
++forest,6,8,-2
++forest,6,8,-1
++forest,7,4,-8
++forest,7,4,-6
++forest,7,4,-5
++forest,7,5,-8
++forest,7,5,-7
++forest,8,3,3
++forest,8,3,4
++forest,8,3,5
++forest,8,4,4
++forest,9,-5,-3
++forest,9,-5,-2
++forest,9,-4,-3
++forest,9,-4,-2
++forest,9,-4,-1
++forest,9,-4,0
+diff --git "a/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\unsatisfiable-town-config.json" "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\unsatisfiable-town-config.json"
+new file mode 100644
+index 0000000..5817892
+--- /dev/null
++++ "b/D:\\Projects\\two-dimension-exploration\\Tests\\Fixtures\\WorldMap\\GeneratorV1\\unsatisfiable-town-config.json"
+@@ -0,0 +1,17 @@
++{
++	"radius": 2,
++	"town_count": 7,
++	"town_min_distance": 4,
++	"start": [
++		-2,
++		0
++	],
++	"boss": [
++		2,
++		0
++	],
++	"expected_code": "WORLD_CONSTRAINT_UNSATISFIABLE",
++	"expected_namespace": "town",
++	"expected_published_cells": 0,
++	"expected_save_mutation": false
++}

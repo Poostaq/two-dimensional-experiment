@@ -1,0 +1,1 @@
+"D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe" --headless --path . --script res://Tools/WorldMap/generator_v1_fixture_author.gd -- --output-dir Tests/Fixtures/WorldMap/GeneratorV1 --verify-summaries
