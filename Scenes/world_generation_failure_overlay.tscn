@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://bl63uvifiek6s"]
+
+[ext_resource type="Script" uid="uid://c6xakt7ffteqd" path="res://Scripts/UI/world_generation_failure_overlay.gd" id="1_tn1d5"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_awi1y"]
+bg_color = Color(0.07, 0.09, 0.14, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.55, 0.36, 0.2, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.55)
+shadow_size = 18
+
+[node name="WorldGenerationFailureOverlay" type="Control" unique_id=581477633]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+script = ExtResource("1_tn1d5")
+
+[node name="Dimmer" type="ColorRect" parent="." unique_id=594642091]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1152.0
+offset_bottom = -648.0
+mouse_filter = 2
+color = Color(0.025, 0.035, 0.055, 0.9)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=967300242]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1152.0
+offset_bottom = -648.0
+
+[node name="FailurePanel" type="PanelContainer" parent="Center" unique_id=1127723727]
+custom_minimum_size = Vector2(620, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_awi1y")
+
+[node name="Margin" type="MarginContainer" parent="Center/FailurePanel" unique_id=1590006868]
+layout_mode = 2
+theme_override_constants/margin_left = 40
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 40
+theme_override_constants/margin_bottom = 36
+
+[node name="Content" type="VBoxContainer" parent="Center/FailurePanel/Margin" unique_id=231232438]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="Center/FailurePanel/Margin/Content" unique_id=1920837045]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.95, 0.63, 0.35, 1)
+theme_override_font_sizes/font_size = 25
+text = "WORLD GENERATION FAILED"
+horizontal_alignment = 1
+
+[node name="Divider" type="HSeparator" parent="Center/FailurePanel/Margin/Content" unique_id=15328056]
+layout_mode = 2
+
+[node name="FailureMessage" type="Label" parent="Center/FailurePanel/Margin/Content" unique_id=124855453]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9, 0.92, 0.96, 1)
+theme_override_font_sizes/font_size = 18
+text = "World generation failed. The run was not started."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Guidance" type="Label" parent="Center/FailurePanel/Margin/Content" unique_id=707719899]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.68, 0.78, 1)
+theme_override_font_sizes/font_size = 14
+text = "Return to run setup and choose another seed, or copy diagnostics for a bug report."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="Actions" type="HBoxContainer" parent="Center/FailurePanel/Margin/Content" unique_id=558649672]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="CopyDiagnosticsButton" type="Button" parent="Center/FailurePanel/Margin/Content/Actions" unique_id=276334874]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+text = "Copy Diagnostics"
+
+[node name="ReturnButton" type="Button" parent="Center/FailurePanel/Margin/Content/Actions" unique_id=445211383]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+text = "Return"

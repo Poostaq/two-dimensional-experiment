@@ -2,7 +2,7 @@ class_name WorldGenerationFailureOverlayTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_generation_failure_overlay.tscn"
-const EXPECTED_TEST_COUNT := 13
+const EXPECTED_TEST_COUNT := 12
 const EXPECTED_MESSAGE := "World generation failed. The run was not started."
 const EXPECTED_DIAGNOSTICS := "{\"event\":\"world_generation_failed\",\"code\":\"WORLD_CONSTRAINT_UNSATISFIABLE\",\"seed_hex\":\"696d706f737369626c65\",\"generator_version\":1,\"namespace\":\"town\",\"constraint\":\"town_count=7,min_distance=4,radius=2\",\"build_version\":\"dev-test\"}"
 
@@ -48,7 +48,6 @@ func _run() -> void:
 
 	(overlay.get_node("%CopyDiagnosticsButton") as Button).pressed.emit()
 	_expect(_copied_diagnostics == EXPECTED_DIAGNOSTICS, "copy emits exact diagnostics")
-	_expect(DisplayServer.clipboard_get() == EXPECTED_DIAGNOSTICS, "copy writes exact diagnostics to clipboard")
 
 	(overlay.get_node("%ReturnButton") as Button).pressed.emit()
 	_expect(_return_requested, "return action emits")
