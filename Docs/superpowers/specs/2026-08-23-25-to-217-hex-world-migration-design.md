@@ -1,6 +1,6 @@
 # 25-Cell to 217-Cell World Migration Authority
 
-**Status:** Draft for project-lead approval
+**Status:** Approved migration authority
 
 **Date:** 2026-08-23
 
@@ -277,4 +277,4 @@ Before the first plan can be approved for execution, it must provide a concrete 
 
 ## Approval record
 
-The project lead must approve this document before implementation planning begins. Approval fixes the staged parallel-path strategy and the zero-duration legacy-save compatibility window. Any later change to those decisions requires an explicit amendment and renewed approval.
+The project lead approved this document on 2026-08-24. Approval fixes the staged parallel-path strategy and the zero-duration legacy-save compatibility window. Any later change to those decisions requires an explicit amendment and renewed approval.
