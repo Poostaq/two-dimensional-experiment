@@ -1,0 +1,19 @@
+RUN res://Tests/WorldMap/test_hex_world_geometry.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() ??? debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: Attempt to open script 'res://Scripts/WorldMap/hex_world_geometry.gd' resulted in error 'File not found'.
+   at: load_source_code (modules/gdscript/gdscript.cpp:1139)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_hex_world_geometry.gd:12)
+ERROR: Failed loading resource: res://Scripts/WorldMap/hex_world_geometry.gd.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_hex_world_geometry.gd:12)
+ERROR: HexWorldGeometry script is missing
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_hex_world_geometry.gd:63)
+       [1] _run (res://Tests/WorldMap/test_hex_world_geometry.gd:14)
+EXIT 1
