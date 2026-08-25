@@ -2,7 +2,7 @@ class_name WorldPresentationSceneTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_preview.tscn"
-const EXPECTED_TEST_COUNT := 22
+const EXPECTED_TEST_COUNT := 44
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -51,6 +51,36 @@ func _run() -> void:
 	footprint_before = minimap.get_camera_footprint()
 	camera.zoom_by_steps(-1, Vector2(576.0, 324.0))
 	_expect(minimap.get_camera_footprint() != footprint_before, "minimap footprint updates live after camera zoom")
+
+	var canonical_corners: Array[Vector2i] = [
+		Vector2i(-8, 0),
+		Vector2i(-8, 8),
+		Vector2i(0, -8),
+		Vector2i(0, 8),
+		Vector2i(8, -8),
+		Vector2i(8, 0),
+	]
+	var framing_steps: Array[int] = [100, 0, -100]
+	var framing_labels: Array[int] = [3, 5, 11]
+	var plan_id_before := int(preview.call("get_plan_instance_id"))
+	var edge_footprint_before := minimap.get_camera_footprint()
+	for framing_index: int in framing_steps.size():
+		camera.set_default_zoom()
+		camera.zoom_by_steps(framing_steps[framing_index], Vector2(576.0, 324.0))
+		for corner: Vector2i in canonical_corners:
+			var target := Vector2(preview.call("axial_to_world", corner))
+			camera.center_on(target)
+			_expect(
+				camera.position.is_equal_approx(target),
+				"radius-8 corner %s centers at %d-hex framing" % [corner, framing_labels[framing_index]]
+			)
+	_expect(minimap.get_camera_footprint() != edge_footprint_before, "minimap footprint follows edge-centered camera")
+	_expect(int(preview.call("get_plan_instance_id")) == plan_id_before, "camera framing preserves logical plan identity")
+
+	camera.center_on(Vector2(99999.0, 99999.0))
+	_expect(camera.position.is_equal_approx(Vector2(640.0, 552.0)), "positive camera limit equals canonical cell-center bounds")
+	camera.center_on(Vector2(-99999.0, -99999.0))
+	_expect(camera.position.is_equal_approx(Vector2(-640.0, -552.0)), "negative camera limit equals canonical cell-center bounds")
 	_expect(
 		int(preview.call("get_plan_instance_id"))
 		== int(preview.get_node("%WorldMinimap").call("get_plan_instance_id")),

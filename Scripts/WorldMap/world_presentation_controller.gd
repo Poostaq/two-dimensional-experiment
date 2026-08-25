@@ -177,8 +177,7 @@ func _calculate_world_rect(coords: Array[Vector2i]) -> Rect2:
 		var point := axial_to_world(coord)
 		minimum = minimum.min(point)
 		maximum = maximum.max(point)
-	var margin := Vector2(CELL_FLAT_WIDTH * 0.6, CELL_POINT_HEIGHT * 0.6)
-	return Rect2(minimum - margin, maximum - minimum + margin * 2.0)
+	return Rect2(minimum, maximum - minimum)
 
 
 func _clear_children(parent: Node) -> void:
