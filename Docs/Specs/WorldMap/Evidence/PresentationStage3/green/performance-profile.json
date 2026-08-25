@@ -1,0 +1,29 @@
+{
+  "evidence_kind": "headless_fallback",
+  "workload": "golden-alpha Generator V1 plus one isolated 217-cell presentation build, minimap footprint update, 60,000 ms scripted pan/zoom route, and 10 idle frames; automated coverage also profiles the five approved corpus seeds",
+  "environment": {
+    "cpu": "AMD Ryzen 9 5950X 16-Core Processor",
+    "godot_version": "4.7.2-stable (steam)",
+    "headless": true,
+    "logical_cpu_count": 32,
+    "os": "Windows",
+    "video_adapter": "",
+    "viewport": [1152, 648]
+  },
+  "generator_version": 1,
+  "seed": "golden-alpha",
+  "generation_usec": 224108,
+  "presentation_build_usec": 47534,
+  "minimap_update_usec": 5,
+  "resident_node_count": 4883,
+  "world_cell_count": 217,
+  "memory_before_bytes": 60398033,
+  "memory_after_bytes": 80143209,
+  "memory_delta_bytes": 19745176,
+  "idle_memory_delta_bytes": -2484,
+  "idle_sample_count": 10,
+  "scripted_duration_msec": 60000,
+  "scripted_step_count": 8697,
+  "reference_hardware_status": "pending_manual_reference_hardware",
+  "confidence": "Headless timing and static-memory measurements are observed values on the named machine; GPU/frame-time compliance is inconclusive until tested on the approved i3-12100F/RX 6500 XT baseline."
+}

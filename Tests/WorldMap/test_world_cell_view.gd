@@ -2,7 +2,7 @@ class_name WorldCellViewTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_cell_view.tscn"
-const EXPECTED_TEST_COUNT := 37
+const EXPECTED_TEST_COUNT := 40
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -49,6 +49,8 @@ func _run() -> void:
 	_expect(float(cell.call("marker_plate_diameter", flat_width, point_height)) == 36.0, "marker plate uses ceil 44 percent of smaller dimension")
 	_expect(is_equal_approx(float(cell.call("marker_silhouette_diameter", flat_width, point_height)), 30.4), "marker silhouette uses 38 percent maximum")
 	_expect(float(cell.call("marker_outline_width")) >= 2.0, "marker plate has contrasting two-pixel outline")
+	var marker_outline := cell.get_node_or_null("MarkerLayer/Outline") as Line2D
+	_expect(is_instance_valid(marker_outline) and marker_outline.closed and marker_outline.width >= 2.0, "marker outline is rendered as closed geometry")
 
 	var road_edges: Array[Vector2i] = [Vector2i(1, 0)]
 	cell.call("configure", Vector2i(2, -1), "Combat", "forest", road_edges, true)
@@ -63,6 +65,7 @@ func _run() -> void:
 	cell.call("set_party_marker", "player")
 	_expect((cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).visible, "player icon is visible")
 	_expect((cell.get_node("MarkerLayer/Plate") as Polygon2D).visible, "player readability plate is visible")
+	_expect(marker_outline.visible, "rendered marker outline is visible with player")
 	_expect((cell.get_node("ContextLayer/PartyLabel") as Label).text == "P", "player has a non-color label")
 	_expect((cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).modulate == Color("55d879"), "player icon is green")
 	cell.call("set_party_marker", "boss")
@@ -71,6 +74,7 @@ func _run() -> void:
 	cell.call("set_party_marker", "")
 	_expect(not (cell.get_node("MarkerLayer/PartyIcon") as Sprite2D).visible, "empty marker hides the icon")
 	_expect(not (cell.get_node("MarkerLayer/Plate") as Polygon2D).visible, "empty marker hides the plate")
+	_expect(not marker_outline.visible, "empty marker hides the rendered outline")
 	_expect(not (cell.get_node("ContextLayer/PartyLabel") as Label).visible, "empty marker hides the label")
 
 	cell.queue_free()

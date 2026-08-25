@@ -1,0 +1,20 @@
+Stage 3 production-isolation proof — 2026-08-25
+branch=feat/world-presentation-stage3
+base=203248307dbd8cb29cb240f48363b692afa39df2
+evidence_head_before_task8_commit=1ec33c6bda5dbc31644f6ae2bab6d1d86367437a
+
+git diff --exit-code 203248307dbd8cb29cb240f48363b692afa39df2 -- Scenes/game_world.tscn Scripts/Map Tests/Map
+exit=0
+
+sha256 Scenes/game_world.tscn
+4506304315bd40c10f26c3dfb3aee50d3765df2684867822b829179071140bfd
+
+sha256 Scripts/Map/map_controller.gd
+405adb18ba54cd0c8e4c46011bfd247a006d9411647f46610ec85b5df8a63f74
+
+Production main scene remains res://Scenes/game_world.tscn. Stage 3 introduces no production cutover, runtime movement, encounter resolution, or boss-pursuit ownership.
+
+Pre-existing untracked exclusions recorded at Stage 3 baseline and preserved unstaged:
+.github/agents/race-class-designer.agent.md
+Tests/Battle/test_active_turn_skill_lock.gd.uid
+Tests/Map/test_world_turn_counter.gd.uid

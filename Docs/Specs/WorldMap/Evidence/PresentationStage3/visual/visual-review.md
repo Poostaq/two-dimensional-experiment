@@ -2,6 +2,8 @@
 
 This review uses the deterministic `golden-alpha` preview at 1152×648. Geometry and layer metrics are checked by `test_world_visual_fixtures.gd` before visual capture. Screenshots are observations, not automatically approved pixel baselines.
 
+Persistent captures: `overview-3-hex.png`, `overview-5-hex.png`, and `overview-11-hex.png`.
+
 ## Required states
 
 - Road through forest: road remains above the forest layer and retains its 16 px protected corridor.

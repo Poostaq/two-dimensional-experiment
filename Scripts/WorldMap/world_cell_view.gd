@@ -16,6 +16,7 @@ const ENCOUNTER_COLORS := {
 @onready var _town_buildings: Node2D = $TownLayer/Buildings
 @onready var _highlight_outline: Line2D = $HighlightLayer/Outline
 @onready var _marker_plate: Polygon2D = $MarkerLayer/Plate
+@onready var _marker_outline: Line2D = $MarkerLayer/Outline
 @onready var _party_marker: Sprite2D = $MarkerLayer/PartyIcon
 @onready var _party_label: Label = $ContextLayer/PartyLabel
 
@@ -50,6 +51,7 @@ func set_party_marker(kind: String) -> void:
 	var normalized := kind.to_lower()
 	var has_marker := normalized == "player" or normalized == "boss"
 	_marker_plate.visible = has_marker
+	_marker_outline.visible = has_marker
 	_party_marker.visible = has_marker
 	_party_label.visible = has_marker
 	if not has_marker:

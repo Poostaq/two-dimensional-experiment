@@ -2,7 +2,7 @@ class_name WorldCameraControllerTests
 extends SceneTree
 
 const SCRIPT_PATH := "res://Scripts/WorldMap/world_camera_controller.gd"
-const EXPECTED_TEST_COUNT := 23
+const EXPECTED_TEST_COUNT := 26
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -22,8 +22,13 @@ func _run() -> void:
 	get_root().add_child(camera)
 	await process_frame
 
+	var view_changes: Array[Rect2] = []
+	if camera.has_signal("view_changed"):
+		camera.connect("view_changed", func(rect: Rect2) -> void: view_changes.append(rect))
 	var world_rect := Rect2(-800.0, -800.0, 1600.0, 1600.0)
 	camera.call("configure", world_rect, Vector2(1000.0, 600.0), 100.0)
+	_expect(camera.has_signal("view_changed"), "camera exposes typed view-changed signal")
+	_expect(view_changes.size() == 1, "configuration publishes initial visible rectangle")
 	_expect(is_equal_approx(float(camera.call("get_hexes_across")), 5.0), "default framing shows five cells across")
 	_expect(camera.position == Vector2.ZERO, "configuration centers the world")
 	_expect(camera.has_method("zoom_by_steps"), "wheel zoom API exists")
@@ -31,7 +36,9 @@ func _run() -> void:
 	_expect(not camera.has_method("edge_scroll"), "edge scrolling API is absent")
 
 	var move_count := 12
+	var changes_before_zoom := view_changes.size()
 	camera.call("zoom_by_steps", 100, Vector2(500.0, 300.0))
+	_expect(view_changes.size() == changes_before_zoom + 1, "zoom publishes updated visible rectangle")
 	_expect(is_equal_approx(float(camera.call("get_hexes_across")), 3.0), "zoom-in clamps at three cells across")
 	camera.call("zoom_by_steps", -200, Vector2(500.0, 300.0))
 	_expect(is_equal_approx(float(camera.call("get_hexes_across")), 11.0), "zoom-out clamps at eleven cells across")

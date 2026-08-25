@@ -1,6 +1,8 @@
 class_name WorldCameraController
 extends Camera2D
 
+signal view_changed(visible_world_rect: Rect2)
+
 const MIN_HEXES_ACROSS := 3.0
 const DEFAULT_HEXES_ACROSS := 5.0
 const MAX_HEXES_ACROSS := 11.0
@@ -25,6 +27,7 @@ func configure(world_rect: Rect2, viewport_size: Vector2, cell_flat_width: float
 func set_default_zoom() -> void:
 	_set_hexes_across(DEFAULT_HEXES_ACROSS)
 	_clamp_position()
+	view_changed.emit(get_visible_world_rect())
 
 
 func zoom_by_steps(steps: int, anchor: Vector2) -> void:
@@ -37,16 +40,19 @@ func zoom_by_steps(steps: int, anchor: Vector2) -> void:
 	_set_hexes_across(requested)
 	position = world_anchor - (anchor - _viewport_size * 0.5) / zoom.x
 	_clamp_position()
+	view_changed.emit(get_visible_world_rect())
 
 
 func pan_by(pointer_delta: Vector2) -> void:
 	position -= pointer_delta / zoom.x
 	_clamp_position()
+	view_changed.emit(get_visible_world_rect())
 
 
 func center_on(world_position: Vector2) -> void:
 	position = world_position
 	_clamp_position()
+	view_changed.emit(get_visible_world_rect())
 
 
 func begin_drag(pointer_position: Vector2) -> void:

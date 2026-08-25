@@ -1,0 +1,48 @@
+Stage 3 automated evidence — 2026-08-25
+Godot executable: godot.windows.opt.tools.64.exe, 4.7.2-stable (steam)
+
+Exact command contract: `godot --headless --path . --script <test>`.
+
+Generator/domain commands (all exit=0, stderr_bytes=0):
+res://Tests/WorldMap/test_hex_world_geometry.gd
+res://Tests/WorldMap/test_world_priority_v1.gd
+res://Tests/WorldMap/test_world_constraint_solver_v1.gd
+res://Tests/WorldMap/test_world_plan_codec_v1.gd
+res://Tests/WorldMap/test_hex_world_generator_v1.gd
+res://Tests/WorldMap/test_generator_v1_fixture_integrity.gd
+
+Save/run-start commands (all exit=0, stderr_bytes=0):
+res://Tests/Save/test_world_save_codec_v1.gd
+res://Tests/Save/test_world_save_store.gd
+res://Tests/Run/test_world_run_start_service.gd
+res://Tests/Run/test_world_headless_failure.gd
+res://Tests/Run/test_world_headless_exit_process.gd
+
+Stage 3 commands (all exit=0, stderr_bytes=0):
+res://Tests/WorldMap/test_world_cell_view.gd — PASS 40/40
+res://Tests/WorldMap/test_world_camera_controller.gd — PASS 26/26
+res://Tests/WorldMap/test_world_minimap.gd — PASS 19/19
+res://Tests/UI/test_world_map_hud.gd — PASS 25/25
+res://Tests/WorldMap/test_world_presentation_scene.gd — PASS 22/22
+res://Tests/WorldMap/test_world_visual_fixtures.gd — PASS 48/48
+res://Tests/WorldMap/test_world_presentation_profile.gd — PASS
+
+Frozen legacy commands (all exit=0, stderr_bytes=0):
+res://Tests/Map/test_hex_map_model.gd
+res://Tests/Map/test_map_controller_runtime.gd
+res://Tests/Map/test_ac1_1_runtime_step_counts.gd
+res://Tests/Map/test_ac1_2_encounter_determinism.gd
+res://Tests/Map/test_ac1_2_hex_tile_view_states.gd
+res://Tests/Map/test_ac1_2_runtime_encounter_layout.gd
+res://Tests/Map/test_ac1_3_mouse_navigation.gd
+res://Tests/Map/test_ac1_4_encounter_overlay.gd
+res://Tests/Map/test_ac1_5_sudden_death.gd
+res://Tests/Map/test_ac2_1_battle_arena.gd
+res://Tests/Map/test_ac3_1_recruitment_integration.gd
+res://Tests/Map/test_ac3_3_party_management_integration.gd
+res://Tests/Map/test_world_turn_counter.gd
+res://Tests/Run/test_ac3_1_run_roster.gd
+res://Tests/Run/test_ac3_3_party_formation.gd
+
+TOTAL=33 FAILED=0
+Fixture-author utility excluded because it mutates canonical fixtures and is not a verification test.

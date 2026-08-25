@@ -2,7 +2,7 @@ class_name WorldPresentationSceneTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_preview.tscn"
-const EXPECTED_TEST_COUNT := 19
+const EXPECTED_TEST_COUNT := 22
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -33,11 +33,24 @@ func _run() -> void:
 	_expect(int(preview.call("get_forest_cluster_count")) == 10, "all ten forest clusters are represented")
 	_expect(int(preview.call("get_town_count")) == 7, "all seven towns are represented")
 	_expect(int(preview.call("get_road_count")) == 6, "seven towns use a six-edge spanning road network")
+	var road_cell_count := 0
+	for cell: Node in preview.get_node("%WorldCells").get_children():
+		if cell.get_node("RoadLayer/RoadLines").get_child_count() > 0:
+			road_cell_count += 1
+	_expect(road_cell_count > 6, "town-to-town routes populate every traversed cell road layer")
 	_expect(preview.call("get_player_coord") == Vector2i(-8, 0), "player marker uses canonical start")
 	_expect(preview.call("get_boss_coord") == Vector2i(8, 0), "boss marker uses canonical boss start")
 	_expect(is_instance_valid(preview.get_node_or_null("%WorldCamera")), "world camera is composed")
 	_expect(is_instance_valid(preview.get_node_or_null("%WorldMinimap")), "minimap is composed")
 	_expect(is_instance_valid(preview.get_node_or_null("%WorldMapHud")), "HUD is composed")
+	var camera := preview.get_node("%WorldCamera") as WorldCameraController
+	var minimap := preview.get_node("%WorldMinimap") as WorldMinimap
+	var footprint_before := minimap.get_camera_footprint()
+	camera.pan_by(Vector2(-80.0, 0.0))
+	_expect(minimap.get_camera_footprint() != footprint_before, "minimap footprint updates live after camera pan")
+	footprint_before = minimap.get_camera_footprint()
+	camera.zoom_by_steps(-1, Vector2(576.0, 324.0))
+	_expect(minimap.get_camera_footprint() != footprint_before, "minimap footprint updates live after camera zoom")
 	_expect(
 		int(preview.call("get_plan_instance_id"))
 		== int(preview.get_node("%WorldMinimap").call("get_plan_instance_id")),

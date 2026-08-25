@@ -1,0 +1,12 @@
+{
+  "godotiq_version": "0.5.16",
+  "godot_version": "4.7.2-stable (steam)",
+  "project_parser_check": {"scripts_checked": 103, "errors": 0},
+  "preview_runtime": {"scene": "res://Scenes/world_map_preview.tscn", "verdict": "PASS", "debug_entries": 0},
+  "production_runtime": {"scene": "res://Scenes/game_world.tscn", "verdict": "PASS", "debug_entries": 0},
+  "project_validation": {"errors": 0, "warnings": 13, "info": 6},
+  "signal_audit": {
+    "stage3_expected_orphan": "party_requested is intentionally an unconsumed Stage 3 boundary",
+    "preexisting_orphans": ["battle_completed", "diagnostics_copied", "hover_changed", "return_requested"]
+  }
+}
