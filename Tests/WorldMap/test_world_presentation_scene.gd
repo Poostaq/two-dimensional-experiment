@@ -2,7 +2,7 @@ class_name WorldPresentationSceneTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_preview.tscn"
-const EXPECTED_TEST_COUNT := 44
+const EXPECTED_TEST_COUNT := 46
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -63,7 +63,6 @@ func _run() -> void:
 	var framing_steps: Array[int] = [100, 0, -100]
 	var framing_labels: Array[int] = [3, 5, 11]
 	var plan_id_before := int(preview.call("get_plan_instance_id"))
-	var edge_footprint_before := minimap.get_camera_footprint()
 	for framing_index: int in framing_steps.size():
 		camera.set_default_zoom()
 		camera.zoom_by_steps(framing_steps[framing_index], Vector2(576.0, 324.0))
@@ -74,7 +73,21 @@ func _run() -> void:
 				camera.position.is_equal_approx(target),
 				"radius-8 corner %s centers at %d-hex framing" % [corner, framing_labels[framing_index]]
 			)
-	_expect(minimap.get_camera_footprint() != edge_footprint_before, "minimap footprint follows edge-centered camera")
+	camera.set_default_zoom()
+	camera.zoom_by_steps(-100, Vector2(576.0, 324.0))
+	camera.center_on(Vector2(preview.call("axial_to_world", Vector2i(-8, 0))))
+	var left_edge_footprint := minimap.get_camera_footprint()
+	_expect(
+		left_edge_footprint[0].x < minimap.get_node("%PlayerIcon").position.x,
+		"left-edge minimap footprint overscans beyond the map"
+	)
+	camera.center_on(Vector2(preview.call("axial_to_world", Vector2i(8, 0))))
+	var right_edge_footprint := minimap.get_camera_footprint()
+	_expect(right_edge_footprint != left_edge_footprint, "minimap footprint follows opposite-edge camera centering")
+	_expect(
+		right_edge_footprint[1].x > minimap.get_node("%BossIcon").position.x,
+		"right-edge minimap footprint overscans beyond the map"
+	)
 	_expect(int(preview.call("get_plan_instance_id")) == plan_id_before, "camera framing preserves logical plan identity")
 
 	camera.center_on(Vector2(99999.0, 99999.0))
