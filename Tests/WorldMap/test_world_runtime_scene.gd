@@ -1,7 +1,7 @@
 class_name WorldRuntimeSceneContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 2
+const EXPECTED_TEST_COUNT := 8
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []
@@ -18,6 +18,18 @@ func _run() -> void:
         "production main scene remains frozen"
     )
     _expect(ResourceLoader.exists(SCENE_PATH), "explicit non-production runtime scene exists")
+    if not ResourceLoader.exists(SCENE_PATH):
+        _finish()
+        return
+    var packed := load(SCENE_PATH) as PackedScene
+    var runtime := packed.instantiate()
+    _expect(runtime.has_method("get_runtime_snapshot"), "runtime scene exposes typed snapshot inspection")
+    _expect(runtime.has_method("request_move"), "runtime scene exposes movement request boundary")
+    _expect(runtime.has_method("get_valid_destinations"), "runtime scene exposes valid destinations")
+    _expect(runtime.has_method("get_plan_instance_id"), "runtime scene exposes shared plan identity")
+    _expect(runtime.has_method("get_world_camera"), "runtime scene exposes camera verification boundary")
+    _expect(runtime.has_method("has_integration_failed"), "runtime scene exposes integration failure state")
+    runtime.free()
     _finish()
 
 

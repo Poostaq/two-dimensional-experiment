@@ -44,7 +44,7 @@ func _init(
     _boss_encounter_open = boss_open
 
 
-func duplicate_value() -> RefCounted:
+func duplicate_value() -> WorldRuntimeSnapshot:
     return get_script().new(
         player_coord,
         boss_coord,

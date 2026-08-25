@@ -16,7 +16,7 @@ enum Rejection {
 
 var status: Status
 var rejection: Rejection
-var snapshot: RefCounted
+var snapshot: WorldRuntimeSnapshot
 var previous_player_coord: Vector2i
 var previous_boss_coord: Vector2i
 var boss_moved: bool
@@ -26,7 +26,7 @@ var encounter_type: String
 func _init(
     value_status: Status,
     value_rejection: Rejection,
-    value_snapshot: RefCounted,
+    value_snapshot: WorldRuntimeSnapshot,
     previous_player: Vector2i,
     previous_boss: Vector2i,
     did_boss_move: bool,

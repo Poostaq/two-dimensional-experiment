@@ -18,6 +18,7 @@ var _boss_encounter_open: bool = false
 
 func configure(plan: WorldPlan) -> bool:
     if not is_instance_valid(plan) or WorldPlanCodecV1.validate(plan) != null:
+        _invalidate()
         return false
     _plan = plan
     _cells = plan.get_cells()
@@ -25,7 +26,7 @@ func configure(plan: WorldPlan) -> bool:
     return true
 
 
-func get_snapshot() -> RefCounted:
+func get_snapshot() -> WorldRuntimeSnapshot:
     return _snapshot_script.new(
         _player_coord,
         _boss_coord,
@@ -56,17 +57,17 @@ func get_runtime_encounter_type(coord: Vector2i) -> String:
     return String(_cells[coord].get("encounter", "safe"))
 
 
-func request_move(destination: Vector2i) -> RefCounted:
+func request_move(destination: Vector2i) -> WorldMoveResult:
     if _boss_encounter_open:
-        return _rejected(4)
+        return _rejected(WorldMoveResult.Rejection.BOSS_ENCOUNTER_OPEN)
     if _input_blocked:
-        return _rejected(1)
+        return _rejected(WorldMoveResult.Rejection.INPUT_BLOCKED)
     if not _cells.has(destination):
-        return _rejected(2)
+        return _rejected(WorldMoveResult.Rejection.INVALID_DESTINATION)
     if HexWorldGeometry.get_hex_distance(_player_coord, destination) != 1:
-        return _rejected(3)
+        return _rejected(WorldMoveResult.Rejection.NOT_ADJACENT)
 
-    var before := get_snapshot()
+    var before: WorldRuntimeSnapshot = get_snapshot()
     var was_active := _sudden_death_active
     _player_coord = destination
     _move_count += 1
@@ -97,6 +98,17 @@ func reset() -> void:
     _boss_encounter_open = false
 
 
+func _invalidate() -> void:
+    _plan = null
+    _cells.clear()
+    _player_coord = Vector2i.ZERO
+    _boss_coord = Vector2i.ZERO
+    _move_count = 0
+    _sudden_death_active = false
+    _input_blocked = true
+    _boss_encounter_open = false
+
+
 func _get_pursuit_step(from_coord: Vector2i, to_coord: Vector2i) -> Vector2i:
     var best_coord := from_coord
     var best_distance := HexWorldGeometry.get_hex_distance(from_coord, to_coord)
@@ -112,16 +124,16 @@ func _get_pursuit_step(from_coord: Vector2i, to_coord: Vector2i) -> Vector2i:
 
 
 func _accepted(
-    before: RefCounted,
+    before: WorldRuntimeSnapshot,
     boss_moved: bool,
     encounter_type: String,
     boss_open: bool
-) -> RefCounted:
+) -> WorldMoveResult:
     _boss_encounter_open = boss_open
     _input_blocked = true
     return _result_script.new(
-        0,
-        0,
+        WorldMoveResult.Status.ACCEPTED,
+        WorldMoveResult.Rejection.NONE,
         get_snapshot(),
         before.get("player_coord"),
         before.get("boss_coord"),
@@ -130,9 +142,9 @@ func _accepted(
     )
 
 
-func _rejected(rejection: int) -> RefCounted:
+func _rejected(rejection: WorldMoveResult.Rejection) -> WorldMoveResult:
     return _result_script.new(
-        1,
+        WorldMoveResult.Status.REJECTED,
         rejection,
         get_snapshot(),
         _player_coord,
