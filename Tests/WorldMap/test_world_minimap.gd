@@ -2,7 +2,7 @@ class_name WorldMinimapTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_minimap.tscn"
-const EXPECTED_TEST_COUNT := 19
+const EXPECTED_TEST_COUNT := 24
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -49,6 +49,15 @@ func _run() -> void:
 	_expect((minimap.get_node("%BossLabel") as Label).text == "B", "boss has a non-color label")
 	_expect(minimap.call("get_player_coord") == Vector2i(-8, 0), "player marker uses runtime coordinate")
 	_expect(minimap.call("get_boss_coord") == Vector2i(8, 0), "boss marker uses runtime coordinate")
+
+	var plan_id_before := int(minimap.call("get_plan_instance_id"))
+	var footprint_during_marker_update := minimap.call("get_camera_footprint") as PackedVector2Array
+	minimap.call("update_party_markers", Vector2i(-7, 0), Vector2i(7, 0))
+	_expect(minimap.call("get_player_coord") == Vector2i(-7, 0), "runtime update moves minimap player coordinate")
+	_expect(minimap.call("get_boss_coord") == Vector2i(7, 0), "runtime update moves minimap boss coordinate")
+	_expect((minimap.get_node("%PlayerIcon") as Sprite2D).position != (minimap.get_node("%BossIcon") as Sprite2D).position, "runtime party markers remain distinct")
+	_expect(int(minimap.call("get_plan_instance_id")) == plan_id_before, "party update preserves logical plan identity")
+	_expect(minimap.call("get_camera_footprint") == footprint_during_marker_update, "party update preserves camera footprint")
 
 	var footprint_before := minimap.call("get_camera_footprint") as PackedVector2Array
 	minimap.call("update_camera_footprint", Rect2(-80.0, -60.0, 160.0, 120.0))

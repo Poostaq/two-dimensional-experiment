@@ -2,7 +2,7 @@ class_name WorldPresentationSceneTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_preview.tscn"
-const EXPECTED_TEST_COUNT := 46
+const EXPECTED_TEST_COUNT := 57
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -99,6 +99,39 @@ func _run() -> void:
 		== int(preview.get_node("%WorldMinimap").call("get_plan_instance_id")),
 		"main map and minimap share one logical plan"
 	)
+	var runtime_plan_id := int(preview.call("get_plan_instance_id"))
+	var runtime_snapshot := WorldRuntimeSnapshot.new(Vector2i(-7, 0), Vector2i(7, 0), 1, false, false, false)
+	_expect(bool(preview.call("apply_runtime_snapshot", runtime_snapshot)), "valid runtime snapshot applies atomically")
+	_expect(preview.call("get_player_coord") == Vector2i(-7, 0), "snapshot moves main-map player marker")
+	_expect(preview.call("get_boss_coord") == Vector2i(7, 0), "snapshot moves main-map boss marker")
+	_expect(minimap.get_player_coord() == Vector2i(-7, 0), "snapshot moves minimap player marker")
+	_expect(minimap.get_boss_coord() == Vector2i(7, 0), "snapshot moves minimap boss marker")
+	var player_marker_count := 0
+	var boss_marker_count := 0
+	for cell: Node in preview.get_node("%WorldCells").get_children():
+		var label := cell.get_node("ContextLayer/PartyLabel") as Label
+		if label.visible and label.text == "P":
+			player_marker_count += 1
+		elif label.visible and label.text == "B":
+			boss_marker_count += 1
+	_expect(player_marker_count == 1, "snapshot renders exactly one player marker")
+	_expect(boss_marker_count == 1, "snapshot renders exactly one boss marker")
+	_expect(int(preview.call("get_plan_instance_id")) == runtime_plan_id, "snapshot preserves logical plan identity")
+	var valid_destinations: Array[Vector2i] = [Vector2i(-8, 0), Vector2i(-7, -1)]
+	preview.call("set_valid_destinations", valid_destinations)
+	var highlighted_count := 0
+	for cell: Node in preview.get_node("%WorldCells").get_children():
+		if (cell.get_node("HighlightLayer/Outline") as Line2D).visible:
+			highlighted_count += 1
+	_expect(highlighted_count == 2, "valid destinations drive exactly two cell highlights")
+	preview.call("set_valid_destinations", [])
+	highlighted_count = 0
+	for cell: Node in preview.get_node("%WorldCells").get_children():
+		if (cell.get_node("HighlightLayer/Outline") as Line2D).visible:
+			highlighted_count += 1
+	_expect(highlighted_count == 0, "empty destinations clear all cell highlights")
+	_expect(not preview.has_method("request_move"), "presentation adapter does not own movement requests")
+
 	var before_count := int(preview.call("get_main_cell_count"))
 	_expect(not bool(preview.call("present_plan", null)), "invalid plan is rejected")
 	_expect(int(preview.call("get_main_cell_count")) == before_count, "invalid plan creates no partial presentation")

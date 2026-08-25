@@ -2,10 +2,12 @@ class_name WorldCellViewTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_cell_view.tscn"
-const EXPECTED_TEST_COUNT := 40
+const EXPECTED_TEST_COUNT := 47
 
 var _failures: Array[String] = []
 var _assertions: int = 0
+var _selected_coords: Array[Vector2i] = []
+var _inspected_coords: Array[Vector2i] = []
 
 
 func _init() -> void:
@@ -54,6 +56,17 @@ func _run() -> void:
 
 	var road_edges: Array[Vector2i] = [Vector2i(1, 0)]
 	cell.call("configure", Vector2i(2, -1), "Combat", "forest", road_edges, true)
+	_expect(cell.has_signal("selected"), "cell exposes selection intent without owning movement")
+	_expect(cell.has_signal("inspected"), "cell exposes inspection intent without mutating data")
+	cell.connect("selected", _on_cell_selected)
+	cell.connect("inspected", _on_cell_inspected)
+	cell.call("request_selection")
+	cell.call("request_inspection")
+	_expect(_selected_coords == [Vector2i(2, -1)], "selection emits configured coordinate exactly once")
+	_expect(_inspected_coords == [Vector2i(2, -1)], "inspection emits configured coordinate exactly once")
+	_expect(cell.coordinate == Vector2i(2, -1), "selection and inspection preserve coordinate")
+	_expect(cell.encounter_type == "Combat", "selection and inspection preserve encounter data")
+	_expect(cell.terrain_type == "forest" and cell.is_town, "selection and inspection preserve terrain and town data")
 	_expect((cell.get_node("TerrainLayer/ForestFill") as Polygon2D).visible, "forest terrain is shown independently")
 	_expect((cell.get_node("TownLayer/Buildings") as Node2D).visible, "town buildings are shown")
 	_expect(cell.get_node("RoadLayer/RoadLines").get_child_count() == 1, "one road corridor is drawn for one edge")
@@ -80,6 +93,14 @@ func _run() -> void:
 	cell.queue_free()
 	await process_frame
 	_finish()
+
+
+func _on_cell_selected(coord: Vector2i) -> void:
+	_selected_coords.append(coord)
+
+
+func _on_cell_inspected(coord: Vector2i) -> void:
+	_inspected_coords.append(coord)
 
 
 func _expect(condition: bool, message: String) -> void:
