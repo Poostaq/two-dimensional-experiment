@@ -1,0 +1,22 @@
+Stage 4 frozen legacy baseline — 2026-08-25
+Godot: 4.7.2.stable.steam.ed1daf0bf
+
+res://Tests/Map/test_hex_map_model.gd exit=0
+res://Tests/Map/test_map_controller_runtime.gd exit=0
+res://Tests/Map/test_ac1_1_runtime_step_counts.gd exit=0
+res://Tests/Map/test_ac1_2_encounter_determinism.gd exit=0
+res://Tests/Map/test_ac1_2_hex_tile_view_states.gd exit=0
+res://Tests/Map/test_ac1_2_runtime_encounter_layout.gd exit=0
+res://Tests/Map/test_ac1_3_mouse_navigation.gd exit=0
+res://Tests/Map/test_ac1_4_encounter_overlay.gd exit=0
+res://Tests/Map/test_ac1_5_sudden_death.gd exit=0
+res://Tests/Map/test_ac2_1_battle_arena.gd exit=0
+res://Tests/Map/test_ac3_1_recruitment_integration.gd exit=0
+res://Tests/Map/test_ac3_3_party_management_integration.gd exit=0
+res://Tests/Map/test_world_turn_counter.gd exit=0
+res://Tests/Run/test_ac3_1_run_roster.gd exit=0
+res://Tests/Run/test_ac3_3_party_formation.gd exit=0
+
+Result: PASS (15/15 runners)
+Frozen-file mutations: none
+Production isolation diff: exit 0

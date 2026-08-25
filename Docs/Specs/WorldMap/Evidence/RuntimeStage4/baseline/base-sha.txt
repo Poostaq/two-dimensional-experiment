@@ -1,0 +1,5 @@
+integration_branch=main
+integration_base_sha=eab06893af5f5b87435e80f397a47353028d05c4
+stage4_plan_head_sha=84874f2db9ba47edff6460c4c75ad2dad374faf8
+production_isolation_exit=0
+

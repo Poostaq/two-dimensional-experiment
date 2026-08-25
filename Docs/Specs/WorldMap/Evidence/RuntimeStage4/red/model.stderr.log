@@ -1,0 +1,15 @@
+ERROR: runtime snapshot value exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:44)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:27)
+ERROR: typed move result exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:44)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:27)
+ERROR: pure runtime model exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:44)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:27)
