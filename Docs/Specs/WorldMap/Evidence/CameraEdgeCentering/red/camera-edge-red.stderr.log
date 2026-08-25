@@ -1,0 +1,25 @@
+ERROR: maximum boundary center is reachable
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_camera_controller.gd:122)
+       [1] _run (res://Tests/WorldMap/test_world_camera_controller.gd:105)
+ERROR: maximum boundary centering exposes dark overscan
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_camera_controller.gd:122)
+       [1] _run (res://Tests/WorldMap/test_world_camera_controller.gd:105)
+ERROR: minimum boundary center is reachable
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_camera_controller.gd:122)
+       [1] _run (res://Tests/WorldMap/test_world_camera_controller.gd:105)
+ERROR: minimum boundary centering exposes dark overscan
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_camera_controller.gd:122)
+       [1] _run (res://Tests/WorldMap/test_world_camera_controller.gd:105)
+ERROR: camera center cannot leave supplied bounds
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_camera_controller.gd:122)
+       [1] _run (res://Tests/WorldMap/test_world_camera_controller.gd:105)
