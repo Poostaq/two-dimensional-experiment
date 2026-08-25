@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "scene": "res://Scenes/world_map_preview.tscn",
+  "fixture_seed": "golden-alpha",
+  "viewport": [1152, 648],
+  "framings_hexes_across": [3, 5, 11],
+  "states": [
+    "road-through-forest",
+    "town-on-Safe",
+    "highlighted-road",
+    "player-on-road",
+    "boss-adjacent-to-forest"
+  ],
+  "protected_metrics": {
+    "cell_flat_width": 80.0,
+    "cell_point_height": 92.0,
+    "road_corridor_width": 16.0,
+    "town_footprint": [-24.0, -23.0, 48.0, 46.0],
+    "marker_plate_diameter": 36.0,
+    "marker_outline_width": 2.0,
+    "layer_indices": {
+      "EncounterBase": 0,
+      "TerrainLayer": 1,
+      "RoadLayer": 2,
+      "TownLayer": 3,
+      "HighlightLayer": 4,
+      "MarkerLayer": 5,
+      "ContextLayer": 6
+    }
+  },
+  "approval_policy": "manual-visual-review-required"
+}
