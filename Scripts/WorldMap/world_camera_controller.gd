@@ -107,14 +107,7 @@ func _set_hexes_across(value: float) -> void:
 
 
 func _clamp_position() -> void:
-	var half_visible := (_viewport_size / zoom.x) * 0.5
-	var minimum := _world_rect.position + half_visible
-	var maximum := _world_rect.end - half_visible
-	if minimum.x > maximum.x:
-		position.x = _world_rect.get_center().x
-	else:
-		position.x = clampf(position.x, minimum.x, maximum.x)
-	if minimum.y > maximum.y:
-		position.y = _world_rect.get_center().y
-	else:
-		position.y = clampf(position.y, minimum.y, maximum.y)
+	var minimum := _world_rect.position
+	var maximum := _world_rect.end
+	position.x = clampf(position.x, minimum.x, maximum.x)
+	position.y = clampf(position.y, minimum.y, maximum.y)

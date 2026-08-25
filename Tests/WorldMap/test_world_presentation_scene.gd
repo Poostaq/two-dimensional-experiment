@@ -2,7 +2,7 @@ class_name WorldPresentationSceneTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_preview.tscn"
-const EXPECTED_TEST_COUNT := 22
+const EXPECTED_TEST_COUNT := 46
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -51,6 +51,49 @@ func _run() -> void:
 	footprint_before = minimap.get_camera_footprint()
 	camera.zoom_by_steps(-1, Vector2(576.0, 324.0))
 	_expect(minimap.get_camera_footprint() != footprint_before, "minimap footprint updates live after camera zoom")
+
+	var canonical_corners: Array[Vector2i] = [
+		Vector2i(-8, 0),
+		Vector2i(-8, 8),
+		Vector2i(0, -8),
+		Vector2i(0, 8),
+		Vector2i(8, -8),
+		Vector2i(8, 0),
+	]
+	var framing_steps: Array[int] = [100, 0, -100]
+	var framing_labels: Array[int] = [3, 5, 11]
+	var plan_id_before := int(preview.call("get_plan_instance_id"))
+	for framing_index: int in framing_steps.size():
+		camera.set_default_zoom()
+		camera.zoom_by_steps(framing_steps[framing_index], Vector2(576.0, 324.0))
+		for corner: Vector2i in canonical_corners:
+			var target := Vector2(preview.call("axial_to_world", corner))
+			camera.center_on(target)
+			_expect(
+				camera.position.is_equal_approx(target),
+				"radius-8 corner %s centers at %d-hex framing" % [corner, framing_labels[framing_index]]
+			)
+	camera.set_default_zoom()
+	camera.zoom_by_steps(-100, Vector2(576.0, 324.0))
+	camera.center_on(Vector2(preview.call("axial_to_world", Vector2i(-8, 0))))
+	var left_edge_footprint := minimap.get_camera_footprint()
+	_expect(
+		left_edge_footprint[0].x < minimap.get_node("%PlayerIcon").position.x,
+		"left-edge minimap footprint overscans beyond the map"
+	)
+	camera.center_on(Vector2(preview.call("axial_to_world", Vector2i(8, 0))))
+	var right_edge_footprint := minimap.get_camera_footprint()
+	_expect(right_edge_footprint != left_edge_footprint, "minimap footprint follows opposite-edge camera centering")
+	_expect(
+		right_edge_footprint[1].x > minimap.get_node("%BossIcon").position.x,
+		"right-edge minimap footprint overscans beyond the map"
+	)
+	_expect(int(preview.call("get_plan_instance_id")) == plan_id_before, "camera framing preserves logical plan identity")
+
+	camera.center_on(Vector2(99999.0, 99999.0))
+	_expect(camera.position.is_equal_approx(Vector2(640.0, 552.0)), "positive camera limit equals canonical cell-center bounds")
+	camera.center_on(Vector2(-99999.0, -99999.0))
+	_expect(camera.position.is_equal_approx(Vector2(-640.0, -552.0)), "negative camera limit equals canonical cell-center bounds")
 	_expect(
 		int(preview.call("get_plan_instance_id"))
 		== int(preview.get_node("%WorldMinimap").call("get_plan_instance_id")),

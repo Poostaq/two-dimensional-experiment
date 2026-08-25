@@ -1,0 +1,10 @@
+ERROR: positive camera limit equals canonical cell-center bounds
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_presentation_scene.gd:117)
+       [1] _run (res://Tests/WorldMap/test_world_presentation_scene.gd:100)
+ERROR: negative camera limit equals canonical cell-center bounds
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_presentation_scene.gd:117)
+       [1] _run (res://Tests/WorldMap/test_world_presentation_scene.gd:100)

@@ -2,7 +2,7 @@ class_name WorldCameraControllerTests
 extends SceneTree
 
 const SCRIPT_PATH := "res://Scripts/WorldMap/world_camera_controller.gd"
-const EXPECTED_TEST_COUNT := 26
+const EXPECTED_TEST_COUNT := 29
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -50,10 +50,14 @@ func _run() -> void:
 	_expect(move_count == 12, "drag pan does not mutate world turns")
 	camera.call("pan_by", Vector2(-100000.0, -100000.0))
 	var visible_rect := camera.call("get_visible_world_rect") as Rect2
-	_expect(world_rect.encloses(visible_rect), "camera remains bounded after extreme positive pan")
+	_expect(camera.position == Vector2(800.0, 800.0), "maximum boundary center is reachable")
+	_expect(not world_rect.encloses(visible_rect), "maximum boundary centering exposes dark overscan")
 	camera.call("pan_by", Vector2(200000.0, 200000.0))
 	visible_rect = camera.call("get_visible_world_rect") as Rect2
-	_expect(world_rect.encloses(visible_rect), "camera remains bounded after extreme negative pan")
+	_expect(camera.position == Vector2(-800.0, -800.0), "minimum boundary center is reachable")
+	_expect(not world_rect.encloses(visible_rect), "minimum boundary centering exposes dark overscan")
+	camera.call("center_on", Vector2(5000.0, -5000.0))
+	_expect(camera.position == Vector2(800.0, -800.0), "camera center cannot leave supplied bounds")
 
 	camera.call("begin_drag", Vector2(300.0, 200.0))
 	_expect(bool(camera.call("is_dragging")), "left-button drag state begins explicitly")
