@@ -1,0 +1,20 @@
+World camera edge-centering verification — 2026-08-25
+
+Focused regression suite (Godot 4.7.2, headless):
+- Tests/WorldMap/test_world_camera_controller.gd — exit 0
+- Tests/WorldMap/test_world_minimap.gd — exit 0
+- Tests/WorldMap/test_world_presentation_scene.gd — exit 0; PASS 44/44
+- Tests/WorldMap/test_world_visual_fixtures.gd — exit 0
+- Tests/Map/test_hex_map_model.gd — exit 0
+- Tests/Map/test_map_controller_runtime.gd — exit 0
+- Tests/Map/test_world_turn_counter.gd — exit 0
+
+GodotIQ verification:
+- Project parse check: 103 scripts checked, 0 errors.
+- Project validation: 0 errors; 13 pre-existing warnings and 6 informational findings.
+- world_map_preview.tscn: PASS; started with 0 runtime/script errors.
+- Production main scene game_world.tscn: PASS; started with 0 runtime/script errors.
+
+Isolation gate:
+- git diff --exit-code main -- Scenes/game_world.tscn Scripts/Map Tests/Map — exit 0.
+
