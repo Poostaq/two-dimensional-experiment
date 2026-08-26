@@ -1,7 +1,7 @@
 class_name WorldRuntimeMigratedFlowContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 8
+const EXPECTED_TEST_COUNT := 22
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []
@@ -29,6 +29,37 @@ func _run() -> void:
     _expect(runtime.has_method("has_active_battle"), "migrated battle state is inspectable")
     _expect(runtime.has_method("open_party_management"), "migrated Party flow is explicit")
     _expect(runtime.has_method("has_active_party_management"), "migrated Party state is inspectable")
+    get_root().add_child(runtime)
+    await process_frame
+    await process_frame
+    var initial_moves := (runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).move_count
+    var destination := (runtime.call("get_valid_destinations") as Array[Vector2i])[0]
+    var accepted := runtime.call("request_move", destination) as WorldMoveResult
+    _expect(accepted.is_accepted(), "accepted world move enters the migrated flow")
+    _expect(bool(runtime.call("has_active_encounter")), "accepted move opens one encounter overlay")
+    _expect(runtime.get_node("EncounterHost").get_child_count() == 1, "encounter host owns exactly one overlay")
+    var blocked_result := runtime.call("request_move", accepted.previous_player_coord) as WorldMoveResult
+    _expect(not blocked_result.is_accepted(), "encounter overlay blocks repeated world input")
+    var overlay := runtime.get_node("EncounterHost").get_child(0) as EncounterOverlay
+    _expect(overlay.encounter_coordinate == destination, "encounter overlay receives accepted coordinate")
+    overlay.battle_requested.emit(destination, "combat")
+    await process_frame
+    _expect(not bool(runtime.call("has_active_encounter")) and bool(runtime.call("has_active_battle")), "battle request replaces the encounter with one battle")
+    _expect(runtime.get_node("BattleHost").get_child_count() == 1, "battle host owns exactly one arena")
+    var battle := runtime.get_node("BattleHost").get_child(0) as BattleArena
+    battle.exit_requested.emit()
+    await process_frame
+    _expect(not bool(runtime.call("has_active_battle")), "battle exit restores the world surface")
+    _expect((runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).move_count == initial_moves + 1, "battle flow consumes no additional world moves")
+    runtime.call("open_party_management")
+    _expect(bool(runtime.call("has_active_party_management")), "Party opens one normal management surface")
+    _expect(runtime.get_node("PartyHost").get_child_count() == 1, "Party host owns exactly one management instance")
+    var party := runtime.get_node("PartyHost").get_child(0) as PartyManagement
+    party.close_requested.emit()
+    await process_frame
+    _expect(not bool(runtime.call("has_active_party_management")), "Party close restores world input")
+    _expect((runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).move_count == initial_moves + 1, "Party open and close consume zero world moves")
+    _expect(not (runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).input_blocked, "ordinary migrated flows clear only their owned blocker")
     runtime.free()
     _finish()
 
