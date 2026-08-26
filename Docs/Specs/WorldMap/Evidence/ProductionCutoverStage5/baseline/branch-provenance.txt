@@ -1,0 +1,12 @@
+Stage 5 development baseline
+Date: 2026-08-26
+branch: feat/world-production-cutover-stage5
+remote_base_ref: origin/main
+remote_base_sha: 41504697011bece55d56ffff90053d211054abe9
+local_main_sha: 179cfee0a40b7858e481d7ee2f5c20f45ce907d6
+godot: 4.7.2.stable.steam.ed1daf0bf
+production_main: res://Scenes/game_world.tscn
+unrelated_untracked_exclusions:
+- .github/agents/race-class-designer.agent.md
+- Tests/Battle/test_active_turn_skill_lock.gd.uid
+- Tests/Map/test_world_turn_counter.gd.uid
