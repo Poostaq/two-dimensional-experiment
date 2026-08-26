@@ -26,6 +26,49 @@ func configure(plan: WorldPlan) -> bool:
     return true
 
 
+func restore_run_state(state: RefCounted) -> bool:
+    if (
+        not is_instance_valid(_plan)
+        or not is_instance_valid(state)
+        or not state.call("is_valid", _plan)
+    ):
+        return false
+    _player_coord = state.get("player_coord") as Vector2i
+    _boss_coord = state.get("boss_coord") as Vector2i
+    _move_count = int(state.get("move_count"))
+    _sudden_death_active = bool(state.get("boss_active"))
+    _boss_encounter_open = bool(state.get("boss_engaged"))
+    _input_blocked = _boss_encounter_open
+    return true
+
+
+func duplicate_model() -> WorldRuntimeModel:
+    if not is_instance_valid(_plan):
+        return null
+    var copy := get_script().new() as WorldRuntimeModel
+    copy._plan = _plan
+    copy._cells = _cells.duplicate(true)
+    copy._player_coord = _player_coord
+    copy._boss_coord = _boss_coord
+    copy._move_count = _move_count
+    copy._sudden_death_active = _sudden_death_active
+    copy._input_blocked = _input_blocked
+    copy._boss_encounter_open = _boss_encounter_open
+    return copy
+
+
+func create_move_candidate(destination: Vector2i) -> Dictionary:
+    var candidate := duplicate_model()
+    if not is_instance_valid(candidate):
+        return {"ok": false, "model": null, "result": null}
+    var result := candidate.request_move(destination)
+    return {
+        "ok": result.is_accepted(),
+        "model": candidate,
+        "result": result,
+    }
+
+
 func get_snapshot() -> WorldRuntimeSnapshot:
     return _snapshot_script.new(
         _player_coord,

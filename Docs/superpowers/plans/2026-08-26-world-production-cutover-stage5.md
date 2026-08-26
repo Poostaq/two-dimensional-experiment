@@ -250,23 +250,23 @@ git commit -m "feat: add production run-start scene"
 - Modify: `Scripts/WorldMap/world_runtime_model.gd`
 - Modify: `Scripts/WorldMap/world_runtime_controller.gd`
 
-- [ ] **Step 1: Write failing coordinator tests**
+- [x] **Step 1: Write failing coordinator tests**
 
 Use a fake repository counting writes. Assert one write per accepted move, encounter resolution, reward completion, recruitment completion, and Party move; zero writes for rejected move, drag, zoom, inspect, Party open/close without mutation. Force a write failure and assert authoritative input blocks, retry writes identical bytes, and discard restores the prior durable canonical key.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: exit `1` because the coordinator is missing and controller does not expose candidate transactions.
 
-- [ ] **Step 3: Implement candidate/commit model boundary**
+- [x] **Step 3: Implement candidate/commit model boundary**
 
 Add defensive model cloning or candidate-state construction so a move can be evaluated without publishing. The coordinator encodes and saves the candidate; on success the controller publishes its snapshot, and on failure retains the candidate only for retry.
 
-- [ ] **Step 4: Connect all authoritative owners**
+- [x] **Step 4: Connect all authoritative owners**
 
 Route encounter close, battle reward, recruitment completion, and Party formation mutation through the same coordinator. Presentation-only actions bypass it.
 
-- [ ] **Step 5: Validate, run focused Stage 4 regressions, and commit**
+- [x] **Step 5: Validate, run focused Stage 4 regressions, and commit**
 
 ```powershell
 & $godot --headless --path . --script Tests/WorldMap/test_world_runtime_save_coordinator.gd

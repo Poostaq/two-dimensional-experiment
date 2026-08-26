@@ -1,9 +1,16 @@
 class_name WorldRuntimeController
 extends WorldPresentationController
 
+signal autosave_failed(error: RefCounted)
+signal autosave_recovered
+
 static var ENCOUNTER_SCENE: PackedScene = load("res://Scenes/encounter_overlay.tscn")
 static var BATTLE_SCENE: PackedScene = load("res://Scenes/battle_arena.tscn")
 static var PARTY_SCENE: PackedScene = load("res://Scenes/party_management.tscn")
+static var SAVE_COORDINATOR_SCRIPT: GDScript = load(
+	"res://Scripts/WorldMap/world_runtime_save_coordinator.gd"
+)
+static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 var _model: WorldRuntimeModel = WorldRuntimeModel.new()
 var _runtime_plan: WorldPlan
@@ -14,6 +21,10 @@ var _active_battle: BattleArena
 var _active_party: PartyManagement
 var _pending_recruitment_option: BattleRewardOption
 var _pending_recruit: RunCharacter
+var _save_coordinator: RefCounted
+var _durable_run_state: RefCounted
+var _pending_candidate_model: WorldRuntimeModel
+var _pending_move_result: WorldMoveResult
 
 @export var auto_initialize_runtime: bool = true
 
@@ -50,15 +61,92 @@ func configure_runtime(plan: WorldPlan) -> bool:
 	return not _integration_failed
 
 
+func configure_persistence(
+	resolved_seed: String,
+	run_state: RefCounted,
+	repository: RefCounted
+) -> bool:
+	if (
+		not is_instance_valid(_runtime_plan)
+		or not is_instance_valid(run_state)
+		or not _model.restore_run_state(run_state)
+	):
+		return false
+	_save_coordinator = SAVE_COORDINATOR_SCRIPT.new()
+	if not _save_coordinator.call(
+		"configure", _runtime_plan, resolved_seed, run_state, repository
+	):
+		_save_coordinator = null
+		return false
+	_durable_run_state = _save_coordinator.call("get_durable_state") as RefCounted
+	_apply_snapshot(_model.get_snapshot())
+	return true
+
+
+func retry_autosave() -> Dictionary:
+	if not is_instance_valid(_save_coordinator):
+		return {"ok": false, "value": null, "error": null}
+	var move_was_pending := is_instance_valid(_pending_candidate_model)
+	var result: Dictionary = _save_coordinator.call("retry_pending")
+	if bool(result.get("ok", false)):
+		if not move_was_pending and is_instance_valid(_durable_run_state):
+			_model.restore_run_state(_durable_run_state)
+			_apply_snapshot(_model.get_snapshot())
+		autosave_recovered.emit()
+	return result
+
+
+func discard_pending_autosave() -> bool:
+	if not is_instance_valid(_save_coordinator):
+		return false
+	var restored := _save_coordinator.call("discard_pending") as RefCounted
+	if not is_instance_valid(restored) or not _model.restore_run_state(restored):
+		return false
+	_durable_run_state = restored
+	_pending_candidate_model = null
+	_pending_move_result = null
+	_apply_snapshot(_model.get_snapshot())
+	autosave_recovered.emit()
+	return true
+
+
+func is_autosave_blocked() -> bool:
+	return (
+		is_instance_valid(_save_coordinator)
+		and bool(_save_coordinator.call("is_input_blocked"))
+	)
+
+
 func get_runtime_snapshot() -> WorldRuntimeSnapshot:
 	return _model.get_snapshot()
 
 
 func request_move(destination: Vector2i) -> WorldMoveResult:
-	var result := _model.request_move(destination)
-	if result.is_accepted():
-		_apply_snapshot(result.snapshot)
-		_open_encounter(result.snapshot.player_coord, result.encounter_type)
+	if not is_instance_valid(_save_coordinator):
+		var legacy_result := _model.request_move(destination)
+		if legacy_result.is_accepted():
+			_apply_snapshot(legacy_result.snapshot)
+			_open_encounter(legacy_result.snapshot.player_coord, legacy_result.encounter_type)
+		return legacy_result
+	if is_autosave_blocked():
+		return _model.request_move(destination)
+	var candidate: Dictionary = _model.create_move_candidate(destination)
+	var result := candidate.get("result") as WorldMoveResult
+	if not bool(candidate.get("ok", false)) or not is_instance_valid(result):
+		return result
+	_pending_candidate_model = candidate.get("model") as WorldRuntimeModel
+	_pending_move_result = result
+	var candidate_state := _build_candidate_state(_pending_candidate_model, false)
+	var saved: Dictionary = _save_coordinator.call(
+		"commit_candidate",
+		candidate_state,
+		Callable(self, "_publish_pending_move"),
+		"accepted_move"
+	)
+	if not bool(saved.get("ok", false)):
+		_model.set_surface_blocked(true)
+		_apply_snapshot(_model.get_snapshot())
+		autosave_failed.emit(saved.get("error") as RefCounted)
 	return result
 
 
@@ -116,6 +204,8 @@ func _on_encounter_close_requested() -> void:
 	_active_encounter = null
 	if not was_boss:
 		_model.close_ordinary_encounter()
+		if not _commit_current_authoritative("encounter_resolution", true):
+			return
 		_apply_snapshot(_model.get_snapshot())
 
 
@@ -142,7 +232,7 @@ func _on_battle_completed(_outcome: BattleOutcome.Type) -> void:
 
 
 func _on_reward_confirmed(_option: BattleRewardOption) -> void:
-	pass
+	_commit_current_authoritative("reward_completion", false)
 
 
 func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
@@ -180,6 +270,8 @@ func _on_recruitment_replace_requested(destination_slot: int, expected_character
 
 
 func _complete_recruitment() -> void:
+	if not _commit_current_authoritative("recruitment_completion", false):
+		return
 	var option := _pending_recruitment_option
 	_close_recruitment_party()
 	if has_active_battle() and is_instance_valid(option):
@@ -208,11 +300,17 @@ func _on_battle_closed() -> void:
 	_active_battle = null
 	_close_recruitment_party()
 	_model.close_ordinary_encounter()
+	if not _commit_current_authoritative("encounter_resolution", true):
+		return
 	_apply_snapshot(_model.get_snapshot())
 
 
 func _on_party_move_requested(source_slot: int, destination_slot: int, character_id: StringName) -> void:
-	_roster.try_move(source_slot, destination_slot, character_id)
+	var move_result := _roster.try_move(source_slot, destination_slot, character_id)
+	if move_result not in [RunRoster.MoveResult.MOVED, RunRoster.MoveResult.SWAPPED]:
+		return
+	if not _commit_current_authoritative("party_move", false):
+		return
 	if has_active_party_management():
 		_active_party.refresh_slots(_roster.get_slot_snapshot())
 	var hud := get_node("%WorldMapHud") as WorldMapHud
@@ -226,6 +324,68 @@ func _on_party_close_requested() -> void:
 	_active_party = null
 	_model.set_surface_blocked(false)
 	_apply_snapshot(_model.get_snapshot())
+
+
+func _publish_pending_move(state: RefCounted) -> void:
+	if not is_instance_valid(_pending_candidate_model) or not is_instance_valid(_pending_move_result):
+		return
+	_model = _pending_candidate_model
+	_durable_run_state = state
+	var result := _pending_move_result
+	_pending_candidate_model = null
+	_pending_move_result = null
+	_apply_snapshot(result.snapshot)
+	_open_encounter(result.snapshot.player_coord, result.encounter_type)
+
+
+func _publish_current_state(state: RefCounted) -> void:
+	_durable_run_state = state
+
+
+func _commit_current_authoritative(event_name: String, consume_current: bool) -> bool:
+	if not is_instance_valid(_save_coordinator):
+		return true
+	var candidate_state := _build_candidate_state(_model, consume_current)
+	var saved: Dictionary = _save_coordinator.call(
+		"commit_candidate",
+		candidate_state,
+		Callable(self, "_publish_current_state"),
+		event_name
+	)
+	if bool(saved.get("ok", false)):
+		return true
+	_model.set_surface_blocked(true)
+	_apply_snapshot(_model.get_snapshot())
+	autosave_failed.emit(saved.get("error") as RefCounted)
+	return false
+
+
+func _build_candidate_state(model: WorldRuntimeModel, consume_current: bool) -> RefCounted:
+	if not is_instance_valid(_durable_run_state) or not is_instance_valid(model):
+		return null
+	var data := _durable_run_state.call("to_dictionary") as Dictionary
+	var snapshot := model.get_snapshot()
+	data["player_coord"] = [snapshot.player_coord.x, snapshot.player_coord.y]
+	data["boss_coord"] = [snapshot.boss_coord.x, snapshot.boss_coord.y]
+	data["move_count"] = snapshot.move_count
+	data["boss_active"] = snapshot.sudden_death_active
+	data["boss_engaged"] = snapshot.boss_encounter_open
+	data["formation"] = _formation_ids()
+	if consume_current:
+		var consumed := data.get("consumed_encounters", []) as Array
+		var coord_value := [snapshot.player_coord.x, snapshot.player_coord.y]
+		if not consumed.has(coord_value):
+			consumed.append(coord_value)
+		data["consumed_encounters"] = consumed
+	var decoded: Dictionary = RUN_STATE_SCRIPT.from_dictionary(data, _runtime_plan)
+	return decoded.get("value") as RefCounted if bool(decoded.get("ok", false)) else null
+
+
+func _formation_ids() -> Array[StringName]:
+	var formation: Array[StringName] = []
+	for character: RunCharacter in _roster.get_slot_snapshot():
+		formation.append(character.character_id if is_instance_valid(character) else &"")
+	return formation
 
 
 func _apply_snapshot(snapshot: WorldRuntimeSnapshot) -> void:
