@@ -51,6 +51,10 @@ func _run() -> void:
         "Continue is initially disabled without a validated save"
     )
     _expect(launcher.get_script() != null, "launcher logic is attached")
+    _expect(
+        launcher.get("_world_factory") is PackedScene,
+        "launcher defaults to the production world factory"
+    )
     launcher.free()
     _finish()
 

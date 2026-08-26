@@ -242,6 +242,8 @@ func _wire_autosave_overlay() -> void:
 		_autosave_overlay.retry_requested.connect(_on_autosave_retry_requested)
 	if not _autosave_overlay.return_requested.is_connected(_on_autosave_return_requested):
 		_autosave_overlay.return_requested.connect(_on_autosave_return_requested)
+	if not _autosave_overlay.diagnostics_copied.is_connected(_on_autosave_diagnostics_copied):
+		_autosave_overlay.diagnostics_copied.connect(_on_autosave_diagnostics_copied)
 
 
 func _on_autosave_failed(error: RefCounted) -> void:
@@ -259,6 +261,10 @@ func _on_autosave_retry_requested() -> void:
 func _on_autosave_return_requested() -> void:
 	discard_pending_autosave()
 	launcher_return_requested.emit()
+
+
+func _on_autosave_diagnostics_copied(_diagnostics: String) -> void:
+	pass
 
 
 func _on_autosave_recovered() -> void:

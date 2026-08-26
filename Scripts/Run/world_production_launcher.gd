@@ -18,6 +18,10 @@ static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save
 static var FAILURE_OVERLAY_SCENE: PackedScene = load(
     "res://Scenes/world_generation_failure_overlay.tscn"
 )
+static var WORLD_SCENE: PackedScene = load("res://Scenes/world_map_runtime.tscn")
+static var WORLD_ERROR_SCRIPT: GDScript = load(
+    "res://Scripts/WorldMap/world_generation_error.gd"
+)
 
 var _screen: Screen = Screen.MAIN
 var _start_service: RefCounted
@@ -27,6 +31,9 @@ var _world_factory: PackedScene
 var _pending_seed: String = ""
 var _failure_overlay: Control
 
+@onready var _background: ColorRect = $Background
+@onready var _main_center: CenterContainer = $MainCenter
+@onready var _new_run_center: CenterContainer = $NewRunCenter
 @onready var _main_screen: Control = %MainScreen
 @onready var _new_run_screen: Control = %NewRunScreen
 @onready var _overwrite_screen: Control = %OverwriteScreen
@@ -57,7 +64,7 @@ func _init(
     )
     _repository = repository if is_instance_valid(repository) else REPOSITORY_SCRIPT.new()
     _exit_adapter = exit_adapter if is_instance_valid(exit_adapter) else EXIT_ADAPTER_SCRIPT.new()
-    _world_factory = world_factory
+    _world_factory = world_factory if world_factory != null else WORLD_SCENE
 
 
 func _ready() -> void:
@@ -217,13 +224,48 @@ func _refresh_continue_button() -> void:
 
 func _on_session_ready(session: Dictionary) -> void:
     if _world_factory == null:
+        _emit_world_open_failure(session, "world_factory_missing")
         return
     for child: Node in _world_host.get_children():
         child.queue_free()
     var world := _world_factory.instantiate()
     _world_host.add_child(world)
-    if world.has_method("apply_session"):
-        world.call("apply_session", session)
+    if world is WorldRuntimeController:
+        var runtime_world := world as WorldRuntimeController
+        runtime_world.launcher_return_requested.connect(_on_world_launcher_return_requested)
+    if not world.has_method("apply_session") or not bool(world.call("apply_session", session)):
+        world.queue_free()
+        _emit_world_open_failure(session, "session_apply_failed")
+        return
+    _set_launcher_surface_visible(false)
+
+
+func _on_world_launcher_return_requested() -> void:
+    for child: Node in _world_host.get_children():
+        child.queue_free()
+    _set_launcher_surface_visible(true)
+    back_to_main()
+
+
+func _set_launcher_surface_visible(value: bool) -> void:
+    _background.visible = value
+    _main_center.visible = value
+    _new_run_center.visible = value
+    if not value:
+        _overwrite_dimmer.hide()
+        _overwrite_center.hide()
+
+
+func _emit_world_open_failure(session: Dictionary, constraint: String) -> void:
+    var plan := session.get("plan") as RefCounted
+    var error := WORLD_ERROR_SCRIPT.new(
+        WORLD_ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+        plan.get_seed_hex() if is_instance_valid(plan) else "",
+        plan.get_version() if is_instance_valid(plan) else 1,
+        "production-launcher",
+        constraint
+    ) as RefCounted
+    _emit_failure(error)
 
 
 func _on_launch_failed(error: RefCounted) -> void:

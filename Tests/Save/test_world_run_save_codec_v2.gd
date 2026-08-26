@@ -94,7 +94,8 @@ func _run() -> void:
         "sudden_death_active": false,
     })
     _expect(bool(save_codec.decode_any(v1_bytes).get("ok", false)), "Save V1 remains readable through V2 dispatch")
-    var no_consumed_encounters: Array[Vector2i] = []
+    var no_consumed_encounters: Array[Vector2i] = [Vector2i.ZERO]
+    no_consumed_encounters.clear()
     _expect(
         not is_instance_valid(state_script.create(
             Vector2i(-8, 0), Vector2i(8, 0), 29, true, false, no_consumed_encounters, formation

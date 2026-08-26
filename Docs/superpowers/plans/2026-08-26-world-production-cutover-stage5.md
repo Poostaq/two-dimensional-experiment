@@ -315,15 +315,15 @@ git commit -m "feat: add durable production world composition"
 - Create: `Docs/Specs/WorldMap/Evidence/ProductionCutoverStage5/pre-cutover/godotiq-validation.json`
 - Create: `Docs/Specs/WorldMap/Evidence/ProductionCutoverStage5/baseline/parent-p-sha.txt`
 
-- [ ] **Step 1: Run every new test and the full 37-run matrix**
+- [x] **Step 1: Run every new test and the full 37-run matrix**
 
 Expected: zero failures and zero unexpected stderr.
 
-- [ ] **Step 2: Run GodotIQ project validation, errors, signals, preview, launcher-by-path, and production-world-by-path health checks**
+- [x] **Step 2: Run GodotIQ project validation, errors, signals, preview, launcher-by-path, and production-world-by-path health checks**
 
 Expected: zero parser/runtime errors and no new orphan signals.
 
-- [ ] **Step 3: Commit the implementation and identify `P`**
+- [x] **Step 3: Commit the implementation and identify `P`**
 
 Commit all implementation changes. The resulting implementation commit is `P`. Generate `parent-p-sha.txt` and the pre-cutover artifacts against that exact committed tree, but leave those evidence files unstaged until the evidence-only commit after `C`; this avoids a self-referential SHA artifact changing `P`.
 
