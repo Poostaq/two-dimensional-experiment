@@ -13,22 +13,30 @@ var _active_encounter: EncounterOverlay
 var _active_battle: BattleArena
 var _active_party: PartyManagement
 
+@export var auto_initialize_runtime: bool = true
+
 
 func _ready() -> void:
 	if not _validate_dependencies():
 		_fail_integration()
 		return
+	if not auto_initialize_runtime:
+		return
 	var generated := HexWorldGeneratorV1.new().generate(PREVIEW_SEED)
 	if not bool(generated.get("ok", false)):
 		_fail_integration()
 		return
-	_runtime_plan = generated.get("plan") as WorldPlan
-	if not is_instance_valid(_runtime_plan):
+	configure_runtime(generated.get("plan") as WorldPlan)
+
+
+func configure_runtime(plan: WorldPlan) -> bool:
+	if _integration_failed or not is_instance_valid(plan) or not _model.configure(plan):
 		_fail_integration()
-		return
-	if not present_plan(_runtime_plan) or not _model.configure(_runtime_plan):
+		return false
+	_runtime_plan = plan
+	if not present_plan(_runtime_plan):
 		_fail_integration()
-		return
+		return false
 	if not cell_selected.is_connected(_on_runtime_cell_selected):
 		cell_selected.connect(_on_runtime_cell_selected)
 	if not cell_inspected.is_connected(_on_runtime_cell_inspected):
@@ -37,6 +45,7 @@ func _ready() -> void:
 	if not hud.party_requested.is_connected(open_party_management):
 		hud.party_requested.connect(open_party_management)
 	_apply_snapshot(_model.get_snapshot())
+	return not _integration_failed
 
 
 func get_runtime_snapshot() -> WorldRuntimeSnapshot:
