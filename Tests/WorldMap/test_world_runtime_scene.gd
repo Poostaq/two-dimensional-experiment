@@ -1,7 +1,7 @@
 class_name WorldRuntimeSceneContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 45
+const EXPECTED_TEST_COUNT := 46
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []
@@ -35,6 +35,11 @@ func _run() -> void:
     await process_frame
 
     _expect(not bool(runtime.call("has_integration_failed")), "validated runtime composition enables integration")
+    var serialized_formation := runtime.call("_formation_ids") as Array
+    _expect(
+        serialized_formation.all(func(character_id: Variant) -> bool: return character_id is String),
+        "runtime formation IDs remain valid serialized save values"
+    )
     _expect(runtime.find_child("*MapController*", true, false) == null, "legacy MapController is absent")
     var initial_snapshot := runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot
     _expect(is_instance_valid(initial_snapshot), "runtime exposes an immutable initial snapshot")

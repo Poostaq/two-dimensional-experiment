@@ -55,6 +55,10 @@ func _run() -> void:
         launcher.get("_world_factory") is PackedScene,
         "launcher defaults to the production world factory"
     )
+    _expect(
+        launcher.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+        "launcher root leaves world clicks unhandled"
+    )
     var new_run_center := launcher.get_node_or_null("NewRunCenter") as Control
     var failure_host := launcher.get_node_or_null("%FailureHost") as Control
     _expect(
