@@ -12,6 +12,8 @@ var _roster: RunRoster = RunRoster.new()
 var _active_encounter: EncounterOverlay
 var _active_battle: BattleArena
 var _active_party: PartyManagement
+var _pending_recruitment_option: BattleRewardOption
+var _pending_recruit: RunCharacter
 
 @export var auto_initialize_runtime: bool = true
 
@@ -101,7 +103,7 @@ func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
 		return
 	_active_encounter = ENCOUNTER_SCENE.instantiate() as EncounterOverlay
 	get_node("EncounterHost").add_child(_active_encounter)
-	_active_encounter.configure(coord, encounter_type)
+	_active_encounter.configure(coord, encounter_type.to_lower())
 	_active_encounter.close_requested.connect(_on_encounter_close_requested)
 	_active_encounter.battle_requested.connect(_on_battle_requested)
 
@@ -123,16 +125,80 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	if has_active_encounter():
 		_active_encounter.queue_free()
 		_active_encounter = null
+	var normalized_encounter := encounter_type.to_lower()
 	_active_battle = BATTLE_SCENE.instantiate() as BattleArena
 	get_node("BattleHost").add_child(_active_battle)
-	_active_battle.configure(coord, encounter_type)
+	_active_battle.configure(coord, normalized_encounter)
 	_active_battle.configure_units(_roster.create_battle_units())
+	_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
 	_active_battle.exit_requested.connect(_on_battle_closed)
 	_active_battle.battle_completed.connect(_on_battle_completed)
+	_active_battle.reward_confirmed.connect(_on_reward_confirmed)
+	_active_battle.recruitment_placement_requested.connect(_on_recruitment_placement_requested)
 
 
 func _on_battle_completed(_outcome: BattleOutcome.Type) -> void:
-	_on_battle_closed()
+	pass
+
+
+func _on_reward_confirmed(_option: BattleRewardOption) -> void:
+	pass
+
+
+func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
+	if not has_active_battle() or has_active_party_management() or not is_instance_valid(option):
+		return
+	var recruit := RunCharacterCatalog.create_for_reward(option.reward_id)
+	if not is_instance_valid(recruit) or _roster.has_character(recruit.character_id):
+		_active_battle.restore_pending_recruitment(option)
+		return
+	_pending_recruitment_option = option
+	_pending_recruit = recruit
+	_active_party = PARTY_SCENE.instantiate() as PartyManagement
+	get_node("PartyHost").add_child(_active_party)
+	_active_party.placement_requested.connect(_on_recruitment_add_requested)
+	_active_party.replacement_requested.connect(_on_recruitment_replace_requested)
+	_active_party.placement_cancelled.connect(_on_recruitment_cancelled)
+	if _roster.is_full():
+		_active_party.configure_replacement(_roster.get_slot_snapshot(), recruit)
+	else:
+		_active_party.configure_placement(_roster.get_slot_snapshot(), recruit)
+
+
+func _on_recruitment_add_requested(destination_slot: int, expected_id: StringName) -> void:
+	if not is_instance_valid(_pending_recruit) or _pending_recruit.character_id != expected_id:
+		return
+	if _roster.try_add_at(_pending_recruit, destination_slot) == RunRoster.AddResult.ADDED:
+		_complete_recruitment()
+
+
+func _on_recruitment_replace_requested(destination_slot: int, expected_character_id: StringName, expected_recruit_id: StringName) -> void:
+	if not is_instance_valid(_pending_recruit) or _pending_recruit.character_id != expected_recruit_id:
+		return
+	if _roster.try_replace_at(_pending_recruit, destination_slot, expected_character_id) == RunRoster.ReplaceResult.REPLACED:
+		_complete_recruitment()
+
+
+func _complete_recruitment() -> void:
+	var option := _pending_recruitment_option
+	_close_recruitment_party()
+	if has_active_battle() and is_instance_valid(option):
+		_active_battle.complete_pending_recruitment(option)
+
+
+func _on_recruitment_cancelled() -> void:
+	var option := _pending_recruitment_option
+	_close_recruitment_party()
+	if has_active_battle() and is_instance_valid(option):
+		_active_battle.restore_pending_recruitment(option)
+
+
+func _close_recruitment_party() -> void:
+	if has_active_party_management():
+		_active_party.queue_free()
+	_active_party = null
+	_pending_recruitment_option = null
+	_pending_recruit = null
 
 
 func _on_battle_closed() -> void:
@@ -140,6 +206,7 @@ func _on_battle_closed() -> void:
 		return
 	_active_battle.queue_free()
 	_active_battle = null
+	_close_recruitment_party()
 	_model.close_ordinary_encounter()
 	_apply_snapshot(_model.get_snapshot())
 
@@ -173,9 +240,7 @@ func _apply_snapshot(snapshot: WorldRuntimeSnapshot) -> void:
 	if not is_instance_valid(hud):
 		_fail_integration()
 		return
-	var empty_formation: Array[RunCharacter] = []
-	empty_formation.resize(6)
-	hud.set_formation(empty_formation)
+	hud.set_formation(_roster.get_slot_snapshot())
 	var terrain_tags: Array[String] = []
 	var cells := _runtime_plan.get_cells()
 	var cell_data: Dictionary = cells.get(snapshot.player_coord, {})

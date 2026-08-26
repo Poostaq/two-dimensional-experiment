@@ -1,7 +1,7 @@
 class_name WorldRuntimeSceneContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 39
+const EXPECTED_TEST_COUNT := 45
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []
@@ -89,6 +89,64 @@ func _run() -> void:
     _expect(runtime.call("get_runtime_snapshot").canonical_key() == key_before_camera, "camera pan and zoom never mutate runtime state")
 
     runtime.free()
+
+    var input_runtime := packed.instantiate() as WorldRuntimeController
+    get_root().add_child(input_runtime)
+    await process_frame
+    await process_frame
+    var pointer_destination := input_runtime.get_valid_destinations()[0]
+    var pointer_cell: WorldCellView
+    for candidate: Node in input_runtime.get_node("%WorldCells").get_children():
+        if candidate is WorldCellView and candidate.coordinate == pointer_destination:
+            pointer_cell = candidate
+            break
+    var pointer_event := InputEventMouseButton.new()
+    pointer_event.button_index = MOUSE_BUTTON_LEFT
+    pointer_event.pressed = true
+    pointer_event.position = pointer_cell.get_canvas_transform() * pointer_cell.global_position
+    pointer_cell._unhandled_input(pointer_event)
+    pointer_event.pressed = false
+    pointer_cell._unhandled_input(pointer_event)
+    var pointer_snapshot := input_runtime.get_runtime_snapshot()
+    _expect(pointer_snapshot.move_count == 1, "left-click cell input reaches the runtime transaction boundary")
+    _expect(pointer_snapshot.player_coord == pointer_destination, "clicked highlighted cell becomes the player coordinate")
+    _expect(input_runtime.has_active_encounter(), "clicked highlighted cell opens its encounter surface")
+    input_runtime.free()
+
+    var drag_runtime := packed.instantiate() as WorldRuntimeController
+    get_root().add_child(drag_runtime)
+    await process_frame
+    await process_frame
+    var drag_destination := drag_runtime.get_valid_destinations()[0]
+    var drag_cell: WorldCellView
+    for candidate: Node in drag_runtime.get_node("%WorldCells").get_children():
+        if candidate is WorldCellView and candidate.coordinate == drag_destination:
+            drag_cell = candidate
+            break
+    var drag_camera := drag_runtime.get_world_camera()
+    var drag_start := drag_cell.get_canvas_transform() * drag_cell.global_position
+    var before_drag_key := drag_runtime.get_runtime_snapshot().canonical_key()
+    var drag_press := InputEventMouseButton.new()
+    drag_press.button_index = MOUSE_BUTTON_LEFT
+    drag_press.pressed = true
+    drag_press.position = drag_start
+    drag_cell._unhandled_input(drag_press)
+    drag_camera._unhandled_input(drag_press)
+    var drag_motion := InputEventMouseMotion.new()
+    drag_motion.position = drag_start + Vector2(32.0, 0.0)
+    drag_motion.relative = Vector2(32.0, 0.0)
+    drag_cell._unhandled_input(drag_motion)
+    drag_camera._unhandled_input(drag_motion)
+    var drag_release := InputEventMouseButton.new()
+    drag_release.button_index = MOUSE_BUTTON_LEFT
+    drag_release.pressed = false
+    drag_release.position = drag_motion.position
+    drag_cell._unhandled_input(drag_release)
+    drag_camera._unhandled_input(drag_release)
+    _expect(drag_runtime.get_runtime_snapshot().canonical_key() == before_drag_key, "drag over highlighted cell preserves the canonical runtime snapshot")
+    _expect(not drag_runtime.has_active_encounter(), "drag over highlighted cell opens no encounter")
+    _expect(not drag_camera.is_dragging(), "drag release closes the camera gesture")
+    drag_runtime.free()
 
     var failed_runtime := packed.instantiate() as WorldRuntimeController
     failed_runtime.auto_initialize_runtime = false

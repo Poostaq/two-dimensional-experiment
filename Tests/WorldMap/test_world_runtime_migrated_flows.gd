@@ -1,7 +1,7 @@
 class_name WorldRuntimeMigratedFlowContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 22
+const EXPECTED_TEST_COUNT := 29
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []
@@ -47,6 +47,21 @@ func _run() -> void:
     _expect(not bool(runtime.call("has_active_encounter")) and bool(runtime.call("has_active_battle")), "battle request replaces the encounter with one battle")
     _expect(runtime.get_node("BattleHost").get_child_count() == 1, "battle host owns exactly one arena")
     var battle := runtime.get_node("BattleHost").get_child(0) as BattleArena
+    battle.call("_complete_battle", BattleOutcome.Type.VICTORY)
+    await process_frame
+    _expect(bool(runtime.call("has_active_battle")), "victory keeps battle alive for reward selection")
+    var reward_options := battle.get_reward_options()
+    _expect(not reward_options.is_empty(), "combat battle exposes configured reward options")
+    var recruitment_option := reward_options[0] as BattleRewardOption
+    battle.select_reward(recruitment_option.reward_id)
+    battle.confirm_reward_selection()
+    await process_frame
+    _expect(bool(runtime.call("has_active_party_management")), "recruitment reward opens Party placement")
+    var recruitment_party := runtime.get_node("PartyHost").get_child(0) as PartyManagement
+    recruitment_party.placement_cancelled.emit()
+    await process_frame
+    _expect(not bool(runtime.call("has_active_party_management")), "cancelled recruitment closes only Party placement")
+    _expect(bool(runtime.call("has_active_battle")), "cancelled recruitment restores the pending battle reward")
     battle.exit_requested.emit()
     await process_frame
     _expect(not bool(runtime.call("has_active_battle")), "battle exit restores the world surface")
@@ -55,9 +70,14 @@ func _run() -> void:
     _expect(bool(runtime.call("has_active_party_management")), "Party opens one normal management surface")
     _expect(runtime.get_node("PartyHost").get_child_count() == 1, "Party host owns exactly one management instance")
     var party := runtime.get_node("PartyHost").get_child(0) as PartyManagement
+    var source_character := (party.get("_slots") as Array)[0] as RunCharacter
+    party.move_requested.emit(0, 3, source_character.character_id)
     party.close_requested.emit()
     await process_frame
     _expect(not bool(runtime.call("has_active_party_management")), "Party close restores world input")
+    var hud := runtime.get_node("%WorldMapHud") as WorldMapHud
+    _expect((hud.get_node("%BackSlot0") as Label).text == "Empty", "Party move persists the emptied source slot in HUD")
+    _expect((hud.get_node("%FrontSlot0") as Label).text == source_character.display_name, "Party move persists destination formation in HUD after close")
     _expect((runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).move_count == initial_moves + 1, "Party open and close consume zero world moves")
     _expect(not (runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).input_blocked, "ordinary migrated flows clear only their owned blocker")
     runtime.free()

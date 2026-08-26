@@ -7,6 +7,7 @@ signal inspected(coord: Vector2i)
 const CELL_FLAT_WIDTH := 80.0
 const CELL_POINT_HEIGHT := 92.0
 const MARKER_OUTLINE_WIDTH := 2.0
+const POINTER_CLICK_THRESHOLD := 8.0
 const ENCOUNTER_COLORS := {
 	"Safe": Color("526b5b"),
 	"Combat": Color("754b4b"),
@@ -27,6 +28,9 @@ var coordinate: Vector2i
 var encounter_type: String = "Safe"
 var terrain_type: String = ""
 var is_town: bool = false
+var _pointer_armed: bool = false
+var _pointer_button: MouseButton = MOUSE_BUTTON_NONE
+var _pointer_press_position: Vector2 = Vector2.ZERO
 
 
 func configure(
@@ -44,6 +48,43 @@ func configure(
 	_terrain_fill.visible = terrain_type == "forest"
 	_town_buildings.visible = is_town
 	_configure_roads(road_edges)
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and _pointer_armed:
+		var motion_event := event as InputEventMouseMotion
+		if motion_event.position.distance_to(_pointer_press_position) > POINTER_CLICK_THRESHOLD:
+			_pointer_armed = false
+		return
+	var mouse_event := event as InputEventMouseButton
+	if not is_instance_valid(mouse_event):
+		return
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT and mouse_event.button_index != MOUSE_BUTTON_RIGHT:
+		return
+	if mouse_event.pressed:
+		_pointer_armed = _contains_viewport_position(mouse_event.position)
+		_pointer_button = mouse_event.button_index if _pointer_armed else MOUSE_BUTTON_NONE
+		_pointer_press_position = mouse_event.position
+		return
+	var should_activate := (
+		_pointer_armed
+		and _pointer_button == mouse_event.button_index
+		and mouse_event.position.distance_to(_pointer_press_position) <= POINTER_CLICK_THRESHOLD
+		and _contains_viewport_position(mouse_event.position)
+	)
+	_pointer_armed = false
+	_pointer_button = MOUSE_BUTTON_NONE
+	if not should_activate:
+		return
+	if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+		request_selection()
+	else:
+		request_inspection()
+
+
+func _contains_viewport_position(viewport_position: Vector2) -> bool:
+	var world_position := get_canvas_transform().affine_inverse() * viewport_position
+	return Geometry2D.is_point_in_polygon(to_local(world_position), _encounter_fill.polygon)
 
 
 func request_selection() -> void:
