@@ -44,7 +44,7 @@ Before every `.gd` or `.tscn` edit, use GodotIQ `file_context(detail="brief")`; 
 | Path | Bounded change |
 |---|---|
 | `Scripts/WorldMap/world_cell_view.gd` | Emit axial selection/inspection signals only |
-| `Scenes/world_map_cell.tscn` | Wire cell input node to `WorldCellView` |
+| `Scenes/world_cell_view.tscn` | Wire cell input node to `WorldCellView` |
 | `Scripts/WorldMap/world_presentation_controller.gd` | Apply snapshots, highlights, marker updates, and expose typed selection signals |
 | `Scripts/WorldMap/world_minimap.gd` | Move player/boss markers without rebuilding the plan |
 | `Tests/WorldMap/test_world_cell_view.gd` | Selection signal contract |
@@ -305,7 +305,7 @@ git commit -m "feat: add deterministic world movement and pursuit"
 
 **Files:**
 - Modify: `Scripts/WorldMap/world_cell_view.gd`
-- Modify: `Scenes/world_map_cell.tscn`
+- Modify: `Scenes/world_cell_view.tscn`
 - Modify: `Scripts/WorldMap/world_minimap.gd`
 - Modify: `Scripts/WorldMap/world_presentation_controller.gd`
 - Modify: `Tests/WorldMap/test_world_cell_view.gd`
@@ -331,7 +331,7 @@ Expected: cell, minimap, and presentation runners all exit `0`; project main sce
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add -- Scripts/WorldMap/world_cell_view.gd Scenes/world_map_cell.tscn Scripts/WorldMap/world_minimap.gd Scripts/WorldMap/world_presentation_controller.gd Tests/WorldMap/test_world_cell_view.gd Tests/WorldMap/test_world_minimap.gd Tests/WorldMap/test_world_presentation_scene.gd
+git add -- Scripts/WorldMap/world_cell_view.gd Scenes/world_cell_view.tscn Scripts/WorldMap/world_minimap.gd Scripts/WorldMap/world_presentation_controller.gd Tests/WorldMap/test_world_cell_view.gd Tests/WorldMap/test_world_minimap.gd Tests/WorldMap/test_world_presentation_scene.gd
 git commit -m "feat: add world runtime presentation adapters"
 ```
 

@@ -36,3 +36,5 @@ Coverage: 10/10 acceptance criteria have automated or structured runtime proof. 
 ## Smoke verdict
 
 PASS. Both the explicit Stage 4 preview and production main scene start with runtime attachment and zero debug-console errors. No production cutover is present.
+
+Repository-wide GodotIQ validation is not warning-free: it reports 13 pre-existing warnings and 4 informational findings. The informational findings include three pre-existing orphan signals (`diagnostics_copied`, `hover_changed`, and `return_requested`). Stage 4 introduced no new validation issue or orphan signal; these baseline findings remain outside this stage's implementation scope.
