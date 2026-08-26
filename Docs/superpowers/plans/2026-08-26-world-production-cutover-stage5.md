@@ -176,15 +176,15 @@ git commit -m "feat: add single world run repository"
 - Create: `Tests/Run/test_world_production_launcher.gd`
 - Modify: `Scripts/Run/world_run_start_service.gd`
 
-- [ ] **Step 1: Write failing launcher tests**
+- [x] **Step 1: Write failing launcher tests**
 
 Assert initial `MAIN` screen, Start New Run transitions to `NEW_RUN`, Back returns to `MAIN`, blank input produces a nonempty resolved seed, explicit seed is preserved, existing save requests overwrite confirmation, cancellation performs zero writes, Continue emits a validated session, and Exit calls an injected adapter exactly once with status 0.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: exit `1` because launcher and exit adapter are missing.
 
-- [ ] **Step 3: Implement `WorldExitAdapter`**
+- [x] **Step 3: Implement `WorldExitAdapter`**
 
 ```gdscript
 class_name WorldExitAdapter
@@ -199,15 +199,15 @@ func request_exit(tree: SceneTree, status: int = 0) -> void:
         tree.quit(status)
 ```
 
-- [ ] **Step 4: Implement launcher state machine**
+- [x] **Step 4: Implement launcher state machine**
 
 Use `enum Screen { MAIN, NEW_RUN, OVERWRITE_CONFIRM }`. Inject `WorldRunStartService`, `WorldSingleSlotRepository`, `WorldExitAdapter`, and a `PackedScene` world factory. Resolve blank seeds through cryptographic/random system entropy converted to stable text; pass the resolved text to Generator V1.
 
-- [ ] **Step 5: Extend run-start service minimally**
+- [x] **Step 5: Extend run-start service minimally**
 
 Return a typed dictionary containing validated `plan`, `resolved_seed`, and initial `WorldRunState`; do not add UI or process exit behavior.
 
-- [ ] **Step 6: Validate, run launcher and frozen run-start tests, and commit**
+- [x] **Step 6: Validate, run launcher and frozen run-start tests, and commit**
 
 ```powershell
 & $godot --headless --path . --script Tests/Run/test_world_production_launcher.gd

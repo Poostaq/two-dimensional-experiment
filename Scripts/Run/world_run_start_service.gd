@@ -6,6 +6,7 @@ const RETURN_RESULT := "RETURN_RESULT"
 static var GENERATOR_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_generator_v1.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
 static var PRIORITY_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_priority.gd")
+static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 var _commit_callback: Callable
 var _generator: RefCounted
@@ -49,5 +50,36 @@ func start(seed_text: String, config: Dictionary = {}, policy: String = RETURN_R
                 "commit_callback_invalid"
             ),
         }
+    var consumed_encounters: Array[Vector2i] = []
+    var formation: Array[StringName] = [&"", &"", &"", &"", &"", &""]
+    var run_state: RefCounted = RUN_STATE_SCRIPT.create(
+        plan.get_start_coord(),
+        plan.get_boss_coord(),
+        0,
+        false,
+        false,
+        consumed_encounters,
+        formation
+    )
+    if not is_instance_valid(run_state):
+        return {
+            "ok": false,
+            "plan": null,
+            "resolved_seed": "",
+            "run_state": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                plan.get_seed_hex(),
+                plan.get_version(),
+                "run-start",
+                "initial_run_state_invalid"
+            ),
+        }
     _commit_callback.call(plan)
-    return {"ok": true, "plan": plan, "error": null}
+    return {
+        "ok": true,
+        "plan": plan,
+        "resolved_seed": seed_text,
+        "run_state": run_state,
+        "error": null,
+    }
