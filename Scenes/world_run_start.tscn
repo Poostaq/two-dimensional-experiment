@@ -1,0 +1,244 @@
+[gd_scene format=3 uid="uid://dh21nsecrn53v"]
+
+[ext_resource type="Script" uid="uid://dsyvtiyhnikkc" path="res://Scripts/Run/world_production_launcher.gd" id="1_fupo4"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t0187"]
+bg_color = Color(0.0627451, 0.10980392, 0.16470589, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.28235295, 0.39215687, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ar2gu"]
+bg_color = Color(0.0627451, 0.10980392, 0.16470589, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.17254902, 0.28235295, 0.39215687, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.4)
+shadow_size = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kfx8h"]
+bg_color = Color(0.09411765, 0.13333334, 0.19215687, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.44705883, 0.34901962, 0.23529412, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.53333336)
+shadow_size = 20
+
+[node name="WorldRunStart" type="Control" unique_id=773976830]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1152.0
+offset_bottom = 648.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fupo4")
+
+[node name="WorldHost" type="Control" parent="." unique_id=301588196]
+unique_name_in_owner = true
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Background" type="ColorRect" parent="." unique_id=1199529459]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.03529412, 0.06666667, 0.10980392, 1)
+
+[node name="MainCenter" type="CenterContainer" parent="." unique_id=117463336]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="MainScreen" type="PanelContainer" parent="MainCenter" unique_id=674728917]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_t0187")
+
+[node name="MainMargin" type="MarginContainer" parent="MainCenter/MainScreen" unique_id=1243165231]
+layout_mode = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 42
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 42
+
+[node name="MainContent" type="VBoxContainer" parent="MainCenter/MainScreen/MainMargin" unique_id=1543577250]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Title" type="Label" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=1967585373]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8627451, 0.9254902, 1, 1)
+theme_override_font_sizes/font_size = 30
+text = "TWO DIMENSION EXPLORATION"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=2002797340]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.50980395, 0.58431375, 0.6784314, 1)
+theme_override_font_sizes/font_size = 16
+text = "A deterministic expedition awaits."
+horizontal_alignment = 1
+
+[node name="MainSpacer" type="Control" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=842861202]
+layout_mode = 2
+
+[node name="ContinueButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=433389460]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "CONTINUE SAVED RUN"
+
+[node name="StartNewRunButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=673270744]
+unique_name_in_owner = true
+layout_mode = 2
+text = "START NEW RUN"
+
+[node name="ExitButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=1769241077]
+unique_name_in_owner = true
+layout_mode = 2
+text = "EXIT GAME"
+
+[node name="NewRunCenter" type="CenterContainer" parent="." unique_id=324202246]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="NewRunScreen" type="PanelContainer" parent="NewRunCenter" unique_id=2128958829]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ar2gu")
+
+[node name="NewRunMargin" type="MarginContainer" parent="NewRunCenter/NewRunScreen" unique_id=463415345]
+layout_mode = 2
+theme_override_constants/margin_left = 48
+theme_override_constants/margin_top = 42
+theme_override_constants/margin_right = 48
+theme_override_constants/margin_bottom = 42
+
+[node name="NewRunContent" type="VBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin" unique_id=1809188953]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="NewRunTitle" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1830517438]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8627451, 0.9254902, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "START NEW RUN"
+horizontal_alignment = 1
+
+[node name="SeedLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=629032007]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5647059, 0.654902, 0.7529412, 1)
+theme_override_font_sizes/font_size = 14
+text = "WORLD SEED"
+
+[node name="SeedInput" type="LineEdit" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=766796348]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "Leave blank for a random world"
+clear_button_enabled = true
+
+[node name="SeedHint" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=2091054211]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.43529412, 0.50980395, 0.6, 1)
+text = "The resolved seed is stored with your run."
+autowrap_mode = 2
+
+[node name="SeedSpacer" type="Control" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=432435744]
+layout_mode = 2
+
+[node name="StartButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=22799963]
+unique_name_in_owner = true
+layout_mode = 2
+text = "GENERATE WORLD"
+
+[node name="BackButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1691449921]
+unique_name_in_owner = true
+layout_mode = 2
+text = "BACK"
+
+[node name="OverwriteDimmer" type="ColorRect" parent="." unique_id=1290756472]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.72156864)
+
+[node name="OverwriteCenter" type="CenterContainer" parent="." unique_id=392748070]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="OverwriteScreen" type="PanelContainer" parent="OverwriteCenter" unique_id=853193403]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kfx8h")
+
+[node name="OverwriteMargin" type="MarginContainer" parent="OverwriteCenter/OverwriteScreen" unique_id=784447667]
+layout_mode = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 38
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 38
+
+[node name="OverwriteContent" type="VBoxContainer" parent="OverwriteCenter/OverwriteScreen/OverwriteMargin" unique_id=2046206140]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="OverwriteTitle" type="Label" parent="OverwriteCenter/OverwriteScreen/OverwriteMargin/OverwriteContent" unique_id=713839584]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.8392157, 0.6313726, 1)
+theme_override_font_sizes/font_size = 24
+text = "REPLACE SAVED RUN?"
+horizontal_alignment = 1
+
+[node name="OverwriteMessage" type="Label" parent="OverwriteCenter/OverwriteScreen/OverwriteMargin/OverwriteContent" unique_id=922235062]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68235296, 0.7411765, 0.8039216, 1)
+text = "Your existing expedition will be replaced only after the new world is generated and saved successfully."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="OverwriteConfirmButton" type="Button" parent="OverwriteCenter/OverwriteScreen/OverwriteMargin/OverwriteContent" unique_id=1682699400]
+unique_name_in_owner = true
+layout_mode = 2
+text = "REPLACE AND START"
+
+[node name="OverwriteCancelButton" type="Button" parent="OverwriteCenter/OverwriteScreen/OverwriteMargin/OverwriteContent" unique_id=1319208618]
+unique_name_in_owner = true
+layout_mode = 2
+text = "CANCEL"
+
+[node name="FailureHost" type="Control" parent="." unique_id=1831954588]
+unique_name_in_owner = true
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 1

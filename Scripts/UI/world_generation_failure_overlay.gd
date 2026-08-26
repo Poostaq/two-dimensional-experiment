@@ -33,7 +33,7 @@ func _fit_to_viewport() -> void:
 	_center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 
-func present(error: WorldGenerationError, build_version: String) -> void:
+func present(error: RefCounted, build_version: String) -> void:
 	_diagnostics_text = WorldFailureFormatter.format_json_line(error, build_version).strip_edges()
 	show()
 	_return_button.grab_focus()

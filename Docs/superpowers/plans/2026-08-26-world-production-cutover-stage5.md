@@ -222,19 +222,19 @@ git commit -m "feat: add production world launcher logic"
 - Create: `Scenes/world_run_start.tscn`
 - Create: `Tests/UI/test_world_run_start_scene.gd`
 
-- [ ] **Step 1: Write failing scene assertions**
+- [x] **Step 1: Write failing scene assertions**
 
 Assert exact unique nodes `%ContinueButton`, `%StartNewRunButton`, `%ExitButton`, `%SeedInput`, `%StartButton`, `%BackButton`, `%OverwriteConfirmButton`, `%OverwriteCancelButton`, `%FailureHost`, and `%WorldHost`. Assert seed controls are hidden on initial main screen and Continue disabled without a save.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: exit `1` because `Scenes/world_run_start.tscn` is absent.
 
-- [ ] **Step 3: Build the scene with GodotIQ**
+- [x] **Step 3: Build the scene with GodotIQ**
 
 Use `build_scene`/`node_ops`, attach `WorldProductionLauncher`, connect buttons to typed controller methods, instance `world_generation_failure_overlay.tscn` only on failure, save, and inspect with GodotIQ tour.
 
-- [ ] **Step 4: Validate, run scene test, and commit**
+- [x] **Step 4: Validate, run scene test, and commit**
 
 ```powershell
 & $godot --headless --path . --script Tests/UI/test_world_run_start_scene.gd
