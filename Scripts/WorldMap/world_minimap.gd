@@ -49,6 +49,18 @@ func configure(plan: WorldPlan, player_coord: Vector2i, boss_coord: Vector2i) ->
 	return true
 
 
+func update_party_markers(player_coord: Vector2i, boss_coord: Vector2i) -> bool:
+	if not is_instance_valid(_plan):
+		return false
+	var cells := _plan.get_cells()
+	if not cells.has(player_coord) or not cells.has(boss_coord):
+		return false
+	_player_coord = player_coord
+	_boss_coord = boss_coord
+	_position_party_markers()
+	return true
+
+
 func update_camera_footprint(world_rect: Rect2) -> void:
 	var top_left := _surface.position + world_rect.position * MAIN_TO_MINIMAP_SCALE
 	var bottom_right := _surface.position + world_rect.end * MAIN_TO_MINIMAP_SCALE

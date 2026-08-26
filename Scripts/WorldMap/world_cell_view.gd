@@ -1,6 +1,9 @@
 class_name WorldCellView
 extends Node2D
 
+signal selected(coord: Vector2i)
+signal inspected(coord: Vector2i)
+
 const CELL_FLAT_WIDTH := 80.0
 const CELL_POINT_HEIGHT := 92.0
 const MARKER_OUTLINE_WIDTH := 2.0
@@ -41,6 +44,14 @@ func configure(
 	_terrain_fill.visible = terrain_type == "forest"
 	_town_buildings.visible = is_town
 	_configure_roads(road_edges)
+
+
+func request_selection() -> void:
+	selected.emit(coordinate)
+
+
+func request_inspection() -> void:
+	inspected.emit(coordinate)
 
 
 func set_highlighted(value: bool) -> void:

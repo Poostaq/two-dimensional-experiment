@@ -1,6 +1,9 @@
 class_name WorldPresentationController
 extends Node2D
 
+signal cell_selected(coord: Vector2i)
+signal cell_inspected(coord: Vector2i)
+
 static var CELL_SCENE: PackedScene = load("res://Scenes/world_cell_view.tscn")
 const CELL_FLAT_WIDTH := 80.0
 const CELL_POINT_HEIGHT := 92.0
@@ -17,6 +20,7 @@ const PREVIEW_SEED := "golden-alpha"
 var _plan: WorldPlan
 var _player_coord: Vector2i
 var _boss_coord: Vector2i
+var _cells_by_coord: Dictionary[Vector2i, WorldCellView] = {}
 
 
 func _ready() -> void:
@@ -39,6 +43,7 @@ func present_plan(plan: WorldPlan) -> bool:
 			return false
 	_clear_children(_world_cells)
 	_clear_children(_road_network)
+	_cells_by_coord.clear()
 	_plan = plan
 	_player_coord = plan.get_start_coord()
 	_boss_coord = plan.get_boss_coord()
@@ -66,6 +71,36 @@ func present_plan(plan: WorldPlan) -> bool:
 	_hud.set_context("safe", terrain_tags, false)
 	_hud.set_party_available(true)
 	return true
+
+
+func apply_runtime_snapshot(snapshot: WorldRuntimeSnapshot) -> bool:
+	if not is_instance_valid(snapshot) or not is_instance_valid(_plan):
+		return false
+	var cells := _plan.get_cells()
+	if not cells.has(snapshot.player_coord) or not cells.has(snapshot.boss_coord):
+		return false
+	if not _minimap.update_party_markers(snapshot.player_coord, snapshot.boss_coord):
+		return false
+	_player_coord = snapshot.player_coord
+	_boss_coord = snapshot.boss_coord
+	for coord: Vector2i in _cells_by_coord:
+		var marker_kind := ""
+		if coord == _player_coord:
+			marker_kind = "player"
+		elif coord == _boss_coord:
+			marker_kind = "boss"
+		_cells_by_coord[coord].set_party_marker(marker_kind)
+	_hud.set_turn_state(snapshot.move_count, snapshot.sudden_death_active)
+	return true
+
+
+func set_valid_destinations(destinations: Array[Vector2i]) -> void:
+	for coord: Vector2i in _cells_by_coord:
+		_cells_by_coord[coord].set_highlighted(destinations.has(coord))
+
+
+func get_world_camera() -> WorldCameraController:
+	return _world_camera
 
 
 func _on_camera_view_changed(visible_world_rect: Rect2) -> void:
@@ -116,6 +151,9 @@ func _add_world_cell(coord: Vector2i, data: Dictionary, road_edges: Array[Vector
 	cell.name = "WorldCell_%d_%d" % [coord.x, coord.y]
 	cell.position = axial_to_world(coord)
 	_world_cells.add_child(cell)
+	_cells_by_coord[coord] = cell
+	cell.selected.connect(_on_cell_selected)
+	cell.inspected.connect(_on_cell_inspected)
 	cell.configure(
 		coord,
 		String(data.get("encounter", "safe")).capitalize(),
@@ -127,6 +165,14 @@ func _add_world_cell(coord: Vector2i, data: Dictionary, road_edges: Array[Vector
 		cell.set_party_marker("player")
 	elif coord == _boss_coord:
 		cell.set_party_marker("boss")
+
+
+func _on_cell_selected(coord: Vector2i) -> void:
+	cell_selected.emit(coord)
+
+
+func _on_cell_inspected(coord: Vector2i) -> void:
+	cell_inspected.emit(coord)
 
 
 func _build_road_topology(roads: Array) -> Dictionary:

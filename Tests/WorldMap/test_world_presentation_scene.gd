@@ -124,7 +124,8 @@ func _run() -> void:
 		if (cell.get_node("HighlightLayer/Outline") as Line2D).visible:
 			highlighted_count += 1
 	_expect(highlighted_count == 2, "valid destinations drive exactly two cell highlights")
-	preview.call("set_valid_destinations", [])
+	valid_destinations.clear()
+	preview.call("set_valid_destinations", valid_destinations)
 	highlighted_count = 0
 	for cell: Node in preview.get_node("%WorldCells").get_children():
 		if (cell.get_node("HighlightLayer/Outline") as Line2D).visible:
