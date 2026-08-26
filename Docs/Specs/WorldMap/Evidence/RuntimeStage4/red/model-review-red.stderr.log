@@ -1,0 +1,10 @@
+ERROR: failed reconfiguration leaves no usable destinations
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:188)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:62)
+ERROR: failed reconfiguration blocks runtime input
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:188)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:62)

@@ -1,0 +1,31 @@
+{
+  "date": "2026-08-26",
+  "preview": {
+    "scene": "res://Scenes/world_map_runtime_preview.tscn",
+    "verdict": "PASS",
+    "runtime_attached": true,
+    "script_errors": 0,
+    "runtime_errors": 0
+  },
+  "production": {
+    "scene": "res://Scenes/game_world.tscn",
+    "launch": "main",
+    "verdict": "PASS",
+    "runtime_attached": true,
+    "script_errors": 0,
+    "runtime_errors": 0
+  },
+  "manual_runtime": {
+    "party_open_close_zero_moves": true,
+    "valid_neighbor_accepted": true,
+    "combat_overlay_opened": true,
+    "visible_camera_preserved": true,
+    "hidden_camera_recentered": true,
+    "move_30_active_without_pursuit": true,
+    "move_31_one_pursuit_step": true,
+    "move_32_one_pursuit_step": true,
+    "boss_engagement_opened": true,
+    "main_minimap_coordinates_synchronized": true,
+    "debug_console_errors": 0
+  }
+}

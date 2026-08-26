@@ -1,0 +1,23 @@
+{
+  "date": "2026-08-26",
+  "godot": "4.7.2.stable.steam.ed1daf0bf",
+  "project_validate": {
+    "files": 110,
+    "scenes": 11,
+    "errors": 0,
+    "warnings": 13,
+    "info": 4,
+    "stage4_new_issues": 0
+  },
+  "check_errors": {
+    "scripts_checked": 110,
+    "errors": 0
+  },
+  "signal_map": {
+    "signals_defined": 23,
+    "emissions": 49,
+    "connections": 76,
+    "stage4_new_orphans": 0,
+    "note": "Three pre-existing non-Stage-4 orphans remain: diagnostics_copied, hover_changed, return_requested."
+  }
+}

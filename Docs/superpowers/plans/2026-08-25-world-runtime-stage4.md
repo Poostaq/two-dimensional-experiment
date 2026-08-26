@@ -443,15 +443,15 @@ git commit -m "test: prove Stage 4 camera and production isolation"
 - Create: `Docs/Specs/WorldMap/Evidence/RuntimeStage4/green/runtime-health.json`
 - Create: `Docs/Specs/WorldMap/Evidence/RuntimeStage4/manual-review.md`
 
-- [ ] **Step 1: Run the full automated matrix**
+- [x] **Step 1: Run the full automated matrix**
 
 Run all `Tests/WorldMap/test_*.gd`, all frozen tests named by the migration authority, and the existing Generator V1, Save V1, Presentation Stage 3, and camera-edge suites. Record exact commands, assertion summaries, stderr, and exit codes. Expected: zero failures.
 
-- [ ] **Step 2: Run GodotIQ project gates**
+- [x] **Step 2: Run GodotIQ project gates**
 
 Run project `validate`, project `check_errors`, `signal_map(find="orphans")`, runtime preview `verify_project_runs`, and production main `verify_project_runs`. Expected: zero parser/runtime errors and no new orphan signals.
 
-- [ ] **Step 3: Record isolation**
+- [x] **Step 3: Record isolation**
 
 ```powershell
 git diff --exit-code main -- Scenes/game_world.tscn Scripts/Map Tests/Map
@@ -461,15 +461,15 @@ git status --short
 
 Expected: isolation exit `0`; only Stage 4 and approved WorldMap presentation paths differ; unrelated untracked exclusions remain untouched.
 
-- [ ] **Step 4: Perform manual runtime review**
+- [x] **Step 4: Perform manual runtime review**
 
 Using the explicit Stage 4 scene, record observations for valid-neighbor movement, Safe/Combat overlay, Party open/close, camera preservation/recenter, move 30 activation, move 31 pursuit, later pursuit, and one Boss engagement. Capture one screenshot only where it materially proves synchronized main-map/minimap boss movement.
 
-- [ ] **Step 5: Request code and architecture review**
+- [x] **Step 5: Request code and architecture review**
 
 Review against the Stage 4 design, target design WM-T07/WM-T10/WM-T11, migration isolation, and evidence packet. Fix every Critical or Important finding and rerun affected plus full gates.
 
-- [ ] **Step 6: Commit evidence**
+- [x] **Step 6: Commit evidence**
 
 ```powershell
 git add -- Docs/Specs/WorldMap/Evidence/RuntimeStage4
@@ -478,16 +478,16 @@ git commit -m "test: record Stage 4 runtime evidence"
 
 ## Final acceptance checklist
 
-- [ ] Pure model state is the sole runtime authority and snapshots are defensive immutable values.
-- [ ] Rejected moves are typed and atomic.
-- [ ] Move 30 activates without pursuit; move 31 and every later accepted unengaged move has exactly one pursuit step.
-- [ ] Both engagement directions open one Boss encounter and permanently block map movement.
-- [ ] Main map, minimap, highlights, HUD, encounter, and Party state derive from one snapshot.
-- [ ] Camera-only/UI-only actions consume zero moves and cause no boss movement.
-- [ ] Conditional camera recenter uses the implemented visible-rectangle contract.
-- [ ] Migrated AC1/AC2/AC3 successor flows pass through the explicit Stage 4 scene.
-- [ ] Full frozen legacy suite and hashes remain unchanged and green.
-- [ ] Generator V1, Save V1, Stage 3, and edge-centering regressions remain green.
-- [ ] Production main scene remains `Scenes/game_world.tscn`; `Scripts/Map` and frozen tests are unchanged.
-- [ ] GodotIQ project validation, parse, signal, preview runtime, and production runtime gates pass.
-- [ ] No cutover, legacy cleanup, or unrelated feature is included.
+- [x] Pure model state is the sole runtime authority and snapshots are defensive immutable values.
+- [x] Rejected moves are typed and atomic.
+- [x] Move 30 activates without pursuit; move 31 and every later accepted unengaged move has exactly one pursuit step.
+- [x] Both engagement directions open one Boss encounter and permanently block map movement.
+- [x] Main map, minimap, highlights, HUD, encounter, and Party state derive from one snapshot.
+- [x] Camera-only/UI-only actions consume zero moves and cause no boss movement.
+- [x] Conditional camera recenter uses the implemented visible-rectangle contract.
+- [x] Migrated AC1/AC2/AC3 successor flows pass through the explicit Stage 4 scene.
+- [x] Full frozen legacy suite and hashes remain unchanged and green.
+- [x] Generator V1, Save V1, Stage 3, and edge-centering regressions remain green.
+- [x] Production main scene remains `Scenes/game_world.tscn`; `Scripts/Map` and frozen tests are unchanged.
+- [x] GodotIQ project validation, parse, signal, preview runtime, and production runtime gates pass.
+- [x] No cutover, legacy cleanup, or unrelated feature is included.

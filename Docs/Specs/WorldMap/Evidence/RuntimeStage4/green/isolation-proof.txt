@@ -1,0 +1,18 @@
+Stage 4 production isolation proof
+Date: 2026-08-26
+main SHA: eab06893af5f5b87435e80f397a47353028d05c4
+implementation HEAD before evidence commit: e21a82094f9b23a2533657c5e8ecdbfce2cde4e6
+
+git diff --exit-code main -- Scenes/game_world.tscn Scripts/Map Tests/Map
+ISOLATION_EXIT=0
+
+ProjectSettings main scene: res://Scenes/game_world.tscn
+GodotIQ file_context: game_world.tscn uses only res://Scripts/Map/map_controller.gd.
+GodotIQ dependency_graph(depth=2): MapController has no Stage 4 reference or reverse dependency.
+Stage 4 launch entry is explicit: res://Scenes/world_map_runtime_preview.tscn.
+No production cutover, legacy cleanup, or legacy-save conversion is included.
+
+Unrelated untracked exclusions were left untouched:
+.github/agents/race-class-designer.agent.md
+Tests/Battle/test_active_turn_skill_lock.gd.uid
+Tests/Map/test_world_turn_counter.gd.uid

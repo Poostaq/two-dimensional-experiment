@@ -1,0 +1,20 @@
+ERROR: runtime snapshot value exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:69)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:22)
+ERROR: typed move result exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:69)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:22)
+ERROR: pure runtime model exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:69)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:22)
+ERROR: expected 18 assertions, ran 3
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/WorldMap/test_world_runtime_model.gd:69)
+       [1] _run (res://Tests/WorldMap/test_world_runtime_model.gd:22)

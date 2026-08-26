@@ -1,0 +1,50 @@
+Stage 4 automated matrix
+Date: 2026-08-26
+Godot: 4.7.2.stable.steam.ed1daf0bf
+Command pattern: godot.windows.opt.tools.64.exe --headless --path D:\Projects\two-dimension-exploration -s <runner>
+Result: MATRIX_TOTAL=37 MATRIX_FAILURES=0; every runner exit=0 and stderr_bytes=0.
+
+Frozen legacy (15/15):
+Tests/Map/test_ac1_1_runtime_step_counts.gd — PASS 8/8
+Tests/Map/test_ac1_2_encounter_determinism.gd — PASS 6/6
+Tests/Map/test_ac1_2_hex_tile_view_states.gd — PASS 1/1
+Tests/Map/test_ac1_2_runtime_encounter_layout.gd — PASS 5/5
+Tests/Map/test_ac1_3_mouse_navigation.gd — PASS 7/7
+Tests/Map/test_ac1_4_encounter_overlay.gd — PASS 6/6
+Tests/Map/test_ac1_5_sudden_death.gd — PASS 13/13
+Tests/Map/test_ac2_1_battle_arena.gd — PASS 12/12
+Tests/Map/test_ac3_1_recruitment_integration.gd — PASS 8/8
+Tests/Map/test_ac3_3_party_management_integration.gd — PASS 24/24
+Tests/Map/test_hex_map_model.gd — PASS 7/7
+Tests/Map/test_map_controller_runtime.gd — PASS 8/8
+Tests/Map/test_world_turn_counter.gd — PASS 4/4
+Tests/Run/test_ac3_1_run_roster.gd — PASS 13/13
+Tests/Run/test_ac3_3_party_formation.gd — PASS 36/36
+
+Generator V1, Save V1, run-start, headless, and HUD (13/13):
+Tests/WorldMap/test_generator_v1_fixture_author.gd — PASS
+Tests/WorldMap/test_generator_v1_fixture_integrity.gd — PASS
+Tests/WorldMap/test_hex_world_generator_v1.gd — PASS
+Tests/WorldMap/test_hex_world_geometry.gd — PASS
+Tests/WorldMap/test_world_constraint_solver_v1.gd — PASS
+Tests/WorldMap/test_world_plan_codec_v1.gd — PASS
+Tests/WorldMap/test_world_priority_v1.gd — PASS
+Tests/Save/test_world_save_codec_v1.gd — PASS
+Tests/Save/test_world_save_store.gd — PASS
+Tests/Run/test_world_run_start_service.gd — PASS
+Tests/Run/test_world_headless_failure.gd — PASS
+Tests/Run/test_world_headless_exit_process.gd — PASS
+Tests/UI/test_world_map_hud.gd — PASS 25/25
+
+Presentation and Stage 4 runtime (9/9):
+Tests/WorldMap/test_world_camera_controller.gd — PASS 29/29
+Tests/WorldMap/test_world_cell_view.gd — PASS 47/47
+Tests/WorldMap/test_world_minimap.gd — PASS 24/24
+Tests/WorldMap/test_world_presentation_profile.gd — PASS
+Tests/WorldMap/test_world_presentation_scene.gd — PASS 57/57
+Tests/WorldMap/test_world_runtime_migrated_flows.gd — PASS 29/29
+Tests/WorldMap/test_world_runtime_model.gd — PASS 68/68
+Tests/WorldMap/test_world_runtime_scene.gd — PASS 45/45
+Tests/WorldMap/test_world_visual_fixtures.gd — PASS 48/48
+
+Category totals are disjoint: 15 + 13 + 9 = 37 unique executed runners.
