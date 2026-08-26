@@ -139,7 +139,7 @@ git commit -m "feat: add durable world run Save V2"
 - Create: `Scripts/Run/world_single_slot_repository.gd`
 - Create: `Tests/Run/test_world_single_slot_repository.gd`
 
-- [ ] **Step 1: Write failing repository tests**
+- [x] **Step 1: Write failing repository tests**
 
 ```gdscript
 var repository := WorldSingleSlotRepository.new(test_path)
@@ -151,15 +151,15 @@ _expect(repository.load_validated().value.run_state.canonical_key() == expected_
 
 Assert overwrite cancellation performs zero writes, failed replacement preserves prior bytes, legacy fixture maps to `LEGACY_WORLD_SAVE_UNSUPPORTED`, and unsupported V2 generator maps to `WORLD_VERSION_UNSUPPORTED`.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: exit `1` because the repository class is missing.
 
-- [ ] **Step 3: Implement the repository**
+- [x] **Step 3: Implement the repository**
 
 Constructor accepts a path defaulting to `user://active-world-run.json`. `has_save()` checks existence only. `load_validated()` reads bytes and calls `WorldRunSaveCodecV2.decode_any()`. `replace_atomic()` delegates to `WorldSaveStore.save_atomic()`.
 
-- [ ] **Step 4: Validate, run repository plus existing store tests, and commit**
+- [x] **Step 4: Validate, run repository plus existing store tests, and commit**
 
 ```powershell
 & $godot --headless --path . --script Tests/Run/test_world_single_slot_repository.gd

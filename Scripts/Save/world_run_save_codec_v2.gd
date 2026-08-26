@@ -36,9 +36,13 @@ static func decode_any(bytes: PackedByteArray) -> Dictionary:
     if not parsed is Dictionary:
         return _save_failure("json_object")
     var root := parsed as Dictionary
-    if int(root.get("save_version", -1)) == 1:
+    if int(root.get("save_version", -1)) == 1 or _is_legacy_envelope(root):
         return V1_CODEC_SCRIPT.decode(bytes)
     return _decode_v2(root)
+
+
+static func _is_legacy_envelope(root: Dictionary) -> bool:
+    return int(root.get("map_width", -1)) == 5 and int(root.get("map_height", -1)) == 5
 
 
 static func _decode_v2(root: Dictionary) -> Dictionary:
