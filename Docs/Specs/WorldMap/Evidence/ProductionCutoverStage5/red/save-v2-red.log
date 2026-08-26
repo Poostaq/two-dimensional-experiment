@@ -1,0 +1,9 @@
+Stage 5 Save V2 RED
+Date: 2026-08-26
+Runner: Tests/Save/test_world_run_save_codec_v2.gd
+Godot: 4.7.2.stable.steam.ed1daf0bf
+Exit: 1
+stdout_bytes: 175
+stderr_bytes: 291
+Expected failure: WorldRunState script is missing
+Backtrace origin: Tests/Save/test_world_run_save_codec_v2.gd:_run

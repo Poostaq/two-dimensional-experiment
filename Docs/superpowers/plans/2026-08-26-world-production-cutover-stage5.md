@@ -33,7 +33,7 @@ Do not modify `project.godot`, frozen legacy tests, `Scenes/game_world.tscn`, or
 **Files:**
 - Create: `Docs/Specs/WorldMap/Evidence/ProductionCutoverStage5/baseline/branch-provenance.txt`
 
-- [ ] **Step 1: Merge the documentation branch into local main**
+- [x] **Step 1: Merge the documentation branch into local main**
 
 ```powershell
 git checkout main
@@ -43,17 +43,17 @@ git merge docs/world-production-cutover-stage5
 
 Expected: clean fast-forward or single merge with no conflicts; unrelated untracked files remain unstaged.
 
-- [ ] **Step 2: Create the implementation branch**
+- [x] **Step 2: Create the implementation branch**
 
 ```powershell
 git checkout -b feat/world-production-cutover-stage5
 ```
 
-- [ ] **Step 3: Record provenance**
+- [x] **Step 3: Record provenance**
 
 Create `branch-provenance.txt` containing the branch name, `git rev-parse origin/main`, `git rev-parse main`, Godot version, and the explicit statement `production_main=res://Scenes/game_world.tscn`.
 
-- [ ] **Step 4: Run the 37-run Stage 4 matrix**
+- [x] **Step 4: Run the 37-run Stage 4 matrix**
 
 Use every runner named in `Docs/Specs/WorldMap/Evidence/RuntimeStage4/green/automated-tests.log` with:
 
@@ -63,7 +63,7 @@ Use every runner named in `Docs/Specs/WorldMap/Evidence/RuntimeStage4/green/auto
 
 Expected: 37 runners, zero nonzero exits, zero stderr bytes.
 
-- [ ] **Step 5: Commit the baseline**
+- [x] **Step 5: Commit the baseline**
 
 ```powershell
 git add -- Docs/Specs/WorldMap/Evidence/ProductionCutoverStage5/baseline/branch-provenance.txt
@@ -78,7 +78,7 @@ git commit -m "test: freeze Stage 5 development baseline"
 - Create: `Tests/Save/test_world_run_save_codec_v2.gd`
 - Create: `Docs/Specs/WorldMap/Evidence/ProductionCutoverStage5/red/save-v2-red.log`
 
-- [ ] **Step 1: Write the failing Save V2 runner**
+- [x] **Step 1: Write the failing Save V2 runner**
 
 The runner must construct:
 
@@ -99,7 +99,7 @@ _expect(
 
 Also assert `save_version == 2`, Save V1 remains readable through `decode_any`, altered plan SHA fails immutably, and roster slots retain front/back indices.
 
-- [ ] **Step 2: Capture RED**
+- [x] **Step 2: Capture RED**
 
 ```powershell
 & $godot --headless --path . --script Tests/Save/test_world_run_save_codec_v2.gd 1> save-v2-red.stdout 2> save-v2-red.stderr
