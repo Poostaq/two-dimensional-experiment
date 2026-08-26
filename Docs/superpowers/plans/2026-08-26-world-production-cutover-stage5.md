@@ -286,19 +286,19 @@ git commit -m "feat: autosave authoritative world transactions"
 - Create: `Tests/UI/test_world_autosave_failure_overlay.gd`
 - Create: `Tests/WorldMap/test_world_production_scene.gd`
 
-- [ ] **Step 1: Write failing production-scene and recovery tests**
+- [x] **Step 1: Write failing production-scene and recovery tests**
 
 Assert production scene has `auto_initialize_runtime=false`, rejects missing injected session, restores plan/runtime/roster before input, and hosts exactly one blocking autosave failure overlay. Assert Retry, Return, and Copy signals and that Return requests launcher restoration.
 
-- [ ] **Step 2: Run RED**
+- [x] **Step 2: Run RED**
 
 Expected: both runners exit `1` because the artifacts are absent.
 
-- [ ] **Step 3: Build scripts/scenes with GodotIQ**
+- [x] **Step 3: Build scripts/scenes with GodotIQ**
 
 Derive the production scene composition from the proven Stage 4 scene resources without inheriting preview auto-start. Build the recovery overlay as a saved scene with dark blocking dimmer and three explicit actions.
 
-- [ ] **Step 4: Validate, visually inspect, run tests, and commit**
+- [x] **Step 4: Validate, visually inspect, run tests, and commit**
 
 ```powershell
 & $godot --headless --path . --script Tests/UI/test_world_autosave_failure_overlay.gd

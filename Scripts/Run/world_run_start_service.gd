@@ -51,7 +51,11 @@ func start(seed_text: String, config: Dictionary = {}, policy: String = RETURN_R
             ),
         }
     var consumed_encounters: Array[Vector2i] = []
-    var formation: Array[StringName] = [&"", &"", &"", &"", &"", &""]
+    var formation: Array[StringName] = []
+    formation.resize(RunRoster.MAX_ROSTER_SIZE)
+    var starters: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+    for slot_index: int in starters.size():
+        formation[slot_index] = starters[slot_index].character_id
     var run_state: RefCounted = RUN_STATE_SCRIPT.create(
         plan.get_start_coord(),
         plan.get_boss_coord(),

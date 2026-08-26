@@ -3,6 +3,7 @@ extends WorldPresentationController
 
 signal autosave_failed(error: RefCounted)
 signal autosave_recovered
+signal launcher_return_requested
 
 static var ENCOUNTER_SCENE: PackedScene = load("res://Scenes/encounter_overlay.tscn")
 static var BATTLE_SCENE: PackedScene = load("res://Scenes/battle_arena.tscn")
@@ -11,6 +12,9 @@ static var SAVE_COORDINATOR_SCRIPT: GDScript = load(
 	"res://Scripts/WorldMap/world_runtime_save_coordinator.gd"
 )
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
+static var REPOSITORY_SCRIPT: GDScript = load(
+	"res://Scripts/Run/world_single_slot_repository.gd"
+)
 
 var _model: WorldRuntimeModel = WorldRuntimeModel.new()
 var _runtime_plan: WorldPlan
@@ -25,6 +29,8 @@ var _save_coordinator: RefCounted
 var _durable_run_state: RefCounted
 var _pending_candidate_model: WorldRuntimeModel
 var _pending_move_result: WorldMoveResult
+var _autosave_overlay: WorldAutosaveFailureOverlay
+var _session_applied: bool = false
 
 @export var auto_initialize_runtime: bool = true
 
@@ -33,6 +39,7 @@ func _ready() -> void:
 	if not _validate_dependencies():
 		_fail_integration()
 		return
+	_wire_autosave_overlay()
 	if not auto_initialize_runtime:
 		return
 	var generated := HexWorldGeneratorV1.new().generate(PREVIEW_SEED)
@@ -40,6 +47,43 @@ func _ready() -> void:
 		_fail_integration()
 		return
 	configure_runtime(generated.get("plan") as WorldPlan)
+
+
+func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
+	_session_applied = false
+	if (
+		not session.get("plan") is WorldPlan
+		or not session.get("run_state") is RefCounted
+		or not session.get("resolved_seed") is String
+		or String(session.get("resolved_seed", "")).is_empty()
+	):
+		_model.set_surface_blocked(true)
+		var empty_destinations: Array[Vector2i] = []
+		set_valid_destinations(empty_destinations)
+		return false
+	var plan := session.get("plan") as WorldPlan
+	var run_state := session.get("run_state") as RefCounted
+	if not _restore_roster(run_state):
+		return false
+	if not configure_runtime(plan):
+		return false
+	var target_repository := repository
+	if not is_instance_valid(target_repository):
+		target_repository = REPOSITORY_SCRIPT.new()
+	if not configure_persistence(
+		String(session.get("resolved_seed")), run_state, target_repository
+	):
+		return false
+	_session_applied = true
+	return true
+
+
+func is_session_applied() -> bool:
+	return _session_applied
+
+
+func get_durable_run_state() -> RefCounted:
+	return _durable_run_state
 
 
 func configure_runtime(plan: WorldPlan) -> bool:
@@ -184,6 +228,72 @@ func get_valid_destinations() -> Array[Vector2i]:
 
 func has_integration_failed() -> bool:
 	return _integration_failed
+
+
+func _wire_autosave_overlay() -> void:
+	_autosave_overlay = get_node_or_null("%AutosaveFailureOverlay") as WorldAutosaveFailureOverlay
+	if not is_instance_valid(_autosave_overlay):
+		return
+	if not autosave_failed.is_connected(_on_autosave_failed):
+		autosave_failed.connect(_on_autosave_failed)
+	if not autosave_recovered.is_connected(_on_autosave_recovered):
+		autosave_recovered.connect(_on_autosave_recovered)
+	if not _autosave_overlay.retry_requested.is_connected(_on_autosave_retry_requested):
+		_autosave_overlay.retry_requested.connect(_on_autosave_retry_requested)
+	if not _autosave_overlay.return_requested.is_connected(_on_autosave_return_requested):
+		_autosave_overlay.return_requested.connect(_on_autosave_return_requested)
+
+
+func _on_autosave_failed(error: RefCounted) -> void:
+	if is_instance_valid(_autosave_overlay) and is_instance_valid(error):
+		_autosave_overlay.present(
+			error,
+			String(ProjectSettings.get_setting("application/config/version", "development"))
+		)
+
+
+func _on_autosave_retry_requested() -> void:
+	retry_autosave()
+
+
+func _on_autosave_return_requested() -> void:
+	discard_pending_autosave()
+	launcher_return_requested.emit()
+
+
+func _on_autosave_recovered() -> void:
+	if is_instance_valid(_autosave_overlay):
+		_autosave_overlay.dismiss()
+
+
+func _restore_roster(run_state: RefCounted) -> bool:
+	if not is_instance_valid(run_state):
+		return false
+	var ids := run_state.get("formation") as Array[StringName]
+	if ids.size() != RunRoster.MAX_ROSTER_SIZE:
+		return false
+	var available: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+	for reward_id: StringName in [
+		RunCharacterCatalog.COMBAT_SCOUT_REWARD_ID,
+		RunCharacterCatalog.BOSS_CHAMPION_REWARD_ID,
+	]:
+		var reward_character := RunCharacterCatalog.create_for_reward(reward_id)
+		if is_instance_valid(reward_character):
+			available.append(reward_character)
+	var restored_slots: Array[RunCharacter] = []
+	restored_slots.resize(RunRoster.MAX_ROSTER_SIZE)
+	for slot_index: int in ids.size():
+		var expected_id := ids[slot_index]
+		if expected_id.is_empty():
+			continue
+		for character: RunCharacter in available:
+			if character.character_id == expected_id:
+				restored_slots[slot_index] = character
+				break
+		if not is_instance_valid(restored_slots[slot_index]):
+			return false
+	_roster = RunRoster.new(restored_slots)
+	return true
 
 
 func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
