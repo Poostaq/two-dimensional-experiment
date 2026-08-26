@@ -51,6 +51,7 @@ offset_right = 1152.0
 offset_bottom = 648.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("1_fupo4")
 
 [node name="WorldHost" type="Control" parent="." unique_id=301588196]
@@ -126,6 +127,7 @@ text = "EXIT GAME"
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
 
 [node name="NewRunScreen" type="PanelContainer" parent="NewRunCenter" unique_id=2128958829]
 unique_name_in_owner = true
@@ -241,4 +243,4 @@ unique_name_in_owner = true
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-mouse_filter = 1
+mouse_filter = 2

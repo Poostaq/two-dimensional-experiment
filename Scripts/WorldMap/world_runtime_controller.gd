@@ -497,10 +497,10 @@ func _build_candidate_state(model: WorldRuntimeModel, consume_current: bool) -> 
 	return decoded.get("value") as RefCounted if bool(decoded.get("ok", false)) else null
 
 
-func _formation_ids() -> Array[StringName]:
-	var formation: Array[StringName] = []
+func _formation_ids() -> Array[String]:
+	var formation: Array[String] = []
 	for character: RunCharacter in _roster.get_slot_snapshot():
-		formation.append(character.character_id if is_instance_valid(character) else &"")
+		formation.append(String(character.character_id) if is_instance_valid(character) else "")
 	return formation
 
 
