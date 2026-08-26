@@ -107,15 +107,15 @@ Also assert `save_version == 2`, Save V1 remains readable through `decode_any`, 
 
 Expected: exit `1` because `WorldRunState`/`WorldRunSaveCodecV2` do not exist. Store the combined result in `red/save-v2-red.log`.
 
-- [ ] **Step 3: Implement `WorldRunState`**
+- [x] **Step 3: Implement `WorldRunState`**
 
 Provide typed fields, defensive copies, `is_valid(plan) -> bool`, `to_dictionary() -> Dictionary`, `from_dictionary(value, plan) -> Dictionary`, and `canonical_key() -> String`. Reject invalid coordinates, negative moves, boss-active-before-30, duplicate roster IDs, and non-six-slot formation.
 
-- [ ] **Step 4: Implement `WorldRunSaveCodecV2`**
+- [x] **Step 4: Implement `WorldRunSaveCodecV2`**
 
 Use root schema `twde-run-save`, `save_version=2`, the complete canonical plan text/SHA, resolved seed, and `WorldRunState.to_dictionary()`. `decode_any()` dispatches version 1 to `WorldSaveCodecV1.decode()` and version 2 locally; it never regenerates from seed.
 
-- [ ] **Step 5: Validate and run GREEN**
+- [x] **Step 5: Validate and run GREEN**
 
 Run GodotIQ validate/check-errors after each script, then:
 
@@ -126,7 +126,7 @@ Run GodotIQ validate/check-errors after each script, then:
 
 Expected: both exit `0` with zero stderr.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add -- Scripts/Run/world_run_state.gd Scripts/Save/world_run_save_codec_v2.gd Tests/Save/test_world_run_save_codec_v2.gd Docs/Specs/WorldMap/Evidence/ProductionCutoverStage5/red/save-v2-red.log
