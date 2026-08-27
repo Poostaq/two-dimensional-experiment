@@ -50,6 +50,7 @@ unique_name_in_owner = true
 
 [node name="EncounterHost" type="Node" parent="." unique_id=1732862383]
 
-[node name="BattleHost" type="Node" parent="." unique_id=1022605648]
-
 [node name="PartyHost" type="Node" parent="." unique_id=252367502]
+
+[node name="BattleHost" type="CanvasLayer" parent="." unique_id=1601670911]
+layer = 20
