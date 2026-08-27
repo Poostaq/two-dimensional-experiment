@@ -1,6 +1,6 @@
 # Stage 6 Legacy World Runtime Cleanup Design
 
-**Status:** Approved design pending written-spec review
+**Status:** Approved
 
 **Date:** 2026-08-27
 
@@ -17,12 +17,13 @@ The candidate legacy cluster is:
 - `Scenes/game_world.tscn`
 - `Scenes/map_hex_tile.tscn`
 - `Scripts/Map/map_controller.gd`
-- `Scripts/Map/hex_map_model.gd`
 - `Scripts/Map/hex_tile_view.gd`
 - matching `.uid` files
 - tests under `Tests/Map/` whose sole subject is one or more deleted legacy paths
 
 The final deletion set is evidence-driven. A candidate is deleted only after GodotIQ dependency inspection and repository test-reference inspection show that no retained production or migrated test path depends on it.
+
+Compiler-backed verification established that `Scripts/Map/hex_map_model.gd` remains shared production code: retained battle, encounter, reward, and world-runtime scripts use its encounter constants and neighbor offsets. The model and its direct unit test are therefore preserved.
 
 ## Preserved contracts
 

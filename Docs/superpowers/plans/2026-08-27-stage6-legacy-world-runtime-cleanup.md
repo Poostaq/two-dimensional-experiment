@@ -4,7 +4,7 @@
 
 **Goal:** Remove the unreachable 25-cell world runtime and its legacy-only tests while preserving the post-cutover production world and compatibility contracts.
 
-**Architecture:** Treat the old scene, controller, model, tile view, and their tests as one isolated deletion unit. Make absence executable in the existing cutover-entry test, then verify current production, persistence, generation, and migrated gameplay paths before review and local integration.
+**Architecture:** Treat the old scene, controller, tile view, and their legacy-only tests as one isolated deletion unit. Preserve the shared map model and its direct test because current battle, encounter, reward, and world-runtime code still consumes its constants. Make absence executable in the existing cutover-entry test, then verify current production, persistence, generation, and migrated gameplay paths before review and local integration.
 
 **Tech Stack:** Godot 4, typed GDScript, GodotIQ structured inspection/editing/validation, PowerShell, Git.
 
@@ -116,7 +116,7 @@ Run:
 & $godot --headless --path . --script Tests/Run/test_world_cutover_entry.gd
 ```
 
-Expected: exit `1`; failures name the five still-existing legacy paths. If `$godot` is unset, resolve the installed Godot executable first and assign its absolute path without changing repository files.
+Expected: exit `1`; failures name the four still-existing legacy paths. If `$godot` is unset, resolve the installed Godot executable first and assign its absolute path without changing repository files.
 
 - [ ] **Step 5: Commit the executable contract**
 
