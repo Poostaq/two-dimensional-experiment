@@ -14,8 +14,8 @@ func _init() -> void:
 
 func _run() -> void:
 	_expect(
-		ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/game_world.tscn",
-		"production main scene remains frozen"
+		ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/world_run_start.tscn",
+		"production main scene is the Stage 5 launcher"
 	)
 	var packed := load(SCENE_PATH) as PackedScene
 	_expect(is_instance_valid(packed), "non-production preview scene loads")
@@ -137,7 +137,7 @@ func _run() -> void:
 	_expect(not bool(preview.call("present_plan", null)), "invalid plan is rejected")
 	_expect(int(preview.call("get_main_cell_count")) == before_count, "invalid plan creates no partial presentation")
 	_expect(
-		ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/game_world.tscn",
+		ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/world_run_start.tscn",
 		"preview does not change production authority"
 	)
 	_expect(not preview.has_method("request_move"), "Stage 3 preview owns no runtime movement")

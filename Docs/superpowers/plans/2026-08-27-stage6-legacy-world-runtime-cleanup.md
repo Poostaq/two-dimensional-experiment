@@ -30,7 +30,7 @@ Expected: the run-start launcher and runtime scene resolve successfully; neither
 
 Run `file_context(detail="normal")` for both legacy scenes and all three legacy scripts. Run `dependency_graph(depth=2, detail="normal")` for each script.
 
-Expected: `map_controller.gd` is used only by `game_world.tscn`; `hex_tile_view.gd` is used only by `map_hex_tile.tscn` and the legacy controller; `hex_map_model.gd` has no retained production dependent.
+Expected: `map_controller.gd` is used only by `game_world.tscn`; `hex_tile_view.gd` is used only by `map_hex_tile.tscn` and the legacy controller. Compiler-backed search showed that `hex_map_model.gd` still supplies encounter constants and neighbor offsets to retained battle, encounter, reward, and world-runtime code, so preserve it.
 
 - [ ] **Step 3: Inspect every legacy test before deletion**
 
@@ -78,7 +78,6 @@ const REMOVED_LEGACY_PATHS: Array[String] = [
     "res://Scenes/game_world.tscn",
     "res://Scenes/map_hex_tile.tscn",
     "res://Scripts/Map/map_controller.gd",
-    "res://Scripts/Map/hex_map_model.gd",
     "res://Scripts/Map/hex_tile_view.gd",
 ]
 ```
@@ -132,9 +131,8 @@ git commit -m "test: require removal of legacy world runtime"
 - Delete: `Scenes/game_world.tscn`
 - Delete: `Scenes/map_hex_tile.tscn`
 - Delete: `Scripts/Map/map_controller.gd`
-- Delete: `Scripts/Map/hex_map_model.gd`
 - Delete: `Scripts/Map/hex_tile_view.gd`
-- Delete: matching `.uid` sidecars
+- Delete: matching `.uid` sidecars for deleted scripts
 - Delete: the thirteen `Tests/Map/*.gd` files listed in Task 1 and their `.uid` sidecars
 
 - [ ] **Step 1: Reconfirm impact immediately before deletion**

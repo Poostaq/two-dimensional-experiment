@@ -6,7 +6,6 @@ const REMOVED_LEGACY_PATHS: Array[String] = [
     "res://Scenes/game_world.tscn",
     "res://Scenes/map_hex_tile.tscn",
     "res://Scripts/Map/map_controller.gd",
-    "res://Scripts/Map/hex_map_model.gd",
     "res://Scripts/Map/hex_tile_view.gd",
 ]
 
@@ -27,7 +26,7 @@ func _run() -> void:
     )
     for legacy_path: String in REMOVED_LEGACY_PATHS:
         _expect(
-            not ResourceLoader.exists(legacy_path),
+            not FileAccess.file_exists(ProjectSettings.globalize_path(legacy_path)),
             "legacy runtime path is removed: %s" % legacy_path
         )
     if _failures == 0:
