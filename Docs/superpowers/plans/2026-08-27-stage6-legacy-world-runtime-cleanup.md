@@ -49,7 +49,6 @@ Tests/Map/test_ac1_5_sudden_death.gd
 Tests/Map/test_ac2_1_battle_arena.gd
 Tests/Map/test_ac3_1_recruitment_integration.gd
 Tests/Map/test_ac3_3_party_management_integration.gd
-Tests/Map/test_hex_map_model.gd
 Tests/Map/test_map_controller_runtime.gd
 Tests/Map/test_world_turn_counter.gd
 ```
@@ -133,7 +132,7 @@ git commit -m "test: require removal of legacy world runtime"
 - Delete: `Scripts/Map/map_controller.gd`
 - Delete: `Scripts/Map/hex_tile_view.gd`
 - Delete: matching `.uid` sidecars for deleted scripts
-- Delete: the thirteen `Tests/Map/*.gd` files listed in Task 1 and their `.uid` sidecars
+- Delete: the twelve legacy-only `Tests/Map/*.gd` files listed in Task 1 and their `.uid` sidecars
 
 - [ ] **Step 1: Reconfirm impact immediately before deletion**
 
