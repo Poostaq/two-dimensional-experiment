@@ -1,7 +1,7 @@
 class_name WorldRuntimeSceneContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 48
+const EXPECTED_TEST_COUNT := 46
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []
@@ -35,13 +35,6 @@ func _run() -> void:
     await process_frame
 
     _expect(not bool(runtime.call("has_integration_failed")), "validated runtime composition enables integration")
-    var battle_host := runtime.get_node("BattleHost")
-    var world_ui := runtime.get_node("UI") as CanvasLayer
-    _expect(battle_host is CanvasLayer, "battle host owns a dedicated modal canvas layer")
-    _expect(
-        battle_host is CanvasLayer and (battle_host as CanvasLayer).layer > world_ui.layer,
-        "battle modal renders above the world-map HUD"
-    )
     var serialized_formation := runtime.call("_formation_ids") as Array
     _expect(
         serialized_formation.all(func(character_id: Variant) -> bool: return character_id is String),

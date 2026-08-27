@@ -335,7 +335,7 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	_active_battle = BATTLE_SCENE.instantiate() as BattleArena
 	get_node("BattleHost").add_child(_active_battle)
 	_active_battle.configure(coord, normalized_encounter)
-	_active_battle.configure_units(_roster.create_battle_units())
+	_active_battle.configure_party_units(_roster.create_battle_units())
 	_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
 	_active_battle.exit_requested.connect(_on_battle_closed)
 	_active_battle.battle_completed.connect(_on_battle_completed)

@@ -152,6 +152,23 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 		_refresh_turn_ui()
 
 
+func configure_party_units(player_units: Array[BattleUnitState]) -> void:
+	var fixture_units := _create_debug_units()
+	var fixture_players: Dictionary[StringName, BattleUnitState] = {}
+	var battle_units: Array[BattleUnitState] = []
+	for fixture: BattleUnitState in fixture_units:
+		if fixture.side == BattleUnitState.Side.PLAYER:
+			fixture_players[fixture.unit_id] = fixture
+		else:
+			battle_units.append(fixture)
+	for player: BattleUnitState in player_units:
+		var fixture := fixture_players.get(player.unit_id) as BattleUnitState
+		if player.skills.is_empty() and is_instance_valid(fixture):
+			player.set_skills(fixture.skills)
+		battle_units.append(player)
+	configure_units(battle_units)
+
+
 func get_turn_queue() -> Array[BattleUnitState]:
 	return _turn_queue.duplicate()
 
