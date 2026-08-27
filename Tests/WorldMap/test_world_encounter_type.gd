@@ -23,6 +23,9 @@ func _run() -> void:
     _expect(runtime_source.contains("WorldEncounterType.NONE"), "runtime uses none authority")
     _expect(runtime_source.contains("WorldEncounterType.SAFE"), "runtime uses safe authority")
     _expect(runtime_source.contains("WorldEncounterType.BOSS"), "runtime uses boss authority")
+    _expect(not runtime_source.contains("\"boss\""), "runtime has no raw boss identifier")
+    _expect(not runtime_source.contains("\"safe\""), "runtime has no raw safe identifier")
+    _expect(not runtime_source.contains("\"\""), "runtime has no raw none identifier")
     _finish()
 
 
