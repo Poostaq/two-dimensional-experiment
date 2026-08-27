@@ -32,7 +32,7 @@ func configure(coordinate: Vector2i, type: String) -> void:
 
 
 func can_enter_battle() -> bool:
-	return encounter_type == HexMapModel.ENCOUNTER_COMBAT or encounter_type == HexMapModel.ENCOUNTER_BOSS
+	return encounter_type == WorldEncounterType.COMBAT or encounter_type == WorldEncounterType.BOSS
 
 
 func _refresh_text() -> void:

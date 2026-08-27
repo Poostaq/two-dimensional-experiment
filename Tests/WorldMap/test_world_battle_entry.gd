@@ -27,7 +27,7 @@ func _run() -> void:
 		and runtime.configure_runtime(generated.get("plan") as WorldPlan)
 	)
 	if configured:
-		runtime.call("_on_battle_requested", Vector2i.ZERO, HexMapModel.ENCOUNTER_COMBAT)
+		runtime.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
 		await process_frame
 	var battle_host := runtime.get_node("BattleHost")
 	var arena := (

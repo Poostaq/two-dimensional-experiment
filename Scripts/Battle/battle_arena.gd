@@ -116,7 +116,7 @@ func _ready() -> void:
 func configure(coordinate: Vector2i, type: String) -> void:
 	_configured_reward_options.clear()
 	_has_configured_reward_options = false
-	if type != HexMapModel.ENCOUNTER_COMBAT and type != HexMapModel.ENCOUNTER_BOSS:
+	if type != WorldEncounterType.COMBAT and type != WorldEncounterType.BOSS:
 		return
 	encounter_coordinate = coordinate
 	encounter_type = type
