@@ -155,7 +155,7 @@ func _invalidate() -> void:
 func _get_pursuit_step(from_coord: Vector2i, to_coord: Vector2i) -> Vector2i:
     var best_coord := from_coord
     var best_distance := HexWorldGeometry.get_hex_distance(from_coord, to_coord)
-    for offset: Vector2i in HexMapModel.NEIGHBOR_OFFSETS:
+    for offset: Vector2i in HexWorldGeometry.NEIGHBOR_OFFSETS:
         var candidate := from_coord + offset
         if not _cells.has(candidate):
             continue
