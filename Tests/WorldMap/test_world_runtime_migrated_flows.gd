@@ -14,8 +14,8 @@ func _init() -> void:
 
 func _run() -> void:
     _expect(
-        ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/game_world.tscn",
-        "migrated flows do not cut over production"
+        ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/world_run_start.tscn",
+        "migrated flows retain the Stage 5 production launcher"
     )
     _expect(ResourceLoader.exists(SCENE_PATH), "migrated flows have an explicit Stage 4 entry")
     if not ResourceLoader.exists(SCENE_PATH):

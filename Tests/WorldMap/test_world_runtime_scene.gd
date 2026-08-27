@@ -15,8 +15,8 @@ func _init() -> void:
 
 func _run() -> void:
     _expect(
-        ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/game_world.tscn",
-        "production main scene remains frozen"
+        ProjectSettings.get_setting("application/run/main_scene") == "res://Scenes/world_run_start.tscn",
+        "production main scene is the Stage 5 launcher"
     )
     _expect(ResourceLoader.exists(SCENE_PATH), "explicit non-production runtime scene exists")
     if not ResourceLoader.exists(SCENE_PATH):
