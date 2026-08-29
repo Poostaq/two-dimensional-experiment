@@ -1,6 +1,6 @@
 # AC6 Goblin Combat Vertical Slice Design
 
-**Status:** Approved design; awaiting written-spec review
+**Status:** Approved design only — no AC6 criterion is implemented or complete
 
 **Date:** 2026-08-29
 
@@ -9,6 +9,27 @@
 Deliver the complete authored Goblin combat roster as a sequence of bounded acceptance criteria: six regular classes, Brakka Rustbanner as the Goblin commander, every shared combat mechanic those kits require, and Brakka's full world-map preparation choice. Correct the reversed world-map formation preview as part of the shared formation foundation.
 
 This milestone does not implement character progression. AC3.4 remains unchecked. Leveling, evolution, and mechanical-unit upgrade models must be re-evaluated before implementation and recorded as deferred product decisions in `Docs/TO_CONSIDER.md`.
+
+## Evidence status
+
+This document is a prospective implementation roadmap and acceptance contract. It does not describe shipped state.
+
+Repository inspection on 2026-08-29 found reusable AC2/AC3 foundations: `BattleUnitState` owns HP-based activity, slots, Speed modifiers, and cooldowns; `BattleSkillRules` owns basic target evaluation, revision checks, damage/Speed plans, row requirements, and lane-distance sorting; current run/save code persists formation and general world-run state. None of that is evidence that AC6 mechanics are implemented.
+
+The following are currently missing as AC6 implementation evidence: Goblin catalog definitions, Power/Defense formula integration, Armor, Bleed, enemy-bound Advantage, Snared, Goblin reactive processing, Brakka's trigger, distinct-attacker queries, Cache fields, preparation transaction/hook, corrected world-HUD slot mapping, AC6-focused tests, and saved runtime verification records.
+
+Every AC6 criterion remains **NOT IMPLEMENTED / TRACEABILITY FAIL** until its planned failing test exists, the implementation link is recorded, the test passes, and required GodotIQ runtime evidence is captured. Design wording such as “must,” “implement,” and “verify” is prospective and never a completion claim.
+
+## Operational definitions and planned ownership
+
+- **Active battle unit:** a valid `BattleUnitState` included in the arena's current configured-unit collection, assigned to a valid side and slot `0..5`, with `is_active() == true`. Under the observed baseline this means `current_hp > 0`. Catalog entries and preview-only objects are not active battle units.
+- **Active enemy at battle start:** an active battle unit on the side opposing the player after fresh battle units are configured and before the preparation transaction or first queue action resolves.
+- **Formation lane:** `slot_index % 3`. Front slots are `0..2`; back slots are `3..5`.
+- **Distance for Banner Holder:** absolute lane difference, `abs((enemy.slot_index % 3) - (Brakka.slot_index % 3))`. Lowest distance wins. Equal distance resolves front slot before back slot, then lowest slot index. This must be extracted as a shared tested formation-distance rule rather than duplicated in Brakka logic.
+- **Accepted move:** a world move that has passed validation and whose updated run state is durably committed. Rejected, cancelled, previewed, or save-failed movement does not advance Cache counters.
+- **Cache owner:** planned fields on authoritative `WorldRunState`, encoded and decoded by `WorldRunSaveCodecV2` through an explicit schema-compatible change: stored charge `0..1` and accepted-move remainder `0..3`.
+- **Preparation owner:** a planned typed battle-preparation transaction coordinated at the existing world-to-battle entry boundary. It creates fresh battle units, locks ordinary actions, validates the choice against those units, applies the modifier, consumes Cache in the durable run-state transition, and then unlocks battle actions.
+- **Preparation durability:** no partially chosen preparation is persisted. Before commit, reload returns to the last durable pre-entry state and reopens the required choice. After commit, Cache consumption and the initialized battle modifier must be represented by one authoritative transition; the concrete save/scene-reload strategy must be selected in the implementation plan and tested before AC6.6 can pass.
 
 ## Authority and content boundary
 
@@ -30,9 +51,25 @@ AC6 includes these regular Goblin classes:
 5. Shivrunner;
 6. Mobcaller.
 
-Each regular class receives its authored Opener, Converter, Pivot, and Signature Passive, plus Default Attack and Default Swap. Brakka is a Scrapshield Bruiser commander variant whose Banner Holder replaces Pack Wall while preserving the four-character-skill limit.
+Each regular class receives its three Set 1 battle skills plus Default Attack and Default Swap. Brakka retains the Scrapshield Bruiser's three skills and adds Banner Holder as her fourth commander skill.
+
+The canonical Advantage contract changes globally in this milestone: Advantage is a single non-stacking, round-local debuff on an enemy. The first eligible allied Active skill targeting or directly hitting that enemy consumes it for that skill's authored Advantage rider. Any ally may consume it, regardless of source. Orc, Werewolf, Lizardman, and Harpy documents are explicitly pending Set 1 reconciliation and are not implementation targets here.
 
 ## Milestone decomposition
+
+### Planned implementation links
+
+These links identify expected ownership for planning and TDD; they are not implemented links. The implementation plan may extract smaller typed helpers after GodotIQ impact checks, but it must update this table whenever ownership changes.
+
+| Criterion | Existing integration seam | Planned production ownership | Planned focused evidence |
+|---|---|---|---|
+| AC6.1 | `BattleUnitState`, `BattleSkillRules`, `BattleArena`, `RunRoster.create_battle_units()`, `world_map_hud` | Extend battle stats/default actions and shared formation semantics; correct HUD slot mapping | `test_ac6_1_combat_foundation.gd` plus updated HUD/formation tests |
+| AC6.2 | Battle state, skill effect plan, arena history/queue | Typed battle-local keyword state and deterministic reaction dispatcher; arena remains transaction coordinator | `test_ac6_2_keyword_reactions.gd` |
+| AC6.3 | Character catalog and battle skill definitions | Catalog-owned Scrapshield, Wirefang, and Snarewright definitions composed from shared effects | `test_ac6_3_goblin_wave_a.gd` |
+| AC6.4 | Character catalog and battle skill definitions | Catalog-owned Scrapbroker, Shivrunner, and Mobcaller definitions composed from shared effects | `test_ac6_4_goblin_wave_b.gd` |
+| AC6.5 | Root-class catalog, formation rule, reaction dispatcher | Catalog-owned Brakka definition and shared closest-enemy selector | `test_ac6_5_brakka.gd` |
+| AC6.6 | `WorldRunState`, `WorldRunSaveCodecV2`, world battle entry, battle initialization UI | Persisted Cache fields plus typed preparation transaction and battle-start modifier application | `test_ac6_6_quartermaster_state.gd` and `test_ac6_6_battle_preparation.gd` |
+| AC6.7 | Production world/battle/reward flows | No compensating feature code; integration and evidence only | `test_ac6_7_goblin_integration.gd` plus GodotIQ runtime record |
 
 ### AC6.1 — Goblin combat foundation
 
@@ -54,8 +91,10 @@ The world-map formation preview must use the same row contract as party manageme
 Implement the reusable mechanics required by Goblin kits:
 
 - Advantage;
+- Snared;
 - Armor;
 - Bleed;
+- temporary Speed modifiers and immediate unresolved-queue rebuilding;
 - authored cooldown reduction;
 - movement-history and distinct-attacker history queries;
 - deterministic Passive trigger processing;
@@ -73,7 +112,7 @@ Implement the complete authored loadouts for:
 - Wirefang Skirmisher;
 - Snarewright.
 
-This wave proves hostile and allied formation movement, Armor, Advantage, movement-conditioned targeting, movement-history conditions, multi-target movement atomicity, and movement-triggered Passives.
+This wave proves Armor, enemy-bound Advantage, Snared, post-hit application timing, temporary Speed control, optional self movement, multi-target status atomicity, and unresolved-queue rebuilding.
 
 ### AC6.4 — Goblin class wave B
 
@@ -83,19 +122,20 @@ Implement the complete authored loadouts for:
 - Shivrunner;
 - Mobcaller.
 
-This wave proves support targeting, threshold requirements, Bleed, Advantage riders, distinct allied-attacker scaling, allied movement, and mixed-race interaction conditions.
+This wave proves support targeting, threshold requirements, Bleed, Advantage consumption history, distinct allied-attacker scaling, and mixed-race interaction conditions.
 
 ### AC6.5 — Brakka Rustbanner
 
 Implement Brakka as a catalog-owned commander definition:
 
 - retain the Scrapshield Bruiser base identity and stats unless the authoritative commander record explicitly overrides them;
-- replace Pack Wall with Banner Holder;
-- grant Advantage to the next active unresolved ally that owns a currently legal Active Advantage rider;
-- revalidate recipient activity, queue order, and rider legality before application;
+- retain Shield Tap, Pack Brace, and Banner Nudge, then add Banner Holder as the fourth commander skill;
+- apply Advantage to the active enemy closest to Brakka;
+- break equal-distance ties frontline before backline, then lowest slot index;
+- revalidate target activity and distance before application without redirecting a stale result;
 - apply the once-per-round guard;
 - prevent Default Attack and Default Swap from consuming Advantage;
-- log the authored success or no-recipient result.
+- log the authored success or no-active-enemy result.
 
 ### AC6.6 — Scrapline Quartermaster world-map integration
 
@@ -106,7 +146,7 @@ Implement the full world-map choice rather than the documented fallback:
 - do not change movement range, movement count, reveal authority, or encounter generation;
 - consume Cache only when entering a Combat encounter and only after a valid preparation choice commits;
 - require one of these choices before combat actions begin:
-  - **Frontline Briefing:** choose one active front-row ally to begin with Advantage;
+  - **Frontline Briefing:** choose one active enemy to begin with Advantage;
   - **Spare Plating:** all active front-row allies begin with `+2 Armor`;
 - do not consume Cache on Safe or Boss encounters;
 - persist Cache and any required transaction state through save and reload;
@@ -119,7 +159,7 @@ The preparation UI is a transaction boundary between world state and battle init
 Verify the complete Goblin slice through current production entry points:
 
 - all six regular classes;
-- Brakka's commander loadout and Passive replacement;
+- Brakka's three-plus-one commander loadout and Passive trigger;
 - real target and movement-path selection;
 - keyword presentation and logs;
 - formation rearrangement before and after battles;
@@ -137,11 +177,11 @@ No earlier criterion is considered complete solely because AC6.7 compensates for
 
 `BattleUnitState` is the authoritative runtime owner of mutable per-battle unit state. It holds effective combat values and battle-local keyword state without mutating run-character definitions. Each battle receives fresh unit instances from the run roster.
 
-Run-character and catalog definitions own stable identity, base stats, class identity, commander identity, and authored skills. They do not own current HP, Armor, Advantage, Bleed, cooldowns, movement history, Passive guards, side, or slot index.
+Run-character and catalog definitions own stable identity, base stats, class identity, commander identity, and authored skills. They do not own current HP, Armor, Advantage, Snared, Bleed, temporary Speed modifiers, cooldowns, action history, Passive guards, side, or slot index.
 
 ### Skill and effect definitions
 
-Skills remain typed definitions. Shared effect operations represent direct damage, formation movement, Armor, Advantage, Bleed, and cooldown adjustment. Goblin classes compose these operations instead of embedding class-specific mutation branches in `BattleArena`.
+Skills remain typed definitions. Shared effect operations represent direct damage, formation movement, Armor, Advantage, Snared, Bleed, temporary Speed changes, and cooldown adjustment. Goblin classes compose these operations instead of embedding class-specific mutation branches in `BattleArena`.
 
 Stable class, unit, skill, keyword-source, and commander IDs are catalog-owned. UI labels are presentation data and never serve as identity.
 
@@ -182,15 +222,16 @@ A confirmed action resolves in this order:
 
 1. Revalidate actor, target, position, path, cooldown, conditions, and Advantage eligibility.
 2. Lock all targets and declared movement paths.
-3. Resolve direct damage through Defense.
-4. Spend Armor after Defense; apply remaining damage to HP.
-5. Apply declared formation movement atomically.
-6. Apply or consume Advantage, Armor, or Bleed.
-7. Apply the new cooldown and authored cooldown adjustments.
-8. Record one typed authoritative history transaction, including associated Passive reactions.
-9. Resolve defeat and battle outcome.
-10. Rebuild unresolved queue entries when a supported effect requires it.
-11. Resolve declared action-end or round-end ticks and later cooldown decrements.
+3. Determine and lock any eligible Advantage consumption and authored rider.
+4. Resolve direct damage through Defense using the locked rider.
+5. Spend Armor after Defense; apply remaining damage to HP.
+6. Apply declared formation movement atomically.
+7. Consume the locked Advantage and apply ordered post-hit Advantage, Snared, Armor, Bleed, or temporary-stat effects. A token created after damage cannot be consumed by that same hit.
+8. Apply the new cooldown and authored cooldown adjustments.
+9. Record one typed authoritative history transaction, including associated Passive reactions.
+10. Resolve defeat and battle outcome.
+11. Rebuild unresolved queue entries immediately when a supported Speed effect requires it.
+12. Resolve declared action-end or round-end ticks and later cooldown decrements.
 
 Invalid, stale, or partially illegal actions reject before mutation. Rejection produces no damage, movement, keyword consumption, keyword application, cooldown, Passive trigger, or history entry.
 
@@ -217,7 +258,7 @@ On Combat entry with Cache available:
 2. Open the preparation transaction before ordinary battle actions are enabled.
 3. Present Frontline Briefing and Spare Plating.
 4. Revalidate the selected option and any selected frontline unit.
-5. Atomically apply the battle-start modifier and consume Cache.
+5. Atomically apply the battle-start modifier and consume Cache. Frontline Briefing places Advantage on the selected enemy; Spare Plating grants Armor to active front-row allies.
 6. Record the committed preparation in world/battle diagnostics and enable battle actions.
 
 Safe and Boss entry bypass this transaction without consuming Cache. Closing, cancelling, stale selection, save failure, or scene teardown cannot partially apply preparation or consume the charge.
@@ -252,14 +293,15 @@ Every criterion uses test-first development. Each behavior must be observed fail
 
 - front/back row semantics across world HUD, party management, battle, and roster conversion;
 - damage rounding, minimum damage, Defense, Armor cap, absorption order, and zero-damage direct hits;
-- Advantage recipient eligibility, replacement, expiry, consumption, authored riders, and exclusions;
+- Advantage enemy eligibility, shared consumption, replacement, expiry, post-hit application timing, authored riders, and exclusions;
+- Snared application, refresh, expiry, Tripline's one follow-up, non-consumption by Holdfast Wire, and Ring Net atomicity;
 - Bleed source snapshots, stacks, duration, reapplication, action ticks, exclusions, defeat, and cleanup;
 - legal and illegal movement paths, stale occupancy, multi-target atomicity, and history;
 - cooldown creation and authored cooldown reduction timing;
 - distinct-attacker and forced-movement history queries;
 - Passive ordering, guards, bounded reactions, and lifecycle reset;
 - every Goblin skill's valid case, rejection cases, preview, confirmation, cooldown, history, log, and relevant AI legality condition;
-- Brakka's loadout replacement, Banner Holder selection, no-recipient path, and once-per-round rule;
+- Brakka's three-plus-one loadout, closest-enemy tie-break, stale/no-enemy paths, and once-per-round rule;
 - Cache accrual, cap, persistence, encounter filtering, preparation choices, cancellation, stale selection, atomic consumption, and battle-start state;
 - fresh battle isolation and save/reload behavior.
 
@@ -279,17 +321,37 @@ Use GodotIQ through production scenes to verify:
 
 ## Acceptance criteria
 
-1. AC6 is represented as seven ordered criteria in the active game specification without changing AC3.4's meaning or status.
-2. The world-map preview, party management, battle grid, save formation, and runtime roster agree that slots `0..2` are front and `3..5` are back.
-3. Shared Power/Defense damage, Default actions, movement, Advantage, Armor, Bleed, cooldown adjustment, history queries, and Passive processing satisfy their authoritative contracts.
-4. All six Goblin classes expose and correctly resolve their complete authored four-skill loadouts.
-5. Brakka replaces Pack Wall with Banner Holder and does not exceed four character-specific skills.
-6. Scrapline Quartermaster implements Cache accrual and the complete Frontline Briefing/Spare Plating choice without changing movement economy or reveal authority.
-7. All action, movement, keyword, Passive, and preparation transactions reject invalid or stale state atomically.
-8. Battle-local state clears at battle end, and every new battle receives fresh runtime unit state from persistent run definitions.
-9. Cache and required authoritative world state survive save/reload without duplication or loss.
-10. Leveling, evolution, and mechanical progression remain unimplemented and are recorded as explicit deferred decisions.
-11. Focused tests, retained regression suites, GodotIQ validation, project parser checks, signal audit, production startup, runtime interactions, and debug-console checks pass with current evidence.
+- **AC6-AC01 — Milestone governance:** AC6 is represented as seven ordered criteria in the active game specification without changing AC3.4's meaning or status.
+- **AC6-AC02 — Formation semantics:** The world-map preview, party management, battle grid, save formation, and runtime roster agree that slots `0..2` are front and `3..5` are back.
+- **AC6-AC03 — Shared mechanics:** Shared Power/Defense damage, Default actions, movement, Advantage, Snared, Armor, Bleed, temporary Speed, cooldown adjustment, history queries, and Passive processing satisfy their authoritative contracts.
+- **AC6-AC04 — Regular Goblins:** All six Goblin classes expose and correctly resolve their complete authored three-skill Set 1 loadouts.
+- **AC6-AC05 — Brakka:** Brakka retains all three Scrapshield skills, adds Banner Holder as the fourth commander skill, and deterministically targets the closest enemy.
+- **AC6-AC06 — Quartermaster:** Scrapline Quartermaster implements Cache accrual and the complete Frontline Briefing/Spare Plating choice without changing movement economy or reveal authority.
+- **AC6-AC07 — Atomicity:** All action, movement, keyword, Passive, and preparation transactions reject invalid or stale state atomically.
+- **AC6-AC08 — Battle isolation:** Battle-local state clears at battle end, and every new battle receives fresh runtime unit state from persistent run definitions.
+- **AC6-AC09 — Durability:** Cache and required authoritative world state survive save/reload without duplication or loss.
+- **AC6-AC10 — Progression exclusion:** Leveling, evolution, and mechanical progression remain unimplemented and are recorded as explicit deferred decisions.
+- **AC6-AC11 — Integration evidence:** Focused tests, retained regression suites, GodotIQ validation, project parser checks, signal audit, production startup, runtime interactions, and debug-console checks must pass and be recorded with current evidence.
+
+## Acceptance-to-evidence traceability
+
+This is the required evidence ledger, not a claim that the planned files exist. “Baseline” means an older test exercises a reusable foundation only. Every row is currently blocking.
+
+| ID | Type | Existing baseline evidence | Required AC6 verification path | Current status and gap |
+|---|---|---|---|---|
+| AC6-AC01 | Documentation | This design and the active game specification | Document diff confirming AC6.1–AC6.7 plus unchanged AC3.4; implementation-plan links per criterion | **FAIL:** active specification and implementation links not yet updated |
+| AC6-AC02 | Logic / visual | `test_ac3_3_party_formation.gd` preserves slot indices; `test_world_map_hud.gd` currently proves the reversed mapping defect | Add exact `0..2 -> FrontSlot0..2`, `3..5 -> BackSlot0..2` assertions; production GodotIQ HUD inspection; battle placement comparison | **FAIL:** current HUD assertion expects slot 0 in BackSlot0 |
+| AC6-AC03 | Logic | AC2 targeting, transaction, speed-order, and combo tests cover only the generic framework | Planned `Tests/Battle/test_ac6_1_combat_foundation.gd` and `test_ac6_2_keyword_reactions.gd`, with one focused case per canonical lifecycle rule | **FAIL:** AC6 states/effects and tests do not exist |
+| AC6-AC04 | Logic / integration | Four-slot presentation and generic CharacterSkill tests only | Planned `test_ac6_3_goblin_wave_a.gd`, `test_ac6_4_goblin_wave_b.gd`, and catalog/loadout assertions for all 18 regular skills | **FAIL:** no Goblin runtime definitions or skill tests |
+| AC6-AC05 | Logic / runtime | Existing lane-distance sorting is reusable but currently implements only a farthest-enemy target rule | Planned `test_ac6_5_brakka.gd`: three-plus-one loadout, activity filter, distance, tie order, stale target, no enemy, once-per-round; runtime log check | **FAIL:** no shared closest rule, scheduler, or Brakka definition |
+| AC6-AC06 | Integration / runtime | Existing world battle entry and save tests provide entry/save seams only | Planned `test_ac6_6_quartermaster_state.gd`, `test_ac6_6_battle_preparation.gd`, and production Cache-to-choice-to-battle runtime walkthrough | **FAIL:** Cache fields, prep state, UI, and hook do not exist |
+| AC6-AC07 | Logic | AC2.8 revision-confirmation tests establish generic stale-action rejection | Each AC6 mechanic test must snapshot all mutated state and prove rejection leaves it unchanged; preparation cancellation/staleness receives dedicated cases | **FAIL:** no AC6 atomicity cases |
+| AC6-AC08 | Integration | Existing battle configuration and reward/next-battle tests prove generic transitions | Planned `test_ac6_7_goblin_integration.gd` must end battle, start another, and assert no HP/status/cooldown/reaction-guard leakage | **FAIL:** AC6 battle-local fields do not exist |
+| AC6-AC09 | Save / integration | `test_world_run_save_codec_v2.gd` round-trips current run state and formation | Extend codec tests for Cache charge/remainder, legacy defaults, corrupt bounds, pre-choice reload, and post-commit single consumption | **FAIL:** current schema has no Cache data |
+| AC6-AC10 | Documentation | Goblin class and commander docs mark progression deferred | Exact `TO_CONSIDER.md` entries plus repository search proving no Goblin level/evolution/mechanical implementation was added | **FAIL:** deferred entries still need implementation-step verification |
+| AC6-AC11 | Runtime / integration | Earlier AC2/AC3 suites and prior battle smoke runs are regression baseline only | Current full suite; GodotIQ validate/check-errors/orphan-signal gate; production startup; recorded formation, Goblin skill, reward, next-battle, Cache, save/reload checks | **FAIL:** depends on AC6-AC01 through AC6-AC10 and has no current artifact |
+
+**Coverage result:** 0/11 AC6 acceptance criteria have complete evidence. All 11 have a concrete planned verification path; AC6-AC11 is the aggregate runtime gate. Overall traceability status is **FAIL**, as required until implementation begins and evidence links are filled.
 
 ## Exclusions
 

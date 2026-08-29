@@ -4,6 +4,8 @@
 
 This document is the canonical contract for named combat keywords. Race and class documents may assign these keywords, but they must not redefine them. Formation movement is documented separately in `FormationMovement.md`. Class skills may use direct damage, formation movement, cooldowns and requirements, plus only the mechanics defined here.
 
+Canonical authority does not imply runtime availability. Each keyword remains unimplemented until a linked runtime owner, focused tests, and integration evidence exist.
+
 ## Shared Rules
 
 - Status identity is `(target, keyword, source unit, source skill)`.
@@ -72,17 +74,31 @@ Stun is rare, bounded action denial.
 
 ## Advantage
 
-Advantage is a short coalition setup window, not a generic damage bonus.
+Advantage is a short coalition setup window represented as a debuff on an enemy, not a generic attacker buff.
 
-- **Application:** Grant one non-stacking Advantage token to an ally.
-- **Consumer:** The next eligible Active skill used by that ally consumes the token and activates that skill's explicitly written `Advantage rider`.
-- **Eligibility:** Each granting skill may restrict the recipient. Each consuming skill states its rider; a skill without a rider is ineligible and leaves the token intact.
+- **Application:** Apply one non-stacking Advantage token to an enemy.
+- **Consumer:** The first eligible allied Active skill that targets or directly hits that enemy consumes the token and activates that skill's explicitly written `Advantage rider`.
+- **Shared access:** Any allied unit may consume the token, regardless of which ally applied it.
+- **Eligibility:** Each applying skill may restrict the enemy target. Each consuming skill states its rider; a skill without a rider is ineligible and leaves the token intact.
 - **Expiry:** Advantage expires at the end of the current round.
 - **Reapplication:** Replace the existing token's source and refresh its round expiry; never create a second token.
 - **Exclusions:** Default Attack and Default Swap do not consume Advantage. Previewed, cancelled, rejected, or stale actions do not consume it.
 - **Atomicity:** Consumption and its rider are recorded in the same authoritative action history entry as the consuming skill.
-- **Tooltip pattern:** `Grant Advantage until round end. The recipient's next eligible Active skill consumes it for that skill's Advantage effect.`
-- **Log pattern:** `<source> granted Advantage to <ally> until round end.`
+- **Timing:** If an effect applies Advantage after resolving direct damage, that same hit cannot consume the newly applied token.
+- **Tooltip pattern:** `Apply Advantage to an enemy until round end. The first eligible allied skill targeting it consumes Advantage for that skill's Advantage effect.`
+- **Log pattern:** `<source> applied Advantage to <enemy> until round end.`
+
+## Snared
+
+Snared is a non-stacking enemy setup mark used by authored trap effects.
+
+- **Application:** Apply one Snared mark to an enemy.
+- **Duration:** Snared expires at the end of the current round.
+- **Reapplication:** Refresh the current round expiry; never create a second mark.
+- **Base effect:** Snared has no inherent movement, Power, Defense, or Speed effect.
+- **Interaction:** A skill may require Snared without consuming it. Only an explicitly authored effect removes or consumes Snared.
+- **Tooltip pattern:** `Apply Snared until round end. Snared has no effect unless another skill names it.`
+- **Log pattern:** `<source> applied Snared to <enemy> until round end.`
 
 ## Leech
 
@@ -99,8 +115,12 @@ Leech is offense-dependent recovery, not general healing.
 
 ## Race Profiles
 
-- Goblins: Advantage primary; Bleed secondary on physical opportunists.
+- Goblins: Advantage primary; Snared supports the trap specialist; Bleed is secondary on physical opportunists.
 - Orcs: Armor primary for front liners; Stun is bounded to specialist control. Bleed is not part of the Orc profile.
 - Werewolves: Leech primary; Bleed secondary for tracking and wounded-target play.
 - Lizardmen: Poison primary; Advantage secondary only through degradation-based ally setup.
 - Harpies: formation movement is primary; Advantage follows successful exposure or isolation; Bleed is limited to one physical branch.
+
+## Reconciliation status
+
+The enemy-debuff Advantage contract is authoritative immediately. Goblin skills and Brakka are the first reconciled roster. Orc, Werewolf, Lizardman, and Harpy documents remain design-only and must receive a Set 1 reconciliation pass before their implementation; older text that grants Advantage to an ally is temporarily stale and does not override this contract.
