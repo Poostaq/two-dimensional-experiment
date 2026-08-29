@@ -66,6 +66,7 @@ var _turn_queue: Array[BattleUnitState] = []
 var _current_turn_index: int = 0
 var _battle_log_entries: Array[BattleLogEntry] = []
 var _battle_action_log_entries: Array[BattleActionLogEntry] = []
+var _action_records: Array[BattleActionRecord] = []
 var _hovered_log_index: int = -1
 var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
@@ -139,6 +140,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_hovered_log_index = -1
 	_transient_log_entry = null
 	_battle_log_entries.clear()
+	_action_records.clear()
 	_clear_committed_action_history()
 	if is_node_ready():
 		_clear_log_controls()
@@ -191,6 +193,13 @@ func get_committed_action_history_snapshot() -> Array[BattleActionLogEntry]:
 	var snapshot: Array[BattleActionLogEntry] = []
 	for entry: BattleActionLogEntry in _battle_action_log_entries:
 		snapshot.append(entry.duplicate_entry())
+	return snapshot
+
+
+func get_action_records() -> Array[BattleActionRecord]:
+	var snapshot: Array[BattleActionRecord] = []
+	for record: BattleActionRecord in _action_records:
+		snapshot.append(record.duplicate_record() as BattleActionRecord)
 	return snapshot
 
 
@@ -359,6 +368,102 @@ func clear_skill_preview() -> void:
 
 func get_battle_revision() -> int:
 	return _battle_revision
+
+
+func preview_default_attack(actor_id: StringName, target_id: StringName) -> Dictionary:
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	var target: BattleUnitState = get_unit_by_id(target_id)
+	if not _is_valid_default_attack(actor, target):
+		return {}
+	return {
+		&"actor_id": actor_id,
+		&"target_id": target_id,
+		&"revision": _battle_revision,
+	}
+
+
+func confirm_default_attack(
+	actor_id: StringName,
+	target_id: StringName,
+	expected_revision: int
+) -> bool:
+	if _action_in_progress or expected_revision != _battle_revision:
+		return false
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	var target: BattleUnitState = get_unit_by_id(target_id)
+	if not _is_valid_default_attack(actor, target):
+		return false
+	var requested_damage: int = BattleDamageRules.physical_damage(
+		actor.power,
+		1.0,
+		target.defense
+	)
+	if requested_damage < 1:
+		return false
+	_action_in_progress = true
+	var action_round: int = round_number
+	var result: BattleDamageResult = BattleDamageResolver.apply_damage(
+		actor,
+		target,
+		requested_damage
+	)
+	if not is_instance_valid(result):
+		_action_in_progress = false
+		return false
+	var log_entry: BattleLogEntry = BattleLogEntry.new(
+		_battle_log_entries.size() + 1,
+		action_round,
+		result
+	)
+	_battle_log_entries.append(log_entry)
+	_append_log_control(log_entry, _battle_log_entries.size() - 1)
+	_show_resolution_feedback(log_entry)
+	actor.tick_skill_cooldowns()
+	actor.expire_speed_modifiers_after_action()
+	_battle_revision += 1
+	var damage_by_target: Dictionary[StringName, int] = {
+		target.unit_id: result.applied_damage,
+	}
+	var target_ids: Array[StringName] = [target.unit_id]
+	var empty_slots: Dictionary[StringName, int] = {}
+	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
+	var action_record: BattleActionRecord = action_record_script.new(
+		BattleActionRecord.Kind.DEFAULT_ATTACK,
+		actor.unit_id,
+		target_ids,
+		damage_by_target,
+		empty_slots,
+		empty_slots,
+		action_round,
+		_battle_revision
+	) as BattleActionRecord
+	if not is_instance_valid(action_record) or not action_record.is_valid():
+		_action_in_progress = false
+		return false
+	_action_records.append(action_record)
+	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
+	if resolved_outcome == BattleOutcome.Type.IN_PROGRESS:
+		_advance_after_action(actor.unit_id)
+	else:
+		_complete_battle(resolved_outcome)
+	_action_in_progress = false
+	_refresh_turn_ui()
+	return true
+
+
+func _is_valid_default_attack(actor: BattleUnitState, target: BattleUnitState) -> bool:
+	var current: BattleUnitState = get_current_unit()
+	return (
+		not is_battle_complete()
+		and is_instance_valid(actor)
+		and actor.is_active()
+		and actor.side == BattleUnitState.Side.PLAYER
+		and is_instance_valid(current)
+		and current.unit_id == actor.unit_id
+		and is_instance_valid(target)
+		and target.is_active()
+		and target.side != actor.side
+	)
 
 
 func get_skill_presentation_snapshot() -> Dictionary:
