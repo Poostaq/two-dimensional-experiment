@@ -335,23 +335,34 @@ Use GodotIQ through production scenes to verify:
 
 ## Acceptance-to-evidence traceability
 
-This is the required evidence ledger, not a claim that the planned files exist. “Baseline” means an older test exercises a reusable foundation only. Every row is currently blocking.
+This is the required evidence ledger. “Baseline” means an older test exercises a reusable foundation only. A PASS row names current implementation and verification evidence; partial foundation work does not satisfy a broader criterion.
 
 | ID | Type | Existing baseline evidence | Required AC6 verification path | Current status and gap |
 |---|---|---|---|---|
 | AC6-AC01 | Documentation | This design and the active game specification | Document diff confirming AC6.1–AC6.7 plus unchanged AC3.4; implementation-plan links per criterion | **FAIL:** active specification and implementation links not yet updated |
-| AC6-AC02 | Logic / visual | `test_ac3_3_party_formation.gd` preserves slot indices; `test_world_map_hud.gd` currently proves the reversed mapping defect | Add exact `0..2 -> FrontSlot0..2`, `3..5 -> BackSlot0..2` assertions; production GodotIQ HUD inspection; battle placement comparison | **FAIL:** current HUD assertion expects slot 0 in BackSlot0 |
-| AC6-AC03 | Logic | AC2 targeting, transaction, speed-order, and combo tests cover only the generic framework | Planned `Tests/Battle/test_ac6_1_combat_foundation.gd` and `test_ac6_2_keyword_reactions.gd`, with one focused case per canonical lifecycle rule | **FAIL:** AC6 states/effects and tests do not exist |
+| AC6-AC02 | Logic / visual | `test_ac3_3_party_formation.gd` preserves slot indices; `test_world_map_hud.gd` asserts canonical labels | Exact `0..2 -> FrontSlot0..2`, `3..5 -> BackSlot0..2` assertions; production GodotIQ HUD inspection; battle conversion comparison | **PASS (2026-08-29):** HUD 25/25, party formation 37/37, production UI map and screenshot agree |
+| AC6-AC03 | Logic | `test_ac6_1_combat_foundation.gd` covers fresh Power/Defense, physical damage, shared formation rules, Default Attack, movement, and Default Swap | Add `test_ac6_2_keyword_reactions.gd`, with one focused case per canonical lifecycle rule | **FAIL / PARTIAL:** AC6.1 foundation passes 36/36; Advantage, Snared, Armor, Bleed, reactions, and Goblin effects remain absent |
 | AC6-AC04 | Logic / integration | Four-slot presentation and generic CharacterSkill tests only | Planned `test_ac6_3_goblin_wave_a.gd`, `test_ac6_4_goblin_wave_b.gd`, and catalog/loadout assertions for all 18 regular skills | **FAIL:** no Goblin runtime definitions or skill tests |
 | AC6-AC05 | Logic / runtime | Existing lane-distance sorting is reusable but currently implements only a farthest-enemy target rule | Planned `test_ac6_5_brakka.gd`: three-plus-one loadout, activity filter, distance, tie order, stale target, no enemy, once-per-round; runtime log check | **FAIL:** no shared closest rule, scheduler, or Brakka definition |
 | AC6-AC06 | Integration / runtime | Existing world battle entry and save tests provide entry/save seams only | Planned `test_ac6_6_quartermaster_state.gd`, `test_ac6_6_battle_preparation.gd`, and production Cache-to-choice-to-battle runtime walkthrough | **FAIL:** Cache fields, prep state, UI, and hook do not exist |
-| AC6-AC07 | Logic | AC2.8 revision-confirmation tests establish generic stale-action rejection | Each AC6 mechanic test must snapshot all mutated state and prove rejection leaves it unchanged; preparation cancellation/staleness receives dedicated cases | **FAIL:** no AC6 atomicity cases |
-| AC6-AC08 | Integration | Existing battle configuration and reward/next-battle tests prove generic transitions | Planned `test_ac6_7_goblin_integration.gd` must end battle, start another, and assert no HP/status/cooldown/reaction-guard leakage | **FAIL:** AC6 battle-local fields do not exist |
+| AC6-AC07 | Logic | AC2.8 revision confirmation plus AC6.1 stale default-action and stale-occupancy snapshots | Each later AC6 mechanic must prove rejection leaves every owned state unchanged; preparation cancellation/staleness receives dedicated cases | **FAIL / PARTIAL:** AC6.1 action atomicity is covered; keyword, Passive, and preparation transactions do not exist |
+| AC6-AC08 | Integration | Fresh Power/Defense conversion is isolated; existing battle configuration and reward/next-battle tests prove generic transitions | Planned `test_ac6_7_goblin_integration.gd` must end battle, start another, and assert no HP/status/cooldown/reaction-guard leakage | **FAIL / PARTIAL:** stable stats do not leak, but AC6 keyword/reaction cleanup cannot yet be tested |
 | AC6-AC09 | Save / integration | `test_world_run_save_codec_v2.gd` round-trips current run state and formation | Extend codec tests for Cache charge/remainder, legacy defaults, corrupt bounds, pre-choice reload, and post-commit single consumption | **FAIL:** current schema has no Cache data |
 | AC6-AC10 | Documentation | Goblin class and commander docs mark progression deferred | Exact `TO_CONSIDER.md` entries plus repository search proving no Goblin level/evolution/mechanical implementation was added | **FAIL:** deferred entries still need implementation-step verification |
-| AC6-AC11 | Runtime / integration | Earlier AC2/AC3 suites and prior battle smoke runs are regression baseline only | Current full suite; GodotIQ validate/check-errors/orphan-signal gate; production startup; recorded formation, Goblin skill, reward, next-battle, Cache, save/reload checks | **FAIL:** depends on AC6-AC01 through AC6-AC10 and has no current artifact |
+| AC6-AC11 | Runtime / integration | AC6.1 selected regression gate passes 19/19 runners; GodotIQ startup and parser gate pass | Current full suite; GodotIQ validate/check-errors/orphan-signal gate; production startup; recorded formation, Goblin skill, reward, next-battle, Cache, save/reload checks | **FAIL / PARTIAL:** AC6.1 evidence exists, but this aggregate gate depends on AC6-AC01 through AC6-AC10 |
 
-**Coverage result:** 0/11 AC6 acceptance criteria have complete evidence. All 11 have a concrete planned verification path; AC6-AC11 is the aggregate runtime gate. Overall traceability status is **FAIL**, as required until implementation begins and evidence links are filled.
+**Coverage result:** 1/11 AC6 acceptance criteria has complete evidence. All 11 have a concrete verification path; AC6-AC11 is the aggregate runtime gate. Overall milestone traceability remains **FAIL**.
+
+## AC6.1 evidence record — 2026-08-29
+
+**Implementation commits:** `0fb5606`, `0e9b68e`, `db61da3`, `eebab48`, `ce8fddf`, `f4a3417`, `1ae3f0b`.
+
+- Focused foundation runner: `AC6.1 combat foundation: PASS (36/36)`.
+- Selected regression gate: 19/19 runners passed, comprising every `Tests/Battle/test_*.gd` runner plus world-map HUD, party management, party formation, world battle entry, and world cutover entry.
+- Key retained counts: HUD 25/25, party management 31/31, party formation 37/37, speed order 12/12, damage/log 18/18, battle results 9/9, reward selection 17/17, character skills 19/19, active-turn lock 5/5.
+- GodotIQ: 116 scripts compile with zero parser errors; project convention audit remains at the pre-existing 19 findings (0 errors, 13 warnings, 6 info); signal audit reports zero orphan signals; production main-scene startup PASS with zero captured runtime/debug errors.
+- Production formation evidence: the runtime HUD places `Player Front 1..3` in `FrontSlot0..2` and the slot-3 Scout in `BackSlot0`; party and battle conversion tests preserve the same indices.
+- Scope boundary: this record earns AC6-AC02 only. AC6-AC03, AC6-AC07, AC6-AC08, and AC6-AC11 remain partial because keywords, reactions, Goblin content, preparation, and full integration are not implemented.
 
 ## Exclusions
 
