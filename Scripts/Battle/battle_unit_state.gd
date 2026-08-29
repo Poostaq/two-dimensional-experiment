@@ -19,6 +19,8 @@ var display_name: String
 var side: Side
 var slot_index: int
 var speed: int
+var power: int = 1
+var defense: int = 0
 var max_hp: int
 var current_hp: int
 var skills: Array[CharacterSkill]:
@@ -38,7 +40,9 @@ func _init(
 	unit_slot_index: int,
 	unit_speed: int,
 	max_hp_value: int = DEFAULT_MAX_HP,
-	unit_skills: Array[CharacterSkill] = []
+	unit_skills: Array[CharacterSkill] = [],
+	unit_power: int = 1,
+	unit_defense: int = 0
 ) -> void:
 	unit_id = id
 	display_name = name
@@ -46,6 +50,11 @@ func _init(
 	slot_index = unit_slot_index
 	_base_speed = unit_speed
 	speed = unit_speed
+	if unit_power < 1 or unit_defense < 0:
+		push_error("BattleUnitState requires Power >= 1 and Defense >= 0.")
+	else:
+		power = unit_power
+		defense = unit_defense
 	max_hp = max_hp_value
 	current_hp = max_hp_value
 	set_skills(unit_skills)
