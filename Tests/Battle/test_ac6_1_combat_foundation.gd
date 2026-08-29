@@ -1,7 +1,7 @@
 class_name Ac6_1CombatFoundationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT: int = 36
+const EXPECTED_TEST_COUNT: int = 39
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -84,6 +84,12 @@ func _test_default_attack_transaction() -> void:
 	_expect(record.kind == BattleActionRecord.Kind.DEFAULT_ATTACK, "history types default attack")
 	_expect(record.actor_id == actor.unit_id and record.target_ids == [target.unit_id], "history locks identities")
 	_expect(record.damage_by_target[target.unit_id] == 4, "history records applied damage")
+	var committed_history: Array[BattleActionLogEntry] = arena.get_committed_action_history_snapshot()
+	_expect(
+		committed_history.size() == 1
+		and committed_history[0].skill_id == &"default_attack",
+		"default attack joins authoritative committed-action history"
+	)
 
 	arena.configure_units(_typed_units([actor, ally, target]))
 	var stale_preview: Dictionary = arena.preview_default_attack(actor.unit_id, target.unit_id)
@@ -129,6 +135,11 @@ func _test_formation_move_transactions() -> void:
 		and move_record.slot_after_by_unit[actor.unit_id] == 1,
 		"movement history records before and after slots"
 	)
+	_expect(
+		arena.get_committed_action_history_snapshot().size() == 1
+		and arena.get_committed_action_history_snapshot()[0].skill_id == &"formation_move",
+		"formation move joins authoritative committed-action history"
+	)
 
 	actor = BattleUnitState.new(&"mover", "Mover", BattleUnitState.Side.PLAYER, 0, 10)
 	ally = BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 3, 8)
@@ -148,6 +159,11 @@ func _test_formation_move_transactions() -> void:
 	)
 	_expect(actor.slot_index == 3 and ally.slot_index == 0, "Default Swap exchanges allied slots")
 	_expect(arena.get_action_records().back().kind == BattleActionRecord.Kind.DEFAULT_SWAP, "history types Default Swap")
+	_expect(
+		arena.get_committed_action_history_snapshot().size() == 1
+		and arena.get_committed_action_history_snapshot()[0].skill_id == &"default_swap",
+		"Default Swap joins authoritative committed-action history"
+	)
 
 	actor = BattleUnitState.new(&"mover", "Mover", BattleUnitState.Side.PLAYER, 0, 10)
 	ally = BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 3, 8)

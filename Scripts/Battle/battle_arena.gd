@@ -418,13 +418,33 @@ func confirm_default_attack(
 	_battle_log_entries.append(log_entry)
 	_append_log_control(log_entry, _battle_log_entries.size() - 1)
 	_show_resolution_feedback(log_entry)
+	var target_ids: Array[StringName] = [target.unit_id]
+	var action_results: Array[BattleDamageResult] = [result]
+	var base_damage: Dictionary[StringName, int] = {
+		target.unit_id: requested_damage,
+	}
+	var empty_bonus: Dictionary[StringName, int] = {}
+	var empty_speed_targets: Array[StringName] = []
+	var committed_entry: BattleActionLogEntry = BattleActionLogEntry.new(
+		_battle_action_log_entries.size() + 1,
+		action_round,
+		actor.unit_id,
+		actor.side,
+		&"default_attack",
+		target_ids,
+		action_results,
+		base_damage,
+		empty_bonus,
+		empty_speed_targets,
+		false
+	)
+	_battle_action_log_entries.append(committed_entry)
 	actor.tick_skill_cooldowns()
 	actor.expire_speed_modifiers_after_action()
 	_battle_revision += 1
 	var damage_by_target: Dictionary[StringName, int] = {
 		target.unit_id: result.applied_damage,
 	}
-	var target_ids: Array[StringName] = [target.unit_id]
 	var empty_slots: Dictionary[StringName, int] = {}
 	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
 	var action_record: BattleActionRecord = action_record_script.new(
@@ -554,6 +574,23 @@ func confirm_formation_move(
 		_action_in_progress = false
 		return false
 	_action_records.append(action_record)
+	var empty_results: Array[BattleDamageResult] = []
+	var empty_speed_targets: Array[StringName] = []
+	var movement_skill_id: StringName = &"default_swap" if default_swap else &"formation_move"
+	var committed_entry: BattleActionLogEntry = BattleActionLogEntry.new(
+		_battle_action_log_entries.size() + 1,
+		round_number,
+		actor.unit_id,
+		actor.side,
+		movement_skill_id,
+		target_ids,
+		empty_results,
+		empty_damage,
+		empty_damage,
+		empty_speed_targets,
+		false
+	)
+	_battle_action_log_entries.append(committed_entry)
 	_advance_after_action(actor.unit_id)
 	_action_in_progress = false
 	_refresh_turn_ui()
