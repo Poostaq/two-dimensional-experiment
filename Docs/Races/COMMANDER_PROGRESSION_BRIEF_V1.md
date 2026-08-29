@@ -41,9 +41,9 @@ Scope: Player-available core five races (Goblins, Orcs, Werewolves, Lizardmen, H
 
 ### Goblins Commander
 
-Name: Brakka Rustbanner, Packmarshal  
-Theme: Frontline organizer who turns mixed crews into one action sequence.  
-Fourth commander skill: Banner Holder (Passive)  
+Name: Brakka Rustbanner, Packmarshal
+Theme: Frontline organizer who turns mixed crews into one action sequence.
+Fourth commander skill: Banner Holder (Passive)
 - Tactical moment: Start of Brakka eligible action, once per round.
 - Effect: Apply Advantage to the active enemy closest to Brakka. Ties resolve frontline before backline, then lowest slot index.
 - Counterplay: Change the closest target, defeat Brakka, or expire the token.
@@ -61,9 +61,9 @@ Gameplay fantasy hook: The crew always has one more rumor than the enemy.
 
 ### Orcs Commander
 
-Name: Goruk Ironline, War-Khan  
-Theme: Makes first contact stick and prevents line collapse.  
-Battle signature passive (replaces Unbroken Contact): Iron Decree  
+Name: Goruk Ironline, War-Khan
+Theme: Makes first contact stick and prevents line collapse.
+Battle signature passive (replaces Unbroken Contact): Iron Decree
 - Tactical moment: First time each round Goruk ends an action neighboring an enemy.
 - Effect: Goruk gains 2 Armor; one neighboring ally gains 2 Armor (deterministic ally priority).
 - Counterplay: Rotate Goruk off contact; isolate him from allied adjacency; status pressure.
@@ -79,9 +79,9 @@ Gameplay fantasy hook: Once the line commits, retreat options shrink.
 
 ### Werewolves Commander
 
-Name: Veyra Moontrace, Hunt Matriarch  
-Theme: Converts one blood-threshold moment into immediate pack pressure.  
-Battle signature passive (replaces Fate Smells of Blood): Mark of the Alpha  
+Name: Veyra Moontrace, Hunt Matriarch
+Theme: Converts one blood-threshold moment into immediate pack pressure.
+Battle signature passive (replaces Fate Smells of Blood): Mark of the Alpha
 - Tactical moment: First enemy each round crossing below 50% HP from direct allied damage.
 - Effect: Veyra gains Advantage; triggering ally gains +15% Leech on next eligible Active direct hit this round.
 - Cap: Total Leech on that hit cannot exceed 50%.
@@ -98,9 +98,9 @@ Gameplay fantasy hook: The pack reads when the kill window opens, not just where
 
 ### Lizardmen Commander
 
-Name: Sszek Still-Mire, Delta Strategist  
-Theme: Extends single-axis poison plans into controlled area pressure.  
-Battle signature passive (replaces Exact Mixture): Cartographer of Venoms  
+Name: Sszek Still-Mire, Delta Strategist
+Theme: Extends single-axis poison plans into controlled area pressure.
+Battle signature passive (replaces Exact Mixture): Cartographer of Venoms
 - Tactical moment: First same-axis reapplication each round by Sszek to a target already carrying Sszek poison.
 - Effect: Also apply 1 stack of that same axis to one adjacent enemy for 2 rounds.
 - Safeguards: Secondary stack cannot trigger passives and cannot refresh itself.
@@ -116,9 +116,9 @@ Gameplay fantasy hook: Planning advantage comes from precise local reads, not om
 
 ### Harpies Commander
 
-Name: Kyris Windscar, Sky Matron  
-Theme: Turns one successful displacement into a controlled ally follow-through.  
-Battle signature passive (replaces Clear Sightline): Open-Sky Command  
+Name: Kyris Windscar, Sky Matron
+Theme: Turns one successful displacement into a controlled ally follow-through.
+Battle signature passive (replaces Clear Sightline): Open-Sky Command
 - Tactical moment: First successful hostile movement each round caused by Kyris.
 - Effect: Chosen ally may rotate Move 1 immediately after its next Active direct hit this round.
 - Eligibility: Consume only on hit dealing at least 1 HP after Defense/Armor.
