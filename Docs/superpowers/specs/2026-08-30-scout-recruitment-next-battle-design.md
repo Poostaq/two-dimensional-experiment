@@ -49,7 +49,7 @@ Valid transitions are:
 - `placement_confirmed -> save_failed -> reward_completed` when retry succeeds
 - `save_failed -> placement_open` only when the failed candidate is explicitly discarded and the player remains in the run
 
-Duplicate confirmation, duplicate placement requests, and any completion outside these transitions are no-ops.
+Both duplicate reward-confirmation signals and duplicate `recruitment_placement_requested` signals must be idempotent at the `WorldRuntimeController` boundary. While one recruitment is pending, repeated signals must not create another recruit, open another placement screen, reset the selected slot, or advance the lifecycle. Any completion outside the valid transitions is also a no-op.
 
 ### Transaction and Persistence Contract
 
@@ -66,20 +66,20 @@ On save failure:
 
 1. Keep the live roster and durable formation unchanged.
 2. Keep the same staged candidate and recruit identity for retry; never construct or append a second recruit.
-3. Keep the battle open with its reward suspended and the placement screen underneath the autosave failure surface.
+3. Keep the battle open with its reward suspended. Keep the same placement-screen instance alive underneath the modal autosave-failure surface; the failure surface owns input until retry or discard resolves it.
 4. Do not emit reward completion or battle exit.
 5. Disable further placement mutation while persistence is blocked.
-6. A successful save retry publishes the existing candidate and resumes the success sequence without another slot click.
+6. A successful save retry publishes the existing candidate and resumes the success sequence without re-showing/recreating placement and without another slot click.
 7. If the failed candidate is explicitly discarded while remaining in the run, discard it, refresh placement from the unchanged live roster, and return to `placement_open`.
 
-This makes roster publication and reward completion atomic from the player's perspective.
+Roster publication and reward completion are mutually gated: there is no live-roster mutation without save success, and there is no reward completion without successful roster publication.
 
 ### Cancellation Contract
 
 - Cancellation is allowed only in `placement_open`, before a candidate save begins. The battle reward overlay is expected to be hidden at that point.
 - Cancellation closes the party-placement screen, clears the queued recruit and any candidate, and restores the reward overlay with Scout still selected and confirmable.
 - The player may confirm Scout again to create one new placement session.
-- Any ordinary close route from the recruitment-mode party screen must use the same cancellation transition; it may not silently dismiss the screen or close the battle.
+- Any ordinary close route from the recruitment-mode party screen must invoke the same `placement_open -> placement_cancelled -> reward_selected` transition. It must never silently complete the reward, dismiss the battle, or leave the reward overlay suspended without an active placement session.
 - Cancellation is ignored in `placement_confirmed`, `save_failed`, and `reward_completed`; those states are resolved through persistence retry/discard or normal completion.
 
 ## Non-goals
