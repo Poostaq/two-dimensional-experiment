@@ -1,8 +1,6 @@
 class_name BattleSkillRules
 extends RefCounted
 
-const FRONT_ROW_END := 3
-
 
 static func evaluate_targets(
 	actor: BattleUnitState,
@@ -267,14 +265,20 @@ static func _evaluate_actor_and_skill(
 			actor,
 			skill
 		)
-	if skill.requirement == CharacterSkill.Requirement.FRONT_ROW and actor.slot_index >= FRONT_ROW_END:
+	if (
+		skill.requirement == CharacterSkill.Requirement.FRONT_ROW
+		and not BattleFormationRules.is_front_slot(actor.slot_index)
+	):
 		return _reason(
 			SkillActionReason.Code.POSITION_REQUIRED,
 			"Requires a front-row position.",
 			actor,
 			skill
 		)
-	if skill.requirement == CharacterSkill.Requirement.BACK_ROW and actor.slot_index < FRONT_ROW_END:
+	if (
+		skill.requirement == CharacterSkill.Requirement.BACK_ROW
+		and not BattleFormationRules.is_back_slot(actor.slot_index)
+	):
 		return _reason(
 			SkillActionReason.Code.POSITION_REQUIRED,
 			"Requires a back-row position.",
@@ -366,8 +370,8 @@ static func _farthest_comes_before(
 	var second_distance: int = absi((second.slot_index % 3) - actor_lane)
 	if first_distance != second_distance:
 		return first_distance > second_distance
-	var first_back: bool = first.slot_index >= FRONT_ROW_END
-	var second_back: bool = second.slot_index >= FRONT_ROW_END
+	var first_back: bool = BattleFormationRules.is_back_slot(first.slot_index)
+	var second_back: bool = BattleFormationRules.is_back_slot(second.slot_index)
 	if first_back != second_back:
 		return first_back
 	return first.slot_index > second.slot_index
