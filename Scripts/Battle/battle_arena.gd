@@ -466,6 +466,130 @@ func _is_valid_default_attack(actor: BattleUnitState, target: BattleUnitState) -
 	)
 
 
+func preview_formation_move(
+	actor_id: StringName,
+	destination_slot: int,
+	default_swap: bool
+) -> Dictionary:
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	if not _is_valid_move_actor(actor, destination_slot):
+		return {}
+	var occupant: BattleUnitState = _allied_occupant_at(
+		actor.side,
+		destination_slot,
+		actor.unit_id
+	)
+	if default_swap and not is_instance_valid(occupant):
+		return {}
+	return {
+		&"actor_id": actor.unit_id,
+		&"source_slot": actor.slot_index,
+		&"destination_slot": destination_slot,
+		&"occupant_id": occupant.unit_id if is_instance_valid(occupant) else &"",
+		&"revision": _battle_revision,
+		&"default_swap": default_swap,
+	}
+
+
+func confirm_formation_move(
+	actor_id: StringName,
+	expected_source_slot: int,
+	destination_slot: int,
+	expected_occupant_id: StringName,
+	expected_revision: int,
+	default_swap: bool
+) -> bool:
+	if _action_in_progress or expected_revision != _battle_revision:
+		return false
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	if (
+		not _is_valid_move_actor(actor, destination_slot)
+		or actor.slot_index != expected_source_slot
+	):
+		return false
+	var occupant: BattleUnitState = _allied_occupant_at(
+		actor.side,
+		destination_slot,
+		actor.unit_id
+	)
+	var occupant_id: StringName = occupant.unit_id if is_instance_valid(occupant) else &""
+	if occupant_id != expected_occupant_id or (default_swap and not is_instance_valid(occupant)):
+		return false
+	_action_in_progress = true
+	var slot_before: Dictionary[StringName, int] = {
+		actor.unit_id: actor.slot_index,
+	}
+	var slot_after: Dictionary[StringName, int] = {
+		actor.unit_id: destination_slot,
+	}
+	var target_ids: Array[StringName] = []
+	if is_instance_valid(occupant):
+		target_ids.append(occupant.unit_id)
+		slot_before[occupant.unit_id] = occupant.slot_index
+		slot_after[occupant.unit_id] = actor.slot_index
+		occupant.slot_index = actor.slot_index
+	actor.slot_index = destination_slot
+	actor.tick_skill_cooldowns()
+	actor.expire_speed_modifiers_after_action()
+	_battle_revision += 1
+	var empty_damage: Dictionary[StringName, int] = {}
+	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
+	var action_record: BattleActionRecord = action_record_script.new(
+		BattleActionRecord.Kind.DEFAULT_SWAP
+		if default_swap
+		else BattleActionRecord.Kind.FORMATION_MOVE,
+		actor.unit_id,
+		target_ids,
+		empty_damage,
+		slot_before,
+		slot_after,
+		round_number,
+		_battle_revision
+	) as BattleActionRecord
+	if not is_instance_valid(action_record) or not action_record.is_valid():
+		actor.slot_index = slot_before[actor.unit_id]
+		if is_instance_valid(occupant):
+			occupant.slot_index = slot_before[occupant.unit_id]
+		_battle_revision -= 1
+		_action_in_progress = false
+		return false
+	_action_records.append(action_record)
+	_advance_after_action(actor.unit_id)
+	_action_in_progress = false
+	_refresh_turn_ui()
+	return true
+
+
+func _is_valid_move_actor(actor: BattleUnitState, destination_slot: int) -> bool:
+	var current: BattleUnitState = get_current_unit()
+	return (
+		not is_battle_complete()
+		and is_instance_valid(actor)
+		and actor.is_active()
+		and actor.side == BattleUnitState.Side.PLAYER
+		and is_instance_valid(current)
+		and current.unit_id == actor.unit_id
+		and BattleFormationRules.is_move_one(actor.slot_index, destination_slot)
+	)
+
+
+func _allied_occupant_at(
+	side: int,
+	slot_index: int,
+	excluded_unit_id: StringName
+) -> BattleUnitState:
+	for unit: BattleUnitState in _units:
+		if (
+			is_instance_valid(unit)
+			and unit.unit_id != excluded_unit_id
+			and unit.side == side
+			and unit.slot_index == slot_index
+			and unit.is_active()
+		):
+			return unit
+	return null
+
+
 func get_skill_presentation_snapshot() -> Dictionary:
 	return _skill_transaction.presentation_snapshot()
 

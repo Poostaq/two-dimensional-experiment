@@ -25,3 +25,11 @@ static func lane_distance(first_slot: int, second_slot: int) -> int:
 	if not is_valid_slot(first_slot) or not is_valid_slot(second_slot):
 		return -1
 	return absi(lane_of(first_slot) - lane_of(second_slot))
+
+
+static func is_move_one(from_slot: int, to_slot: int) -> bool:
+	if not is_valid_slot(from_slot) or not is_valid_slot(to_slot) or from_slot == to_slot:
+		return false
+	var lane_delta: int = absi(lane_of(from_slot) - lane_of(to_slot))
+	var row_changed: bool = is_front_slot(from_slot) != is_front_slot(to_slot)
+	return (lane_delta == 1 and not row_changed) or (lane_delta == 0 and row_changed)

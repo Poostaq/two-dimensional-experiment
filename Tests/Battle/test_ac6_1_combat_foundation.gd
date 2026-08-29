@@ -1,7 +1,7 @@
 class_name Ac6_1CombatFoundationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT: int = 23
+const EXPECTED_TEST_COUNT: int = 36
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -16,6 +16,7 @@ func _run() -> void:
 	_test_physical_damage_formula()
 	_test_formation_contract()
 	await _test_default_attack_transaction()
+	await _test_formation_move_transactions()
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -56,6 +57,10 @@ func _test_formation_contract() -> void:
 	_expect(BattleFormationRules.lane_of(4) == 1, "slot 4 is lane 1")
 	_expect(BattleFormationRules.lane_distance(0, 5) == 2, "distance compares lanes")
 	_expect(BattleFormationRules.lane_of(-1) == -1, "invalid slots are rejected")
+	_expect(BattleFormationRules.is_move_one(0, 1), "adjacent front lane is Move 1")
+	_expect(BattleFormationRules.is_move_one(0, 3), "same-lane row change is Move 1")
+	_expect(not BattleFormationRules.is_move_one(0, 2), "two lanes is not Move 1")
+	_expect(not BattleFormationRules.is_move_one(0, 4), "diagonal row-and-lane change is not Move 1")
 
 
 func _test_default_attack_transaction() -> void:
@@ -90,6 +95,81 @@ func _test_default_attack_transaction() -> void:
 		and arena.get_action_records().is_empty(),
 		"stale default attack rejects without mutation"
 	)
+	arena.queue_free()
+	await process_frame
+
+
+func _test_formation_move_transactions() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as BattleArena
+	root.add_child(arena)
+	await process_frame
+	var actor := BattleUnitState.new(&"mover", "Mover", BattleUnitState.Side.PLAYER, 0, 10)
+	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 3, 8)
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5)
+	arena.configure_units(_typed_units([actor, ally, enemy]))
+	var move_preview: Dictionary = arena.preview_formation_move(actor.unit_id, 1, false)
+	_expect(move_preview.get("destination_slot", -1) == 1, "empty Move 1 previews destination")
+	_expect(
+		arena.confirm_formation_move(
+			actor.unit_id,
+			int(move_preview.get("source_slot", -1)),
+			1,
+			move_preview.get("occupant_id", &""),
+			int(move_preview.get("revision", -1)),
+			false
+		),
+		"empty Move 1 confirms"
+	)
+	_expect(actor.slot_index == 1 and ally.slot_index == 3, "empty Move 1 changes only actor slot")
+	var move_record: BattleActionRecord = arena.get_action_records().back()
+	_expect(
+		move_record.kind == BattleActionRecord.Kind.FORMATION_MOVE
+		and move_record.slot_before_by_unit[actor.unit_id] == 0
+		and move_record.slot_after_by_unit[actor.unit_id] == 1,
+		"movement history records before and after slots"
+	)
+
+	actor = BattleUnitState.new(&"mover", "Mover", BattleUnitState.Side.PLAYER, 0, 10)
+	ally = BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 3, 8)
+	enemy = BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5)
+	arena.configure_units(_typed_units([actor, ally, enemy]))
+	var swap_preview: Dictionary = arena.preview_formation_move(actor.unit_id, 3, true)
+	_expect(
+		arena.confirm_formation_move(
+			actor.unit_id,
+			int(swap_preview.get("source_slot", -1)),
+			3,
+			swap_preview.get("occupant_id", &""),
+			int(swap_preview.get("revision", -1)),
+			true
+		),
+		"Default Swap confirms with occupied ally"
+	)
+	_expect(actor.slot_index == 3 and ally.slot_index == 0, "Default Swap exchanges allied slots")
+	_expect(arena.get_action_records().back().kind == BattleActionRecord.Kind.DEFAULT_SWAP, "history types Default Swap")
+
+	actor = BattleUnitState.new(&"mover", "Mover", BattleUnitState.Side.PLAYER, 0, 10)
+	ally = BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 3, 8)
+	enemy = BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5)
+	arena.configure_units(_typed_units([actor, ally, enemy]))
+	var stale_preview: Dictionary = arena.preview_formation_move(actor.unit_id, 1, false)
+	ally.slot_index = 1
+	_expect(
+		not arena.confirm_formation_move(
+			actor.unit_id,
+			int(stale_preview.get("source_slot", -1)),
+			1,
+			stale_preview.get("occupant_id", &""),
+			int(stale_preview.get("revision", -1)),
+			false
+		)
+		and actor.slot_index == 0
+		and ally.slot_index == 1
+		and arena.get_action_records().is_empty(),
+		"stale occupancy rejects without partial movement"
+	)
+	_expect(arena.preview_formation_move(actor.unit_id, 2, false).is_empty(), "non-neighbor Move 1 is rejected")
 	arena.queue_free()
 	await process_frame
 
