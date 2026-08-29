@@ -341,7 +341,7 @@ This is the required evidence ledger. “Baseline” means an older test exercis
 |---|---|---|---|---|
 | AC6-AC01 | Documentation | This design and the active game specification | Document diff confirming AC6.1–AC6.7 plus unchanged AC3.4; implementation-plan links per criterion | **FAIL:** active specification and implementation links not yet updated |
 | AC6-AC02 | Logic / visual | `test_ac3_3_party_formation.gd` preserves slot indices; `test_world_map_hud.gd` asserts canonical labels | Exact `0..2 -> FrontSlot0..2`, `3..5 -> BackSlot0..2` assertions; production GodotIQ HUD inspection; battle conversion comparison | **PASS (2026-08-29):** HUD 25/25, party formation 37/37, production UI map and screenshot agree |
-| AC6-AC03 | Logic | `test_ac6_1_combat_foundation.gd` covers fresh Power/Defense, physical damage, shared formation rules, Default Attack, movement, and Default Swap | Add `test_ac6_2_keyword_reactions.gd`, with one focused case per canonical lifecycle rule | **FAIL / PARTIAL:** AC6.1 foundation passes 36/36; Advantage, Snared, Armor, Bleed, reactions, and Goblin effects remain absent |
+| AC6-AC03 | Logic | `test_ac6_1_combat_foundation.gd` covers fresh Power/Defense, physical damage, shared formation rules, Default Attack, movement, Default Swap, and authoritative committed-action history | Add `test_ac6_2_keyword_reactions.gd`, with one focused case per canonical lifecycle rule | **FAIL / PARTIAL:** AC6.1 foundation passes 39/39; Advantage, Snared, Armor, Bleed, reactions, and Goblin effects remain absent |
 | AC6-AC04 | Logic / integration | Four-slot presentation and generic CharacterSkill tests only | Planned `test_ac6_3_goblin_wave_a.gd`, `test_ac6_4_goblin_wave_b.gd`, and catalog/loadout assertions for all 18 regular skills | **FAIL:** no Goblin runtime definitions or skill tests |
 | AC6-AC05 | Logic / runtime | Existing lane-distance sorting is reusable but currently implements only a farthest-enemy target rule | Planned `test_ac6_5_brakka.gd`: three-plus-one loadout, activity filter, distance, tie order, stale target, no enemy, once-per-round; runtime log check | **FAIL:** no shared closest rule, scheduler, or Brakka definition |
 | AC6-AC06 | Integration / runtime | Existing world battle entry and save tests provide entry/save seams only | Planned `test_ac6_6_quartermaster_state.gd`, `test_ac6_6_battle_preparation.gd`, and production Cache-to-choice-to-battle runtime walkthrough | **FAIL:** Cache fields, prep state, UI, and hook do not exist |
@@ -355,9 +355,9 @@ This is the required evidence ledger. “Baseline” means an older test exercis
 
 ## AC6.1 evidence record — 2026-08-29
 
-**Implementation commits:** `0fb5606`, `0e9b68e`, `db61da3`, `eebab48`, `ce8fddf`, `f4a3417`, `1ae3f0b`.
+**Implementation commits:** `0fb5606`, `0e9b68e`, `db61da3`, `eebab48`, `ce8fddf`, `f4a3417`, `1ae3f0b`, `b041602`.
 
-- Focused foundation runner: `AC6.1 combat foundation: PASS (36/36)`.
+- Focused foundation runner: `AC6.1 combat foundation: PASS (39/39)`.
 - Selected regression gate: 19/19 runners passed, comprising every `Tests/Battle/test_*.gd` runner plus world-map HUD, party management, party formation, world battle entry, and world cutover entry.
 - Key retained counts: HUD 25/25, party management 31/31, party formation 37/37, speed order 12/12, damage/log 18/18, battle results 9/9, reward selection 17/17, character skills 19/19, active-turn lock 5/5.
 - GodotIQ: 116 scripts compile with zero parser errors; project convention audit remains at the pre-existing 19 findings (0 errors, 13 warnings, 6 info); signal audit reports zero orphan signals; production main-scene startup PASS with zero captured runtime/debug errors.
