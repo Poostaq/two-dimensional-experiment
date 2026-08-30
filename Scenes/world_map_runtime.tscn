@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://iw0tft40dhmb" path="res://Scripts/WorldMap/world_camera_controller.gd" id="2_wr8mu"]
 [ext_resource type="PackedScene" uid="uid://cs1abrmsf7038" path="res://Scenes/world_map_hud.tscn" id="3_ioilc"]
 [ext_resource type="PackedScene" uid="uid://ry5f32nn4nye" path="res://Scenes/world_minimap.tscn" id="5_8roes"]
+[ext_resource type="Script" uid="uid://by33cv2flal02" path="res://Scripts/UI/world_autosave_failure_overlay.gd" id="6_30kyr"]
 [ext_resource type="PackedScene" uid="uid://b36euxg5lv0i4" path="res://Scenes/world_autosave_failure_overlay.tscn" id="7_6n27o"]
 
 [node name="WorldMapRuntime" type="Node2D" unique_id=861273873]
@@ -45,12 +46,19 @@ offset_top = 48.0
 offset_right = 316.0
 offset_bottom = 348.0
 
-[node name="AutosaveFailureOverlay" parent="UI" unique_id=1589388168 instance=ExtResource("7_6n27o")]
-unique_name_in_owner = true
-
 [node name="EncounterHost" type="Node" parent="." unique_id=1732862383]
-
-[node name="PartyHost" type="Node" parent="." unique_id=252367502]
 
 [node name="BattleHost" type="CanvasLayer" parent="." unique_id=1601670911]
 layer = 20
+
+[node name="PartyHost" type="CanvasLayer" parent="." unique_id=605497936]
+layer = 30
+
+[node name="FailureOverlayHost" type="CanvasLayer" parent="." unique_id=2084605563]
+layer = 40
+
+[node name="AutosaveFailureOverlay" type="Control" parent="FailureOverlayHost" unique_id=1589388168 instance=ExtResource("7_6n27o")]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("6_30kyr")

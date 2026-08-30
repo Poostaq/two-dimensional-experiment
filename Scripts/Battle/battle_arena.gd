@@ -3,6 +3,7 @@ extends Control
 
 signal exit_requested
 signal battle_completed(outcome: BattleOutcome.Type)
+signal reward_selected(option: BattleRewardOption)
 signal reward_confirmed(option: BattleRewardOption)
 signal recruitment_placement_requested(option: BattleRewardOption)
 
@@ -225,6 +226,7 @@ func select_reward(reward_id: StringName) -> void:
 	for option: BattleRewardOption in _reward_options:
 		if option.reward_id == reward_id:
 			_selected_reward = option
+			reward_selected.emit(_selected_reward)
 			_refresh_reward_selection_ui()
 			return
 
