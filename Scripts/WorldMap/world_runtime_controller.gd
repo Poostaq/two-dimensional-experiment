@@ -5,6 +5,17 @@ signal autosave_failed(error: RefCounted)
 signal autosave_recovered
 signal launcher_return_requested
 
+enum RecruitmentState {
+	IDLE,
+	REWARD_SELECTED,
+	RECRUITMENT_PENDING,
+	PLACEMENT_OPEN,
+	PLACEMENT_CONFIRMED,
+	PLACEMENT_CANCELLED,
+	SAVE_FAILED,
+	REWARD_COMPLETED,
+}
+
 static var ENCOUNTER_SCENE: PackedScene = load("res://Scenes/encounter_overlay.tscn")
 static var BATTLE_SCENE: PackedScene = load("res://Scenes/battle_arena.tscn")
 static var PARTY_SCENE: PackedScene = load("res://Scenes/party_management.tscn")
@@ -25,6 +36,8 @@ var _active_battle: BattleArena
 var _active_party: PartyManagement
 var _pending_recruitment_option: BattleRewardOption
 var _pending_recruit: RunCharacter
+var _pending_recruitment_roster: RunRoster
+var _recruitment_state: RecruitmentState = RecruitmentState.IDLE
 var _save_coordinator: RefCounted
 var _durable_run_state: RefCounted
 var _pending_candidate_model: WorldRuntimeModel
@@ -149,6 +162,11 @@ func discard_pending_autosave() -> bool:
 	_durable_run_state = restored
 	_pending_candidate_model = null
 	_pending_move_result = null
+	if _recruitment_state == RecruitmentState.SAVE_FAILED:
+		_pending_recruitment_roster = null
+		_recruitment_state = RecruitmentState.PLACEMENT_OPEN
+		if has_active_party_management():
+			_active_party.refresh_slots(_roster.get_slot_snapshot())
 	_apply_snapshot(_model.get_snapshot())
 	autosave_recovered.emit()
 	return true
@@ -220,6 +238,10 @@ func open_party_management() -> void:
 
 func has_active_party_management() -> bool:
 	return is_instance_valid(_active_party)
+
+
+func get_recruitment_state() -> RecruitmentState:
+	return _recruitment_state
 
 
 func get_valid_destinations() -> Array[Vector2i]:
@@ -328,6 +350,7 @@ func _on_encounter_close_requested() -> void:
 func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	if has_active_battle():
 		return
+	_recruitment_state = RecruitmentState.IDLE
 	if has_active_encounter():
 		_active_encounter.queue_free()
 		_active_encounter = null
@@ -352,61 +375,139 @@ func _on_reward_confirmed(_option: BattleRewardOption) -> void:
 
 
 func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
-	if not has_active_battle() or has_active_party_management() or not is_instance_valid(option):
+	if (
+		not has_active_battle()
+		or has_active_party_management()
+		or not is_instance_valid(option)
+		or _recruitment_state not in [
+			RecruitmentState.IDLE,
+			RecruitmentState.REWARD_SELECTED,
+		]
+	):
 		return
+	_recruitment_state = RecruitmentState.RECRUITMENT_PENDING
 	var recruit := RunCharacterCatalog.create_for_reward(option.reward_id)
 	if not is_instance_valid(recruit) or _roster.has_character(recruit.character_id):
 		_active_battle.restore_pending_recruitment(option)
+		_recruitment_state = RecruitmentState.REWARD_SELECTED
 		return
 	_pending_recruitment_option = option
 	_pending_recruit = recruit
+	_pending_recruitment_roster = null
 	_active_party = PARTY_SCENE.instantiate() as PartyManagement
 	get_node("PartyHost").add_child(_active_party)
 	_active_party.placement_requested.connect(_on_recruitment_add_requested)
 	_active_party.replacement_requested.connect(_on_recruitment_replace_requested)
 	_active_party.placement_cancelled.connect(_on_recruitment_cancelled)
+	_active_party.close_requested.connect(_on_recruitment_cancelled)
 	if _roster.is_full():
 		_active_party.configure_replacement(_roster.get_slot_snapshot(), recruit)
 	else:
 		_active_party.configure_placement(_roster.get_slot_snapshot(), recruit)
+	_recruitment_state = RecruitmentState.PLACEMENT_OPEN
 
 
 func _on_recruitment_add_requested(destination_slot: int, expected_id: StringName) -> void:
-	if not is_instance_valid(_pending_recruit) or _pending_recruit.character_id != expected_id:
+	if (
+		_recruitment_state != RecruitmentState.PLACEMENT_OPEN
+		or is_autosave_blocked()
+		or not is_instance_valid(_pending_recruit)
+		or _pending_recruit.character_id != expected_id
+	):
 		return
-	if _roster.try_add_at(_pending_recruit, destination_slot) == RunRoster.AddResult.ADDED:
-		_complete_recruitment()
+	var candidate: RunRoster = RunRoster.new(_roster.get_slot_snapshot())
+	if candidate.try_add_at(_pending_recruit, destination_slot) == RunRoster.AddResult.ADDED:
+		_commit_recruitment_candidate(candidate)
 
 
-func _on_recruitment_replace_requested(destination_slot: int, expected_character_id: StringName, expected_recruit_id: StringName) -> void:
-	if not is_instance_valid(_pending_recruit) or _pending_recruit.character_id != expected_recruit_id:
+func _on_recruitment_replace_requested(
+	destination_slot: int,
+	expected_character_id: StringName,
+	expected_recruit_id: StringName
+) -> void:
+	if (
+		_recruitment_state != RecruitmentState.PLACEMENT_OPEN
+		or is_autosave_blocked()
+		or not is_instance_valid(_pending_recruit)
+		or _pending_recruit.character_id != expected_recruit_id
+	):
 		return
-	if _roster.try_replace_at(_pending_recruit, destination_slot, expected_character_id) == RunRoster.ReplaceResult.REPLACED:
-		_complete_recruitment()
+	var candidate: RunRoster = RunRoster.new(_roster.get_slot_snapshot())
+	if (
+		candidate.try_replace_at(
+			_pending_recruit,
+			destination_slot,
+			expected_character_id
+		)
+		== RunRoster.ReplaceResult.REPLACED
+	):
+		_commit_recruitment_candidate(candidate)
 
 
-func _complete_recruitment() -> void:
-	if not _commit_current_authoritative("recruitment_completion", false):
+func _commit_recruitment_candidate(candidate: RunRoster) -> void:
+	_recruitment_state = RecruitmentState.PLACEMENT_CONFIRMED
+	_pending_recruitment_roster = candidate
+	if not is_instance_valid(_save_coordinator):
+		_publish_recruitment_without_persistence()
 		return
+	var candidate_state := _build_candidate_state(_model, false, candidate)
+	var saved: Dictionary = _save_coordinator.call(
+		"commit_candidate",
+		candidate_state,
+		Callable(self, "_publish_recruitment_state"),
+		"recruitment_completion"
+	)
+	if bool(saved.get("ok", false)):
+		return
+	_recruitment_state = RecruitmentState.SAVE_FAILED
+	_model.set_surface_blocked(true)
+	_apply_snapshot(_model.get_snapshot())
+	autosave_failed.emit(saved.get("error") as RefCounted)
+
+
+func _publish_recruitment_without_persistence() -> void:
+	if not is_instance_valid(_pending_recruitment_roster):
+		return
+	_roster = _pending_recruitment_roster
+	_finish_recruitment_publication()
+
+
+func _publish_recruitment_state(state: RefCounted) -> void:
+	if not is_instance_valid(_pending_recruitment_roster) or not is_instance_valid(state):
+		return
+	_roster = _pending_recruitment_roster
+	_durable_run_state = state
+	_finish_recruitment_publication()
+
+
+func _finish_recruitment_publication() -> void:
+	_recruitment_state = RecruitmentState.REWARD_COMPLETED
 	var option := _pending_recruitment_option
-	_close_recruitment_party()
+	_close_recruitment_party(false)
 	if has_active_battle() and is_instance_valid(option):
 		_active_battle.complete_pending_recruitment(option)
 
 
 func _on_recruitment_cancelled() -> void:
+	if _recruitment_state != RecruitmentState.PLACEMENT_OPEN:
+		return
 	var option := _pending_recruitment_option
-	_close_recruitment_party()
+	_recruitment_state = RecruitmentState.PLACEMENT_CANCELLED
+	_close_recruitment_party(false)
 	if has_active_battle() and is_instance_valid(option):
 		_active_battle.restore_pending_recruitment(option)
+	_recruitment_state = RecruitmentState.REWARD_SELECTED
 
 
-func _close_recruitment_party() -> void:
+func _close_recruitment_party(reset_state: bool = true) -> void:
 	if has_active_party_management():
 		_active_party.queue_free()
 	_active_party = null
 	_pending_recruitment_option = null
 	_pending_recruit = null
+	_pending_recruitment_roster = null
+	if reset_state:
+		_recruitment_state = RecruitmentState.IDLE
 
 
 func _on_battle_closed() -> void:
@@ -414,7 +515,7 @@ func _on_battle_closed() -> void:
 		return
 	_active_battle.queue_free()
 	_active_battle = null
-	_close_recruitment_party()
+	_close_recruitment_party(_recruitment_state != RecruitmentState.REWARD_COMPLETED)
 	_model.close_ordinary_encounter()
 	if not _commit_current_authoritative("encounter_resolution", true):
 		return
@@ -476,20 +577,24 @@ func _commit_current_authoritative(event_name: String, consume_current: bool) ->
 	return false
 
 
-func _build_candidate_state(model: WorldRuntimeModel, consume_current: bool) -> RefCounted:
+func _build_candidate_state(
+	model: WorldRuntimeModel,
+	consume_current: bool,
+	roster: RunRoster = null
+) -> RefCounted:
 	if not is_instance_valid(_durable_run_state) or not is_instance_valid(model):
 		return null
-	var data := _durable_run_state.call("to_dictionary") as Dictionary
-	var snapshot := model.get_snapshot()
+	var data: Dictionary = _durable_run_state.call("to_dictionary") as Dictionary
+	var snapshot: WorldRuntimeSnapshot = model.get_snapshot()
 	data["player_coord"] = [snapshot.player_coord.x, snapshot.player_coord.y]
 	data["boss_coord"] = [snapshot.boss_coord.x, snapshot.boss_coord.y]
 	data["move_count"] = snapshot.move_count
 	data["boss_active"] = snapshot.sudden_death_active
 	data["boss_engaged"] = snapshot.boss_encounter_open
-	data["formation"] = _formation_ids()
+	data["formation"] = _formation_ids(roster)
 	if consume_current:
-		var consumed := data.get("consumed_encounters", []) as Array
-		var coord_value := [snapshot.player_coord.x, snapshot.player_coord.y]
+		var consumed: Array = data.get("consumed_encounters", []) as Array
+		var coord_value: Array[int] = [snapshot.player_coord.x, snapshot.player_coord.y]
 		if not consumed.has(coord_value):
 			consumed.append(coord_value)
 		data["consumed_encounters"] = consumed
@@ -497,9 +602,10 @@ func _build_candidate_state(model: WorldRuntimeModel, consume_current: bool) -> 
 	return decoded.get("value") as RefCounted if bool(decoded.get("ok", false)) else null
 
 
-func _formation_ids() -> Array[String]:
+func _formation_ids(roster: RunRoster = null) -> Array[String]:
+	var source: RunRoster = roster if is_instance_valid(roster) else _roster
 	var formation: Array[String] = []
-	for character: RunCharacter in _roster.get_slot_snapshot():
+	for character: RunCharacter in source.get_slot_snapshot():
 		formation.append(String(character.character_id) if is_instance_valid(character) else "")
 	return formation
 
