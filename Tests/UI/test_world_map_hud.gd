@@ -43,10 +43,22 @@ func _run() -> void:
 	slots[0] = starters[0]
 	slots[3] = starters[1]
 	hud.call("set_formation", slots)
-	_expect((hud.get_node("%BackSlot0") as Label).text == starters[0].display_name, "back slot shows occupant")
-	_expect((hud.get_node("%BackSlot1") as Label).text == "Empty", "empty back slot is explicit")
-	_expect((hud.get_node("%FrontSlot0") as Label).text == starters[1].display_name, "front slot shows occupant")
-	_expect((hud.get_node("%FrontSlot1") as Label).text == "Empty", "empty front slot is explicit")
+	_expect(
+		(hud.get_node("%FrontSlot0") as Label).text == starters[0].display_name,
+		"formation slot 0 appears in front slot 0"
+	)
+	_expect(
+		(hud.get_node("%FrontSlot1") as Label).text == "Empty",
+		"empty front slot is explicit"
+	)
+	_expect(
+		(hud.get_node("%BackSlot0") as Label).text == starters[1].display_name,
+		"formation slot 3 appears in back slot 0"
+	)
+	_expect(
+		(hud.get_node("%BackSlot1") as Label).text == "Empty",
+		"empty back slot is explicit"
+	)
 
 	var terrain_tags: Array[String] = ["forest", "road"]
 	hud.call("set_context", "combat", terrain_tags, true)

@@ -1,7 +1,7 @@
 class_name Ac3_3PartyFormationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 36
+const EXPECTED_TEST_COUNT := 37
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -57,6 +57,13 @@ func _run() -> void:
 	_expect(roster.get_character_at(4) == replacement, "replacement preserves target slot")
 	_expect(not roster.has_character(&"player_0") and roster.has_character(&"replacement"), "replacement updates membership")
 	_expect(_unit_id_at(roster.create_battle_units(), 4) == &"replacement", "battle conversion uses replaced slot")
+	var replacement_unit: BattleUnitState = _unit_at(roster.create_battle_units(), 4)
+	_expect(
+		is_instance_valid(replacement_unit)
+		and replacement_unit.power == 7
+		and replacement_unit.defense == 2,
+		"battle conversion preserves Power and Defense"
+	)
 
 	var replaced_snapshot := roster.get_slot_snapshot()
 	_expect(
@@ -107,7 +114,7 @@ func _run() -> void:
 
 func _character(id: StringName, display_name: String) -> RunCharacter:
 	var skills: Array[CharacterSkill] = []
-	return RunCharacter.new(id, display_name, 5, 20, skills)
+	return RunCharacter.new(id, display_name, 5, 20, skills, 7, 2)
 
 
 func _id_at(slots: Array[RunCharacter], slot_index: int) -> StringName:
@@ -130,10 +137,15 @@ func _unit_slots(units: Array[BattleUnitState]) -> Array[int]:
 
 
 func _unit_id_at(units: Array[BattleUnitState], slot_index: int) -> StringName:
+	var unit: BattleUnitState = _unit_at(units, slot_index)
+	return unit.unit_id if is_instance_valid(unit) else &""
+
+
+func _unit_at(units: Array[BattleUnitState], slot_index: int) -> BattleUnitState:
 	for unit: BattleUnitState in units:
 		if unit.slot_index == slot_index:
-			return unit.unit_id
-	return &""
+			return unit
+	return null
 
 
 func _same_slots(left: Array[RunCharacter], right: Array[RunCharacter]) -> bool:

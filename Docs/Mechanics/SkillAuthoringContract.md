@@ -2,12 +2,13 @@
 
 ## Character Loadout
 
-Every implementation-target class has exactly four character-specific skills plus Default Attack and Default Swap:
+Every implementation-target regular class has exactly three character-specific battle skills plus Default Attack and Default Swap:
 
 1. **Opener (Active):** Establishes the class condition, position, status, or setup.
 2. **Converter (Active):** Exploits the opener or a canonical keyword applied by an ally.
 3. **Pivot (Active):** Provides Armor, movement, keyword support, or a high-cooldown capstone.
-4. **Signature Passive:** Rewards the intended sequencing or party job.
+
+A commander keeps all three skills of its root class and adds exactly one commander-specific fourth skill. The commander skill may be Active or Passive. It does not replace a root-class skill.
 
 Offense, control, mobility, support, utility, reaction, and capstone are design tags. Runtime kinds remain Active and Passive.
 
@@ -15,7 +16,7 @@ Offense, control, mobility, support, utility, reaction, and capstone are design 
 
 Every skill states stable ID and name; kind and package slot; tags; target and selection; position and condition requirements; trigger; ordered effects; magnitude or Power multiplier and rounding; duration; stack cap; reapplication; cleanup; pre-use or post-use cooldown; Advantage interaction; movement semantics; tooltip; log text; AI condition; and counterplay. Use `None` when a field does not apply; omission is invalid.
 
-Allowed effects are direct damage, canonical formation movement, cooldown changes, and Armor, Bleed, Poison, Stun, Advantage, or Leech. A class skill cannot introduce another named combat state or a direct Power, Speed, or Defense modifier.
+Allowed effects are direct damage, canonical formation movement, cooldown changes, authored temporary stat modifiers, and Armor, Bleed, Poison, Stun, Advantage, Snared, or Leech. A class skill cannot introduce another named combat state. Any temporary stat modifier must name its magnitude, expiry, reapplication behavior, floor, and unresolved-queue consequence.
 
 ## Standard Formulas
 
@@ -53,14 +54,12 @@ An invalid operation rejects the whole skill before damage. There is no partial 
 
 ## Progression
 
-1. Tier 1 unlocks Opener and Converter.
-2. Tier 2 unlocks the class's single Signature Passive.
-3. Tier 3 unlocks Pivot and one cross-race upgrade to an existing skill.
-
-Tier upgrades add no skill slots. The initial roster uses no mana or race-specific meter.
+Character leveling, tier unlocking, evolution, mechanical-unit progression, and commander progression are deferred for re-evaluation. Current design targets require the complete three-skill regular loadout, or the complete three-plus-one commander loadout, without level gates. The initial roster uses no mana or race-specific meter.
 
 ## Implementation Boundary
 
-Current runtime support includes four-skill rosters, Active/Passive kinds, damage, Speed boosts, positional and health requirements, cooldowns, atomic confirmation, generic combos, history, and unresolved-queue rebuilding.
+**Observed runtime baseline (2026-08-29):** `BattleUnitState` supports a four-slot roster ceiling, HP-based activity, base/effective Speed, round- or action-scoped Speed modifiers, and action cooldowns. `BattleSkillRules` supports typed Active/Passive definitions, basic damage and Speed effect plans, positional and health requirements, target evaluation, stale-revision confirmation, and generic combo evaluation. Existing arena tests cover those AC2-era capabilities.
 
-Dependencies still needed are Power/Defense resolution, Armor, general statuses, Bleed, Poison, Stun, Advantage, Leech, ring rotation, passive ordering, and status-aware preview, tooltip, log, and AI rules. Class documents describe desired behavior and do not imply these already exist.
+This baseline does **not** establish implementation of the authoring contract as a whole. Regular three-slot versus commander three-plus-one catalog validation, Power/Defense formula resolution, Armor, general statuses, Bleed, Poison, Stun, enemy-bound Advantage, Snared, Leech, formation movement, reactive Passive scheduling, Goblin skill definitions, status-aware preview/log/UI, Cache, and battle preparation remain implementation dependencies until linked tests and runtime evidence pass.
+
+Class and commander documents are design authority. Their language describes required future behavior and must not be cited as evidence that the behavior is shipped.

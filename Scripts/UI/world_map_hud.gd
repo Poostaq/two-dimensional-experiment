@@ -36,9 +36,9 @@ func set_turn_state(move_count: int, boss_active: bool) -> void:
 
 
 func set_formation(slots: Array[RunCharacter]) -> void:
-	for index: int in 3:
-		_back_slots[index].text = _slot_text(slots, index)
-		_front_slots[index].text = _slot_text(slots, index + 3)
+	for lane_index: int in 3:
+		_front_slots[lane_index].text = _slot_text(slots, lane_index)
+		_back_slots[lane_index].text = _slot_text(slots, lane_index + 3)
 
 
 func set_context(encounter_type: String, terrain_tags: Array[String], is_valid: bool) -> void:

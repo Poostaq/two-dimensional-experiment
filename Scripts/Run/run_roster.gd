@@ -160,7 +160,9 @@ func create_battle_units() -> Array[BattleUnitState]:
 			slot_index,
 			character.base_speed,
 			character.max_hp,
-			character.get_skills()
+			character.get_skills(),
+			character.power,
+			character.defense
 		))
 	return units
 
