@@ -47,4 +47,5 @@ offset_bottom = 348.0
 
 [node name="BattleHost" type="Node" parent="." unique_id=1022605648]
 
-[node name="PartyHost" type="Node" parent="." unique_id=252367502]
+[node name="PartyHost" type="CanvasLayer" parent="." unique_id=63091077]
+layer = 30
