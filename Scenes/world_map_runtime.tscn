@@ -58,6 +58,7 @@ layer = 30
 layer = 40
 
 [node name="AutosaveFailureOverlay" type="Control" parent="FailureOverlayHost" unique_id=1589388168 instance=ExtResource("7_6n27o")]
+unique_name_in_owner = true
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("6_30kyr")
