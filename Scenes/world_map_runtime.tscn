@@ -6,6 +6,19 @@
 [ext_resource type="PackedScene" uid="uid://ry5f32nn4nye" path="res://Scenes/world_minimap.tscn" id="5_8roes"]
 [ext_resource type="PackedScene" uid="uid://b36euxg5lv0i4" path="res://Scenes/world_autosave_failure_overlay.tscn" id="7_6n27o"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_q75vh"]
+bg_color = Color(0.0627451, 0.105882354, 0.16078432, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.4509804, 0.34901962, 0.2509804, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_size = 22
+
 [node name="WorldMapRuntime" type="Node2D" unique_id=861273873]
 script = ExtResource("1_m5ov0")
 auto_initialize_runtime = false
@@ -45,9 +58,6 @@ offset_top = 48.0
 offset_right = 316.0
 offset_bottom = 348.0
 
-[node name="AutosaveFailureOverlay" parent="UI" unique_id=1589388168 instance=ExtResource("7_6n27o")]
-unique_name_in_owner = true
-
 [node name="EncounterHost" type="Node" parent="." unique_id=1732862383]
 
 [node name="BattleHost" type="CanvasLayer" parent="." unique_id=1601670911]
@@ -55,3 +65,79 @@ layer = 20
 
 [node name="PartyHost" type="CanvasLayer" parent="." unique_id=605497936]
 layer = 30
+
+[node name="FailureOverlayHost" type="CanvasLayer" parent="." unique_id=1062015314]
+layer = 40
+
+[node name="AutosaveFailureOverlay" parent="FailureOverlayHost" unique_id=1589388168 instance=ExtResource("7_6n27o")]
+unique_name_in_owner = true
+
+[node name="Dimmer" type="ColorRect" parent="FailureOverlayHost/AutosaveFailureOverlay" unique_id=695668047]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.007843138, 0.023529412, 0.050980393, 0.9019608)
+
+[node name="Center" type="CenterContainer" parent="FailureOverlayHost/AutosaveFailureOverlay" unique_id=1371435162]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="RecoveryPanel" type="PanelContainer" parent="FailureOverlayHost/AutosaveFailureOverlay/Center" unique_id=208345770]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_q75vh")
+
+[node name="Margin" type="MarginContainer" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel" unique_id=2092553286]
+layout_mode = 2
+theme_override_constants/margin_left = 42
+theme_override_constants/margin_top = 36
+theme_override_constants/margin_right = 42
+theme_override_constants/margin_bottom = 36
+
+[node name="Content" type="VBoxContainer" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin" unique_id=542281677]
+layout_mode = 2
+theme_override_constants/separation = 18
+
+[node name="Title" type="Label" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content" unique_id=802726269]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.81960785, 0.6039216, 1)
+theme_override_font_sizes/font_size = 28
+text = "AUTOSAVE INTERRUPTED"
+horizontal_alignment = 1
+
+[node name="FailureMessage" type="Label" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content" unique_id=1038580908]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.84313726, 0.8862745, 0.93333334, 1)
+theme_override_font_sizes/font_size = 17
+text = "Autosave failed. Authoritative input is paused."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="DiagnosticsText" type="TextEdit" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content" unique_id=339282351]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5686275, 0.65882355, 0.7490196, 1)
+theme_override_colors/background_color = Color(0.03137255, 0.06666667, 0.10980392, 1)
+editable = false
+wrap_mode = 1
+
+[node name="Actions" type="HBoxContainer" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content" unique_id=490778776]
+layout_mode = 2
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="RetryButton" type="Button" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content/Actions" unique_id=67259441]
+unique_name_in_owner = true
+layout_mode = 2
+text = "RETRY SAVE"
+
+[node name="ReturnButton" type="Button" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content/Actions" unique_id=771662626]
+unique_name_in_owner = true
+layout_mode = 2
+text = "RETURN TO LAUNCHER"
+
+[node name="CopyButton" type="Button" parent="FailureOverlayHost/AutosaveFailureOverlay/Center/RecoveryPanel/Margin/Content/Actions" unique_id=1177743639]
+unique_name_in_owner = true
+layout_mode = 2
+text = "COPY DETAILS"

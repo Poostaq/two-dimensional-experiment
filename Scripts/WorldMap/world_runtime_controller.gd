@@ -362,12 +362,22 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
 	_active_battle.exit_requested.connect(_on_battle_closed)
 	_active_battle.battle_completed.connect(_on_battle_completed)
+	_active_battle.reward_selected.connect(_on_reward_selected)
 	_active_battle.reward_confirmed.connect(_on_reward_confirmed)
 	_active_battle.recruitment_placement_requested.connect(_on_recruitment_placement_requested)
 
 
 func _on_battle_completed(_outcome: BattleOutcome.Type) -> void:
 	pass
+
+
+func _on_reward_selected(option: BattleRewardOption) -> void:
+	if (
+		_recruitment_state == RecruitmentState.IDLE
+		and is_instance_valid(option)
+		and option.kind == BattleRewardOption.Kind.RECRUITMENT
+	):
+		_recruitment_state = RecruitmentState.REWARD_SELECTED
 
 
 func _on_reward_confirmed(_option: BattleRewardOption) -> void:

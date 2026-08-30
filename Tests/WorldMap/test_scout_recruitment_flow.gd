@@ -4,6 +4,7 @@ extends SceneTree
 const RUNTIME_SCENE := "res://Scenes/world_map_runtime.tscn"
 const SCOUT_REWARD_ID := &"combat_recruit_scout"
 const SCOUT_ID := &"scout"
+const REWARD_SELECTED_STATE := 1
 const PLACEMENT_OPEN_STATE := 3
 const SAVE_FAILED_STATE := 6
 const REWARD_COMPLETED_STATE := 7
@@ -22,7 +23,11 @@ class FailingOnceRepository:
 		writes.append(bytes.duplicate())
 		if fail_next:
 			fail_next = false
-			return {"ok": false, "value": null, "error": null}
+			return {
+				"ok": false,
+				"value": null,
+				"error": WorldSaveError.new("FORCED_SAVE_FAILURE", "scout recruitment test"),
+			}
 		return {"ok": true, "value": null, "error": null}
 
 
@@ -45,6 +50,10 @@ func _run() -> void:
 
 	var battle := _open_victory_battle(runtime)
 	battle.select_reward(SCOUT_REWARD_ID)
+	_expect(
+		int(runtime.call("get_recruitment_state")) == REWARD_SELECTED_STATE,
+		"Scout selection enters reward_selected before confirmation"
+	)
 	battle.confirm_reward_selection()
 	await process_frame
 	var party_host := runtime.get_node("PartyHost")
@@ -70,6 +79,10 @@ func _run() -> void:
 	await process_frame
 	_expect(party_host.get_child_count() == 0, "ordinary recruitment close routes through cancellation")
 	_expect(runtime.has_active_battle(), "recruitment close never dismisses battle")
+	_expect(
+		int(runtime.call("get_recruitment_state")) == REWARD_SELECTED_STATE,
+		"cancelled placement returns to reward_selected"
+	)
 	_expect(
 		is_instance_valid(battle.get_selected_reward())
 		and battle.get_selected_reward().reward_id == SCOUT_REWARD_ID,
@@ -99,8 +112,35 @@ func _run() -> void:
 	)
 	_expect(runtime.has_active_battle(), "failed save keeps battle open")
 	_expect(runtime.has_active_party_management(), "failed save keeps placement alive")
+	var failure_overlay := runtime.get_node("%AutosaveFailureOverlay") as Control
+	_expect(failure_overlay.visible, "failed save presents the modal failure surface")
+	_expect(
+		failure_overlay.get_canvas_layer_node() is CanvasLayer
+		and (failure_overlay.get_canvas_layer_node() as CanvasLayer).layer
+			> (party_host as CanvasLayer).layer,
+		"save failure surface owns input above placement"
+	)
 	_expect(party_host.get_child(0) == retry_party, "failed save preserves placement instance")
 	_expect(runtime.get("_pending_recruit") == pending_recruit, "failed save preserves recruit instance")
+
+	_expect(runtime.discard_pending_autosave(), "failed recruitment candidate can be discarded")
+	_expect(
+		int(runtime.call("get_recruitment_state")) == PLACEMENT_OPEN_STATE,
+		"discard returns to placement_open"
+	)
+	_expect(not runtime.is_autosave_blocked(), "discard unblocks placement input")
+	_expect(
+		not (runtime.get("_roster") as RunRoster).has_character(SCOUT_ID),
+		"discard preserves the live roster"
+	)
+	_expect(party_host.get_child(0) == retry_party, "discard preserves placement instance")
+	_expect(runtime.get("_pending_recruit") == pending_recruit, "discard preserves recruit instance")
+	repository.fail_next = true
+	retry_party.placement_requested.emit(3, pending_recruit.character_id)
+	_expect(
+		int(runtime.call("get_recruitment_state")) == SAVE_FAILED_STATE,
+		"replacement candidate can be retried after discard"
+	)
 
 	var retried := runtime.retry_autosave()
 	await process_frame
@@ -122,7 +162,57 @@ func _run() -> void:
 		"next battle receives Scout from RunRoster.create_battle_units"
 	)
 	runtime.free()
+	await process_frame
+	await _test_full_roster_replacement()
 	_finish()
+
+
+func _test_full_roster_replacement() -> void:
+	var packed: PackedScene = load(RUNTIME_SCENE) as PackedScene
+	var runtime: WorldRuntimeController = packed.instantiate() as WorldRuntimeController
+	runtime.auto_initialize_runtime = false
+	root.add_child(runtime)
+	await process_frame
+	var full_slots: Array[RunCharacter] = []
+	for index: int in RunRoster.MAX_ROSTER_SIZE:
+		full_slots.append(
+			RunCharacter.new(
+				StringName("full_%d" % index),
+				"Full %d" % index,
+				5 + index,
+				20,
+				[]
+			)
+		)
+	runtime.set("_roster", RunRoster.new(full_slots))
+	var battle := _open_victory_battle(runtime)
+	battle.select_reward(SCOUT_REWARD_ID)
+	battle.confirm_reward_selection()
+	await process_frame
+	var party := runtime.get_node("PartyHost").get_child(0) as PartyManagement
+	var target := full_slots[0]
+	var pending := runtime.get("_pending_recruit") as RunCharacter
+	party.replacement_requested.emit(0, &"stale_occupant", pending.character_id)
+	_expect(
+		(runtime.get("_roster") as RunRoster).get_character_at(0) == target,
+		"stale occupant identity cannot evict a full-roster member"
+	)
+	_expect(
+		int(runtime.call("get_recruitment_state")) == PLACEMENT_OPEN_STATE,
+		"stale replacement keeps placement open"
+	)
+	party.replacement_requested.emit(0, target.character_id, &"stale_recruit")
+	_expect(
+		(runtime.get("_roster") as RunRoster).get_character_at(0) == target,
+		"stale recruit identity cannot replace a full-roster member"
+	)
+	party.replacement_requested.emit(0, target.character_id, pending.character_id)
+	_expect(
+		(runtime.get("_roster") as RunRoster).get_character_at(0).character_id == SCOUT_ID,
+		"valid full-roster replacement publishes Scout"
+	)
+	runtime.free()
+	await process_frame
 
 
 func _create_runtime(
