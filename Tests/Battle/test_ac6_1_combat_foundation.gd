@@ -1,7 +1,7 @@
 class_name Ac6_1CombatFoundationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT: int = 39
+const EXPECTED_TEST_COUNT: int = 40
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -47,6 +47,10 @@ func _test_physical_damage_formula() -> void:
 	_expect(BattleDamageRules.physical_damage(6, 1.20, 2) == 6, "ordinary damage uses ceil")
 	_expect(BattleDamageRules.physical_damage(1, 0.60, 99) == 1, "direct damage minimum is one")
 	_expect(BattleDamageRules.physical_damage(0, 1.0, 0) == -1, "invalid Power is rejected")
+	var attacker := BattleUnitState.new(&"attacker", "Attacker", BattleUnitState.Side.PLAYER, 0, 8, 20, [], 6, 0)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 1, 2)
+	var damage_result := BattleDamageResolver.apply_damage(attacker, target, 4)
+	_expect(damage_result.applied_damage == 4 and damage_result.armor_prevented == 0 and damage_result.was_direct_hit and not damage_result.is_status_damage, "legacy apply_damage remains direct damage")
 
 
 func _test_formation_contract() -> void:

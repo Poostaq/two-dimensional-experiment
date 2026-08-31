@@ -4,7 +4,7 @@ extends SceneTree
 const SOURCE_PATH: String = "res://Scripts/Battle/battle_keyword_source.gd"
 const BLEED_PATH: String = "res://Scripts/Battle/battle_bleed_state.gd"
 const UNIT_STATE_PATH: String = "res://Scripts/Battle/battle_unit_state.gd"
-const EXPECTED_TEST_COUNT: int = 50
+const EXPECTED_TEST_COUNT: int = 59
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -17,6 +17,7 @@ func _init() -> void:
 func _run() -> void:
 	_test_keyword_value_objects()
 	_test_battle_local_keyword_state()
+	_test_armor_aware_damage_results()
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -153,6 +154,45 @@ func _test_battle_local_keyword_state() -> void:
 	unit.clear_battle_local_state()
 	_expect(unit.unit_id == &"scout" and unit.power == 8 and unit.get_base_speed() == 5 and unit.skills.size() == 1, "battle cleanup preserves identity, stats, and skills")
 	_expect(unit.get_armor() == 0 and not unit.has_advantage(4) and not unit.is_snared(4) and unit.get_skill_cooldown(&"knife_work") == 0 and unit.get_effective_speed() == 5 and unit.get_bleed_snapshot().is_empty(), "battle cleanup removes local keyword state")
+
+
+func _test_armor_aware_damage_results() -> void:
+	var resolver_script := load("res://Scripts/Battle/battle_damage_resolver.gd") as Script
+	var has_direct := _script_has_static_method(resolver_script, &"apply_direct_damage")
+	var has_status := _script_has_static_method(resolver_script, &"apply_status_damage")
+	_expect(has_direct, "damage resolver exposes direct damage")
+	_expect(has_status, "damage resolver exposes status damage")
+	if not has_direct or not has_status:
+		return
+	var attacker := BattleUnitState.new(&"attacker", "Attacker", BattleUnitState.Side.PLAYER, 0, 8, 20, [], 6, 0)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 1, 2)
+	target.add_armor(3)
+	var partial: RefCounted = resolver_script.call("apply_direct_damage", attacker, target, 5)
+	_expect(partial.get("requested_damage") == 5, "direct result keeps post-Defense request")
+	_expect(partial.get("armor_prevented") == 3, "Armor prevents direct damage first")
+	_expect(partial.get("applied_damage") == 2 and target.current_hp == 18 and target.get_armor() == 0, "direct damage applies after Armor")
+	_expect(partial.get("was_direct_hit") and not partial.get("is_status_damage"), "direct hit classification survives absorption")
+	target = BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 1, 2)
+	target.add_armor(10)
+	var absorbed: RefCounted = resolver_script.call("apply_direct_damage", attacker, target, 4)
+	_expect(absorbed.get("applied_damage") == 0 and absorbed.get("armor_prevented") == 4 and target.current_hp == 20 and target.get_armor() == 6 and absorbed.get("was_direct_hit"), "fully absorbed direct damage still counts as a hit")
+	target.current_hp = 3
+	var overkill: RefCounted = resolver_script.call("apply_direct_damage", attacker, target, 10)
+	_expect(overkill.get("armor_prevented") == 6 and overkill.get("applied_damage") == 3 and target.current_hp == 0 and overkill.get("caused_defeat"), "overkill reports actual HP loss after Armor")
+	target = BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 1, 2)
+	target.current_hp = 10
+	target.add_armor(5)
+	var status: RefCounted = resolver_script.call("apply_status_damage", attacker, target, 4)
+	_expect(status.get("applied_damage") == 4 and target.current_hp == 6 and target.get_armor() == 5 and status.get("is_status_damage") and not status.get("was_direct_hit"), "status damage bypasses Armor")
+
+
+func _script_has_static_method(script: Script, method_name: StringName) -> bool:
+	if not is_instance_valid(script):
+		return false
+	for method: Dictionary in script.get_script_method_list():
+		if method.get("name", &"") == method_name:
+			return true
+	return false
 
 
 func _has_bleed_tick(ticks: Array[RefCounted], source_unit_id: StringName, expected_stacks: int, expected_damage: int) -> bool:
