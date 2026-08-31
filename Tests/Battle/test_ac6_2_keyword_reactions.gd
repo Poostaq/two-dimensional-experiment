@@ -8,7 +8,8 @@ const OPERATION_PATH: String = "res://Scripts/Battle/battle_keyword_operation.gd
 const HISTORY_QUERY_PATH: String = "res://Scripts/Battle/battle_history_query.gd"
 const REACTION_DEFINITION_PATH: String = "res://Scripts/Battle/battle_reaction_definition.gd"
 const REACTION_DISPATCHER_PATH: String = "res://Scripts/Battle/battle_reaction_dispatcher.gd"
-const EXPECTED_TEST_COUNT: int = 93
+const ARENA_PATH: String = "res://Scenes/battle_arena.tscn"
+const EXPECTED_TEST_COUNT: int = 113
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -26,6 +27,7 @@ func _run() -> void:
 	_test_keyword_skill_and_plan_contract()
 	_test_history_query_contract()
 	_test_passive_reaction_dispatch_contract()
+	await _test_arena_ordered_keyword_lifecycle()
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -194,6 +196,112 @@ func _test_passive_reaction_dispatch_contract() -> void:
 	_expect(dispatcher_script.call("collect_reactions", trigger, [defender_a], 1, 0).is_empty(), "once-per-action guard prevents duplicate dispatch")
 	defender_a.clear_battle_local_state()
 	_expect(dispatcher_script.call("collect_reactions", trigger, [defender_a], 1, 2).is_empty(), "dispatcher blocks undeclared reaction chains")
+
+
+func _test_arena_ordered_keyword_lifecycle() -> void:
+	var arena := await _instantiate_arena()
+	_expect(arena != null, "arena fixture instantiates for AC6.2 transaction coverage")
+	if arena == null:
+		return
+	var source_script := load(SOURCE_PATH) as Script
+	var operation_script := load(OPERATION_PATH) as Script
+	var definition_script := load(REACTION_DEFINITION_PATH) as Script
+	var pre_source: RefCounted = source_script.call("create", &"marker", &"marked_target", 10)
+	var actor_source: RefCounted = source_script.call("create", &"actor", &"goblin_combo", 8)
+	var advantage_rider: RefCounted = operation_script.call("create", 0, &"actor", 2, 0, null, &"")
+	var post_advantage: RefCounted = operation_script.call("create", 1, &"target", 0, 1, actor_source, &"")
+	var post_snare: RefCounted = operation_script.call("create", 2, &"target", 0, 1, actor_source, &"")
+	var post_bleed: RefCounted = operation_script.call("create", 3, &"target", 0, 2, actor_source, &"")
+	var cooldown_cut: RefCounted = operation_script.call("create", 4, &"actor", 2, 0, null, &"backup")
+	var passive_armor: RefCounted = operation_script.call("create", 0, &"guard", 2, 0, null, &"")
+	var reaction: RefCounted = definition_script.call("create", &"watcher", 0, 0, 1, passive_armor, false)
+	var combo := CharacterSkill.create(
+		&"goblin_combo", "Goblin Combo", CharacterSkill.Kind.ACTIVE,
+		"Deal damage and apply keywords.", "One enemy.", "None.", "Two actions.",
+		CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE, 8, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS, 2, 0, null,
+		[post_advantage, post_snare, post_bleed, cooldown_cut], advantage_rider
+	)
+	var backup := CharacterSkill.create(
+		&"backup", "Backup", CharacterSkill.Kind.ACTIVE,
+		"Fallback.", "One enemy.", "None.", "None.",
+		CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE, 1, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE, 0
+	)
+	var watcher := CharacterSkill.create(
+		&"watcher", "Watcher", CharacterSkill.Kind.PASSIVE,
+		"React.", "Self.", "None.", "None.",
+		-1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0,
+		CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0,
+		null, [], null, reaction
+	)
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 8, 20, [combo, backup], 8, 0)
+	var guard := BattleUnitState.new(&"guard", "Guard", BattleUnitState.Side.PLAYER, 1, 4, 20, [watcher], 5, 0)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 4, 0)
+	var enemy_late := BattleUnitState.new(&"enemy_late", "Enemy Late", BattleUnitState.Side.ENEMY, 1, 1, 20, [], 1, 0)
+	target.add_armor(3)
+	target.apply_advantage(pre_source, 1)
+	target.apply_bleed(pre_source, 2)
+	actor.set_skill_cooldown(&"backup", 3)
+	arena.configure_units([actor, guard, target, enemy_late])
+	arena.begin_skill_action(&"actor", &"goblin_combo")
+	arena.select_skill_target(&"target")
+	var committed: bool = arena.confirm_skill_action()
+	var records: Array[BattleActionRecord] = arena.get_action_records()
+	_expect(committed, "arena commits a valid AC6.2 keyword transaction")
+	_expect(target.get_armor() == 0 and target.current_hp == 11, "arena resolves Armor direct damage before Bleed ticks")
+	_expect(actor.get_armor() == 2, "arena consumes pre-existing Advantage and applies its rider")
+	_expect(target.has_advantage(1), "post-hit Advantage remains for later actions")
+	_expect(target.is_snared(1), "post-hit Snared applies after damage")
+	_expect(target.get_bleed_snapshot().size() == 1, "Bleed remains after its first affected action tick")
+	_expect(actor.get_skill_cooldown(&"backup") == 1, "keyword cooldown reduction applies during the transaction")
+	_expect(guard.get_armor() == 2, "Passive reaction operation applies deterministically")
+	_expect(records.size() == 1, "arena appends one authoritative record for the transaction")
+	if not records.is_empty():
+		var record := records[0]
+		_expect(record.source_skill_id == &"goblin_combo" and record.direct_hit_by_target.get(&"target", false), "arena record includes source skill and direct-hit metadata")
+		_expect(record.advantage_consumed != null and record.advantage_consumed.get("source_unit_id") == &"marker", "arena record captures consumed Advantage source")
+		_expect(record.keyword_deltas.size() >= 5, "arena record captures keyword and reaction deltas")
+		_expect(record.bleed_ticks.size() == 2, "arena record captures affected-unit Bleed ticks")
+	var stale_hp: int = target.current_hp
+	var stale_armor: int = target.get_armor()
+	var stale_revision: int = arena.get_battle_revision()
+	arena.begin_skill_action(&"guard", &"watcher")
+	arena.notify_authoritative_battle_change()
+	var stale_committed: bool = arena.confirm_skill_action()
+	_expect(not stale_committed, "stale or rejected actions do not commit")
+	_expect(target.current_hp == stale_hp and target.get_armor() == stale_armor and arena.get_battle_revision() == stale_revision + 1, "stale rejection changes no combat state beyond the explicit revision bump")
+	arena.advance_turn()
+	arena.advance_turn()
+	arena.advance_turn()
+	_expect(not target.has_advantage(2) and not target.is_snared(2), "round cleanup expires Advantage and Snared")
+	arena.queue_free()
+	await process_frame
+	var cleanup_arena := await _instantiate_arena()
+	var finisher := CharacterSkill.create(
+		&"finish", "Finish", CharacterSkill.Kind.ACTIVE,
+		"Finish.", "One enemy.", "None.", "None.",
+		CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE, 8, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE, 0
+	)
+	var cleanup_actor := BattleUnitState.new(&"cleanup_actor", "Cleanup Actor", BattleUnitState.Side.PLAYER, 0, 8, 20, [finisher], 8, 0)
+	var cleanup_enemy := BattleUnitState.new(&"cleanup_enemy", "Cleanup Enemy", BattleUnitState.Side.ENEMY, 0, 1, 3, [], 1, 0)
+	cleanup_enemy.add_armor(1)
+	cleanup_enemy.apply_bleed(pre_source, 2)
+	cleanup_arena.configure_units([cleanup_actor, cleanup_enemy])
+	cleanup_arena.begin_skill_action(&"cleanup_actor", &"finish")
+	cleanup_arena.select_skill_target(&"cleanup_enemy")
+	var killed: bool = cleanup_arena.confirm_skill_action()
+	_expect(killed and cleanup_arena.is_battle_complete(), "battle completion resolves immediately after defeat")
+	_expect(cleanup_actor.get_armor() == 0 and cleanup_enemy.get_armor() == 0 and cleanup_enemy.get_bleed_snapshot().is_empty(), "battle teardown clears local keyword state")
+	cleanup_arena.queue_free()
+	await process_frame
 
 
 func _test_history_query_contract() -> void:
@@ -396,6 +504,17 @@ func _test_armor_aware_damage_results() -> void:
 	target.add_armor(5)
 	var status: RefCounted = resolver_script.call("apply_status_damage", attacker, target, 4)
 	_expect(status.get("applied_damage") == 4 and target.current_hp == 6 and target.get_armor() == 5 and status.get("is_status_damage") and not status.get("was_direct_hit"), "status damage bypasses Armor")
+
+
+func _instantiate_arena() -> BattleArena:
+	var packed := load(ARENA_PATH) as PackedScene
+	if packed == null:
+		return null
+	var arena := packed.instantiate() as BattleArena
+	if is_instance_valid(arena):
+		root.add_child(arena)
+		await process_frame
+	return arena
 
 
 func _script_method_min_arg_count(script: Script, method_name: StringName) -> int:

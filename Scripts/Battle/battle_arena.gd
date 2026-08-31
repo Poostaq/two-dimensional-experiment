@@ -404,7 +404,7 @@ func confirm_default_attack(
 		return false
 	_action_in_progress = true
 	var action_round: int = round_number
-	var result: BattleDamageResult = BattleDamageResolver.apply_damage(
+	var result: BattleDamageResult = BattleDamageResolver.apply_direct_damage(
 		actor,
 		target,
 		requested_damage
@@ -447,7 +447,15 @@ func confirm_default_attack(
 	var damage_by_target: Dictionary[StringName, int] = {
 		target.unit_id: result.applied_damage,
 	}
+	var affected_units: Dictionary[StringName, BattleUnitState] = {
+		target.unit_id: target,
+	}
+	var bleed_ticks: Array[RefCounted] = _resolve_bleed_ticks_for_units(actor, affected_units, action_round, damage_by_target)
 	var empty_slots: Dictionary[StringName, int] = {}
+	var direct_hit_by_target: Dictionary[StringName, bool] = {
+		target.unit_id: result.was_direct_hit,
+	}
+	var empty_keyword_deltas: Array[Dictionary] = []
 	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
 	var action_record: BattleActionRecord = action_record_script.new(
 		BattleActionRecord.Kind.DEFAULT_ATTACK,
@@ -457,7 +465,16 @@ func confirm_default_attack(
 		empty_slots,
 		empty_slots,
 		action_round,
-		_battle_revision
+		_battle_revision,
+		_battle_revision,
+		actor.side,
+		&"default_attack",
+		false,
+		direct_hit_by_target,
+		empty_keyword_deltas,
+		null,
+		bleed_ticks,
+		false
 	) as BattleActionRecord
 	if not is_instance_valid(action_record) or not action_record.is_valid():
 		_action_in_progress = false
@@ -806,18 +823,33 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
 		if not is_instance_valid(target) or not target.is_active():
 			return false
+	for operation: RefCounted in plan.keyword_operations:
+		var target: BattleUnitState = get_unit_by_id(operation.get("target_id"))
+		if not is_instance_valid(target) or not target.is_active():
+			return false
 	_action_in_progress = true
 	var action_round: int = round_number
 	var action_damage_results: Array[BattleDamageResult] = []
 	var action_base_damage_by_target: Dictionary[StringName, int] = {}
 	var action_combo_bonus_damage_by_target: Dictionary[StringName, int] = {}
 	var action_speed_target_ids: Array[StringName] = []
+	var keyword_deltas: Array[Dictionary] = []
+	var direct_hit_by_target: Dictionary[StringName, bool] = {}
+	var affected_units: Dictionary[StringName, BattleUnitState] = {}
+	var advantage_consumed: RefCounted = null
+	if is_instance_valid(plan.advantage_rider) and not plan.damage_operations.is_empty():
+		var marked_target: BattleUnitState = get_unit_by_id(plan.damage_operations[0].get("target_id", &""))
+		if is_instance_valid(marked_target):
+			advantage_consumed = marked_target.consume_advantage(action_round)
+			if is_instance_valid(advantage_consumed):
+				_apply_keyword_operation(plan.advantage_rider, action_round, keyword_deltas, false)
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
 		var target_id: StringName = operation[&"target_id"]
 		action_base_damage_by_target[target_id] = int(operation[&"base_damage"])
 		action_combo_bonus_damage_by_target[target_id] = int(operation[&"combo_bonus_damage"])
-		var result: BattleDamageResult = BattleDamageResolver.apply_damage(
+		affected_units[target_id] = target
+		var result: BattleDamageResult = BattleDamageResolver.apply_direct_damage(
 			actor,
 			target,
 			int(operation[&"total_requested_damage"])
@@ -825,6 +857,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		if not is_instance_valid(result):
 			_action_in_progress = false
 			return false
+		direct_hit_by_target[target_id] = result.was_direct_hit
 		action_damage_results.append(result)
 		var entry := BattleLogEntry.new(
 			_battle_log_entries.size() + 1,
@@ -847,6 +880,8 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		)
 		if target == actor:
 			new_actor_speed_sources.append(operation["source_id"])
+	for operation: RefCounted in plan.keyword_operations:
+		_apply_keyword_operation(operation, action_round, keyword_deltas, false)
 	if plan.cooldown_actions > 0:
 		actor.set_skill_cooldown(plan.skill_id, plan.cooldown_actions)
 	var excluded_cooldowns: Array[StringName] = []
@@ -854,6 +889,36 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		excluded_cooldowns.append(plan.skill_id)
 	actor.tick_skill_cooldowns(excluded_cooldowns)
 	actor.expire_speed_modifiers_after_action(new_actor_speed_sources)
+	var damage_by_target: Dictionary[StringName, int] = {}
+	for result: BattleDamageResult in action_damage_results:
+		damage_by_target[result.receiver_id] = result.applied_damage
+	var bleed_ticks: Array[RefCounted] = _resolve_bleed_ticks_for_units(actor, affected_units, action_round, damage_by_target)
+	var empty_slots: Dictionary[StringName, int] = {}
+	var next_revision: int = _battle_revision + 1
+	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
+	var action_record: BattleActionRecord = action_record_script.new(
+		BattleActionRecord.Kind.SKILL,
+		actor.unit_id,
+		plan.target_ids,
+		damage_by_target,
+		empty_slots,
+		empty_slots,
+		action_round,
+		next_revision,
+		next_revision,
+		actor.side,
+		plan.skill_id,
+		false,
+		direct_hit_by_target,
+		keyword_deltas,
+		advantage_consumed,
+		bleed_ticks,
+		false
+	) as BattleActionRecord
+	if not is_instance_valid(action_record) or not action_record.is_valid():
+		_action_in_progress = false
+		return false
+	_dispatch_passive_reactions(action_record, action_round, keyword_deltas)
 	var action_entry := BattleActionLogEntry.new(
 		_battle_action_log_entries.size() + 1,
 		action_round,
@@ -868,7 +933,8 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_action_has_combo_bonus(action_combo_bonus_damage_by_target)
 	)
 	_battle_action_log_entries.append(action_entry)
-	_battle_revision += 1
+	_battle_revision = next_revision
+	_action_records.append(action_record)
 	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
 	if resolved_outcome == BattleOutcome.Type.IN_PROGRESS and plan.advance_turn:
 		_advance_after_action(actor.unit_id)
@@ -877,6 +943,101 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	_action_in_progress = false
 	_refresh_turn_ui()
 	return true
+
+
+func _apply_keyword_operation(
+	operation: RefCounted,
+	action_round: int,
+	keyword_deltas: Array[Dictionary],
+	from_reaction: bool
+) -> bool:
+	if not is_instance_valid(operation):
+		return false
+	var target: BattleUnitState = get_unit_by_id(operation.get("target_id"))
+	if not is_instance_valid(target) or not target.is_active():
+		return false
+	var applied: bool = false
+	match int(operation.get("kind")):
+		BattleKeywordOperation.Kind.ADD_ARMOR:
+			var armor_added: int = target.add_armor(int(operation.get("magnitude")))
+			applied = armor_added >= 0
+			keyword_deltas.append(_keyword_delta(operation, target.unit_id, armor_added, from_reaction))
+		BattleKeywordOperation.Kind.APPLY_ADVANTAGE:
+			applied = target.apply_advantage(operation.get("source") as RefCounted, action_round + max(1, int(operation.get("duration"))) - 1)
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+		BattleKeywordOperation.Kind.APPLY_SNARED:
+			applied = target.apply_snared(operation.get("source") as RefCounted, action_round + max(1, int(operation.get("duration"))) - 1)
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+		BattleKeywordOperation.Kind.APPLY_BLEED:
+			applied = target.apply_bleed(operation.get("source") as RefCounted, max(1, int(operation.get("duration"))))
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+		BattleKeywordOperation.Kind.REDUCE_COOLDOWN:
+			var remaining: int = target.reduce_skill_cooldown(operation.get("affected_skill_id"), int(operation.get("magnitude")))
+			applied = true
+			keyword_deltas.append(_keyword_delta(operation, target.unit_id, remaining, from_reaction))
+		_:
+			applied = false
+	return applied
+
+
+func _keyword_delta(
+	operation: RefCounted,
+	target_id: StringName,
+	value: int,
+	from_reaction: bool
+) -> Dictionary:
+	return {
+		&"kind": int(operation.get("kind")),
+		&"target_id": target_id,
+		&"value": value,
+		&"affected_skill_id": operation.get("affected_skill_id"),
+		&"from_reaction": from_reaction,
+	}
+
+
+func _resolve_bleed_ticks_for_units(
+	actor: BattleUnitState,
+	affected_units: Dictionary[StringName, BattleUnitState],
+	action_round: int,
+	damage_by_target: Dictionary[StringName, int]
+) -> Array[RefCounted]:
+	var ticks: Array[RefCounted] = []
+	for target: BattleUnitState in affected_units.values():
+		if not is_instance_valid(target) or not target.is_active():
+			continue
+		for tick: RefCounted in target.resolve_bleed_after_committed_action():
+			var source_unit: BattleUnitState = _unit_for_keyword_source(tick.get("source") as RefCounted)
+			if not is_instance_valid(source_unit) or source_unit.side == target.side:
+				source_unit = actor
+			var status_result: BattleDamageResult = BattleDamageResolver.apply_status_damage(source_unit, target, int(tick.call("tick_damage")))
+			if not is_instance_valid(status_result):
+				continue
+			damage_by_target[target.unit_id] = int(damage_by_target.get(target.unit_id, 0)) + status_result.applied_damage
+			ticks.append(tick)
+	return ticks
+
+
+func _unit_for_keyword_source(source: RefCounted) -> BattleUnitState:
+	if not is_instance_valid(source):
+		return null
+	return get_unit_by_id(source.get("source_unit_id"))
+
+
+func _dispatch_passive_reactions(
+	action_record: BattleActionRecord,
+	action_round: int,
+	keyword_deltas: Array[Dictionary]
+) -> void:
+	var dispatcher_script: Script = load("res://Scripts/Battle/battle_reaction_dispatcher.gd")
+	if not is_instance_valid(dispatcher_script):
+		return
+	var reactions: Array[RefCounted] = dispatcher_script.call("collect_reactions", action_record, _units, action_round, 0)
+	for reaction: RefCounted in reactions:
+		var reaction_operation: RefCounted = reaction.get("operation") as RefCounted
+		_apply_keyword_operation(reaction_operation, action_round, keyword_deltas, true)
 
 
 func _action_has_combo_bonus(bonus_by_target: Dictionary[StringName, int]) -> bool:
@@ -1200,6 +1361,9 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	_battle_outcome = outcome
 	_turn_queue.clear()
 	_current_turn_index = 0
+	for unit: BattleUnitState in _units:
+		if is_instance_valid(unit):
+			unit.clear_battle_local_state()
 	battle_completed.emit(_battle_outcome)
 	if _battle_outcome == BattleOutcome.Type.VICTORY:
 		_show_victory_rewards()
@@ -1284,6 +1448,7 @@ func _expire_round_modifiers(completed_round: int) -> void:
 	for unit: BattleUnitState in _units:
 		if is_instance_valid(unit):
 			unit.expire_speed_modifiers_for_round(completed_round)
+			unit.clear_round_keywords(completed_round)
 
 
 func _get_control_children(formation: GridContainer) -> Array[Control]:
