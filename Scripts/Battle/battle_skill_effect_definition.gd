@@ -36,6 +36,9 @@ var magnitude: int:
 var duration: int:
 	get:
 		return _duration
+var arms_snared_follow_up: bool:
+	get:
+		return _arms_snared_follow_up
 
 var _kind: Kind = Kind.DAMAGE
 var _target_role: TargetRole = TargetRole.ACTOR
@@ -44,6 +47,7 @@ var _advantage_power_percent: int = 0
 var _keyword_kind: BattleKeywordOperation.Kind = BattleKeywordOperation.Kind.ADD_ARMOR
 var _magnitude: int = 0
 var _duration: int = 0
+var _arms_snared_follow_up: bool = false
 var _is_valid: bool = false
 
 
@@ -54,7 +58,8 @@ func _init(
 	advantage_percent: int = 0,
 	operation_kind: int = BattleKeywordOperation.Kind.ADD_ARMOR,
 	effect_magnitude: int = 0,
-	effect_duration: int = 0
+	effect_duration: int = 0,
+	arm_snared_follow_up: bool = false
 ) -> void:
 	if not _is_valid_input(
 		effect_kind,
@@ -63,7 +68,8 @@ func _init(
 		advantage_percent,
 		operation_kind,
 		effect_magnitude,
-		effect_duration
+		effect_duration,
+		arm_snared_follow_up
 	):
 		return
 	_kind = effect_kind as Kind
@@ -73,6 +79,7 @@ func _init(
 	_keyword_kind = operation_kind as BattleKeywordOperation.Kind
 	_magnitude = effect_magnitude
 	_duration = effect_duration
+	_arms_snared_follow_up = arm_snared_follow_up
 	_is_valid = true
 
 
@@ -88,7 +95,8 @@ static func keyword(
 	role: int,
 	operation_kind: int,
 	effect_magnitude: int = 0,
-	effect_duration: int = 0
+	effect_duration: int = 0,
+	arm_snared_follow_up: bool = false
 ) -> RefCounted:
 	return _create(
 		Kind.KEYWORD,
@@ -97,7 +105,8 @@ static func keyword(
 		0,
 		operation_kind,
 		effect_magnitude,
-		effect_duration
+		effect_duration,
+		arm_snared_follow_up
 	)
 
 
@@ -135,7 +144,8 @@ func duplicate_definition() -> RefCounted:
 		_advantage_power_percent,
 		_keyword_kind,
 		_magnitude,
-		_duration
+		_duration,
+		_arms_snared_follow_up
 	)
 
 
@@ -146,7 +156,8 @@ static func _create(
 	advantage_percent: int = 0,
 	operation_kind: int = BattleKeywordOperation.Kind.ADD_ARMOR,
 	effect_magnitude: int = 0,
-	effect_duration: int = 0
+	effect_duration: int = 0,
+	arm_snared_follow_up: bool = false
 ) -> RefCounted:
 	var definition: RefCounted = load("res://Scripts/Battle/battle_skill_effect_definition.gd").new(
 		effect_kind,
@@ -155,7 +166,8 @@ static func _create(
 		advantage_percent,
 		operation_kind,
 		effect_magnitude,
-		effect_duration
+		effect_duration,
+		arm_snared_follow_up
 	)
 	return definition if definition.is_valid() else null
 
@@ -167,11 +179,14 @@ static func _is_valid_input(
 	advantage_percent: int,
 	operation_kind: int,
 	effect_magnitude: int,
-	effect_duration: int
+	effect_duration: int,
+	arm_snared_follow_up: bool
 ) -> bool:
 	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE]:
 		return false
 	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY]:
+		return false
+	if arm_snared_follow_up and (effect_kind != Kind.KEYWORD or operation_kind != BattleKeywordOperation.Kind.APPLY_SNARED):
 		return false
 	match effect_kind:
 		Kind.DAMAGE:

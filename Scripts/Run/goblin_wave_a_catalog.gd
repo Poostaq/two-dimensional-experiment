@@ -180,7 +180,8 @@ static func _snarewright_skills() -> Array[CharacterSkill]:
 					effect_script.TargetRole.PRIMARY,
 					BattleKeywordOperation.Kind.APPLY_SNARED,
 					0,
-					1
+					1,
+					true
 				),
 			]
 		),

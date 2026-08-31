@@ -6,12 +6,17 @@ const EFFECT_DEFINITION_PATH := "res://Scripts/Battle/battle_skill_effect_defini
 const CONDITION_PATH := "res://Scripts/Battle/battle_skill_condition.gd"
 const AUTHORING_RESOLVER_PATH := "res://Scripts/Battle/battle_skill_authoring_resolver.gd"
 const WAVE_A_CATALOG_PATH := "res://Scripts/Run/goblin_wave_a_catalog.gd"
+const ARENA_PATH := "res://Scenes/battle_arena.tscn"
 
 var _failures: Array[String] = []
 var _assertions: int = 0
 
 
 func _init() -> void:
+	call_deferred("_run")
+
+
+func _run() -> void:
 	_test_authoring_value_objects()
 	_test_character_skill_authoring()
 	_test_advantage_damage_definition()
@@ -19,6 +24,8 @@ func _init() -> void:
 	_test_authored_target_profiles()
 	_test_multi_target_and_movement_transaction()
 	_test_wave_a_catalog()
+	_test_tripline_follow_up_contract()
+	await _test_arena_authored_resolution()
 	if _failures.is_empty():
 		print("AC6.3 Goblin wave A: %d/%d assertions passed." % [_assertions, _assertions])
 		quit(0)
@@ -509,6 +516,95 @@ func _test_wave_a_catalog() -> void:
 	_expect(catalog_script.create_by_class_id(&"unknown") == null, "unknown Wave A class rejects")
 	_expect(is_instance_valid(RunCharacterCatalog.create_by_class_id(&"snarewright")), "root catalog delegates Wave A ID")
 	_expect(RunCharacterCatalog.create_by_class_id(&"unknown") == null, "root catalog rejects unknown class ID")
+
+
+func _test_tripline_follow_up_contract() -> void:
+	var effect_script := load(EFFECT_DEFINITION_PATH) as Script
+	var tripline_effect: RefCounted = effect_script.keyword(
+		effect_script.TargetRole.PRIMARY,
+		BattleKeywordOperation.Kind.APPLY_SNARED,
+		0,
+		1,
+		true
+	)
+	_expect(is_instance_valid(tripline_effect), "Tripline Snared definition is valid")
+	_expect(tripline_effect.arms_snared_follow_up, "Tripline definition explicitly arms its follow-up")
+	var source := BattleKeywordSource.create(&"snarewright", &"tripline_tag", 4)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5)
+	_expect(target.apply_snared(source, 1, true), "Tripline applies Snared and arms the follow-up")
+	_expect(target.has_snared_follow_up(1), "Snared target exposes an armed follow-up")
+	var consumed: RefCounted = target.consume_snared_follow_up(1)
+	_expect(is_instance_valid(consumed) and consumed.source_skill_id == &"tripline_tag", "first allied direct hit consumes the Tripline source")
+	_expect(not target.has_snared_follow_up(1), "Tripline follow-up is one-shot per application")
+	_expect(target.consume_snared_follow_up(1) == null, "later direct hits cannot consume the same application")
+	_expect(target.is_snared(1), "consuming the follow-up does not remove Snared")
+	_expect(target.apply_snared(source, 1, true) and target.has_snared_follow_up(1), "reapplying Tripline rearms the follow-up")
+
+
+func _test_arena_authored_resolution() -> void:
+	var catalog_script := load(WAVE_A_CATALOG_PATH) as Script
+	var snarewright: RunCharacter = catalog_script.create_by_class_id(&"snarewright")
+	var basic_hit := CharacterSkill.create(
+		&"basic_hit",
+		"Basic Hit",
+		CharacterSkill.Kind.ACTIVE,
+		"Deal 3 damage.",
+		"One enemy.",
+		"None",
+		"None",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		3
+	)
+	var trapper := BattleUnitState.new(&"trapper", "Trapper", BattleUnitState.Side.PLAYER, 0, 9, 16, snarewright.get_skills(), 4, 1)
+	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 8, 20, [basic_hit], 4, 0)
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 1, 20, [], 4, 0)
+	var arena := await _instantiate_arena()
+	_expect(is_instance_valid(arena), "battle arena instantiates for authored resolution")
+	if not is_instance_valid(arena):
+		return
+	arena.configure_units([trapper, ally, enemy])
+	arena.begin_skill_action(trapper.unit_id, &"tripline_tag")
+	arena.select_skill_target(enemy.unit_id)
+	_expect(arena.confirm_skill_action(), "Tripline Tag commits through the authoritative arena")
+	_expect(enemy.is_snared(1) and enemy.has_snared_follow_up(1), "Tripline commit arms Snared follow-up")
+	_expect(arena.get_current_unit() == ally, "ally owns the turn after Tripline")
+	_expect(arena.begin_skill_action(ally.unit_id, &"basic_hit"), "allied direct-hit preview opens")
+	_expect(arena.select_skill_target(enemy.unit_id), "allied direct-hit target locks")
+	var hp_before: int = enemy.current_hp
+	_expect(arena.confirm_skill_action(), "allied direct hit commits after Tripline")
+	_expect(enemy.current_hp == hp_before - 3, "Tripline follow-up applies after direct damage")
+	_expect(enemy.has_advantage(1), "first later allied direct hit applies Advantage")
+	_expect(not enemy.has_snared_follow_up(1) and enemy.is_snared(1), "follow-up consumption preserves Snared")
+	arena.queue_free()
+	await process_frame
+
+	var ring_arena := await _instantiate_arena()
+	var ring_actor := BattleUnitState.new(&"ring_actor", "Ring Actor", BattleUnitState.Side.PLAYER, 0, 9, 16, snarewright.get_skills(), 4, 1)
+	var enemy_a := BattleUnitState.new(&"enemy_a", "Enemy A", BattleUnitState.Side.ENEMY, 0, 2)
+	var enemy_b := BattleUnitState.new(&"enemy_b", "Enemy B", BattleUnitState.Side.ENEMY, 1, 1)
+	ring_arena.configure_units([ring_actor, enemy_a, enemy_b])
+	ring_arena.begin_skill_action(ring_actor.unit_id, &"ring_net")
+	ring_arena.select_skill_target(enemy_a.unit_id)
+	ring_arena.select_skill_target(enemy_b.unit_id)
+	_expect(ring_arena.confirm_skill_action(), "Ring Net commits with two selected enemies")
+	_expect(enemy_a.is_snared(1) and enemy_b.is_snared(1), "Ring Net applies Snared to both locked targets")
+	ring_arena.queue_free()
+	await process_frame
+
+
+func _instantiate_arena() -> BattleArena:
+	var packed := load(ARENA_PATH) as PackedScene
+	if packed == null:
+		return null
+	var arena := packed.instantiate() as BattleArena
+	if is_instance_valid(arena):
+		root.add_child(arena)
+		await process_frame
+	return arena
 
 
 func _authored_test_skill(

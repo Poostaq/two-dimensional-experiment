@@ -27,6 +27,9 @@ var source: RefCounted:
 var affected_skill_id: StringName:
 	get:
 		return _affected_skill_id
+var arms_snared_follow_up: bool:
+	get:
+		return _arms_snared_follow_up
 
 var _kind: Kind = Kind.ADD_ARMOR
 var _target_id: StringName = &""
@@ -34,6 +37,7 @@ var _magnitude: int = 0
 var _duration: int = 0
 var _source: RefCounted = null
 var _affected_skill_id: StringName = &""
+var _arms_snared_follow_up: bool = false
 
 
 func _init(
@@ -42,7 +46,8 @@ func _init(
 	operation_magnitude: int = 0,
 	operation_duration: int = 0,
 	operation_source: RefCounted = null,
-	operation_affected_skill_id: StringName = &""
+	operation_affected_skill_id: StringName = &"",
+	arm_snared_follow_up: bool = false
 ) -> void:
 	if not _is_valid_input(
 		operation_kind,
@@ -50,7 +55,8 @@ func _init(
 		operation_magnitude,
 		operation_duration,
 		operation_source,
-		operation_affected_skill_id
+		operation_affected_skill_id,
+		arm_snared_follow_up
 	):
 		push_error("BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.")
 		return
@@ -60,6 +66,7 @@ func _init(
 	_duration = operation_duration
 	_source = operation_source.call("duplicate_source") if is_instance_valid(operation_source) else null
 	_affected_skill_id = operation_affected_skill_id
+	_arms_snared_follow_up = arm_snared_follow_up
 
 
 static func create(
@@ -68,7 +75,8 @@ static func create(
 	operation_magnitude: int = 0,
 	operation_duration: int = 0,
 	operation_source: RefCounted = null,
-	operation_affected_skill_id: StringName = &""
+	operation_affected_skill_id: StringName = &"",
+	arm_snared_follow_up: bool = false
 ) -> RefCounted:
 	var operation: RefCounted = load("res://Scripts/Battle/battle_keyword_operation.gd").new(
 		operation_kind,
@@ -76,7 +84,8 @@ static func create(
 		operation_magnitude,
 		operation_duration,
 		operation_source,
-		operation_affected_skill_id
+		operation_affected_skill_id,
+		arm_snared_follow_up
 	)
 	return operation if operation.is_valid() else null
 
@@ -89,7 +98,7 @@ func duplicate_operation() -> RefCounted:
 	if not is_valid():
 		return null
 	var operation_script := load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
-	return operation_script.call("create", _kind, _target_id, _magnitude, _duration, _source, _affected_skill_id)
+	return operation_script.call("create", _kind, _target_id, _magnitude, _duration, _source, _affected_skill_id, _arms_snared_follow_up)
 
 
 static func _is_valid_input(
@@ -98,7 +107,8 @@ static func _is_valid_input(
 	operation_magnitude: int,
 	operation_duration: int,
 	operation_source: RefCounted,
-	operation_affected_skill_id: StringName
+	operation_affected_skill_id: StringName,
+	arm_snared_follow_up: bool
 ) -> bool:
 	if operation_kind not in [
 		Kind.ADD_ARMOR,
@@ -107,6 +117,8 @@ static func _is_valid_input(
 		Kind.APPLY_BLEED,
 		Kind.REDUCE_COOLDOWN,
 	] or operation_target_id.is_empty():
+		return false
+	if arm_snared_follow_up and operation_kind != Kind.APPLY_SNARED:
 		return false
 	match operation_kind:
 		Kind.ADD_ARMOR:

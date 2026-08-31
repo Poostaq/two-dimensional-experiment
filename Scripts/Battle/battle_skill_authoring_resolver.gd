@@ -95,7 +95,9 @@ static func build_plan(
 						target.unit_id,
 						int(authored_effect.get("magnitude")),
 						int(authored_effect.get("duration")),
-						source
+						source,
+						&"",
+						bool(authored_effect.get("arms_snared_follow_up"))
 					)
 					if not is_instance_valid(operation):
 						return null
@@ -213,6 +215,13 @@ static func _latest_ally_attacked_by_primary(
 		):
 			continue
 		for target_id: StringName in record.target_ids:
+			var was_direct_hit: bool = false
+			for damage_result: BattleDamageResult in record.damage_results:
+				if damage_result.receiver_id == target_id and damage_result.was_direct_hit:
+					was_direct_hit = true
+					break
+			if not was_direct_hit:
+				continue
 			for unit: BattleUnitState in units:
 				if (
 					is_instance_valid(unit)

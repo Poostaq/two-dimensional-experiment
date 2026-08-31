@@ -38,6 +38,7 @@ var _advantage_source: RefCounted = null
 var _advantage_expiry_round: int = 0
 var _snared_source: RefCounted = null
 var _snared_expiry_round: int = 0
+var _snared_follow_up_armed: bool = false
 var _bleed_states: Dictionary[StringName, RefCounted] = {}
 var _passive_action_guards: Dictionary[StringName, bool] = {}
 var _passive_round_guards: Dictionary[StringName, bool] = {}
@@ -242,11 +243,12 @@ func consume_advantage(current_round: int) -> RefCounted:
 	return consumed
 
 
-func apply_snared(source: RefCounted, expiry_round: int) -> bool:
+func apply_snared(source: RefCounted, expiry_round: int, arm_follow_up: bool = false) -> bool:
 	if not _is_valid_keyword_source(source) or expiry_round < 1:
 		return false
 	_snared_source = source.call("duplicate_source")
 	_snared_expiry_round = max(_snared_expiry_round, expiry_round)
+	_snared_follow_up_armed = arm_follow_up
 	return true
 
 
@@ -257,6 +259,23 @@ func is_snared(current_round: int) -> bool:
 		_clear_snared()
 		return false
 	return true
+
+
+func has_snared_follow_up(current_round: int) -> bool:
+	return _snared_follow_up_armed and is_snared(current_round)
+
+
+func get_snared_follow_up_source(current_round: int) -> RefCounted:
+	if not has_snared_follow_up(current_round):
+		return null
+	return _snared_source.call("duplicate_source")
+
+
+func consume_snared_follow_up(current_round: int) -> RefCounted:
+	if not has_snared_follow_up(current_round):
+		return null
+	_snared_follow_up_armed = false
+	return _snared_source.call("duplicate_source")
 
 
 func apply_bleed(source: RefCounted, duration_actions: int = 2) -> bool:
@@ -372,6 +391,7 @@ func _clear_advantage() -> void:
 func _clear_snared() -> void:
 	_snared_source = null
 	_snared_expiry_round = 0
+	_snared_follow_up_armed = false
 
 
 func _is_valid_keyword_source(source: RefCounted) -> bool:

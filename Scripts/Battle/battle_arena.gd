@@ -886,6 +886,21 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_battle_log_entries.append(entry)
 		_append_log_control(entry, _battle_log_entries.size() - 1)
 		_show_resolution_feedback(entry)
+		if result.was_direct_hit:
+			var follow_up_source: RefCounted = target.get_snared_follow_up_source(action_round)
+			var follow_up_owner: BattleUnitState = null
+			if is_instance_valid(follow_up_source):
+				follow_up_owner = get_unit_by_id(follow_up_source.get("source_unit_id"))
+			if is_instance_valid(follow_up_owner) and follow_up_owner.side == actor.side:
+				follow_up_source = target.consume_snared_follow_up(action_round)
+				var follow_up_operation: RefCounted = BattleKeywordOperation.create(
+					BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
+					target.unit_id,
+					0,
+					1,
+					follow_up_source
+				)
+				_apply_keyword_operation(follow_up_operation, action_round, keyword_deltas, false)
 	var slot_before: Dictionary[StringName, int] = {}
 	var slot_after: Dictionary[StringName, int] = {}
 	if not plan.movement_path.is_empty():
@@ -995,7 +1010,11 @@ func _apply_keyword_operation(
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
 		BattleKeywordOperation.Kind.APPLY_SNARED:
-			applied = target.apply_snared(operation.get("source") as RefCounted, action_round + max(1, int(operation.get("duration"))) - 1)
+			applied = target.apply_snared(
+				operation.get("source") as RefCounted,
+				action_round + max(1, int(operation.get("duration"))) - 1,
+				bool(operation.get("arms_snared_follow_up"))
+			)
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
 		BattleKeywordOperation.Kind.APPLY_BLEED:
