@@ -26,6 +26,10 @@ var hovered_target_id: StringName = &""
 var combo_ready_target_ids: Array[StringName] = []
 var combo_bonus_by_target: Dictionary[StringName, int] = {}
 var base_damage: int = 0
+var minimum_targets: int = 1
+var maximum_targets: int = 1
+var allows_optional_self_move: bool = false
+var declared_move_path: Array[int] = []
 
 var _can_start: bool = false
 var _confirmation_pending: bool = false
@@ -51,6 +55,9 @@ func preview(evaluation: SkillTargetEvaluation) -> int:
 	combo_ready_target_ids = evaluation.combo_ready_target_ids.duplicate()
 	combo_bonus_by_target = evaluation.combo_bonus_by_target.duplicate()
 	base_damage = evaluation.base_damage
+	minimum_targets = evaluation.minimum_targets
+	maximum_targets = evaluation.maximum_targets
+	allows_optional_self_move = evaluation.allows_optional_self_move
 	_can_start = evaluation.can_start
 	last_reason = evaluation.blocking_reason
 	return generation
@@ -107,7 +114,7 @@ func presentation_snapshot() -> Dictionary:
 				)
 			elif invalid_targets.has(hovered_target_id):
 				roles[hovered_target_id] = &"invalid_hover"
-	var has_lock: bool = not locked_target_ids.is_empty()
+	var has_lock: bool = locked_target_ids.size() >= minimum_targets
 	var action_visible: bool = state in [
 		State.TARGETING,
 		State.VALIDATING,
@@ -161,10 +168,32 @@ func select_target(target_id: StringName, callback_generation: int) -> bool:
 			)
 		)
 		return false
-	locked_target_ids.clear()
-	locked_target_ids.append(target_id)
+	if locked_target_ids.has(target_id):
+		locked_target_ids.erase(target_id)
+	elif maximum_targets == 1:
+		locked_target_ids.assign([target_id])
+	elif locked_target_ids.size() < maximum_targets:
+		locked_target_ids.append(target_id)
+	else:
+		return false
 	hovered_target_id = &""
 	last_reason = SkillActionReason.none()
+	return true
+
+
+func set_declared_move_path(path: Array[int], callback_generation: int) -> bool:
+	if (
+		not _is_current(callback_generation)
+		or state != State.TARGETING
+		or not allows_optional_self_move
+	):
+		return false
+	if path.is_empty():
+		declared_move_path.clear()
+		return true
+	if path.size() != 2 or not BattleFormationRules.is_move_one(path[0], path[1]):
+		return false
+	declared_move_path = path.duplicate()
 	return true
 
 
@@ -173,7 +202,8 @@ func begin_confirmation(callback_generation: int) -> bool:
 		not _is_current(callback_generation)
 		or state != State.TARGETING
 		or _confirmation_pending
-		or locked_target_ids.is_empty()
+		or locked_target_ids.size() < minimum_targets
+		or locked_target_ids.size() > maximum_targets
 	):
 		return false
 	_confirmation_pending = true
@@ -239,6 +269,10 @@ func _clear_selection() -> void:
 	combo_ready_target_ids.clear()
 	combo_bonus_by_target.clear()
 	base_damage = 0
+	minimum_targets = 1
+	maximum_targets = 1
+	allows_optional_self_move = false
+	declared_move_path.clear()
 	last_reason = SkillActionReason.none()
 	_can_start = false
 	_confirmation_pending = false

@@ -16,6 +16,7 @@ func _init() -> void:
 	_test_advantage_damage_definition()
 	_test_authoring_resolver()
 	_test_authored_target_profiles()
+	_test_multi_target_and_movement_transaction()
 	if _failures.is_empty():
 		print("AC6.3 Goblin wave A: %d/%d assertions passed." % [_assertions, _assertions])
 		quit(0)
@@ -398,6 +399,60 @@ func _test_authored_target_profiles() -> void:
 	_expect(ring_evaluation.minimum_targets == 1, "Ring Net minimum is one")
 	_expect(ring_evaluation.maximum_targets == 2, "Ring Net maximum is two")
 	_expect(ring_evaluation.valid_target_ids == [&"enemy"], "Ring Net exposes active enemies")
+
+
+func _test_multi_target_and_movement_transaction() -> void:
+	var no_invalid: Dictionary[StringName, SkillActionReason] = {}
+	var ring_evaluation := SkillTargetEvaluation.new(
+		&"snarewright",
+		&"ring_net",
+		CharacterSkill.TargetingMode.FREE,
+		true,
+		SkillActionReason.none(),
+		[&"enemy_a", &"enemy_b", &"enemy_c"],
+		no_invalid,
+		[],
+		9,
+		[],
+		{},
+		0,
+		1,
+		2,
+		false
+	)
+	var transaction := BattleSkillTransaction.new()
+	var generation: int = transaction.preview(ring_evaluation)
+	_expect(transaction.begin_targeting(generation), "Ring Net targeting begins")
+	_expect(transaction.select_target(&"enemy_a", generation), "Ring Net selects first target")
+	_expect(transaction.select_target(&"enemy_b", generation), "Ring Net selects second target")
+	_expect(not transaction.select_target(&"enemy_c", generation), "Ring Net rejects third target")
+	_expect(transaction.locked_target_ids == [&"enemy_a", &"enemy_b"], "Ring Net retains two locks")
+	_expect(transaction.begin_confirmation(generation), "Ring Net confirms with two targets")
+	transaction.cancel(generation)
+	_expect(transaction.locked_target_ids.is_empty(), "cancel clears all Ring Net locks")
+
+	var movement_evaluation := SkillTargetEvaluation.new(
+		&"wirefang",
+		&"slipstep",
+		CharacterSkill.TargetingMode.FREE,
+		true,
+		SkillActionReason.none(),
+		[],
+		no_invalid,
+		[],
+		10,
+		[],
+		{},
+		0,
+		0,
+		0,
+		true
+	)
+	generation = transaction.preview(movement_evaluation)
+	_expect(transaction.begin_targeting(generation), "Slipstep targeting begins")
+	_expect(transaction.set_declared_move_path([0, 3], generation), "Slipstep accepts declared Move 1")
+	_expect(transaction.declared_move_path == [0, 3], "Slipstep retains declared path")
+	_expect(transaction.begin_confirmation(generation), "Slipstep confirms without target locks")
 
 
 func _authored_test_skill(

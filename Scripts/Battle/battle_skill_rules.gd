@@ -120,7 +120,8 @@ static func validate_confirmation(
 	proposed_target_ids: Array[StringName],
 	expected_revision: int,
 	current_revision: int,
-	history_snapshot: Array[BattleActionLogEntry]
+	history_snapshot: Array[BattleActionLogEntry],
+	proposed_move_path: Array[int] = []
 ) -> SkillConfirmationValidation:
 	if expected_revision != current_revision:
 		return _rejected(
@@ -192,7 +193,8 @@ static func validate_confirmation(
 			units,
 			round_number,
 			current_revision,
-			history_snapshot
+			history_snapshot,
+			proposed_move_path
 		)
 		if not is_instance_valid(authored_plan):
 			return _rejected(

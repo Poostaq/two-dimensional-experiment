@@ -655,7 +655,6 @@ func notify_authoritative_battle_change(increment_revision: bool = true) -> void
 		_battle_revision += 1
 	if (
 		_skill_transaction.state != BattleSkillTransaction.State.TARGETING
-		or _skill_transaction.locked_target_ids.is_empty()
 	):
 		_render_skill_transaction()
 		return
@@ -673,7 +672,8 @@ func notify_authoritative_battle_change(increment_revision: bool = true) -> void
 		_skill_transaction.locked_target_ids,
 		_battle_revision,
 		_battle_revision,
-		get_committed_action_history_snapshot()
+		get_committed_action_history_snapshot(),
+		_skill_transaction.declared_move_path
 	)
 	if validation.accepted:
 		_skill_transaction.battle_revision = _battle_revision
@@ -710,6 +710,15 @@ func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
 	_render_skill_transaction()
 	_refresh_skill_selection()
 	return true
+
+
+func set_skill_move_path(path: Array[int]) -> bool:
+	var accepted: bool = _skill_transaction.set_declared_move_path(
+		path,
+		_skill_transaction.generation
+	)
+	_render_skill_transaction()
+	return accepted
 
 
 func select_skill_target(target_id: StringName) -> bool:
@@ -759,7 +768,8 @@ func confirm_skill_action() -> bool:
 		_skill_transaction.locked_target_ids,
 		_skill_transaction.battle_revision,
 		_battle_revision,
-		get_committed_action_history_snapshot()
+		get_committed_action_history_snapshot(),
+		_skill_transaction.declared_move_path
 	)
 	if not _skill_transaction.complete_confirmation(validation, generation):
 		_render_skill_transaction()
@@ -827,6 +837,15 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id"))
 		if not is_instance_valid(target) or not target.is_active():
 			return false
+	var movement_occupant: BattleUnitState = null
+	if not plan.movement_path.is_empty():
+		if (
+			plan.movement_unit_id != actor.unit_id
+			or plan.movement_path[0] != actor.slot_index
+			or not _is_valid_move_actor(actor, plan.movement_path[1])
+		):
+			return false
+		movement_occupant = _allied_occupant_at(actor.side, plan.movement_path[1], actor.unit_id)
 	_action_in_progress = true
 	var action_round: int = round_number
 	var action_damage_results: Array[BattleDamageResult] = []
@@ -837,11 +856,11 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	var direct_hit_by_target: Dictionary[StringName, bool] = {}
 	var affected_units: Dictionary[StringName, BattleUnitState] = {}
 	var advantage_consumed: RefCounted = null
-	if is_instance_valid(plan.advantage_rider) and not plan.damage_operations.is_empty():
+	if (plan.consume_advantage or is_instance_valid(plan.advantage_rider)) and not plan.damage_operations.is_empty():
 		var marked_target: BattleUnitState = get_unit_by_id(plan.damage_operations[0].get("target_id", &""))
 		if is_instance_valid(marked_target):
 			advantage_consumed = marked_target.consume_advantage(action_round)
-			if is_instance_valid(advantage_consumed):
+			if is_instance_valid(advantage_consumed) and is_instance_valid(plan.advantage_rider):
 				_apply_keyword_operation(plan.advantage_rider, action_round, keyword_deltas, false)
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
@@ -867,6 +886,16 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_battle_log_entries.append(entry)
 		_append_log_control(entry, _battle_log_entries.size() - 1)
 		_show_resolution_feedback(entry)
+	var slot_before: Dictionary[StringName, int] = {}
+	var slot_after: Dictionary[StringName, int] = {}
+	if not plan.movement_path.is_empty():
+		slot_before[actor.unit_id] = actor.slot_index
+		slot_after[actor.unit_id] = plan.movement_path[1]
+		if is_instance_valid(movement_occupant):
+			slot_before[movement_occupant.unit_id] = movement_occupant.slot_index
+			slot_after[movement_occupant.unit_id] = actor.slot_index
+			movement_occupant.slot_index = actor.slot_index
+		actor.slot_index = plan.movement_path[1]
 	var new_actor_speed_sources: Array[StringName] = []
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
@@ -893,7 +922,6 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	for result: BattleDamageResult in action_damage_results:
 		damage_by_target[result.receiver_id] = result.applied_damage
 	var bleed_ticks: Array[RefCounted] = _resolve_bleed_ticks_for_units(actor, affected_units, action_round, damage_by_target)
-	var empty_slots: Dictionary[StringName, int] = {}
 	var next_revision: int = _battle_revision + 1
 	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
 	var action_record: BattleActionRecord = action_record_script.new(
@@ -901,14 +929,14 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		actor.unit_id,
 		plan.target_ids,
 		damage_by_target,
-		empty_slots,
-		empty_slots,
+		slot_before,
+		slot_after,
 		action_round,
 		next_revision,
 		next_revision,
 		actor.side,
 		plan.skill_id,
-		false,
+		not plan.movement_path.is_empty(),
 		direct_hit_by_target,
 		keyword_deltas,
 		advantage_consumed,

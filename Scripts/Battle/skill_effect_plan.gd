@@ -32,6 +32,8 @@ var cooldown_actions: int
 var advance_turn: bool
 var battle_revision: int
 var consume_advantage: bool = false
+var movement_unit_id: StringName = &""
+var movement_path: Array[int] = []
 
 var _target_ids: Array[StringName] = []
 var _damage_operations: Array[Dictionary] = []
@@ -54,7 +56,9 @@ func _init(
 	plan_keyword_operations: Array[RefCounted] = [],
 	plan_locked_advantage_source: RefCounted = null,
 	plan_advantage_rider: RefCounted = null,
-	plan_consume_advantage: bool = false
+	plan_consume_advantage: bool = false,
+	plan_movement_unit_id: StringName = &"",
+	plan_movement_path: Array[int] = []
 ) -> void:
 	if not _valid_input(
 		plan_actor_id,
@@ -65,6 +69,8 @@ func _init(
 		plan_locked_advantage_source,
 		plan_advantage_rider,
 		plan_consume_advantage,
+		plan_movement_unit_id,
+		plan_movement_path,
 		plan_cooldown_actions,
 		plan_battle_revision
 	):
@@ -90,6 +96,8 @@ func _init(
 	advance_turn = plan_advance_turn
 	battle_revision = plan_battle_revision
 	consume_advantage = plan_consume_advantage
+	movement_unit_id = plan_movement_unit_id
+	movement_path = plan_movement_path.duplicate()
 	_is_valid = true
 
 
@@ -105,7 +113,9 @@ static func create(
 	plan_keyword_operations: Array[RefCounted] = [],
 	plan_locked_advantage_source: RefCounted = null,
 	plan_advantage_rider: RefCounted = null,
-	plan_consume_advantage: bool = false
+	plan_consume_advantage: bool = false,
+	plan_movement_unit_id: StringName = &"",
+	plan_movement_path: Array[int] = []
 ) -> SkillEffectPlan:
 	var plan: SkillEffectPlan = SkillEffectPlan.new(
 		plan_actor_id,
@@ -119,7 +129,9 @@ static func create(
 		plan_keyword_operations,
 		plan_locked_advantage_source,
 		plan_advantage_rider,
-		plan_consume_advantage
+		plan_consume_advantage,
+		plan_movement_unit_id,
+		plan_movement_path
 	)
 	return plan if plan.is_valid() else null
 
@@ -137,6 +149,8 @@ static func _valid_input(
 	plan_locked_advantage_source: RefCounted,
 	plan_advantage_rider: RefCounted,
 	plan_consume_advantage: bool,
+	plan_movement_unit_id: StringName,
+	plan_movement_path: Array[int],
 	plan_cooldown_actions: int,
 	plan_battle_revision: int
 ) -> bool:
@@ -161,7 +175,13 @@ static func _valid_input(
 		or plan_damage_operations.is_empty()
 	):
 		return false
-	return true
+	if plan_movement_path.is_empty():
+		return plan_movement_unit_id.is_empty()
+	return (
+		plan_movement_unit_id == plan_actor_id
+		and plan_movement_path.size() == 2
+		and BattleFormationRules.is_move_one(plan_movement_path[0], plan_movement_path[1])
+	)
 
 
 static func _valid_damage_operations(

@@ -18,7 +18,6 @@ static func build_plan(
 		or not is_instance_valid(skill)
 		or not skill.is_valid()
 		or revision < 0
-		or not declared_move_path.is_empty()
 	):
 		return null
 	var target_ids: Array[StringName] = []
@@ -30,8 +29,14 @@ static func build_plan(
 		):
 			return null
 		target_ids.append(target.unit_id)
-	if target_ids.is_empty():
+	var profile: RefCounted = skill.target_profile
+	if target_ids.is_empty() and (
+		not is_instance_valid(profile)
+		or int(profile.get("maximum_targets")) != 0
+	):
 		return null
+	if target_ids.is_empty():
+		target_ids.append(actor.unit_id)
 	if not _conditions_met(actor, skill, locked_targets, units, round_number, history):
 		return null
 
@@ -122,7 +127,9 @@ static func build_plan(
 		keyword_operations,
 		locked_advantage_source,
 		null,
-		consume_advantage
+		consume_advantage,
+		actor.unit_id if not declared_move_path.is_empty() else &"",
+		declared_move_path
 	)
 
 
