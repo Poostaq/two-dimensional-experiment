@@ -91,6 +91,9 @@ static func evaluate_targets(
 			actor,
 			skill
 		)
+	var legacy_target_count: int = 1
+	if not is_instance_valid(authored_profile) and is_instance_valid(skill) and skill.targeting_mode == CharacterSkill.TargetingMode.PREDEFINED:
+		legacy_target_count = affected_ids.size()
 	return SkillTargetEvaluation.new(
 		actor.unit_id if is_instance_valid(actor) else &"",
 		skill.skill_id if is_instance_valid(skill) else &"",
@@ -104,8 +107,8 @@ static func evaluate_targets(
 		combo_ready_ids,
 		combo_bonus_by_target,
 		skill.effect_magnitude if is_instance_valid(skill) else 0,
-		int(authored_profile.get("minimum_targets")) if is_instance_valid(authored_profile) else 1,
-		int(authored_profile.get("maximum_targets")) if is_instance_valid(authored_profile) else 1,
+		int(authored_profile.get("minimum_targets")) if is_instance_valid(authored_profile) else legacy_target_count,
+		int(authored_profile.get("maximum_targets")) if is_instance_valid(authored_profile) else legacy_target_count,
 		bool(authored_profile.get("allows_optional_self_move")) if is_instance_valid(authored_profile) else false
 	)
 
