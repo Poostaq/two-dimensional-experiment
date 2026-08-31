@@ -25,6 +25,7 @@ func _init() -> void:
 	_expect(legacy.race_id == &"unknown", "legacy constructors default race identity")
 	_test_wave_b_condition_contracts()
 	_test_wave_b_history_queries()
+	_test_wave_b_effect_contracts()
 	if _failures.is_empty():
 		print("AC6.4 Goblin wave B: %d/%d assertions passed." % [_assertions, _assertions])
 		quit(0)
@@ -85,6 +86,21 @@ func _test_wave_b_history_queries() -> void:
 		) == [&"ally_a", &"ally_b"],
 		"history returns stable distinct prior allied attackers"
 	)
+
+
+func _test_wave_b_effect_contracts() -> void:
+	var scaled := BattleSkillEffectDefinition.history_scaled_damage(
+		BattleSkillEffectDefinition.TargetRole.PRIMARY, 90, 20, 150
+	)
+	_expect(is_instance_valid(scaled), "history-scaled damage definition is valid")
+	_expect(scaled.history_increment == 20, "history-scaled damage stores increment")
+	_expect(scaled.maximum_power_percent == 150, "history-scaled damage stores cap")
+	var armor := BattleSkillEffectDefinition.conditional_armor(
+		BattleSkillEffectDefinition.TargetRole.PRIMARY, 4, 5
+	)
+	_expect(is_instance_valid(armor), "conditional Armor definition is valid")
+	_expect(armor.magnitude == 4, "conditional Armor stores base amount")
+	_expect(armor.conditional_magnitude == 5, "conditional Armor stores upgraded amount")
 
 
 func _expect(condition: bool, message: String) -> void:
