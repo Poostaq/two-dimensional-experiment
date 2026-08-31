@@ -146,6 +146,9 @@ static func _copy_damage_results(source: Array[BattleDamageResult]) -> Array[Bat
 			item.requested_damage,
 			item.applied_damage,
 			item.receiver_hp_after,
-			item.caused_defeat
+			item.caused_defeat,
+			item.armor_prevented,
+			item.was_direct_hit,
+			item.is_status_damage
 		))
 	return result

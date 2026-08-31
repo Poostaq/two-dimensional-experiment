@@ -5,7 +5,8 @@ const SOURCE_PATH: String = "res://Scripts/Battle/battle_keyword_source.gd"
 const BLEED_PATH: String = "res://Scripts/Battle/battle_bleed_state.gd"
 const UNIT_STATE_PATH: String = "res://Scripts/Battle/battle_unit_state.gd"
 const OPERATION_PATH: String = "res://Scripts/Battle/battle_keyword_operation.gd"
-const EXPECTED_TEST_COUNT: int = 75
+const HISTORY_QUERY_PATH: String = "res://Scripts/Battle/battle_history_query.gd"
+const EXPECTED_TEST_COUNT: int = 83
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -21,6 +22,7 @@ func _run() -> void:
 	_test_armor_aware_damage_results()
 	_test_keyword_operation_contract()
 	_test_keyword_skill_and_plan_contract()
+	_test_history_query_contract()
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -157,6 +159,63 @@ func _test_battle_local_keyword_state() -> void:
 	unit.clear_battle_local_state()
 	_expect(unit.unit_id == &"scout" and unit.power == 8 and unit.get_base_speed() == 5 and unit.skills.size() == 1, "battle cleanup preserves identity, stats, and skills")
 	_expect(unit.get_armor() == 0 and not unit.has_advantage(4) and not unit.is_snared(4) and unit.get_skill_cooldown(&"knife_work") == 0 and unit.get_effective_speed() == 5 and unit.get_bleed_snapshot().is_empty(), "battle cleanup removes local keyword state")
+
+
+func _test_history_query_contract() -> void:
+	_expect(ResourceLoader.exists(HISTORY_QUERY_PATH), "history query script exists")
+	if not ResourceLoader.exists(HISTORY_QUERY_PATH):
+		return
+	var query_script := load(HISTORY_QUERY_PATH) as Script
+	var record_script := load("res://Scripts/Battle/battle_action_record.gd") as Script
+	var forced: BattleActionRecord = record_script.call("new",
+		BattleActionRecord.Kind.SKILL,
+		&"mover",
+		[&"target"],
+		{},
+		{&"target": 0},
+		{&"target": 3},
+		1,
+		2,
+		2,
+		BattleUnitState.Side.ENEMY,
+		&"barbed_hook",
+		false,
+		{},
+		[],
+		null,
+		[],
+		false
+	)
+	var voluntary: BattleActionRecord = record_script.call("new",
+		BattleActionRecord.Kind.FORMATION_MOVE,
+		&"target",
+		[],
+		{},
+		{&"target": 3},
+		{&"target": 4},
+		1,
+		3,
+		3,
+		BattleUnitState.Side.PLAYER,
+		&"formation_move",
+		true
+	)
+	var first_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"ally_a", [&"target"], {&"target": 2}, {}, {}, 1, 4, 4, BattleUnitState.Side.PLAYER, &"strike", false, {&"target": true})
+	var duplicate_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"ally_a", [&"target"], {&"target": 2}, {}, {}, 1, 5, 5, BattleUnitState.Side.PLAYER, &"strike", false, {&"target": true})
+	var second_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.DEFAULT_ATTACK, &"ally_b", [&"target"], {&"target": 1}, {}, {}, 1, 6, 6, BattleUnitState.Side.PLAYER, &"default_attack", false, {&"target": true})
+	var status_tick: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"ally_c", [&"target"], {&"target": 1}, {}, {}, 1, 7, 7, BattleUnitState.Side.PLAYER, &"bleed", false, {&"target": false})
+	var enemy_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"enemy", [&"target"], {&"target": 1}, {}, {}, 1, 8, 8, BattleUnitState.Side.ENEMY, &"strike", false, {&"target": true})
+	var records: Array[BattleActionRecord] = [forced, voluntary, first_hit, duplicate_hit, second_hit, status_tick, enemy_hit]
+	_expect(query_script.call("was_forced_moved_since", records, &"target", 1), "forced movement is found")
+	_expect(not query_script.call("was_forced_moved_since", records, &"target", 2), "history queries exclude records at the marker")
+	_expect(not query_script.call("was_forced_moved_since", [voluntary], &"target", 1), "voluntary movement is not forced movement")
+	var attackers: Array[StringName] = query_script.call("distinct_allied_attackers", records, BattleUnitState.Side.PLAYER, &"target", 3)
+	_expect(attackers.size() == 2, "distinct attackers are unique")
+	_expect(attackers.has(&"ally_a") and attackers.has(&"ally_b"), "distinct attackers include direct-hit allies")
+	_expect(not attackers.has(&"ally_c") and not attackers.has(&"enemy"), "distinct attackers exclude status ticks and enemies")
+	var duplicate: RefCounted = forced.duplicate_record()
+	_expect(duplicate.get("source_skill_id") == &"barbed_hook" and not duplicate.get("voluntary_movement"), "action record duplicates history metadata")
+	_expect(forced.is_valid() and duplicate.is_valid(), "extended action records remain valid")
 
 
 func _test_keyword_skill_and_plan_contract() -> void:
