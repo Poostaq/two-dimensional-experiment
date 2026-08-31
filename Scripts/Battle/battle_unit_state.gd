@@ -310,6 +310,34 @@ func clear_round_keywords(completed_round: int) -> void:
 	_passive_round_guards.clear()
 
 
+func mark_passive_reaction_guard(
+	passive_skill_id: StringName,
+	frequency: int,
+	action_sequence: int,
+	round_number: int
+) -> bool:
+	if passive_skill_id.is_empty() or action_sequence < 1 or round_number < 1:
+		return false
+	var guard_key: StringName = _passive_guard_key(passive_skill_id, action_sequence, round_number)
+	match frequency:
+		0:
+			if _passive_action_guards.has(guard_key):
+				return false
+			_passive_action_guards[guard_key] = true
+			return true
+		1:
+			if _passive_round_guards.has(guard_key):
+				return false
+			_passive_round_guards[guard_key] = true
+			return true
+		2:
+			if _passive_battle_guards.has(passive_skill_id):
+				return false
+			_passive_battle_guards[passive_skill_id] = true
+			return true
+	return false
+
+
 func clear_battle_local_state() -> void:
 	_skill_cooldowns.clear()
 	_speed_modifiers.clear()
@@ -324,6 +352,10 @@ func clear_battle_local_state() -> void:
 
 func get_skill_cooldown_snapshot() -> Dictionary[StringName, int]:
 	return _skill_cooldowns.duplicate()
+
+
+func _passive_guard_key(passive_skill_id: StringName, action_sequence: int, round_number: int) -> StringName:
+	return StringName("%s::%d::%d" % [passive_skill_id, action_sequence, round_number])
 
 
 func _clear_advantage() -> void:

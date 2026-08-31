@@ -112,6 +112,9 @@ var keyword_operations: Array[RefCounted]:
 var advantage_rider: RefCounted:
 	get:
 		return _advantage_rider.call("duplicate_operation") if is_instance_valid(_advantage_rider) else null
+var reaction_definition: RefCounted:
+	get:
+		return _reaction_definition.call("duplicate_definition") if is_instance_valid(_reaction_definition) else null
 
 var _skill_id: StringName = &""
 var _display_name: String = ""
@@ -134,6 +137,7 @@ var _unavailable_through_round: int = 0
 var _combo_definition: RefCounted = null
 var _keyword_operations: Array[RefCounted] = []
 var _advantage_rider: RefCounted = null
+var _reaction_definition: RefCounted = null
 var _is_valid: bool = false
 
 
@@ -158,7 +162,8 @@ func _init(
 	unavailable_through_round_value: int = 0,
 	combo_definition_value: RefCounted = null,
 	keyword_operations_value: Array[RefCounted] = [],
-	advantage_rider_value: RefCounted = null
+	advantage_rider_value: RefCounted = null,
+	reaction_definition_value: RefCounted = null
 ) -> void:
 	if not is_valid_definition(id, name, skill_kind, effect, targeting, requirements, cooldown):
 		push_error("CharacterSkill requires non-blank identity, preview fields, and a valid kind.")
@@ -186,6 +191,11 @@ func _init(
 		return
 	if is_instance_valid(advantage_rider_value) and not _is_valid_keyword_operation(advantage_rider_value):
 		push_error("CharacterSkill Advantage rider must be a valid typed keyword operation.")
+		return
+	if is_instance_valid(reaction_definition_value) and (
+		skill_kind != Kind.PASSIVE or not _is_valid_reaction_definition(reaction_definition_value)
+	):
+		push_error("CharacterSkill reaction definitions require a valid Passive skill.")
 		return
 	if not is_valid_mechanical_definition(
 		skill_kind,
@@ -232,6 +242,11 @@ func _init(
 		if is_instance_valid(advantage_rider_value)
 		else null
 	)
+	_reaction_definition = (
+		reaction_definition_value.call("duplicate_definition")
+		if is_instance_valid(reaction_definition_value)
+		else null
+	)
 	_is_valid = true
 
 
@@ -256,7 +271,8 @@ static func create(
 	unavailable_through_round_value: int = 0,
 	combo_definition_value: RefCounted = null,
 	keyword_operations_value: Array[RefCounted] = [],
-	advantage_rider_value: RefCounted = null
+	advantage_rider_value: RefCounted = null,
+	reaction_definition_value: RefCounted = null
 ) -> CharacterSkill:
 	var skill: CharacterSkill = CharacterSkill.new(
 		id,
@@ -279,7 +295,8 @@ static func create(
 		unavailable_through_round_value,
 		combo_definition_value,
 		keyword_operations_value,
-		advantage_rider_value
+		advantage_rider_value,
+		reaction_definition_value
 	)
 	return skill if skill.is_valid() else null
 
@@ -424,6 +441,11 @@ func mechanical_definition() -> Dictionary:
 			if is_instance_valid(_advantage_rider)
 			else null
 		),
+		"reaction_definition": (
+			_reaction_definition.call("duplicate_definition")
+			if is_instance_valid(_reaction_definition)
+			else null
+		),
 	}
 
 
@@ -448,6 +470,15 @@ static func _is_valid_keyword_operation(operation: RefCounted) -> bool:
 		and operation.has_method("is_valid")
 		and operation.has_method("duplicate_operation")
 		and operation.call("is_valid")
+	)
+
+
+static func _is_valid_reaction_definition(definition: RefCounted) -> bool:
+	return (
+		is_instance_valid(definition)
+		and definition.has_method("is_valid")
+		and definition.has_method("duplicate_definition")
+		and definition.call("is_valid")
 	)
 
 
@@ -479,5 +510,6 @@ func duplicate_skill() -> CharacterSkill:
 		_unavailable_through_round,
 		_combo_definition,
 		_keyword_operations,
-		_advantage_rider
+		_advantage_rider,
+		_reaction_definition
 	)

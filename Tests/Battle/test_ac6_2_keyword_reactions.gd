@@ -6,7 +6,9 @@ const BLEED_PATH: String = "res://Scripts/Battle/battle_bleed_state.gd"
 const UNIT_STATE_PATH: String = "res://Scripts/Battle/battle_unit_state.gd"
 const OPERATION_PATH: String = "res://Scripts/Battle/battle_keyword_operation.gd"
 const HISTORY_QUERY_PATH: String = "res://Scripts/Battle/battle_history_query.gd"
-const EXPECTED_TEST_COUNT: int = 83
+const REACTION_DEFINITION_PATH: String = "res://Scripts/Battle/battle_reaction_definition.gd"
+const REACTION_DISPATCHER_PATH: String = "res://Scripts/Battle/battle_reaction_dispatcher.gd"
+const EXPECTED_TEST_COUNT: int = 93
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -23,6 +25,7 @@ func _run() -> void:
 	_test_keyword_operation_contract()
 	_test_keyword_skill_and_plan_contract()
 	_test_history_query_contract()
+	_test_passive_reaction_dispatch_contract()
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -159,6 +162,38 @@ func _test_battle_local_keyword_state() -> void:
 	unit.clear_battle_local_state()
 	_expect(unit.unit_id == &"scout" and unit.power == 8 and unit.get_base_speed() == 5 and unit.skills.size() == 1, "battle cleanup preserves identity, stats, and skills")
 	_expect(unit.get_armor() == 0 and not unit.has_advantage(4) and not unit.is_snared(4) and unit.get_skill_cooldown(&"knife_work") == 0 and unit.get_effective_speed() == 5 and unit.get_bleed_snapshot().is_empty(), "battle cleanup removes local keyword state")
+
+
+func _test_passive_reaction_dispatch_contract() -> void:
+	_expect(ResourceLoader.exists(REACTION_DEFINITION_PATH), "reaction definition script exists")
+	_expect(ResourceLoader.exists(REACTION_DISPATCHER_PATH), "reaction dispatcher script exists")
+	if not ResourceLoader.exists(REACTION_DEFINITION_PATH) or not ResourceLoader.exists(REACTION_DISPATCHER_PATH):
+		return
+	var definition_script := load(REACTION_DEFINITION_PATH) as Script
+	var dispatcher_script := load(REACTION_DISPATCHER_PATH) as Script
+	var operation_script := load(OPERATION_PATH) as Script
+	var skill_script := load("res://Scripts/Battle/character_skill.gd") as Script
+	var operation: RefCounted = operation_script.call("create", 0, &"ally", 2, 1, null, &"")
+	var high_priority: RefCounted = definition_script.call("create", &"guard_high", 0, 0, 5, operation, false)
+	var low_priority: RefCounted = definition_script.call("create", &"guard_low", 0, 0, 1, operation, false)
+	_expect(high_priority != null and low_priority != null, "reaction definitions validate synthetic Passives")
+	_expect(definition_script.call("create", &"", 0, 0, 1, operation, false) == null, "reaction definitions reject empty passive skill IDs")
+	var high_skill: CharacterSkill = skill_script.call("create", &"guard_high", "Guard High", CharacterSkill.Kind.PASSIVE, "React.", "Self.", "None.", "None.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, [], null, high_priority)
+	var low_skill: CharacterSkill = skill_script.call("create", &"guard_low", "Guard Low", CharacterSkill.Kind.PASSIVE, "React.", "Self.", "None.", "None.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, [], null, low_priority)
+	_expect(high_skill != null and low_skill != null, "Passive skills accept reaction definitions")
+	var defender_a := BattleUnitState.new(&"defender_a", "Defender A", BattleUnitState.Side.PLAYER, 1, 5, 20, [high_skill])
+	var defender_b := BattleUnitState.new(&"defender_b", "Defender B", BattleUnitState.Side.PLAYER, 0, 5, 20, [low_skill])
+	var defeated := BattleUnitState.new(&"defeated", "Defeated", BattleUnitState.Side.PLAYER, 2, 5, 20, [low_skill])
+	defeated.current_hp = 0
+	var trigger := BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"enemy", [&"target"], {&"target": 3}, {}, {}, 1, 10, 10, BattleUnitState.Side.ENEMY, &"strike", false, {&"target": true})
+	var reactions: Array[RefCounted] = dispatcher_script.call("collect_reactions", trigger, [defender_a, defender_b, defeated], 1, 0)
+	_expect(reactions.size() == 2, "dispatcher rejects inactive owners")
+	_expect(reactions[0].get("owner_unit_id") == &"defender_b" and reactions[1].get("owner_unit_id") == &"defender_a", "dispatcher orders by priority then formation")
+	var self_trigger := BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"defender_a", [&"target"], {&"target": 3}, {}, {}, 1, 11, 11, BattleUnitState.Side.PLAYER, &"strike", false, {&"target": true})
+	_expect(dispatcher_script.call("collect_reactions", self_trigger, [defender_a], 1, 0).is_empty(), "dispatcher prevents self-triggered reactions")
+	_expect(dispatcher_script.call("collect_reactions", trigger, [defender_a], 1, 0).is_empty(), "once-per-action guard prevents duplicate dispatch")
+	defender_a.clear_battle_local_state()
+	_expect(dispatcher_script.call("collect_reactions", trigger, [defender_a], 1, 2).is_empty(), "dispatcher blocks undeclared reaction chains")
 
 
 func _test_history_query_contract() -> void:
