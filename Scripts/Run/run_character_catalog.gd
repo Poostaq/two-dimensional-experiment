@@ -5,6 +5,11 @@ const COMBAT_SCOUT_REWARD_ID := &"combat_recruit_scout"
 const BOSS_CHAMPION_REWARD_ID := &"boss_recruit_champion"
 
 
+static func create_by_class_id(class_id: StringName) -> RunCharacter:
+	var catalog_script := load("res://Scripts/Run/goblin_wave_a_catalog.gd") as Script
+	return catalog_script.create_by_class_id(class_id)
+
+
 static func create_starters() -> Array[RunCharacter]:
 	return [
 		RunCharacter.new(&"player_0", "Player Front 1", 8, 20, []),

@@ -5,6 +5,7 @@ const TARGET_PROFILE_PATH := "res://Scripts/Battle/battle_skill_target_profile.g
 const EFFECT_DEFINITION_PATH := "res://Scripts/Battle/battle_skill_effect_definition.gd"
 const CONDITION_PATH := "res://Scripts/Battle/battle_skill_condition.gd"
 const AUTHORING_RESOLVER_PATH := "res://Scripts/Battle/battle_skill_authoring_resolver.gd"
+const WAVE_A_CATALOG_PATH := "res://Scripts/Run/goblin_wave_a_catalog.gd"
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -17,6 +18,7 @@ func _init() -> void:
 	_test_authoring_resolver()
 	_test_authored_target_profiles()
 	_test_multi_target_and_movement_transaction()
+	_test_wave_a_catalog()
 	if _failures.is_empty():
 		print("AC6.3 Goblin wave A: %d/%d assertions passed." % [_assertions, _assertions])
 		quit(0)
@@ -453,6 +455,60 @@ func _test_multi_target_and_movement_transaction() -> void:
 	_expect(transaction.set_declared_move_path([0, 3], generation), "Slipstep accepts declared Move 1")
 	_expect(transaction.declared_move_path == [0, 3], "Slipstep retains declared path")
 	_expect(transaction.begin_confirmation(generation), "Slipstep confirms without target locks")
+
+
+func _test_wave_a_catalog() -> void:
+	var catalog_script := load(WAVE_A_CATALOG_PATH) as Script
+	_expect(is_instance_valid(catalog_script), "Wave A catalog script exists")
+	if not is_instance_valid(catalog_script):
+		return
+	var expected: Dictionary[StringName, Dictionary] = {
+		&"scrapshield_bruiser": {
+			"name": "Scrapshield Bruiser",
+			"hp": 20,
+			"power": 4,
+			"speed": 7,
+			"defense": 2,
+			"skills": [&"shield_tap", &"pack_brace", &"banner_nudge"],
+		},
+		&"wirefang_skirmisher": {
+			"name": "Wirefang Skirmisher",
+			"hp": 14,
+			"power": 6,
+			"speed": 10,
+			"defense": 0,
+			"skills": [&"quick_mark", &"cheap_finish", &"slipstep"],
+		},
+		&"snarewright": {
+			"name": "Snarewright",
+			"hp": 16,
+			"power": 4,
+			"speed": 9,
+			"defense": 1,
+			"skills": [&"tripline_tag", &"holdfast_wire", &"ring_net"],
+		},
+	}
+	for class_id: StringName in expected:
+		var character: RunCharacter = catalog_script.create_by_class_id(class_id)
+		var contract: Dictionary = expected[class_id]
+		_expect(is_instance_valid(character), "%s catalog entry exists" % class_id)
+		if not is_instance_valid(character):
+			continue
+		_expect(character.character_id == class_id, "%s stable ID matches" % class_id)
+		_expect(character.display_name == contract["name"], "%s display name matches" % class_id)
+		_expect(character.max_hp == contract["hp"], "%s Health matches" % class_id)
+		_expect(character.power == contract["power"], "%s Power matches" % class_id)
+		_expect(character.base_speed == contract["speed"], "%s Speed matches" % class_id)
+		_expect(character.defense == contract["defense"], "%s Defense matches" % class_id)
+		var skills: Array[CharacterSkill] = character.get_skills()
+		var skill_ids: Array[StringName] = []
+		for skill: CharacterSkill in skills:
+			_expect(skill.kind == CharacterSkill.Kind.ACTIVE and skill.is_valid(), "%s skill is valid Active" % skill.skill_id)
+			skill_ids.append(skill.skill_id)
+		_expect(skill_ids == contract["skills"], "%s exact loadout matches" % class_id)
+	_expect(catalog_script.create_by_class_id(&"unknown") == null, "unknown Wave A class rejects")
+	_expect(is_instance_valid(RunCharacterCatalog.create_by_class_id(&"snarewright")), "root catalog delegates Wave A ID")
+	_expect(RunCharacterCatalog.create_by_class_id(&"unknown") == null, "root catalog rejects unknown class ID")
 
 
 func _authored_test_skill(
