@@ -11,6 +11,7 @@ var _assertions: int = 0
 
 func _init() -> void:
 	_test_authoring_value_objects()
+	_test_character_skill_authoring()
 	if _failures.is_empty():
 		print("AC6.3 Goblin wave A: %d/%d assertions passed." % [_assertions, _assertions])
 		quit(0)
@@ -77,6 +78,122 @@ func _test_authoring_value_objects() -> void:
 		"Snared without duration rejects"
 	)
 	_expect(condition_script.create(999) == null, "unknown condition rejects")
+
+
+func _test_character_skill_authoring() -> void:
+	var target_profile_script := load(TARGET_PROFILE_PATH) as Script
+	var effect_definition_script := load(EFFECT_DEFINITION_PATH) as Script
+	var condition_script := load(CONDITION_PATH) as Script
+	var profile: RefCounted = target_profile_script.create(
+		1,
+		1,
+		BattleUnitState.Side.ENEMY,
+		false,
+		false
+	)
+	var condition: RefCounted = condition_script.create(condition_script.Kind.PRIMARY_SNARED)
+	var effect: RefCounted = effect_definition_script.damage(
+		effect_definition_script.TargetRole.PRIMARY,
+		115
+	)
+	var conditions: Array[RefCounted] = [condition]
+	var effects: Array[RefCounted] = [effect]
+	var skill := CharacterSkill.create(
+		&"holdfast_wire",
+		"Holdfast Wire",
+		CharacterSkill.Kind.ACTIVE,
+		"Against a Snared enemy, deal 115% Power and reduce Speed by 1 this round.",
+		"One selected active enemy.",
+		"Target must be Snared.",
+		"CD2",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.NONE,
+		0,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS,
+		2,
+		0,
+		null,
+		[],
+		null,
+		null,
+		profile,
+		conditions,
+		effects
+	)
+	_expect(is_instance_valid(skill) and skill.is_valid(), "authored CharacterSkill is valid")
+	if not is_instance_valid(skill):
+		return
+	_expect(skill.target_profile.maximum_targets == 1, "skill retains target profile")
+	_expect(skill.conditions.size() == 1, "skill retains conditions")
+	_expect(skill.authored_effects.size() == 1, "skill retains authored effects")
+
+	var returned_conditions: Array[RefCounted] = skill.conditions
+	returned_conditions.clear()
+	_expect(skill.conditions.size() == 1, "condition getter is defensive")
+	var returned_effects: Array[RefCounted] = skill.authored_effects
+	returned_effects.clear()
+	_expect(skill.authored_effects.size() == 1, "effect getter is defensive")
+
+	var duplicate: CharacterSkill = skill.duplicate_skill()
+	_expect(is_instance_valid(duplicate) and duplicate.is_valid(), "authored skill duplicates")
+	_expect(duplicate.target_profile.maximum_targets == 1, "duplicate retains profile")
+	_expect(duplicate.conditions.size() == 1, "duplicate retains conditions")
+	_expect(duplicate.authored_effects.size() == 1, "duplicate retains effects")
+
+	var legacy := CharacterSkill.create(
+		&"legacy_hit",
+		"Legacy Hit",
+		CharacterSkill.Kind.ACTIVE,
+		"Deal 3 damage.",
+		"One enemy.",
+		"None",
+		"None",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		3
+	)
+	_expect(is_instance_valid(legacy) and legacy.is_valid(), "legacy CharacterSkill remains valid")
+
+	var duplicate_conditions: Array[RefCounted] = [
+		condition,
+		condition.duplicate_condition(),
+	]
+	var invalid := CharacterSkill.create(
+		&"duplicate_condition",
+		"Duplicate Condition",
+		CharacterSkill.Kind.ACTIVE,
+		"Invalid.",
+		"One enemy.",
+		"Target must be Snared.",
+		"CD1",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.NONE,
+		0,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS,
+		1,
+		0,
+		null,
+		[],
+		null,
+		null,
+		profile,
+		duplicate_conditions,
+		effects
+	)
+	_expect(invalid == null, "duplicate authored condition kinds reject")
 
 
 func _expect(condition: bool, message: String) -> void:

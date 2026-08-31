@@ -115,6 +115,15 @@ var advantage_rider: RefCounted:
 var reaction_definition: RefCounted:
 	get:
 		return _reaction_definition.call("duplicate_definition") if is_instance_valid(_reaction_definition) else null
+var target_profile: RefCounted:
+	get:
+		return _target_profile.call("duplicate_profile") if is_instance_valid(_target_profile) else null
+var conditions: Array[RefCounted]:
+	get:
+		return _duplicate_conditions(_conditions)
+var authored_effects: Array[RefCounted]:
+	get:
+		return _duplicate_authored_effects(_authored_effects)
 
 var _skill_id: StringName = &""
 var _display_name: String = ""
@@ -138,6 +147,9 @@ var _combo_definition: RefCounted = null
 var _keyword_operations: Array[RefCounted] = []
 var _advantage_rider: RefCounted = null
 var _reaction_definition: RefCounted = null
+var _target_profile: RefCounted = null
+var _conditions: Array[RefCounted] = []
+var _authored_effects: Array[RefCounted] = []
 var _is_valid: bool = false
 
 
@@ -163,7 +175,10 @@ func _init(
 	combo_definition_value: RefCounted = null,
 	keyword_operations_value: Array[RefCounted] = [],
 	advantage_rider_value: RefCounted = null,
-	reaction_definition_value: RefCounted = null
+	reaction_definition_value: RefCounted = null,
+	target_profile_value: RefCounted = null,
+	condition_values: Array[RefCounted] = [],
+	authored_effect_values: Array[RefCounted] = []
 ) -> void:
 	if not is_valid_definition(id, name, skill_kind, effect, targeting, requirements, cooldown):
 		push_error("CharacterSkill requires non-blank identity, preview fields, and a valid kind.")
@@ -197,7 +212,27 @@ func _init(
 	):
 		push_error("CharacterSkill reaction definitions require a valid Passive skill.")
 		return
-	if not is_valid_mechanical_definition(
+	var is_authored: bool = is_instance_valid(target_profile_value) or not authored_effect_values.is_empty()
+	if is_authored and not _is_valid_authored_definition(
+		skill_kind,
+		target_profile_value,
+		condition_values,
+		authored_effect_values,
+		targeting_mode_value,
+		target_side_value,
+		target_rule_value,
+		requirement_value,
+		effect_value,
+		effect_magnitude_value,
+		effect_duration_value,
+		effect_duration_mode_value,
+		cooldown_mode_value,
+		cooldown_actions_value,
+		unavailable_through_round_value
+	):
+		push_error("CharacterSkill requires valid typed authored targeting, conditions, and effects.")
+		return
+	if not is_authored and not is_valid_mechanical_definition(
 		skill_kind,
 		targeting_mode_value,
 		target_side_value,
@@ -247,6 +282,13 @@ func _init(
 		if is_instance_valid(reaction_definition_value)
 		else null
 	)
+	_target_profile = (
+		target_profile_value.call("duplicate_profile")
+		if is_instance_valid(target_profile_value)
+		else null
+	)
+	_conditions = _duplicate_conditions(condition_values)
+	_authored_effects = _duplicate_authored_effects(authored_effect_values)
 	_is_valid = true
 
 
@@ -272,7 +314,10 @@ static func create(
 	combo_definition_value: RefCounted = null,
 	keyword_operations_value: Array[RefCounted] = [],
 	advantage_rider_value: RefCounted = null,
-	reaction_definition_value: RefCounted = null
+	reaction_definition_value: RefCounted = null,
+	target_profile_value: RefCounted = null,
+	condition_values: Array[RefCounted] = [],
+	authored_effect_values: Array[RefCounted] = []
 ) -> CharacterSkill:
 	var skill: CharacterSkill = CharacterSkill.new(
 		id,
@@ -296,7 +341,10 @@ static func create(
 		combo_definition_value,
 		keyword_operations_value,
 		advantage_rider_value,
-		reaction_definition_value
+		reaction_definition_value,
+		target_profile_value,
+		condition_values,
+		authored_effect_values
 	)
 	return skill if skill.is_valid() else null
 
@@ -446,7 +494,120 @@ func mechanical_definition() -> Dictionary:
 			if is_instance_valid(_reaction_definition)
 			else null
 		),
+		"target_profile": (
+			_target_profile.call("duplicate_profile")
+			if is_instance_valid(_target_profile)
+			else null
+		),
+		"conditions": _duplicate_conditions(_conditions),
+		"authored_effects": _duplicate_authored_effects(_authored_effects),
 	}
+
+
+static func _is_valid_authored_definition(
+	skill_kind: int,
+	profile: RefCounted,
+	candidate_conditions: Array[RefCounted],
+	candidate_effects: Array[RefCounted],
+	targeting_mode_value: int,
+	target_side_value: int,
+	target_rule_value: int,
+	requirement_value: int,
+	effect_value: int,
+	effect_magnitude_value: int,
+	effect_duration_value: int,
+	effect_duration_mode_value: int,
+	cooldown_mode_value: int,
+	cooldown_actions_value: int,
+	unavailable_through_round_value: int
+) -> bool:
+	if skill_kind != Kind.ACTIVE or not _is_valid_target_profile(profile) or candidate_effects.is_empty():
+		return false
+	if (
+		targeting_mode_value not in [TargetingMode.FREE, TargetingMode.PREDEFINED]
+		or target_side_value not in [TargetSide.SELF, TargetSide.ALLY, TargetSide.ENEMY]
+		or target_rule_value not in [
+			TargetRule.SELECT_ONE,
+			TargetRule.SELF,
+			TargetRule.ALL_ACTIVE_ALLIES,
+			TargetRule.FARTHEST_ACTIVE_ENEMY,
+		]
+		or requirement_value not in [
+			Requirement.NONE,
+			Requirement.FRONT_ROW,
+			Requirement.BACK_ROW,
+			Requirement.ABOVE_HALF_HP,
+		]
+		or effect_value != Effect.NONE
+		or effect_magnitude_value != 0
+		or effect_duration_value != 0
+		or effect_duration_mode_value != EffectDuration.NONE
+		or not _are_valid_conditions(candidate_conditions)
+		or not _are_valid_authored_effects(candidate_effects)
+	):
+		return false
+	match cooldown_mode_value:
+		CooldownMode.NONE:
+			return cooldown_actions_value == 0 and unavailable_through_round_value == 0
+		CooldownMode.POST_USE_ACTIONS:
+			return cooldown_actions_value > 0 and unavailable_through_round_value == 0
+		CooldownMode.ROUND_GATE:
+			return cooldown_actions_value == 0 and unavailable_through_round_value > 0
+	return false
+
+
+static func _is_valid_target_profile(profile: RefCounted) -> bool:
+	return (
+		is_instance_valid(profile)
+		and profile.has_method("is_valid")
+		and profile.has_method("duplicate_profile")
+		and profile.call("is_valid")
+	)
+
+
+static func _are_valid_conditions(candidate_conditions: Array[RefCounted]) -> bool:
+	var seen: Dictionary[int, bool] = {}
+	for condition: RefCounted in candidate_conditions:
+		if (
+			not is_instance_valid(condition)
+			or not condition.has_method("is_valid")
+			or not condition.has_method("duplicate_condition")
+			or not condition.call("is_valid")
+		):
+			return false
+		var condition_kind: int = int(condition.get("kind"))
+		if seen.has(condition_kind):
+			return false
+		seen[condition_kind] = true
+	return true
+
+
+static func _are_valid_authored_effects(candidate_effects: Array[RefCounted]) -> bool:
+	for authored_effect: RefCounted in candidate_effects:
+		if (
+			not is_instance_valid(authored_effect)
+			or not authored_effect.has_method("is_valid")
+			or not authored_effect.has_method("duplicate_definition")
+			or not authored_effect.call("is_valid")
+		):
+			return false
+	return true
+
+
+static func _duplicate_conditions(source_conditions: Array[RefCounted]) -> Array[RefCounted]:
+	var copied: Array[RefCounted] = []
+	for condition: RefCounted in source_conditions:
+		if is_instance_valid(condition):
+			copied.append(condition.call("duplicate_condition"))
+	return copied
+
+
+static func _duplicate_authored_effects(source_effects: Array[RefCounted]) -> Array[RefCounted]:
+	var copied: Array[RefCounted] = []
+	for authored_effect: RefCounted in source_effects:
+		if is_instance_valid(authored_effect):
+			copied.append(authored_effect.call("duplicate_definition"))
+	return copied
 
 
 static func _are_valid_keyword_operations(candidate_operations: Array[RefCounted]) -> bool:
@@ -511,5 +672,8 @@ func duplicate_skill() -> CharacterSkill:
 		_combo_definition,
 		_keyword_operations,
 		_advantage_rider,
-		_reaction_definition
+		_reaction_definition,
+		_target_profile,
+		_conditions,
+		_authored_effects
 	)
