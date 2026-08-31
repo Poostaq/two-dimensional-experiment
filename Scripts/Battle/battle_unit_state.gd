@@ -13,6 +13,8 @@ enum ModifierExpiry {
 
 const DEFAULT_MAX_HP := 20
 const MAX_CHARACTER_SKILLS := 4
+const MAX_ARMOR := 10
+const BLEED_STATE_PATH := "res://Scripts/Battle/battle_bleed_state.gd"
 
 var unit_id: StringName
 var display_name: String
@@ -31,6 +33,15 @@ var _skills: Array[CharacterSkill] = []
 var _base_speed: int = 0
 var _skill_cooldowns: Dictionary[StringName, int] = {}
 var _speed_modifiers: Dictionary[StringName, Dictionary] = {}
+var _armor: int = 0
+var _advantage_source: RefCounted = null
+var _advantage_expiry_round: int = 0
+var _snared_source: RefCounted = null
+var _snared_expiry_round: int = 0
+var _bleed_states: Dictionary[StringName, RefCounted] = {}
+var _passive_action_guards: Dictionary[StringName, bool] = {}
+var _passive_round_guards: Dictionary[StringName, bool] = {}
+var _passive_battle_guards: Dictionary[StringName, bool] = {}
 
 
 func _init(
@@ -99,7 +110,7 @@ func get_effective_speed() -> int:
 	var total := _base_speed
 	for modifier: Dictionary in _speed_modifiers.values():
 		total += int(modifier.get("amount", 0))
-	return total
+	return max(1, total)
 
 
 func get_skill_cooldown(skill_id: StringName) -> int:
@@ -136,7 +147,7 @@ func add_speed_modifier(
 ) -> bool:
 	if (
 		source_id.is_empty()
-		or amount <= 0
+		or amount == 0
 		or duration <= 0
 		or expiry not in [ModifierExpiry.NEXT_ACTION, ModifierExpiry.CURRENT_ROUND]
 		or applied_round < 1
@@ -180,8 +191,165 @@ func get_speed_modifier_snapshot() -> Dictionary[StringName, Dictionary]:
 	return _speed_modifiers.duplicate(true)
 
 
+func add_armor(amount: int) -> int:
+	if amount <= 0 or _armor >= MAX_ARMOR:
+		return 0
+	var applied: int = min(amount, MAX_ARMOR - _armor)
+	_armor += applied
+	return applied
+
+
+func spend_armor(requested: int) -> int:
+	if requested <= 0 or _armor <= 0:
+		return 0
+	var spent: int = min(requested, _armor)
+	_armor -= spent
+	return spent
+
+
+func get_armor() -> int:
+	return _armor
+
+
+func apply_advantage(source: RefCounted, expiry_round: int) -> bool:
+	if not _is_valid_keyword_source(source) or expiry_round < 1:
+		return false
+	_advantage_source = source.call("duplicate_source")
+	_advantage_expiry_round = expiry_round
+	return true
+
+
+func has_advantage(current_round: int) -> bool:
+	if current_round < 1 or not is_instance_valid(_advantage_source):
+		return false
+	if _advantage_expiry_round < current_round:
+		_clear_advantage()
+		return false
+	return true
+
+
+func consume_advantage(current_round: int) -> RefCounted:
+	if not has_advantage(current_round):
+		return null
+	var consumed: RefCounted = _advantage_source.call("duplicate_source")
+	_clear_advantage()
+	return consumed
+
+
+func apply_snared(source: RefCounted, expiry_round: int) -> bool:
+	if not _is_valid_keyword_source(source) or expiry_round < 1:
+		return false
+	_snared_source = source.call("duplicate_source")
+	_snared_expiry_round = max(_snared_expiry_round, expiry_round)
+	return true
+
+
+func is_snared(current_round: int) -> bool:
+	if current_round < 1 or not is_instance_valid(_snared_source):
+		return false
+	if _snared_expiry_round < current_round:
+		_clear_snared()
+		return false
+	return true
+
+
+func apply_bleed(source: RefCounted, duration_actions: int = 2) -> bool:
+	if not _is_valid_keyword_source(source) or duration_actions < 1:
+		return false
+	var key := _keyword_source_key(source)
+	if _bleed_states.has(key):
+		return _bleed_states[key].call("add_application", source, duration_actions)
+	var bleed_script := load(BLEED_STATE_PATH) as Script
+	if not is_instance_valid(bleed_script):
+		return false
+	var bleed: RefCounted = bleed_script.call("create", source, 1, duration_actions)
+	if not is_instance_valid(bleed):
+		return false
+	_bleed_states[key] = bleed
+	return true
+
+
+func resolve_bleed_after_committed_action() -> Array[RefCounted]:
+	var ticks: Array[RefCounted] = []
+	for key: StringName in _bleed_states.keys():
+		var bleed: RefCounted = _bleed_states[key]
+		if not is_instance_valid(bleed):
+			_bleed_states.erase(key)
+			continue
+		ticks.append(bleed.call("duplicate_state"))
+		if not bleed.call("consume_action"):
+			_bleed_states.erase(key)
+	return ticks
+
+
+func get_bleed_snapshot() -> Array[RefCounted]:
+	var snapshot: Array[RefCounted] = []
+	for bleed: RefCounted in _bleed_states.values():
+		if is_instance_valid(bleed):
+			snapshot.append(bleed.call("duplicate_state"))
+	return snapshot
+
+
+func reduce_skill_cooldown(skill_id: StringName, amount: int) -> int:
+	if skill_id.is_empty() or amount <= 0 or not _has_skill(skill_id):
+		return get_skill_cooldown(skill_id)
+	var remaining: int = max(0, get_skill_cooldown(skill_id) - amount)
+	set_skill_cooldown(skill_id, remaining)
+	return remaining
+
+
+func clear_round_keywords(completed_round: int) -> void:
+	if completed_round < 1:
+		return
+	if is_instance_valid(_advantage_source) and _advantage_expiry_round <= completed_round:
+		_clear_advantage()
+	if is_instance_valid(_snared_source) and _snared_expiry_round <= completed_round:
+		_clear_snared()
+	expire_speed_modifiers_for_round(completed_round)
+	_passive_action_guards.clear()
+	_passive_round_guards.clear()
+
+
+func clear_battle_local_state() -> void:
+	_skill_cooldowns.clear()
+	_speed_modifiers.clear()
+	_armor = 0
+	_clear_advantage()
+	_clear_snared()
+	_bleed_states.clear()
+	_passive_action_guards.clear()
+	_passive_round_guards.clear()
+	_passive_battle_guards.clear()
+
+
 func get_skill_cooldown_snapshot() -> Dictionary[StringName, int]:
 	return _skill_cooldowns.duplicate()
+
+
+func _clear_advantage() -> void:
+	_advantage_source = null
+	_advantage_expiry_round = 0
+
+
+func _clear_snared() -> void:
+	_snared_source = null
+	_snared_expiry_round = 0
+
+
+func _is_valid_keyword_source(source: RefCounted) -> bool:
+	return (
+		is_instance_valid(source)
+		and source.has_method("is_valid")
+		and source.has_method("duplicate_source")
+		and source.call("is_valid")
+		and source.get("source_unit_id") is StringName
+		and source.get("source_skill_id") is StringName
+		and source.get("source_power") is int
+	)
+
+
+func _keyword_source_key(source: RefCounted) -> StringName:
+	return StringName("%s::%s" % [source.get("source_unit_id"), source.get("source_skill_id")])
 
 
 func _has_skill(skill_id: StringName) -> bool:
