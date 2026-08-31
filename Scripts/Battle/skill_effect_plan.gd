@@ -31,6 +31,7 @@ var advantage_rider: RefCounted:
 var cooldown_actions: int
 var advance_turn: bool
 var battle_revision: int
+var consume_advantage: bool = false
 
 var _target_ids: Array[StringName] = []
 var _damage_operations: Array[Dictionary] = []
@@ -52,7 +53,8 @@ func _init(
 	plan_battle_revision: int,
 	plan_keyword_operations: Array[RefCounted] = [],
 	plan_locked_advantage_source: RefCounted = null,
-	plan_advantage_rider: RefCounted = null
+	plan_advantage_rider: RefCounted = null,
+	plan_consume_advantage: bool = false
 ) -> void:
 	if not _valid_input(
 		plan_actor_id,
@@ -62,6 +64,7 @@ func _init(
 		plan_keyword_operations,
 		plan_locked_advantage_source,
 		plan_advantage_rider,
+		plan_consume_advantage,
 		plan_cooldown_actions,
 		plan_battle_revision
 	):
@@ -86,6 +89,7 @@ func _init(
 	cooldown_actions = plan_cooldown_actions
 	advance_turn = plan_advance_turn
 	battle_revision = plan_battle_revision
+	consume_advantage = plan_consume_advantage
 	_is_valid = true
 
 
@@ -100,7 +104,8 @@ static func create(
 	plan_battle_revision: int,
 	plan_keyword_operations: Array[RefCounted] = [],
 	plan_locked_advantage_source: RefCounted = null,
-	plan_advantage_rider: RefCounted = null
+	plan_advantage_rider: RefCounted = null,
+	plan_consume_advantage: bool = false
 ) -> SkillEffectPlan:
 	var plan: SkillEffectPlan = SkillEffectPlan.new(
 		plan_actor_id,
@@ -113,7 +118,8 @@ static func create(
 		plan_battle_revision,
 		plan_keyword_operations,
 		plan_locked_advantage_source,
-		plan_advantage_rider
+		plan_advantage_rider,
+		plan_consume_advantage
 	)
 	return plan if plan.is_valid() else null
 
@@ -130,6 +136,7 @@ static func _valid_input(
 	plan_keyword_operations: Array[RefCounted],
 	plan_locked_advantage_source: RefCounted,
 	plan_advantage_rider: RefCounted,
+	plan_consume_advantage: bool,
 	plan_cooldown_actions: int,
 	plan_battle_revision: int
 ) -> bool:
@@ -148,6 +155,11 @@ static func _valid_input(
 	if is_instance_valid(plan_locked_advantage_source) and not _is_valid_keyword_source(plan_locked_advantage_source):
 		return false
 	if is_instance_valid(plan_advantage_rider) and not _is_valid_keyword_operation(plan_advantage_rider):
+		return false
+	if plan_consume_advantage and (
+		not is_instance_valid(plan_locked_advantage_source)
+		or plan_damage_operations.is_empty()
+	):
 		return false
 	return true
 

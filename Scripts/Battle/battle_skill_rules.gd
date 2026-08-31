@@ -18,7 +18,32 @@ static func evaluate_targets(
 	var valid_ids: Array[StringName] = []
 	var invalid_targets: Dictionary[StringName, SkillActionReason] = {}
 	var affected_ids: Array[StringName] = []
-	if is_instance_valid(actor) and is_instance_valid(skill):
+	var authored_profile: RefCounted = skill.target_profile if is_instance_valid(skill) else null
+	if is_instance_valid(actor) and is_instance_valid(skill) and is_instance_valid(authored_profile):
+		if int(authored_profile.get("maximum_targets")) > 0:
+			for unit: BattleUnitState in _sorted_units(units):
+				if (
+					not is_instance_valid(unit)
+					or unit == actor
+					or unit.side != int(authored_profile.get("target_side"))
+				):
+					continue
+				if not unit.is_active():
+					invalid_targets[unit.unit_id] = _reason(
+						SkillActionReason.Code.TARGET_DEFEATED,
+						"Target was defeated. Select another target.",
+						actor,
+						skill,
+						unit.unit_id
+					)
+					continue
+				if (
+					bool(authored_profile.get("require_adjacent_lane"))
+					and BattleFormationRules.lane_distance(actor.slot_index, unit.slot_index) != 1
+				):
+					continue
+				valid_ids.append(unit.unit_id)
+	elif is_instance_valid(actor) and is_instance_valid(skill):
 		if skill.targeting_mode == CharacterSkill.TargetingMode.FREE:
 			for unit: BattleUnitState in _sorted_units(units):
 				if not is_instance_valid(unit) or unit.side == actor.side:
@@ -78,7 +103,10 @@ static func evaluate_targets(
 		battle_revision,
 		combo_ready_ids,
 		combo_bonus_by_target,
-		skill.effect_magnitude if is_instance_valid(skill) else 0
+		skill.effect_magnitude if is_instance_valid(skill) else 0,
+		int(authored_profile.get("minimum_targets")) if is_instance_valid(authored_profile) else 1,
+		int(authored_profile.get("maximum_targets")) if is_instance_valid(authored_profile) else 1,
+		bool(authored_profile.get("allows_optional_self_move")) if is_instance_valid(authored_profile) else false
 	)
 
 
@@ -126,6 +154,68 @@ static func validate_confirmation(
 			evaluation.blocking_reason
 		)
 	var accepted_ids: Array[StringName] = []
+	var authored_profile: RefCounted = skill.target_profile
+	if is_instance_valid(authored_profile):
+		var minimum_targets: int = int(authored_profile.get("minimum_targets"))
+		var maximum_targets: int = int(authored_profile.get("maximum_targets"))
+		if proposed_target_ids.size() < minimum_targets or proposed_target_ids.size() > maximum_targets:
+			return _rejected(
+				actor,
+				skill,
+				proposed_target_ids,
+				current_revision,
+				_reason(
+					SkillActionReason.Code.TARGET_INVALID,
+					"Select between %d and %d valid targets." % [minimum_targets, maximum_targets],
+					actor,
+					skill
+				)
+			)
+		for target_id: StringName in proposed_target_ids:
+			if accepted_ids.has(target_id) or not evaluation.valid_target_ids.has(target_id):
+				return _rejected(
+					actor,
+					skill,
+					proposed_target_ids,
+					current_revision,
+					_target_rejection(actor, skill, units, target_id)
+				)
+			accepted_ids.append(target_id)
+		var locked_targets: Array[BattleUnitState] = []
+		for target_id: StringName in accepted_ids:
+			locked_targets.append(_find_unit(units, target_id))
+		var resolver_script: Script = load("res://Scripts/Battle/battle_skill_authoring_resolver.gd") as Script
+		var authored_plan: SkillEffectPlan = resolver_script.build_plan(
+			actor,
+			skill,
+			locked_targets,
+			units,
+			round_number,
+			current_revision,
+			history_snapshot
+		)
+		if not is_instance_valid(authored_plan):
+			return _rejected(
+				actor,
+				skill,
+				proposed_target_ids,
+				current_revision,
+				_reason(
+					SkillActionReason.Code.TARGET_INVALID,
+					"Authored skill requirements changed. Review this skill again.",
+					actor,
+					skill
+				)
+			)
+		return SkillConfirmationValidation.new(
+			true,
+			SkillActionReason.none(),
+			actor.unit_id,
+			skill.skill_id,
+			accepted_ids,
+			current_revision,
+			authored_plan
+		)
 	if skill.targeting_mode == CharacterSkill.TargetingMode.FREE:
 		if (
 			proposed_target_ids.size() != 1

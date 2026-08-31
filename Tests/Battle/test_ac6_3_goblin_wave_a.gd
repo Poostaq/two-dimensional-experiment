@@ -4,6 +4,7 @@ extends SceneTree
 const TARGET_PROFILE_PATH := "res://Scripts/Battle/battle_skill_target_profile.gd"
 const EFFECT_DEFINITION_PATH := "res://Scripts/Battle/battle_skill_effect_definition.gd"
 const CONDITION_PATH := "res://Scripts/Battle/battle_skill_condition.gd"
+const AUTHORING_RESOLVER_PATH := "res://Scripts/Battle/battle_skill_authoring_resolver.gd"
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -12,6 +13,9 @@ var _assertions: int = 0
 func _init() -> void:
 	_test_authoring_value_objects()
 	_test_character_skill_authoring()
+	_test_advantage_damage_definition()
+	_test_authoring_resolver()
+	_test_authored_target_profiles()
 	if _failures.is_empty():
 		print("AC6.3 Goblin wave A: %d/%d assertions passed." % [_assertions, _assertions])
 		quit(0)
@@ -194,6 +198,242 @@ func _test_character_skill_authoring() -> void:
 		effects
 	)
 	_expect(invalid == null, "duplicate authored condition kinds reject")
+
+
+func _test_advantage_damage_definition() -> void:
+	var effect_definition_script := load(EFFECT_DEFINITION_PATH) as Script
+	var cheap_finish: RefCounted = effect_definition_script.damage(
+		effect_definition_script.TargetRole.PRIMARY,
+		120,
+		160
+	)
+	_expect(is_instance_valid(cheap_finish), "Advantage damage definition is valid")
+	_expect(cheap_finish.power_percent == 120, "base Power percentage is retained")
+	_expect(cheap_finish.advantage_power_percent == 160, "Advantage Power percentage is retained")
+	var copied: RefCounted = cheap_finish.duplicate_definition()
+	_expect(copied.advantage_power_percent == 160, "Advantage percentage duplicates")
+	_expect(
+		effect_definition_script.damage(effect_definition_script.TargetRole.PRIMARY, 120, 100) == null,
+		"Advantage percentage must exceed base percentage"
+	)
+
+
+func _test_authoring_resolver() -> void:
+	var resolver_script := load(AUTHORING_RESOLVER_PATH) as Script
+	_expect(is_instance_valid(resolver_script), "authoring resolver script exists")
+	if not is_instance_valid(resolver_script):
+		return
+	var profile_script := load(TARGET_PROFILE_PATH) as Script
+	var effect_script := load(EFFECT_DEFINITION_PATH) as Script
+	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.ENEMY)
+	var damage: RefCounted = effect_script.damage(effect_script.TargetRole.PRIMARY, 120, 160)
+	var skill := _authored_test_skill(
+		&"cheap_finish",
+		2,
+		profile,
+		[],
+		[damage]
+	)
+	var actor := BattleUnitState.new(
+		&"wirefang",
+		"Wirefang",
+		BattleUnitState.Side.PLAYER,
+		0,
+		10,
+		14,
+		[skill],
+		6,
+		0
+	)
+	var plain_target := BattleUnitState.new(
+		&"plain_target",
+		"Plain Target",
+		BattleUnitState.Side.ENEMY,
+		0,
+		5,
+		20,
+		[],
+		4,
+		0
+	)
+	var marked_target := BattleUnitState.new(
+		&"marked_target",
+		"Marked Target",
+		BattleUnitState.Side.ENEMY,
+		1,
+		5,
+		20,
+		[],
+		4,
+		0
+	)
+	var source := BattleKeywordSource.create(&"setup", &"mark", 4)
+	marked_target.apply_advantage(source, 1)
+	var units: Array[BattleUnitState] = [actor, plain_target, marked_target]
+	var plain_targets: Array[BattleUnitState] = [plain_target]
+	var marked_targets: Array[BattleUnitState] = [marked_target]
+	var empty_history: Array[BattleActionLogEntry] = []
+
+	var plain_plan: SkillEffectPlan = resolver_script.build_plan(
+		actor,
+		skill,
+		plain_targets,
+		units,
+		1,
+		7,
+		empty_history
+	)
+	_expect(is_instance_valid(plain_plan), "base authored damage plan builds")
+	_expect(plain_plan.damage_operations[0][&"base_damage"] == 8, "ceil(6 * 1.20) is 8")
+	_expect(not plain_plan.consume_advantage, "unmarked target does not consume Advantage")
+
+	var marked_plan: SkillEffectPlan = resolver_script.build_plan(
+		actor,
+		skill,
+		marked_targets,
+		units,
+		1,
+		7,
+		empty_history
+	)
+	_expect(marked_plan.damage_operations[0][&"base_damage"] == 10, "ceil(6 * 1.60) is 10")
+	_expect(marked_plan.consume_advantage, "marked target locks Advantage consumption")
+
+
+func _test_authored_target_profiles() -> void:
+	var profile_script := load(TARGET_PROFILE_PATH) as Script
+	var effect_script := load(EFFECT_DEFINITION_PATH) as Script
+	var adjacent_profile: RefCounted = profile_script.create(
+		1,
+		1,
+		BattleUnitState.Side.PLAYER,
+		true,
+		false
+	)
+	var armor_effect: RefCounted = effect_script.keyword(
+		effect_script.TargetRole.PRIMARY,
+		BattleKeywordOperation.Kind.ADD_ARMOR,
+		3
+	)
+	var pack_brace := _authored_test_skill(
+		&"pack_brace",
+		2,
+		adjacent_profile,
+		[],
+		[armor_effect]
+	)
+	var actor := BattleUnitState.new(
+		&"bruiser",
+		"Bruiser",
+		BattleUnitState.Side.PLAYER,
+		0,
+		7,
+		20,
+		[pack_brace],
+		4,
+		2
+	)
+	var adjacent := BattleUnitState.new(
+		&"adjacent",
+		"Adjacent",
+		BattleUnitState.Side.PLAYER,
+		1,
+		6
+	)
+	var distant := BattleUnitState.new(
+		&"distant",
+		"Distant",
+		BattleUnitState.Side.PLAYER,
+		2,
+		6
+	)
+	var enemy := BattleUnitState.new(
+		&"enemy",
+		"Enemy",
+		BattleUnitState.Side.ENEMY,
+		0,
+		6
+	)
+	var units: Array[BattleUnitState] = [actor, adjacent, distant, enemy]
+	var history: Array[BattleActionLogEntry] = []
+	var evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
+		actor,
+		pack_brace,
+		units,
+		actor.unit_id,
+		false,
+		1,
+		4,
+		history
+	)
+	_expect(evaluation.minimum_targets == 1, "authored evaluation exposes minimum target count")
+	_expect(evaluation.maximum_targets == 1, "authored evaluation exposes maximum target count")
+	_expect(evaluation.valid_target_ids == [&"adjacent"], "adjacent ally filter is authoritative")
+
+	var ring_profile: RefCounted = profile_script.create(
+		1,
+		2,
+		BattleUnitState.Side.ENEMY,
+		false,
+		false
+	)
+	var snare_effect: RefCounted = effect_script.keyword(
+		effect_script.TargetRole.ALL_SELECTED,
+		BattleKeywordOperation.Kind.APPLY_SNARED,
+		0,
+		1
+	)
+	var ring_net := _authored_test_skill(&"ring_net", 4, ring_profile, [], [snare_effect])
+	actor.set_skills([ring_net])
+	var ring_evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
+		actor,
+		ring_net,
+		units,
+		actor.unit_id,
+		false,
+		1,
+		4,
+		history
+	)
+	_expect(ring_evaluation.minimum_targets == 1, "Ring Net minimum is one")
+	_expect(ring_evaluation.maximum_targets == 2, "Ring Net maximum is two")
+	_expect(ring_evaluation.valid_target_ids == [&"enemy"], "Ring Net exposes active enemies")
+
+
+func _authored_test_skill(
+	skill_id: StringName,
+	cooldown: int,
+	profile: RefCounted,
+	conditions: Array[RefCounted],
+	effects: Array[RefCounted]
+) -> CharacterSkill:
+	return CharacterSkill.create(
+		skill_id,
+		String(skill_id),
+		CharacterSkill.Kind.ACTIVE,
+		"Authored effect.",
+		"Authored targets.",
+		"Authored requirements.",
+		"CD%d" % cooldown,
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.NONE,
+		0,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS,
+		cooldown,
+		0,
+		null,
+		[],
+		null,
+		null,
+		profile,
+		conditions,
+		effects
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

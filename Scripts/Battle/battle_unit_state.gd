@@ -228,6 +228,12 @@ func has_advantage(current_round: int) -> bool:
 	return true
 
 
+func get_advantage_source(current_round: int) -> RefCounted:
+	if not has_advantage(current_round):
+		return null
+	return _advantage_source.call("duplicate_source")
+
+
 func consume_advantage(current_round: int) -> RefCounted:
 	if not has_advantage(current_round):
 		return null

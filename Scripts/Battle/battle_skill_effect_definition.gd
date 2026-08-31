@@ -24,6 +24,9 @@ var target_role: TargetRole:
 var power_percent: int:
 	get:
 		return _power_percent
+var advantage_power_percent: int:
+	get:
+		return _advantage_power_percent
 var keyword_kind: BattleKeywordOperation.Kind:
 	get:
 		return _keyword_kind
@@ -37,6 +40,7 @@ var duration: int:
 var _kind: Kind = Kind.DAMAGE
 var _target_role: TargetRole = TargetRole.ACTOR
 var _power_percent: int = 0
+var _advantage_power_percent: int = 0
 var _keyword_kind: BattleKeywordOperation.Kind = BattleKeywordOperation.Kind.ADD_ARMOR
 var _magnitude: int = 0
 var _duration: int = 0
@@ -47,6 +51,7 @@ func _init(
 	effect_kind: int,
 	role: int,
 	percent: int = 0,
+	advantage_percent: int = 0,
 	operation_kind: int = BattleKeywordOperation.Kind.ADD_ARMOR,
 	effect_magnitude: int = 0,
 	effect_duration: int = 0
@@ -55,6 +60,7 @@ func _init(
 		effect_kind,
 		role,
 		percent,
+		advantage_percent,
 		operation_kind,
 		effect_magnitude,
 		effect_duration
@@ -63,14 +69,19 @@ func _init(
 	_kind = effect_kind as Kind
 	_target_role = role as TargetRole
 	_power_percent = percent
+	_advantage_power_percent = advantage_percent
 	_keyword_kind = operation_kind as BattleKeywordOperation.Kind
 	_magnitude = effect_magnitude
 	_duration = effect_duration
 	_is_valid = true
 
 
-static func damage(role: int, percent: int) -> RefCounted:
-	return _create(Kind.DAMAGE, role, percent)
+static func damage(
+	role: int,
+	percent: int,
+	advantage_percent: int = 0
+) -> RefCounted:
+	return _create(Kind.DAMAGE, role, percent, advantage_percent)
 
 
 static func keyword(
@@ -82,6 +93,7 @@ static func keyword(
 	return _create(
 		Kind.KEYWORD,
 		role,
+		0,
 		0,
 		operation_kind,
 		effect_magnitude,
@@ -97,6 +109,7 @@ static func speed(
 	return _create(
 		Kind.SPEED,
 		role,
+		0,
 		0,
 		BattleKeywordOperation.Kind.ADD_ARMOR,
 		effect_magnitude,
@@ -115,13 +128,22 @@ func is_valid() -> bool:
 func duplicate_definition() -> RefCounted:
 	if not is_valid():
 		return null
-	return _create(_kind, _target_role, _power_percent, _keyword_kind, _magnitude, _duration)
+	return _create(
+		_kind,
+		_target_role,
+		_power_percent,
+		_advantage_power_percent,
+		_keyword_kind,
+		_magnitude,
+		_duration
+	)
 
 
 static func _create(
 	effect_kind: int,
 	role: int,
 	percent: int = 0,
+	advantage_percent: int = 0,
 	operation_kind: int = BattleKeywordOperation.Kind.ADD_ARMOR,
 	effect_magnitude: int = 0,
 	effect_duration: int = 0
@@ -130,6 +152,7 @@ static func _create(
 		effect_kind,
 		role,
 		percent,
+		advantage_percent,
 		operation_kind,
 		effect_magnitude,
 		effect_duration
@@ -141,6 +164,7 @@ static func _is_valid_input(
 	effect_kind: int,
 	role: int,
 	percent: int,
+	advantage_percent: int,
 	operation_kind: int,
 	effect_magnitude: int,
 	effect_duration: int
@@ -154,10 +178,13 @@ static func _is_valid_input(
 			return (
 				role in [TargetRole.PRIMARY, TargetRole.ALL_SELECTED]
 				and percent > 0
+				and (advantage_percent == 0 or advantage_percent > percent)
 				and effect_magnitude == 0
 				and effect_duration == 0
 			)
 		Kind.KEYWORD:
+			if advantage_percent != 0:
+				return false
 			if operation_kind not in [
 				BattleKeywordOperation.Kind.ADD_ARMOR,
 				BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
@@ -177,13 +204,15 @@ static func _is_valid_input(
 			return effect_magnitude > 0 and effect_duration == 0
 		Kind.SPEED:
 			return (
-				role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED]
+				advantage_percent == 0
+				and role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED]
 				and effect_magnitude != 0
 				and effect_duration > 0
 			)
 		Kind.OPTIONAL_SELF_MOVE:
 			return (
 				role == TargetRole.ACTOR
+				and advantage_percent == 0
 				and percent == 0
 				and effect_magnitude == 0
 				and effect_duration == 0

@@ -13,6 +13,9 @@ var battle_revision: int
 var combo_ready_target_ids: Array[StringName]
 var combo_bonus_by_target: Dictionary[StringName, int]
 var base_damage: int
+var minimum_targets: int
+var maximum_targets: int
+var allows_optional_self_move: bool
 
 
 func _init(
@@ -27,7 +30,10 @@ func _init(
 	evaluation_battle_revision: int,
 	evaluation_combo_ready_target_ids: Array[StringName] = [],
 	evaluation_combo_bonus_by_target: Dictionary[StringName, int] = {},
-	evaluation_base_damage: int = 0
+	evaluation_base_damage: int = 0,
+	evaluation_minimum_targets: int = 1,
+	evaluation_maximum_targets: int = 1,
+	evaluation_allows_optional_self_move: bool = false
 ) -> void:
 	actor_id = evaluation_actor_id
 	skill_id = evaluation_skill_id
@@ -41,3 +47,6 @@ func _init(
 	combo_ready_target_ids = evaluation_combo_ready_target_ids.duplicate()
 	combo_bonus_by_target = evaluation_combo_bonus_by_target.duplicate()
 	base_damage = evaluation_base_damage
+	minimum_targets = evaluation_minimum_targets
+	maximum_targets = evaluation_maximum_targets
+	allows_optional_self_move = evaluation_allows_optional_self_move
