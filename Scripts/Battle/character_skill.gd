@@ -106,6 +106,12 @@ var unavailable_through_round: int:
 var combo_definition: RefCounted:
 	get:
 		return _combo_definition.duplicate_definition() if is_instance_valid(_combo_definition) else null
+var keyword_operations: Array[RefCounted]:
+	get:
+		return _duplicate_keyword_operations(_keyword_operations)
+var advantage_rider: RefCounted:
+	get:
+		return _advantage_rider.call("duplicate_operation") if is_instance_valid(_advantage_rider) else null
 
 var _skill_id: StringName = &""
 var _display_name: String = ""
@@ -126,6 +132,8 @@ var _cooldown_mode: CooldownMode = CooldownMode.NONE
 var _cooldown_actions: int = 0
 var _unavailable_through_round: int = 0
 var _combo_definition: RefCounted = null
+var _keyword_operations: Array[RefCounted] = []
+var _advantage_rider: RefCounted = null
 var _is_valid: bool = false
 
 
@@ -148,7 +156,9 @@ func _init(
 	cooldown_mode_value: int = CooldownMode.NONE,
 	cooldown_actions_value: int = 0,
 	unavailable_through_round_value: int = 0,
-	combo_definition_value: RefCounted = null
+	combo_definition_value: RefCounted = null,
+	keyword_operations_value: Array[RefCounted] = [],
+	advantage_rider_value: RefCounted = null
 ) -> void:
 	if not is_valid_definition(id, name, skill_kind, effect, targeting, requirements, cooldown):
 		push_error("CharacterSkill requires non-blank identity, preview fields, and a valid kind.")
@@ -170,6 +180,12 @@ func _init(
 		or target_rule_value != TargetRule.SELECT_ONE
 	):
 		push_error("CharacterSkill combo definitions require an active single-target skill.")
+		return
+	if not _are_valid_keyword_operations(keyword_operations_value):
+		push_error("CharacterSkill keyword operations must be valid typed operations.")
+		return
+	if is_instance_valid(advantage_rider_value) and not _is_valid_keyword_operation(advantage_rider_value):
+		push_error("CharacterSkill Advantage rider must be a valid typed keyword operation.")
 		return
 	if not is_valid_mechanical_definition(
 		skill_kind,
@@ -210,6 +226,12 @@ func _init(
 		if is_instance_valid(combo_definition_value)
 		else null
 	)
+	_keyword_operations = _duplicate_keyword_operations(keyword_operations_value)
+	_advantage_rider = (
+		advantage_rider_value.call("duplicate_operation")
+		if is_instance_valid(advantage_rider_value)
+		else null
+	)
 	_is_valid = true
 
 
@@ -232,7 +254,9 @@ static func create(
 	cooldown_mode_value: int = CooldownMode.NONE,
 	cooldown_actions_value: int = 0,
 	unavailable_through_round_value: int = 0,
-	combo_definition_value: RefCounted = null
+	combo_definition_value: RefCounted = null,
+	keyword_operations_value: Array[RefCounted] = [],
+	advantage_rider_value: RefCounted = null
 ) -> CharacterSkill:
 	var skill: CharacterSkill = CharacterSkill.new(
 		id,
@@ -253,7 +277,9 @@ static func create(
 		cooldown_mode_value,
 		cooldown_actions_value,
 		unavailable_through_round_value,
-		combo_definition_value
+		combo_definition_value,
+		keyword_operations_value,
+		advantage_rider_value
 	)
 	return skill if skill.is_valid() else null
 
@@ -392,7 +418,37 @@ func mechanical_definition() -> Dictionary:
 			if is_instance_valid(_combo_definition)
 			else null
 		),
+		"keyword_operations": _duplicate_keyword_operations(_keyword_operations),
+		"advantage_rider": (
+			_advantage_rider.call("duplicate_operation")
+			if is_instance_valid(_advantage_rider)
+			else null
+		),
 	}
+
+
+static func _are_valid_keyword_operations(candidate_operations: Array[RefCounted]) -> bool:
+	for operation: RefCounted in candidate_operations:
+		if not _is_valid_keyword_operation(operation):
+			return false
+	return true
+
+
+static func _duplicate_keyword_operations(source_operations: Array[RefCounted]) -> Array[RefCounted]:
+	var copied: Array[RefCounted] = []
+	for operation: RefCounted in source_operations:
+		if is_instance_valid(operation):
+			copied.append(operation.call("duplicate_operation"))
+	return copied
+
+
+static func _is_valid_keyword_operation(operation: RefCounted) -> bool:
+	return (
+		is_instance_valid(operation)
+		and operation.has_method("is_valid")
+		and operation.has_method("duplicate_operation")
+		and operation.call("is_valid")
+	)
 
 
 func is_valid() -> bool:
@@ -421,5 +477,7 @@ func duplicate_skill() -> CharacterSkill:
 		_cooldown_mode,
 		_cooldown_actions,
 		_unavailable_through_round,
-		_combo_definition
+		_combo_definition,
+		_keyword_operations,
+		_advantage_rider
 	)

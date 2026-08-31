@@ -4,7 +4,8 @@ extends SceneTree
 const SOURCE_PATH: String = "res://Scripts/Battle/battle_keyword_source.gd"
 const BLEED_PATH: String = "res://Scripts/Battle/battle_bleed_state.gd"
 const UNIT_STATE_PATH: String = "res://Scripts/Battle/battle_unit_state.gd"
-const EXPECTED_TEST_COUNT: int = 59
+const OPERATION_PATH: String = "res://Scripts/Battle/battle_keyword_operation.gd"
+const EXPECTED_TEST_COUNT: int = 75
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -18,6 +19,8 @@ func _run() -> void:
 	_test_keyword_value_objects()
 	_test_battle_local_keyword_state()
 	_test_armor_aware_damage_results()
+	_test_keyword_operation_contract()
+	_test_keyword_skill_and_plan_contract()
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
 	if _failures.is_empty():
@@ -156,6 +159,121 @@ func _test_battle_local_keyword_state() -> void:
 	_expect(unit.get_armor() == 0 and not unit.has_advantage(4) and not unit.is_snared(4) and unit.get_skill_cooldown(&"knife_work") == 0 and unit.get_effective_speed() == 5 and unit.get_bleed_snapshot().is_empty(), "battle cleanup removes local keyword state")
 
 
+func _test_keyword_skill_and_plan_contract() -> void:
+	if not ResourceLoader.exists(OPERATION_PATH):
+		return
+	var operation_script := load(OPERATION_PATH) as Script
+	var source_script := load(SOURCE_PATH) as Script
+	var skill_script := load("res://Scripts/Battle/character_skill.gd") as Script
+	var plan_script := load("res://Scripts/Battle/skill_effect_plan.gd") as Script
+	var skill_accepts_keywords := _script_method_min_arg_count(skill_script, &"create") >= 21
+	var plan_accepts_keywords := _script_method_min_arg_count(plan_script, &"create") >= 11
+	_expect(skill_accepts_keywords, "skills expose keyword-operation create arguments")
+	_expect(plan_accepts_keywords, "plans expose keyword-operation create arguments")
+	if not skill_accepts_keywords or not plan_accepts_keywords:
+		return
+	var source: RefCounted = source_script.call("create", &"actor", &"knife_work", 6)
+	var armor: RefCounted = operation_script.call("create", 0, &"target", 3, 1, null, &"")
+	var bleed: RefCounted = operation_script.call("create", 3, &"target", 0, 2, source, &"")
+	var skill: CharacterSkill = skill_script.call(
+		"create",
+		&"knife_work",
+		"Knife Work",
+		CharacterSkill.Kind.ACTIVE,
+		"Deal damage and keywords.",
+		"One enemy.",
+		"None.",
+		"Two actions.",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		3,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS,
+		2,
+		0,
+		null,
+		[armor, bleed],
+		null
+	)
+	_expect(skill != null, "skills accept authored keyword operations")
+	if skill == null:
+		return
+	var keyword_operations: Array = skill.get("keyword_operations")
+	keyword_operations.clear()
+	_expect(skill.get("keyword_operations").size() == 2, "skill keyword operations are defensive copies")
+	var duplicate: CharacterSkill = skill.duplicate_skill()
+	_expect(duplicate.get("keyword_operations").size() == 2, "skill duplication preserves keyword operations")
+	var invalid_skill: CharacterSkill = skill_script.call(
+		"create",
+		&"bad_keywords",
+		"Bad Keywords",
+		CharacterSkill.Kind.ACTIVE,
+		"Bad.",
+		"One enemy.",
+		"None.",
+		"None.",
+		CharacterSkill.TargetingMode.FREE,
+		CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE,
+		CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.DAMAGE,
+		1,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE,
+		0,
+		0,
+		null,
+		[null],
+		null
+	)
+	_expect(invalid_skill == null, "skills reject invalid keyword operations")
+	var plan: SkillEffectPlan = plan_script.call(
+		"create",
+		&"actor",
+		&"knife_work",
+		[&"target"],
+		[],
+		[],
+		2,
+		true,
+		7,
+		[armor, bleed],
+		null,
+		null
+	)
+	_expect(plan != null, "plans accept ordered keyword operations")
+	if plan == null:
+		return
+	var plan_operations: Array = plan.get("keyword_operations")
+	plan_operations.clear()
+	_expect(plan.get("keyword_operations").size() == 2, "plan keyword operations are defensive copies")
+	_expect(plan_script.call("create", &"actor", &"knife_work", [&"target"], [], [], 2, true, 7, [armor, armor], null, null) == null, "plans reject duplicate keyword operations")
+	var off_target: RefCounted = operation_script.call("create", 0, &"other", 3, 1, null, &"")
+	_expect(plan_script.call("create", &"actor", &"knife_work", [&"target"], [], [], 2, true, 7, [off_target], null, null) == null, "plans reject keyword operations outside targets")
+	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 8, 20, [skill], 6, 0)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 1, 2)
+	var validation := BattleSkillRules.validate_confirmation(actor, skill, [actor, target], actor.unit_id, false, 1, [&"target"], 3, 3, [])
+	_expect(validation.effect_plan != null and validation.effect_plan.get("keyword_operations").size() == 2, "skill confirmation carries keyword operations into the plan")
+
+
+func _test_keyword_operation_contract() -> void:
+	_expect(ResourceLoader.exists(OPERATION_PATH), "keyword operation script exists")
+	if not ResourceLoader.exists(OPERATION_PATH):
+		return
+	var operation_script := load(OPERATION_PATH) as Script
+	var armor: RefCounted = operation_script.call("create", 0, &"target", 3, 1, null, &"")
+	var cooldown: RefCounted = operation_script.call("create", 4, &"actor", 2, 0, null, &"knife_work")
+	_expect(armor != null and armor.get("target_id") == &"target" and armor.get("magnitude") == 3, "keyword operation stores target and magnitude")
+	_expect(cooldown != null and cooldown.get("affected_skill_id") == &"knife_work", "cooldown operation stores affected skill")
+	_expect(operation_script.call("create", 0, &"", 3, 1, null, &"") == null, "keyword operation rejects empty target")
+	_expect(operation_script.call("create", 4, &"actor", 2, 0, null, &"") == null, "cooldown operation rejects empty affected skill")
+
+
 func _test_armor_aware_damage_results() -> void:
 	var resolver_script := load("res://Scripts/Battle/battle_damage_resolver.gd") as Script
 	var has_direct := _script_has_static_method(resolver_script, &"apply_direct_damage")
@@ -184,6 +302,15 @@ func _test_armor_aware_damage_results() -> void:
 	target.add_armor(5)
 	var status: RefCounted = resolver_script.call("apply_status_damage", attacker, target, 4)
 	_expect(status.get("applied_damage") == 4 and target.current_hp == 6 and target.get_armor() == 5 and status.get("is_status_damage") and not status.get("was_direct_hit"), "status damage bypasses Armor")
+
+
+func _script_method_min_arg_count(script: Script, method_name: StringName) -> int:
+	if not is_instance_valid(script):
+		return -1
+	for method: Dictionary in script.get_script_method_list():
+		if method.get("name", &"") == method_name:
+			return (method.get("args", []) as Array).size()
+	return -1
 
 
 func _script_has_static_method(script: Script, method_name: StringName) -> bool:

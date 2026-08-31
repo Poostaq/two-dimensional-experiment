@@ -203,7 +203,10 @@ static func validate_confirmation(
 		speed_operations,
 		skill.cooldown_actions,
 		true,
-		current_revision
+		current_revision,
+		skill.keyword_operations,
+		null,
+		skill.advantage_rider
 	)
 	return SkillConfirmationValidation.new(
 		true,
