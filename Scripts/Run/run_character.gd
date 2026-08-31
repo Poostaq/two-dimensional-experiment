@@ -7,6 +7,7 @@ var base_speed: int
 var max_hp: int
 var power: int = 1
 var defense: int = 0
+var race_id: StringName = &"unknown"
 
 var _skills: Array[CharacterSkill] = []
 
@@ -18,7 +19,8 @@ func _init(
 	maximum_hp: int,
 	character_skills: Array[CharacterSkill],
 	unit_power: int = 1,
-	unit_defense: int = 0
+	unit_defense: int = 0,
+	unit_race_id: StringName = &"unknown"
 ) -> void:
 	character_id = id
 	display_name = name
@@ -29,6 +31,7 @@ func _init(
 	else:
 		power = unit_power
 		defense = unit_defense
+	race_id = unit_race_id if not unit_race_id.is_empty() else &"unknown"
 	_skills = character_skills.duplicate()
 
 
