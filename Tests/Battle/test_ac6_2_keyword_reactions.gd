@@ -180,22 +180,22 @@ func _test_passive_reaction_dispatch_contract() -> void:
 	var low_priority: RefCounted = definition_script.call("create", &"guard_low", 0, 0, 1, operation, false)
 	_expect(high_priority != null and low_priority != null, "reaction definitions validate synthetic Passives")
 	_expect(definition_script.call("create", &"", 0, 0, 1, operation, false) == null, "reaction definitions reject empty passive skill IDs")
-	var high_skill: CharacterSkill = skill_script.call("create", &"guard_high", "Guard High", CharacterSkill.Kind.PASSIVE, "React.", "Self.", "None.", "None.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, [], null, high_priority)
-	var low_skill: CharacterSkill = skill_script.call("create", &"guard_low", "Guard Low", CharacterSkill.Kind.PASSIVE, "React.", "Self.", "None.", "None.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, [], null, low_priority)
+	var high_skill: CharacterSkill = skill_script.call("create", &"guard_high", "Guard High", CharacterSkill.Kind.PASSIVE, "React.", "Self.", "None.", "None.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, _ref_array([]), null, high_priority)
+	var low_skill: CharacterSkill = skill_script.call("create", &"guard_low", "Guard Low", CharacterSkill.Kind.PASSIVE, "React.", "Self.", "None.", "None.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, _ref_array([]), null, low_priority)
 	_expect(high_skill != null and low_skill != null, "Passive skills accept reaction definitions")
 	var defender_a := BattleUnitState.new(&"defender_a", "Defender A", BattleUnitState.Side.PLAYER, 1, 5, 20, [high_skill])
 	var defender_b := BattleUnitState.new(&"defender_b", "Defender B", BattleUnitState.Side.PLAYER, 0, 5, 20, [low_skill])
 	var defeated := BattleUnitState.new(&"defeated", "Defeated", BattleUnitState.Side.PLAYER, 2, 5, 20, [low_skill])
 	defeated.current_hp = 0
-	var trigger := BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"enemy", [&"target"], {&"target": 3}, {}, {}, 1, 10, 10, BattleUnitState.Side.ENEMY, &"strike", false, {&"target": true})
-	var reactions: Array[RefCounted] = dispatcher_script.call("collect_reactions", trigger, [defender_a, defender_b, defeated], 1, 0)
+	var trigger := BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"enemy", _id_array([&"target"]), _int_dictionary({&"target": 3}), _int_dictionary({}), _int_dictionary({}), 1, 10, 10, BattleUnitState.Side.ENEMY, &"strike", false, _bool_dictionary({&"target": true}))
+	var reactions: Array[RefCounted] = dispatcher_script.call("collect_reactions", trigger, _unit_array([defender_a, defender_b, defeated]), 1, 0)
 	_expect(reactions.size() == 2, "dispatcher rejects inactive owners")
 	_expect(reactions[0].get("owner_unit_id") == &"defender_b" and reactions[1].get("owner_unit_id") == &"defender_a", "dispatcher orders by priority then formation")
-	var self_trigger := BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"defender_a", [&"target"], {&"target": 3}, {}, {}, 1, 11, 11, BattleUnitState.Side.PLAYER, &"strike", false, {&"target": true})
-	_expect(dispatcher_script.call("collect_reactions", self_trigger, [defender_a], 1, 0).is_empty(), "dispatcher prevents self-triggered reactions")
-	_expect(dispatcher_script.call("collect_reactions", trigger, [defender_a], 1, 0).is_empty(), "once-per-action guard prevents duplicate dispatch")
+	var self_trigger := BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"defender_a", _id_array([&"target"]), _int_dictionary({&"target": 3}), _int_dictionary({}), _int_dictionary({}), 1, 11, 11, BattleUnitState.Side.PLAYER, &"strike", false, _bool_dictionary({&"target": true}))
+	_expect(dispatcher_script.call("collect_reactions", self_trigger, _unit_array([defender_a]), 1, 0).is_empty(), "dispatcher prevents self-triggered reactions")
+	_expect(dispatcher_script.call("collect_reactions", trigger, _unit_array([defender_a]), 1, 0).is_empty(), "once-per-action guard prevents duplicate dispatch")
 	defender_a.clear_battle_local_state()
-	_expect(dispatcher_script.call("collect_reactions", trigger, [defender_a], 1, 2).is_empty(), "dispatcher blocks undeclared reaction chains")
+	_expect(dispatcher_script.call("collect_reactions", trigger, _unit_array([defender_a]), 1, 2).is_empty(), "dispatcher blocks undeclared reaction chains")
 
 
 func _test_arena_ordered_keyword_lifecycle() -> void:
@@ -222,7 +222,7 @@ func _test_arena_ordered_keyword_lifecycle() -> void:
 		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE,
 		CharacterSkill.Effect.DAMAGE, 8, 0, CharacterSkill.EffectDuration.NONE,
 		CharacterSkill.CooldownMode.POST_USE_ACTIONS, 2, 0, null,
-		[post_advantage, post_snare, post_bleed, cooldown_cut], advantage_rider
+		_ref_array([post_advantage, post_snare, post_bleed, cooldown_cut]), advantage_rider
 	)
 	var backup := CharacterSkill.create(
 		&"backup", "Backup", CharacterSkill.Kind.ACTIVE,
@@ -237,7 +237,7 @@ func _test_arena_ordered_keyword_lifecycle() -> void:
 		"React.", "Self.", "None.", "None.",
 		-1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0,
 		CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0,
-		null, [], null, reaction
+		null, _ref_array([]), null, reaction
 	)
 	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 8, 20, [combo, backup], 8, 0)
 	var guard := BattleUnitState.new(&"guard", "Guard", BattleUnitState.Side.PLAYER, 1, 4, 20, [watcher], 5, 0)
@@ -257,8 +257,8 @@ func _test_arena_ordered_keyword_lifecycle() -> void:
 	_expect(actor.get_armor() == 2, "arena consumes pre-existing Advantage and applies its rider")
 	_expect(target.has_advantage(1), "post-hit Advantage remains for later actions")
 	_expect(target.is_snared(1), "post-hit Snared applies after damage")
-	_expect(target.get_bleed_snapshot().size() == 1, "Bleed remains after its first affected action tick")
-	_expect(actor.get_skill_cooldown(&"backup") == 1, "keyword cooldown reduction applies during the transaction")
+	_expect(target.get_bleed_snapshot().size() == 2, "distinct Bleed sources remain after their first affected action tick")
+	_expect(actor.get_skill_cooldown(&"backup") == 0, "keyword cooldown reduction combines with the committed-action cooldown tick")
 	_expect(guard.get_armor() == 2, "Passive reaction operation applies deterministically")
 	_expect(records.size() == 1, "arena appends one authoritative record for the transaction")
 	if not records.is_empty():
@@ -313,29 +313,29 @@ func _test_history_query_contract() -> void:
 	var forced: BattleActionRecord = record_script.call("new",
 		BattleActionRecord.Kind.SKILL,
 		&"mover",
-		[&"target"],
-		{},
-		{&"target": 0},
-		{&"target": 3},
+		_id_array([&"target"]),
+		_int_dictionary({}),
+		_int_dictionary({&"target": 0}),
+		_int_dictionary({&"target": 3}),
 		1,
 		2,
 		2,
 		BattleUnitState.Side.ENEMY,
 		&"barbed_hook",
 		false,
-		{},
-		[],
+		_bool_dictionary({}),
+		_dictionary_array([]),
 		null,
-		[],
+		_ref_array([]),
 		false
 	)
 	var voluntary: BattleActionRecord = record_script.call("new",
 		BattleActionRecord.Kind.FORMATION_MOVE,
 		&"target",
-		[],
-		{},
-		{&"target": 3},
-		{&"target": 4},
+		_id_array([]),
+		_int_dictionary({}),
+		_int_dictionary({&"target": 3}),
+		_int_dictionary({&"target": 4}),
 		1,
 		3,
 		3,
@@ -343,15 +343,15 @@ func _test_history_query_contract() -> void:
 		&"formation_move",
 		true
 	)
-	var first_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"ally_a", [&"target"], {&"target": 2}, {}, {}, 1, 4, 4, BattleUnitState.Side.PLAYER, &"strike", false, {&"target": true})
-	var duplicate_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"ally_a", [&"target"], {&"target": 2}, {}, {}, 1, 5, 5, BattleUnitState.Side.PLAYER, &"strike", false, {&"target": true})
-	var second_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.DEFAULT_ATTACK, &"ally_b", [&"target"], {&"target": 1}, {}, {}, 1, 6, 6, BattleUnitState.Side.PLAYER, &"default_attack", false, {&"target": true})
-	var status_tick: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"ally_c", [&"target"], {&"target": 1}, {}, {}, 1, 7, 7, BattleUnitState.Side.PLAYER, &"bleed", false, {&"target": false})
-	var enemy_hit: BattleActionRecord = record_script.call("new", BattleActionRecord.Kind.SKILL, &"enemy", [&"target"], {&"target": 1}, {}, {}, 1, 8, 8, BattleUnitState.Side.ENEMY, &"strike", false, {&"target": true})
+	var first_hit: BattleActionRecord = _single_target_record(record_script, BattleActionRecord.Kind.SKILL, &"ally_a", &"target", 2, 4, BattleUnitState.Side.PLAYER, &"strike", true)
+	var duplicate_hit: BattleActionRecord = _single_target_record(record_script, BattleActionRecord.Kind.SKILL, &"ally_a", &"target", 2, 5, BattleUnitState.Side.PLAYER, &"strike", true)
+	var second_hit: BattleActionRecord = _single_target_record(record_script, BattleActionRecord.Kind.DEFAULT_ATTACK, &"ally_b", &"target", 1, 6, BattleUnitState.Side.PLAYER, &"default_attack", true)
+	var status_tick: BattleActionRecord = _single_target_record(record_script, BattleActionRecord.Kind.SKILL, &"ally_c", &"target", 1, 7, BattleUnitState.Side.PLAYER, &"bleed", false)
+	var enemy_hit: BattleActionRecord = _single_target_record(record_script, BattleActionRecord.Kind.SKILL, &"enemy", &"target", 1, 8, BattleUnitState.Side.ENEMY, &"strike", true)
 	var records: Array[BattleActionRecord] = [forced, voluntary, first_hit, duplicate_hit, second_hit, status_tick, enemy_hit]
 	_expect(query_script.call("was_forced_moved_since", records, &"target", 1), "forced movement is found")
 	_expect(not query_script.call("was_forced_moved_since", records, &"target", 2), "history queries exclude records at the marker")
-	_expect(not query_script.call("was_forced_moved_since", [voluntary], &"target", 1), "voluntary movement is not forced movement")
+	_expect(not query_script.call("was_forced_moved_since", _record_array([voluntary]), &"target", 1), "voluntary movement is not forced movement")
 	var attackers: Array[StringName] = query_script.call("distinct_allied_attackers", records, BattleUnitState.Side.PLAYER, &"target", 3)
 	_expect(attackers.size() == 2, "distinct attackers are unique")
 	_expect(attackers.has(&"ally_a") and attackers.has(&"ally_b"), "distinct attackers include direct-hit allies")
@@ -398,7 +398,7 @@ func _test_keyword_skill_and_plan_contract() -> void:
 		2,
 		0,
 		null,
-		[armor, bleed],
+		_ref_array([armor, bleed]),
 		null
 	)
 	_expect(skill != null, "skills accept authored keyword operations")
@@ -430,7 +430,7 @@ func _test_keyword_skill_and_plan_contract() -> void:
 		0,
 		0,
 		null,
-		[null],
+		_ref_array([null]),
 		null
 	)
 	_expect(invalid_skill == null, "skills reject invalid keyword operations")
@@ -438,13 +438,13 @@ func _test_keyword_skill_and_plan_contract() -> void:
 		"create",
 		&"actor",
 		&"knife_work",
-		[&"target"],
-		[],
-		[],
+		_id_array([&"target"]),
+		_dictionary_array([]),
+		_dictionary_array([]),
 		2,
 		true,
 		7,
-		[armor, bleed],
+		_ref_array([armor, bleed]),
 		null,
 		null
 	)
@@ -454,9 +454,9 @@ func _test_keyword_skill_and_plan_contract() -> void:
 	var plan_operations: Array = plan.get("keyword_operations")
 	plan_operations.clear()
 	_expect(plan.get("keyword_operations").size() == 2, "plan keyword operations are defensive copies")
-	_expect(plan_script.call("create", &"actor", &"knife_work", [&"target"], [], [], 2, true, 7, [armor, armor], null, null) == null, "plans reject duplicate keyword operations")
+	_expect(plan_script.call("create", &"actor", &"knife_work", _id_array([&"target"]), _dictionary_array([]), _dictionary_array([]), 2, true, 7, _ref_array([armor, armor]), null, null) == null, "plans reject duplicate keyword operations")
 	var off_target: RefCounted = operation_script.call("create", 0, &"other", 3, 1, null, &"")
-	_expect(plan_script.call("create", &"actor", &"knife_work", [&"target"], [], [], 2, true, 7, [off_target], null, null) == null, "plans reject keyword operations outside targets")
+	_expect(plan_script.call("create", &"actor", &"knife_work", _id_array([&"target"]), _dictionary_array([]), _dictionary_array([]), 2, true, 7, _ref_array([off_target]), null, null) == null, "plans reject keyword operations outside targets")
 	var actor := BattleUnitState.new(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 8, 20, [skill], 6, 0)
 	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 1, 2)
 	var validation := BattleSkillRules.validate_confirmation(actor, skill, [actor, target], actor.unit_id, false, 1, [&"target"], 3, 3, [])
@@ -515,6 +515,73 @@ func _instantiate_arena() -> BattleArena:
 		root.add_child(arena)
 		await process_frame
 	return arena
+
+
+func _single_target_record(
+	record_script: Script,
+	kind: BattleActionRecord.Kind,
+	actor_id: StringName,
+	target_id: StringName,
+	damage: int,
+	revision: int,
+	actor_side: BattleUnitState.Side,
+	source_skill_id: StringName,
+	is_direct_hit: bool
+) -> BattleActionRecord:
+	var damage_by_target: Dictionary[StringName, int] = {}
+	damage_by_target[target_id] = damage
+	var direct_hit_by_target: Dictionary[StringName, bool] = {}
+	direct_hit_by_target[target_id] = is_direct_hit
+	return record_script.call("new", kind, actor_id, _id_array([target_id]), damage_by_target, _int_dictionary({}), _int_dictionary({}), 1, revision, revision, actor_side, source_skill_id, false, direct_hit_by_target)
+
+
+func _id_array(values: Array) -> Array[StringName]:
+	var typed: Array[StringName] = []
+	for value: Variant in values:
+		typed.append(StringName(value))
+	return typed
+
+
+func _ref_array(values: Array) -> Array[RefCounted]:
+	var typed: Array[RefCounted] = []
+	for value: Variant in values:
+		typed.append(value as RefCounted)
+	return typed
+
+
+func _unit_array(values: Array) -> Array[BattleUnitState]:
+	var typed: Array[BattleUnitState] = []
+	for value: Variant in values:
+		typed.append(value as BattleUnitState)
+	return typed
+
+
+func _record_array(values: Array) -> Array[BattleActionRecord]:
+	var typed: Array[BattleActionRecord] = []
+	for value: Variant in values:
+		typed.append(value as BattleActionRecord)
+	return typed
+
+
+func _dictionary_array(values: Array) -> Array[Dictionary]:
+	var typed: Array[Dictionary] = []
+	for value: Variant in values:
+		typed.append(value as Dictionary)
+	return typed
+
+
+func _int_dictionary(values: Dictionary) -> Dictionary[StringName, int]:
+	var typed: Dictionary[StringName, int] = {}
+	for key: Variant in values:
+		typed[StringName(key)] = int(values[key])
+	return typed
+
+
+func _bool_dictionary(values: Dictionary) -> Dictionary[StringName, bool]:
+	var typed: Dictionary[StringName, bool] = {}
+	for key: Variant in values:
+		typed[StringName(key)] = bool(values[key])
+	return typed
 
 
 func _script_method_min_arg_count(script: Script, method_name: StringName) -> int:

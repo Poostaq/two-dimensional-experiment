@@ -143,7 +143,7 @@ static func _valid_input(
 		return false
 	if not _valid_damage_operations(plan_target_ids, plan_damage_operations):
 		return false
-	if not _valid_keyword_operations(plan_target_ids, plan_keyword_operations):
+	if not _valid_keyword_operations(plan_actor_id, plan_target_ids, plan_keyword_operations):
 		return false
 	if is_instance_valid(plan_locked_advantage_source) and not _is_valid_keyword_source(plan_locked_advantage_source):
 		return false
@@ -179,6 +179,7 @@ static func _valid_damage_operations(
 
 
 static func _valid_keyword_operations(
+	plan_actor_id: StringName,
 	plan_target_ids: Array[StringName],
 	plan_keyword_operations: Array[RefCounted]
 ) -> bool:
@@ -187,7 +188,7 @@ static func _valid_keyword_operations(
 		if not _is_valid_keyword_operation(operation):
 			return false
 		var target_id: StringName = operation.get("target_id")
-		if not plan_target_ids.has(target_id):
+		if target_id != plan_actor_id and not plan_target_ids.has(target_id):
 			return false
 		var key: StringName = StringName("%s::%s::%s" % [operation.get("kind"), target_id, operation.get("affected_skill_id")])
 		if seen.has(key):

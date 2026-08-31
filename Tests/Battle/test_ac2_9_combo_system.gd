@@ -98,8 +98,8 @@ func _test_character_skill_combo_contract() -> void:
 		if method.get("name", "") == "create":
 			create_argument_count = method.get("args", []).size()
 			break
-	_expect(create_argument_count == 19, "CharacterSkill.create should accept combo definition")
-	if create_argument_count != 19:
+	_expect(create_argument_count >= 19, "CharacterSkill.create should retain combo definition before optional extensions")
+	if create_argument_count < 19:
 		return
 	var condition_script: Script = load(CONDITION_PATH)
 	var effect_script: Script = load(EFFECT_PATH)

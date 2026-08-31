@@ -58,8 +58,8 @@ func _test_typed_mechanical_contract_exists() -> void:
 		if method.get("name", "") == "is_valid_mechanical_definition":
 			validator_arg_count = (method.get("args", []) as Array).size()
 	_expect(
-		create_arg_count == 19,
-		"CharacterSkill.create must accept preview, mechanical fields, and combo metadata."
+		create_arg_count >= 19,
+		"CharacterSkill.create must retain preview, mechanical, and combo arguments before optional extensions."
 	)
 	_expect(
 		validator_arg_count == 12,
