@@ -1,6 +1,6 @@
 # AC6 Goblin Combat Vertical Slice Design
 
-**Status:** AC6.1 through AC6.3 implemented and evidenced; AC6.4–AC6.7 remain incomplete
+**Status:** AC6.1 through AC6.4 implemented and evidenced; AC6.5–AC6.7 remain incomplete
 
 **Date:** 2026-08-29
 
@@ -12,13 +12,13 @@ This milestone does not implement character progression. AC3.4 remains unchecked
 
 ## Evidence status
 
-This document is the acceptance contract and evidence ledger. AC6.1 and AC6.2 describe implemented shared foundations, and AC6.3 supplies the first three authored Goblin classes; later criteria remain prospective until their own evidence gates pass.
+This document is the acceptance contract and evidence ledger. AC6.1 and AC6.2 describe implemented shared foundations, while AC6.3 and AC6.4 supply all six authored regular Goblin classes; later criteria remain prospective until their own evidence gates pass.
 
 Repository inspection on 2026-08-29 found reusable AC2/AC3 foundations. AC6.1 subsequently implemented the Power/Defense, Default-action, movement, history, and formation foundation; AC6.2 subsequently implemented the shared keyword and Passive foundation recorded below.
 
-The following remain missing as later AC6 implementation evidence: Goblin Wave B catalog/loadout definitions, Brakka's authored trigger and closest-enemy rule, Cache fields, the preparation transaction/hook and UI, complete save/reload coverage, and the AC6.4–AC6.7 focused/runtime records.
+The following remain missing as later AC6 implementation evidence: Brakka's authored trigger and closest-enemy rule, Cache fields, the preparation transaction/hook and UI, complete save/reload coverage, and the AC6.5–AC6.7 focused/runtime records.
 
-Each AC6 criterion remains **NOT IMPLEMENTED / TRACEABILITY FAIL** until its planned failing test exists, the implementation link is recorded, the test passes, and required GodotIQ runtime evidence is captured. AC6.1 through AC6.3 have earned those bounded records; this does not complete the overall AC6 milestone.
+Each AC6 criterion remains **NOT IMPLEMENTED / TRACEABILITY FAIL** until its planned failing test exists, the implementation link is recorded, the test passes, and required GodotIQ runtime evidence is captured. AC6.1 through AC6.4 have earned those bounded records; this does not complete the overall AC6 milestone.
 
 ## Operational definitions and planned ownership
 
@@ -66,7 +66,7 @@ Rows with recorded commits and passing evidence identify implemented ownership; 
 | AC6.1 | `BattleUnitState`, `BattleSkillRules`, `BattleArena`, `RunRoster.create_battle_units()`, `world_map_hud` | Extend battle stats/default actions and shared formation semantics; correct HUD slot mapping | `test_ac6_1_combat_foundation.gd` plus updated HUD/formation tests |
 | AC6.2 | Battle state, skill effect plan, arena history/queue | Implemented by `0ce9d12`, `d134cad`, `961de03`, `8471292`, `5893e6c`, `f62538d`, `034e3ab`, and `23ecb94`; arena remains transaction coordinator | `test_ac6_2_keyword_reactions.gd`: 113/113 on 2026-08-31 |
 | AC6.3 | Character catalog and battle skill definitions | Catalog-owned Scrapshield, Wirefang, and Snarewright definitions composed from shared effects | `test_ac6_3_goblin_wave_a.gd` |
-| AC6.4 | Character catalog and battle skill definitions | Catalog-owned Scrapbroker, Shivrunner, and Mobcaller definitions composed from shared effects | `test_ac6_4_goblin_wave_b.gd` |
+| AC6.4 | Character catalog and battle skill definitions | Implemented by `740367b`, `cf36b8b`, `4374683`, `d1d48eb`, `ef3a000`, and `519110d`; catalog-owned Scrapbroker, Shivrunner, and Mobcaller definitions compose shared history-aware effects | `test_ac6_4_goblin_wave_b.gd`: 93/93 on 2026-09-01 |
 | AC6.5 | Root-class catalog, formation rule, reaction dispatcher | Catalog-owned Brakka definition and shared closest-enemy selector | `test_ac6_5_brakka.gd` |
 | AC6.6 | `WorldRunState`, `WorldRunSaveCodecV2`, world battle entry, battle initialization UI | Persisted Cache fields plus typed preparation transaction and battle-start modifier application | `test_ac6_6_quartermaster_state.gd` and `test_ac6_6_battle_preparation.gd` |
 | AC6.7 | Production world/battle/reward flows | No compensating feature code; integration and evidence only | `test_ac6_7_goblin_integration.gd` plus GodotIQ runtime record |
@@ -342,16 +342,16 @@ This is the required evidence ledger. “Baseline” means an older test exercis
 | AC6-AC01 | Documentation | This design and the active game specification | Document diff confirming AC6.1–AC6.7 plus unchanged AC3.4; implementation-plan links per criterion | **FAIL:** active specification and implementation links not yet updated |
 | AC6-AC02 | Logic / visual | `test_ac3_3_party_formation.gd` preserves slot indices; `test_world_map_hud.gd` asserts canonical labels | Exact `0..2 -> FrontSlot0..2`, `3..5 -> BackSlot0..2` assertions; production GodotIQ HUD inspection; battle conversion comparison | **PASS (2026-08-29):** HUD 25/25, party formation 37/37, production UI map and screenshot agree |
 | AC6-AC03 | Logic | `test_ac6_1_combat_foundation.gd` covers fresh Power/Defense, physical damage, shared formation rules, Default Attack, movement, Default Swap, and authoritative committed-action history | `test_ac6_2_keyword_reactions.gd`, with focused cases for each canonical lifecycle rule | **PASS (2026-08-31):** AC6.1 passes 40/40 and AC6.2 passes 113/113; shared Advantage, Snared, Armor, Bleed, temporary Speed, cooldown adjustment, history queries, bounded deterministic Passives, rejection atomicity, and cleanup are implemented. Authored Goblin loadouts remain AC6-AC04. |
-| AC6-AC04 | Logic / integration | Four-slot presentation and generic CharacterSkill tests only | `test_ac6_3_goblin_wave_a.gd`, planned `test_ac6_4_goblin_wave_b.gd`, and catalog/loadout assertions for all 18 regular skills | **FAIL / PARTIAL:** AC6.3 implements and verifies Scrapshield Bruiser, Wirefang Skirmisher, and Snarewright with all nine Set 1 skills; Wave B's remaining three classes and nine skills remain AC6.4. |
+| AC6-AC04 | Logic / integration | Four-slot presentation and generic CharacterSkill tests only | `test_ac6_3_goblin_wave_a.gd`, `test_ac6_4_goblin_wave_b.gd`, and catalog/loadout assertions for all 18 regular skills | **PASS (2026-09-01):** AC6.3 and AC6.4 implement and verify all six regular Goblin classes and all 18 Set 1 skills, including Wave B history-derived effects, conditional armor, mixed-side ordered targeting, invalid-confirmation atomicity, and production arena resolution. |
 | AC6-AC05 | Logic / runtime | Existing lane-distance sorting is reusable but currently implements only a farthest-enemy target rule | Planned `test_ac6_5_brakka.gd`: three-plus-one loadout, activity filter, distance, tie order, stale target, no enemy, once-per-round; runtime log check | **FAIL:** no shared closest rule, scheduler, or Brakka definition |
 | AC6-AC06 | Integration / runtime | Existing world battle entry and save tests provide entry/save seams only | Planned `test_ac6_6_quartermaster_state.gd`, `test_ac6_6_battle_preparation.gd`, and production Cache-to-choice-to-battle runtime walkthrough | **FAIL:** Cache fields, prep state, UI, and hook do not exist |
 | AC6-AC07 | Logic | AC2.8 revision confirmation plus AC6.1 stale default-action and stale-occupancy snapshots | Each later AC6 mechanic must prove rejection leaves every owned state unchanged; preparation cancellation/staleness receives dedicated cases | **FAIL / PARTIAL:** AC6.2 proves stale/rejected keyword and Passive transactions do not mutate combat state; preparation atomicity remains unimplemented. |
 | AC6-AC08 | Integration | Fresh Power/Defense conversion is isolated; existing battle configuration and reward/next-battle tests prove generic transitions | Planned `test_ac6_7_goblin_integration.gd` must end battle, start another, and assert no HP/status/cooldown/reaction-guard leakage | **FAIL / PARTIAL:** AC6.2 proves battle-end keyword/cooldown/reaction-guard cleanup; the explicit end-battle/start-next-battle integration runner remains AC6.7. |
 | AC6-AC09 | Save / integration | `test_world_run_save_codec_v2.gd` round-trips current run state and formation | Extend codec tests for Cache charge/remainder, legacy defaults, corrupt bounds, pre-choice reload, and post-commit single consumption | **FAIL:** current schema has no Cache data |
 | AC6-AC10 | Documentation | Goblin class and commander docs mark progression deferred | Exact `TO_CONSIDER.md` entries plus repository search proving no Goblin level/evolution/mechanical implementation was added | **FAIL:** deferred entries still need implementation-step verification |
-| AC6-AC11 | Runtime / integration | AC6.1 selected regression gate passes 19/19 runners; GodotIQ startup and parser gate pass | Current full suite; GodotIQ validate/check-errors/orphan-signal gate; production startup; recorded formation, Goblin skill, reward, next-battle, Cache, save/reload checks | **FAIL / PARTIAL:** the bounded AC6.3 gate passes 16/16 Battle runners, project validation, fresh-process parsing, zero-orphan signal audit, and production startup; the aggregate milestone still depends on AC6-AC01 and completion of AC6-AC04 through AC6-AC10. |
+| AC6-AC11 | Runtime / integration | AC6.1 selected regression gate passes 19/19 runners; GodotIQ startup and parser gate pass | Current full suite; GodotIQ validate/check-errors/orphan-signal gate; production startup; recorded formation, Goblin skill, reward, next-battle, Cache, save/reload checks | **FAIL / PARTIAL:** the bounded AC6.4 gate passes 17/17 Battle runners, project validation and parsing, zero-orphan signal audit, and production startup; the aggregate milestone still depends on AC6-AC01 and completion of AC6-AC05 through AC6-AC10. |
 
-**Coverage result:** 2/11 AC6 acceptance criteria have complete evidence. All 11 have a concrete verification path; AC6-AC11 is the aggregate runtime gate. Overall milestone traceability remains **FAIL**.
+**Coverage result:** 3/11 AC6 acceptance criteria have complete evidence. All 11 have a concrete verification path; AC6-AC11 is the aggregate runtime gate. Overall milestone traceability remains **FAIL**.
 
 ## AC6.1 evidence record — 2026-08-29
 
@@ -385,6 +385,17 @@ This is the required evidence ledger. “Baseline” means an older test exercis
 - Project checks: GodotIQ validation inspected 130 scripts and 12 scenes with 0 errors, 12 warnings, and 6 info findings; signal analysis found 0 orphan signals. The live-editor project parser probe retains the known low-confidence, line-less `reload error 22` on the AC6.2 runner, while that runner compiles and passes 113/113 in a fresh waited process.
 - Runtime startup: GodotIQ `verify_project_runs(scene="main", check_scope="scene")` returned PASS; `world_run_start.tscn` attached and produced 0 captured runtime errors and 0 script errors.
 - Scope boundary: this record completes AC6.3 and advances AC6-AC04/AC6-AC11 only partially. Wave B, Brakka, Cache/preparation, save integration, and full next-battle integration remain AC6.4–AC6.7.
+
+## AC6.4 evidence record — 2026-09-01
+
+**Implementation commits:** `740367b`, `cf36b8b`, `4374683`, `d1d48eb`, `ef3a000`, `519110d`.
+
+- Focused runner, executed twice from the final tree: `AC6.4 Goblin wave B: 93/93 assertions passed.` The two outputs were identical (`DIFF_LINES=0`).
+- The focused coverage proves exact Scrapbroker, Shivrunner, and Mobcaller identities, stats, loadouts, cooldowns, targeting, action-history predicates, distinct-attacker scaling, conditional Armor, allied-hit and different-race requirements, invalid-confirmation rejection, and actual `BattleArena` resolution for all nine Wave B skills.
+- Current Battle regression gate: 17/17 `Tests/Battle/test_*.gd` runners exited 0. Retained counted results include Speed 12/12, damage/log 18/18, battle results 9/9, rewards 17/17, character skills 19/19, AC6.1 40/40, AC6.2 113/113, AC6.3 116/116, AC6.4 93/93, and active-turn lock 5/5.
+- Project checks: GodotIQ validation inspected 132 scripts and 12 scenes with 0 errors, 12 warnings, and 6 info findings; project parsing checked all 132 scripts with 0 errors; signal analysis found 0 orphan signals. The reported missing engine UI signals are test-emitted built-ins rather than project signal-definition defects.
+- Runtime startup: GodotIQ `verify_project_runs(scene="main", check_scope="scene", stop_after=true)` returned PASS; `world_run_start.tscn` attached and produced 0 captured runtime errors and 0 script errors.
+- Scope boundary: this record completes AC6.4 and AC6-AC04. Brakka, Cache/preparation, save integration, and the full next-battle integration remain AC6.5–AC6.7; AC6-AC11 remains the aggregate milestone gate.
 
 ## Exclusions
 
