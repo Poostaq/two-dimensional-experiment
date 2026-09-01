@@ -4,6 +4,8 @@
 
 **Acceptance criterion:** AC6.5 / AC6-AC05 — Brakka retains all three Scrapshield Bruiser skills, adds Banner Holder as her fourth commander skill, and deterministically targets the closest active enemy.
 
+**Verification status:** Design approved; implementation and runtime verification have not started. The New Run layout and tooltip behavior in this document are target contracts, not claims about current production behavior.
+
 ## Goal
 
 Implement Brakka Rustbanner as the first selectable commander. The production New Run screen presents Brakka in a commander carousel before run creation, starts her in the middle frontline slot, and exposes her complete four-skill loadout. Banner Holder triggers once per round at the start of Brakka's eligible action and atomically applies Advantage to the deterministically closest active enemy.
@@ -29,6 +31,31 @@ AC6.5 excludes:
 - Scrapline Quartermaster, Cache, and battle-preparation behavior, which remain AC6.6;
 - changes to seed generation, encounter generation, movement economy, or reveal authority;
 - general replacement of the existing launcher or character catalogs.
+
+## Planned file ownership
+
+The implementation plan must confirm these paths after GodotIQ impact checks and retain one clear owner per responsibility.
+
+| Change | File | Responsibility |
+|---|---|---|
+| Create | `Scripts/Run/goblin_commander_catalog.gd` | Brakka stable ID, presentation metadata, placeholder visual references, inherited root-class construction, and Banner Holder authoring |
+| Modify | `Scripts/Run/run_character_catalog.gd` | Delegate Brakka lookup to the commander catalog |
+| Modify | `Scripts/Run/world_production_launcher.gd` | Pending commander selection, one-entry carousel state, Begin payload, and UI refresh |
+| Modify | `Scenes/world_run_start.tscn` | Two-column commander panel, portrait arrows, four ability squares/tooltips, seed field, Back, and Begin controls |
+| Modify | `Scripts/Run/world_run_start_service.gd` | Validate selected commander and construct the three-unit starting formation with Brakka in slot `1` |
+| Modify | `Scripts/Battle/battle_formation_rules.gd` | Shared deterministic closest-enemy ranking contract |
+| Modify | `Scripts/Battle/battle_reaction_definition.gd` | Add the action-start trigger to the typed reaction definition |
+| Modify | `Scripts/Battle/battle_reaction_dispatcher.gd` | Collect deterministic action-start passives without changing existing hit/movement dispatch |
+| Modify | `Scripts/Battle/battle_arena.gd` | Invoke and resolve action-start reactions at the authoritative turn boundary; log atomic outcomes |
+| Create | `Tests/Battle/test_ac6_5_brakka.gd` | Brakka catalog, loadout, selector, trigger, guard, atomicity, log, and Advantage-exclusion coverage |
+| Modify | `Tests/Run/test_world_production_launcher.gd` | Commander selection state, disabled arrows, Begin payload, overwrite continuity |
+| Modify | `Tests/Run/test_world_run_start_service.gd` | Valid/invalid commander start transactions and slot-`1` placement |
+| Modify | `Tests/UI/test_world_run_start_scene.gd` | Exact commander controls, four skill squares, tooltip/focus wiring, seed field, Back, and Begin scene contract |
+| Modify | `Tests/Save/test_world_run_save_codec_v2.gd` | Brakka formation ID round-trip at the existing save boundary |
+| Modify | `Tests/Run/test_ac3_1_run_roster.gd` | Brakka catalog reconstruction and battle conversion retain slot, stats, race, and four skills |
+| Modify | `Tests/Run/test_ac3_3_party_formation.gd` | Middle-frontline slot identity remains stable through formation operations |
+| Modify | `Docs/superpowers/specs/2026-08-29-ac6-goblin-combat-vertical-slice-design.md` | AC6.5 evidence ledger, commit hashes, pass counts, runtime record, and remaining AC6 scope |
+| Modify | `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` | Advance AC6.5 only after all evidence gates pass |
 
 ## Architecture
 
@@ -149,6 +176,22 @@ Launcher, scene, service, save, and roster tests prove:
 
 Retained AC6.1 through AC6.4 battle suites and existing world launcher, run-start, scene, save, roster, and production-entry suites remain green.
 
+### Exact automated runner mapping
+
+| Verification concern | Runner |
+|---|---|
+| Brakka definition, four-skill order, closest selector, action-start trigger, stale/no-enemy behavior, logs, guard, Default exclusions | `Tests/Battle/test_ac6_5_brakka.gd` |
+| Launcher state, one-entry carousel, selected commander payload, overwrite continuity | `Tests/Run/test_world_production_launcher.gd` |
+| Commander validation, atomic start failure, middle-frontline placement, blank/explicit seed continuity | `Tests/Run/test_world_run_start_service.gd` |
+| Exact production scene nodes, disabled arrows, portrait placeholder, four ability squares, tooltip/focus wiring, seed input, Back, Begin | `Tests/UI/test_world_run_start_scene.gd` |
+| Stable Brakka formation ID through Save V2 encode/decode | `Tests/Save/test_world_run_save_codec_v2.gd` |
+| Catalog reconstruction, roster slot, stats, race, and battle-unit four-skill conversion | `Tests/Run/test_ac3_1_run_roster.gd` |
+| Middle-frontline identity through formation operations | `Tests/Run/test_ac3_3_party_formation.gd` |
+| Existing action lock remains intact when action-start passive resolves | `Tests/Battle/test_active_turn_skill_lock.gd` |
+| Production main-scene launcher-to-world cutover remains intact | `Tests/Run/test_world_cutover_entry.gd` |
+
+The implementation plan supplies the exact Godot invocation for each runner, expected RED reason before production work, expected PASS count after implementation, and the bounded retained-suite command.
+
 ### GodotIQ and production runtime evidence
 
 The implementation gate runs:
@@ -158,6 +201,18 @@ The implementation gate runs:
 - production startup and debug-console checks;
 - visual tour of the New Run screen and focused inspection of the commander panel and tooltips;
 - a production walkthrough that starts a seeded run, confirms Brakka in middle frontline, enters combat, observes Banner Holder's deterministic target and log, verifies once-per-round behavior and Default action exclusions, then saves/reloads and reconfirms identity and formation.
+
+The manual production record must explicitly capture these checks:
+
+1. Main menu `Start New Run` opens the combined commander/seed screen.
+2. Brakka portrait placeholder, name, title, and details appear; both adjacent carousel arrows are visible, disabled, and ignore input.
+3. Four ability squares are present. Pointer hover and keyboard focus show the authoritative tooltip for Shield Tap, Pack Brace, Banner Nudge, and Banner Holder; the passive square is visually distinct.
+4. A blank seed and an explicit known seed each reach the existing correct start path; the final action label is `Begin`.
+5. Production world/party inspection reports Brakka's stable ID in formation slot `1`.
+6. Production combat reports Brakka as current unit, applies Advantage to the ranked closest active enemy, and emits the exact success log.
+7. A same-round extra-action attempt does not trigger Banner Holder again; Default Attack and Default Swap leave the Advantage token present.
+8. A save/reload returns Brakka to the same formation identity with four skills.
+9. GodotIQ production startup and the final debug-console read contain no parser or runtime errors.
 
 Evidence records include screenshots, state inspections, exact focused/regression commands and pass counts, runtime logs, validation results, date, branch, and implementation commits. The AC6 design ledger and active specification advance AC6.5 / AC6-AC05 only after every required gate passes.
 
