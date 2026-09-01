@@ -15,6 +15,7 @@ enum TargetRole {
 	PRIMARY,
 	ALL_SELECTED,
 	HISTORY_ALLY,
+	SECONDARY,
 }
 
 var kind: Kind:
@@ -232,7 +233,7 @@ static func _is_valid_input(
 ) -> bool:
 	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR]:
 		return false
-	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY]:
+	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY]:
 		return false
 	if arm_snared_follow_up and (effect_kind != Kind.KEYWORD or operation_kind != BattleKeywordOperation.Kind.APPLY_SNARED):
 		return false

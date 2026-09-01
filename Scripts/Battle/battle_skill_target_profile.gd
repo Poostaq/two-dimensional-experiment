@@ -16,12 +16,16 @@ var require_adjacent_lane: bool:
 var allows_optional_self_move: bool:
 	get:
 		return _allows_optional_self_move
+var target_sides: Array[int]:
+	get:
+		return _target_sides.duplicate()
 
 var _minimum_targets: int = -1
 var _maximum_targets: int = -1
 var _target_side: BattleUnitState.Side = BattleUnitState.Side.PLAYER
 var _require_adjacent_lane: bool = false
 var _allows_optional_self_move: bool = false
+var _target_sides: Array[int] = []
 
 
 func _init(
@@ -29,15 +33,17 @@ func _init(
 	maximum: int,
 	side: int,
 	requires_adjacency: bool,
-	allows_movement: bool
+	allows_movement: bool,
+	ordered_target_sides: Array[int] = []
 ) -> void:
-	if not _is_valid_input(minimum, maximum, side, requires_adjacency, allows_movement):
+	if not _is_valid_input(minimum, maximum, side, requires_adjacency, allows_movement, ordered_target_sides):
 		return
 	_minimum_targets = minimum
 	_maximum_targets = maximum
 	_target_side = side as BattleUnitState.Side
 	_require_adjacent_lane = requires_adjacency
 	_allows_optional_self_move = allows_movement
+	_target_sides = ordered_target_sides.duplicate()
 
 
 static func create(
@@ -45,14 +51,16 @@ static func create(
 	maximum: int,
 	side: int,
 	requires_adjacency: bool = false,
-	allows_movement: bool = false
+	allows_movement: bool = false,
+	ordered_target_sides: Array[int] = []
 ) -> RefCounted:
 	var profile: RefCounted = load("res://Scripts/Battle/battle_skill_target_profile.gd").new(
 		minimum,
 		maximum,
 		side,
 		requires_adjacency,
-		allows_movement
+		allows_movement,
+		ordered_target_sides
 	)
 	return profile if profile.is_valid() else null
 
@@ -70,7 +78,8 @@ func duplicate_profile() -> RefCounted:
 		_maximum_targets,
 		_target_side,
 		_require_adjacent_lane,
-		_allows_optional_self_move
+		_allows_optional_self_move,
+		_target_sides
 	)
 
 
@@ -79,12 +88,19 @@ static func _is_valid_input(
 	maximum: int,
 	side: int,
 	requires_adjacency: bool,
-	allows_movement: bool
+	allows_movement: bool,
+	ordered_target_sides: Array[int]
 ) -> bool:
 	if side not in [BattleUnitState.Side.PLAYER, BattleUnitState.Side.ENEMY]:
 		return false
 	if minimum < 0 or maximum < minimum or maximum > 2:
 		return false
+	if not ordered_target_sides.is_empty():
+		if ordered_target_sides.size() != maximum:
+			return false
+		for target_side: int in ordered_target_sides:
+			if target_side not in [BattleUnitState.Side.PLAYER, BattleUnitState.Side.ENEMY]:
+				return false
 	if allows_movement:
 		return minimum == 0 and maximum == 0 and not requires_adjacency
 	if minimum == 0 or maximum == 0:

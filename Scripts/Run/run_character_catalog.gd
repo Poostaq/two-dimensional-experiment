@@ -6,8 +6,12 @@ const BOSS_CHAMPION_REWARD_ID := &"boss_recruit_champion"
 
 
 static func create_by_class_id(class_id: StringName) -> RunCharacter:
-	var catalog_script := load("res://Scripts/Run/goblin_wave_a_catalog.gd") as Script
-	return catalog_script.create_by_class_id(class_id)
+	var wave_a_script := load("res://Scripts/Run/goblin_wave_a_catalog.gd") as Script
+	var character: RunCharacter = wave_a_script.create_by_class_id(class_id)
+	if is_instance_valid(character):
+		return character
+	var wave_b_script := load("res://Scripts/Run/goblin_wave_b_catalog.gd") as Script
+	return wave_b_script.create_by_class_id(class_id)
 
 
 static func create_starters() -> Array[RunCharacter]:

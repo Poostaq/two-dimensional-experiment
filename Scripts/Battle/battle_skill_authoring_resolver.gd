@@ -10,7 +10,8 @@ static func build_plan(
 	round_number: int,
 	revision: int,
 	history: Array[BattleActionLogEntry],
-	declared_move_path: Array[int] = []
+	declared_move_path: Array[int] = [],
+	action_records: Array[BattleActionRecord] = []
 ) -> SkillEffectPlan:
 	if (
 		not is_instance_valid(actor)
@@ -37,7 +38,7 @@ static func build_plan(
 		return null
 	if target_ids.is_empty():
 		target_ids.append(actor.unit_id)
-	if not _conditions_met(actor, skill, locked_targets, units, round_number, history):
+	if not _conditions_met(actor, skill, locked_targets, units, round_number, history, action_records):
 		return null
 
 	var damage_operations: Array[Dictionary] = []
@@ -80,6 +81,37 @@ static func build_plan(
 						&"combo_bonus_damage": 0,
 						&"total_requested_damage": requested,
 					})
+			effect_script.Kind.HISTORY_SCALED_DAMAGE:
+				for target: BattleUnitState in targets:
+					var count: int = BattleHistoryQuery.distinct_allied_attackers_this_round(
+						action_records, actor.side as BattleUnitState.Side, target.unit_id, actor.unit_id, round_number
+					).size()
+					if _has_condition(skill, BattleSkillCondition.Kind.ALLY_ACTED_BEFORE_ACTOR_THIS_ROUND):
+						count = 1 if BattleHistoryQuery.ally_acted_before_this_round(
+							action_records, actor.side as BattleUnitState.Side, actor.unit_id, round_number
+						) else 0
+					var percent: int = min(
+						int(authored_effect.get("maximum_power_percent")),
+						int(authored_effect.get("power_percent")) + count * int(authored_effect.get("history_increment"))
+					)
+					var requested: int = BattleDamageRules.physical_damage(actor.power, float(percent) / 100.0, target.defense)
+					damage_operations.append({
+						&"target_id": target.unit_id,
+						&"base_damage": requested,
+						&"combo_bonus_damage": 0,
+						&"total_requested_damage": requested,
+					})
+			effect_script.Kind.CONDITIONAL_ARMOR:
+				for target: BattleUnitState in targets:
+					var amount: int = int(authored_effect.get("magnitude"))
+					if BattleHistoryQuery.consumed_advantage_this_round(action_records, target.unit_id, round_number):
+						amount = int(authored_effect.get("conditional_magnitude"))
+					var armor_operation: RefCounted = BattleKeywordOperation.create(
+						BattleKeywordOperation.Kind.ADD_ARMOR, target.unit_id, amount
+					)
+					if not is_instance_valid(armor_operation):
+						return null
+					keyword_operations.append(armor_operation)
 			effect_script.Kind.KEYWORD:
 				for target: BattleUnitState in targets:
 					var source: RefCounted = null
@@ -141,13 +173,38 @@ static func _conditions_met(
 	locked_targets: Array[BattleUnitState],
 	units: Array[BattleUnitState],
 	round_number: int,
-	history: Array[BattleActionLogEntry]
+	history: Array[BattleActionLogEntry],
+	action_records: Array[BattleActionRecord]
 ) -> bool:
 	var condition_script: Script = load("res://Scripts/Battle/battle_skill_condition.gd") as Script
 	for condition: RefCounted in skill.conditions:
 		match int(condition.get("kind")):
 			condition_script.Kind.PRIMARY_SNARED:
 				if locked_targets.is_empty() or not locked_targets[0].is_snared(round_number):
+					return false
+			condition_script.Kind.PRIMARY_BLEEDING:
+				if locked_targets.is_empty() or locked_targets[0].get_bleed_snapshot().is_empty():
+					return false
+			condition_script.Kind.PRIMARY_BELOW_HALF_HP:
+				if locked_targets.is_empty() or locked_targets[0].current_hp * 2 >= locked_targets[0].max_hp:
+					return false
+			condition_script.Kind.PRIMARY_HIT_BY_ALLY_THIS_ROUND:
+				if locked_targets.is_empty() or not BattleHistoryQuery.was_directly_hit_by_ally_this_round(
+					action_records, actor.side as BattleUnitState.Side, locked_targets[0].unit_id, actor.unit_id, round_number
+				):
+					return false
+			condition_script.Kind.PRIMARY_CONSUMED_ADVANTAGE_THIS_ROUND:
+				if locked_targets.is_empty() or not BattleHistoryQuery.consumed_advantage_this_round(
+					action_records, locked_targets[0].unit_id, round_number
+				):
+					return false
+			condition_script.Kind.ALLY_ACTED_BEFORE_ACTOR_THIS_ROUND:
+				if not BattleHistoryQuery.ally_acted_before_this_round(
+					action_records, actor.side as BattleUnitState.Side, actor.unit_id, round_number
+				):
+					return false
+			condition_script.Kind.PRIMARY_DIFFERENT_RACE_FROM_ACTOR:
+				if locked_targets.is_empty() or locked_targets[0].race_id == actor.race_id:
 					return false
 			condition_script.Kind.PRIMARY_ATTACKED_ALLY_THIS_ROUND:
 				if _latest_ally_attacked_by_primary(
@@ -181,6 +238,9 @@ static func _targets_for_role(
 				result.append(locked_targets[0])
 		effect_script.TargetRole.ALL_SELECTED:
 			result = locked_targets.duplicate()
+		effect_script.TargetRole.SECONDARY:
+			if locked_targets.size() > 1:
+				result.append(locked_targets[1])
 		effect_script.TargetRole.HISTORY_ALLY:
 			var ally_id: StringName = _latest_ally_attacked_by_primary(
 				actor,
@@ -194,6 +254,13 @@ static func _targets_for_role(
 					result.append(unit)
 					break
 	return result
+
+
+static func _has_condition(skill: CharacterSkill, kind: int) -> bool:
+	for condition: RefCounted in skill.conditions:
+		if int(condition.get("kind")) == kind:
+			return true
+	return false
 
 
 static func _latest_ally_attacked_by_primary(

@@ -673,7 +673,8 @@ func notify_authoritative_battle_change(increment_revision: bool = true) -> void
 		_battle_revision,
 		_battle_revision,
 		get_committed_action_history_snapshot(),
-		_skill_transaction.declared_move_path
+		_skill_transaction.declared_move_path,
+		get_action_records()
 	)
 	if validation.accepted:
 		_skill_transaction.battle_revision = _battle_revision
@@ -769,7 +770,8 @@ func confirm_skill_action() -> bool:
 		_skill_transaction.battle_revision,
 		_battle_revision,
 		get_committed_action_history_snapshot(),
-		_skill_transaction.declared_move_path
+		_skill_transaction.declared_move_path,
+		get_action_records()
 	)
 	if not _skill_transaction.complete_confirmation(validation, generation):
 		_render_skill_transaction()

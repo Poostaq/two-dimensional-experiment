@@ -19,13 +19,21 @@ static func evaluate_targets(
 	var invalid_targets: Dictionary[StringName, SkillActionReason] = {}
 	var affected_ids: Array[StringName] = []
 	var authored_profile: RefCounted = skill.target_profile if is_instance_valid(skill) else null
+	var ordered_target_sides: Array = authored_profile.get("target_sides") if is_instance_valid(authored_profile) else []
 	if is_instance_valid(actor) and is_instance_valid(skill) and is_instance_valid(authored_profile):
 		if int(authored_profile.get("maximum_targets")) > 0:
 			for unit: BattleUnitState in _sorted_units(units):
 				if (
 					not is_instance_valid(unit)
 					or unit == actor
-					or unit.side != int(authored_profile.get("target_side"))
+					or (
+						ordered_target_sides.is_empty()
+						and unit.side != int(authored_profile.get("target_side"))
+					)
+					or (
+						not ordered_target_sides.is_empty()
+						and not ordered_target_sides.has(unit.side)
+					)
 				):
 					continue
 				if not unit.is_active():
@@ -124,7 +132,8 @@ static func validate_confirmation(
 	expected_revision: int,
 	current_revision: int,
 	history_snapshot: Array[BattleActionLogEntry],
-	proposed_move_path: Array[int] = []
+	proposed_move_path: Array[int] = [],
+	action_records: Array[BattleActionRecord] = []
 ) -> SkillConfirmationValidation:
 	if expected_revision != current_revision:
 		return _rejected(
@@ -175,8 +184,18 @@ static func validate_confirmation(
 					skill
 				)
 			)
-		for target_id: StringName in proposed_target_ids:
-			if accepted_ids.has(target_id) or not evaluation.valid_target_ids.has(target_id):
+		var target_sides: Array = authored_profile.get("target_sides")
+		for target_index: int in proposed_target_ids.size():
+			var target_id: StringName = proposed_target_ids[target_index]
+			var target_unit: BattleUnitState = _find_unit(units, target_id)
+			var wrong_stage_side: bool = (
+				not target_sides.is_empty()
+				and (
+					not is_instance_valid(target_unit)
+					or target_unit.side != int(target_sides[target_index])
+				)
+			)
+			if accepted_ids.has(target_id) or not evaluation.valid_target_ids.has(target_id) or wrong_stage_side:
 				return _rejected(
 					actor,
 					skill,
@@ -197,7 +216,8 @@ static func validate_confirmation(
 			round_number,
 			current_revision,
 			history_snapshot,
-			proposed_move_path
+			proposed_move_path,
+			action_records
 		)
 		if not is_instance_valid(authored_plan):
 			return _rejected(
