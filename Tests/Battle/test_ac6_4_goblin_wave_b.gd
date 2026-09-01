@@ -34,6 +34,7 @@ func _run() -> void:
 	_test_wave_b_catalog_contracts()
 	_test_wave_b_resolver_contracts()
 	_test_mixed_side_confirmation_contract()
+	_test_wave_b_rejections()
 	await _test_wave_b_arena_resolution()
 	if _failures.is_empty():
 		print("AC6.4 Goblin wave B: %d/%d assertions passed." % [_assertions, _assertions])
@@ -211,6 +212,42 @@ func _test_mixed_side_confirmation_contract() -> void:
 		false, 1, [enemy.unit_id, ally.unit_id], 0, 0, [], [], []
 	)
 	_expect(not reversed.accepted, "mixed-side reversed selection is rejected")
+
+
+func _test_wave_b_rejections() -> void:
+	var broker := _battle_unit(&"scrapbroker", BattleUnitState.Side.PLAYER, 0)
+	var shiv := _battle_unit(&"shivrunner", BattleUnitState.Side.PLAYER, 0)
+	var mob := _battle_unit(&"mobcaller", BattleUnitState.Side.PLAYER, 0)
+	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 5, 20, [], 4, 0, &"goblin")
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 1, 20)
+	ally.current_hp = 10
+	var units: Array[BattleUnitState] = [broker, ally, enemy]
+	var exact_half := BattleSkillRules.validate_confirmation(
+		broker, _skill(broker, &"emergency_kit"), units, broker.unit_id,
+		false, 1, [ally.unit_id], 0, 0, [], [], []
+	)
+	_expect(not exact_half.accepted, "Emergency Kit rejects exactly half HP")
+	var dirty_units: Array[BattleUnitState] = [shiv, enemy]
+	var no_bleed := BattleSkillRules.validate_confirmation(
+		shiv, _skill(shiv, &"dirty_window"), dirty_units, shiv.unit_id,
+		false, 1, [enemy.unit_id], 0, 0, [], [], []
+	)
+	_expect(not no_bleed.accepted, "Dirty Window rejects a non-Bleeding enemy")
+	var dog_units: Array[BattleUnitState] = [mob, enemy]
+	var no_hit := BattleSkillRules.validate_confirmation(
+		mob, _skill(mob, &"dogpile_math"), dog_units, mob.unit_id,
+		false, 1, [enemy.unit_id], 0, 0, [], [], []
+	)
+	_expect(not no_hit.accepted, "Dogpile Math rejects without an earlier allied hit")
+	var same_race_units: Array[BattleUnitState] = [mob, ally, enemy]
+	var same_race := BattleSkillRules.validate_confirmation(
+		mob, _skill(mob, &"louder_together"), same_race_units, mob.unit_id,
+		false, 1, [ally.unit_id, enemy.unit_id], 0, 0, [], [], []
+	)
+	_expect(not same_race.accepted, "Louder Together rejects a same-race ally")
+	var first := RunCharacterCatalog.create_by_class_id(&"scrapbroker")
+	var second := RunCharacterCatalog.create_by_class_id(&"scrapbroker")
+	_expect(first != second and first.get_skills()[0] != second.get_skills()[0], "Wave B catalog returns fresh definitions")
 
 
 func _test_wave_b_arena_resolution() -> void:
