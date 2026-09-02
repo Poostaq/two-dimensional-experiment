@@ -23,6 +23,10 @@ static var SAVE_COORDINATOR_SCRIPT: GDScript = load(
 	"res://Scripts/WorldMap/world_runtime_save_coordinator.gd"
 )
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
+static var CACHE_RULES_SCRIPT: GDScript = load("res://Scripts/Run/quartermaster_cache_rules.gd")
+static var PREPARATION_RECORD_SCRIPT: GDScript = load(
+	"res://Scripts/Battle/battle_preparation_record.gd"
+)
 static var REPOSITORY_SCRIPT: GDScript = load(
 	"res://Scripts/Run/world_single_slot_repository.gd"
 )
@@ -88,6 +92,7 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 	):
 		return false
 	_session_applied = true
+	_restore_persisted_preparation()
 	return true
 
 
@@ -198,7 +203,7 @@ func request_move(destination: Vector2i) -> WorldMoveResult:
 		return result
 	_pending_candidate_model = candidate.get("model") as WorldRuntimeModel
 	_pending_move_result = result
-	var candidate_state := _build_candidate_state(_pending_candidate_model, false)
+	var candidate_state := _build_candidate_state(_pending_candidate_model, false, null, true)
 	var saved: Dictionary = _save_coordinator.call(
 		"commit_candidate",
 		candidate_state,
@@ -369,6 +374,139 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	_active_battle.reward_selected.connect(_on_reward_selected)
 	_active_battle.reward_confirmed.connect(_on_reward_confirmed)
 	_active_battle.recruitment_placement_requested.connect(_on_recruitment_placement_requested)
+	_active_battle.preparation_commit_requested.connect(_on_preparation_commit_requested)
+	_configure_battle_preparation(coord, normalized_encounter)
+
+
+func _configure_battle_preparation(coord: Vector2i, encounter_type: String) -> void:
+	if encounter_type != "combat" or not is_instance_valid(_durable_run_state):
+		return
+	var persisted := _durable_run_state.get("battle_preparation") as RefCounted
+	if is_instance_valid(persisted) and persisted.state != BattlePreparationRecord.State.NONE:
+		if persisted.encounter_coord != coord or persisted.encounter_type != encounter_type:
+			_fail_integration()
+			return
+		var restored: bool = (
+			_active_battle.configure_preparation(persisted)
+			if persisted.state == BattlePreparationRecord.State.OFFERED
+			else _active_battle.apply_committed_preparation(persisted)
+		)
+		if not restored:
+			_fail_integration()
+		return
+	if not bool(_durable_run_state.get("cache_ready")) or not _roster.has_character(CACHE_RULES_SCRIPT.BRAKKA_ID):
+		return
+	var identity := _active_battle.get_setup_identity() as RefCounted
+	if not is_instance_valid(identity):
+		_fail_integration()
+		return
+	var preparation_id := StringName(
+		"cache:%d:%d:%s" % [coord.x, coord.y, identity.canonical_key.left(12)]
+	)
+	var offered := PREPARATION_RECORD_SCRIPT.offered(
+		preparation_id, coord, encounter_type, identity.canonical_key
+	) as RefCounted
+	if not is_instance_valid(offered) or not _active_battle.configure_preparation(offered):
+		_fail_integration()
+		return
+	_commit_preparation_state(offered, false, "_publish_preparation_offer", "battle_preparation_offer")
+
+
+func _on_preparation_commit_requested(
+	choice: int,
+	target_unit_id: StringName,
+	expected_setup_key: String
+) -> void:
+	if not has_active_battle() or not is_instance_valid(_durable_run_state):
+		return
+	var offered: RefCounted = _durable_run_state.get("battle_preparation") as RefCounted
+	var identity: RefCounted = _active_battle.get_setup_identity() as RefCounted
+	if (
+		not is_instance_valid(offered)
+		or offered.state != BattlePreparationRecord.State.OFFERED
+		or not bool(_durable_run_state.get("cache_ready"))
+		or not is_instance_valid(identity)
+		or offered.setup_key != expected_setup_key
+		or identity.canonical_key != expected_setup_key
+	):
+		return
+	var committed: RefCounted = PREPARATION_RECORD_SCRIPT.committed(
+		offered.preparation_id,
+		offered.encounter_coord,
+		offered.encounter_type,
+		offered.setup_key,
+		choice as BattlePreparationRecord.Choice,
+		target_unit_id
+	) as RefCounted
+	if not is_instance_valid(committed):
+		return
+	_commit_preparation_state(
+		committed, true, "_publish_preparation_commit", "battle_preparation_commit"
+	)
+
+
+func _commit_preparation_state(
+	record: RefCounted,
+	consume_cache: bool,
+	publish_method: StringName,
+	event_name: String
+) -> void:
+	var candidate_state: RefCounted = _build_preparation_candidate(record, consume_cache)
+	if not is_instance_valid(candidate_state):
+		return
+	if not is_instance_valid(_save_coordinator):
+		call(publish_method, candidate_state)
+		return
+	var saved: Dictionary = _save_coordinator.call(
+		"commit_candidate", candidate_state, Callable(self, publish_method), event_name
+	)
+	if not bool(saved.get("ok", false)):
+		_model.set_surface_blocked(true)
+		_apply_snapshot(_model.get_snapshot())
+		autosave_failed.emit(saved.get("error") as RefCounted)
+
+
+func _build_preparation_candidate(record: RefCounted, consume_cache: bool) -> RefCounted:
+	if not is_instance_valid(_durable_run_state) or not is_instance_valid(record):
+		return null
+	var data: Dictionary = _durable_run_state.call("to_dictionary") as Dictionary
+	data["battle_preparation"] = record.call("to_dictionary")
+	if consume_cache:
+		var consumed: Dictionary = CACHE_RULES_SCRIPT.after_consumption(
+			bool(_durable_run_state.get("cache_ready"))
+		)
+		if consumed.is_empty():
+			return null
+		data["cache_move_progress"] = int(consumed.get("progress"))
+		data["cache_ready"] = bool(consumed.get("ready"))
+	var decoded: Dictionary = RUN_STATE_SCRIPT.from_dictionary(data, _runtime_plan)
+	return decoded.get("value") as RefCounted if bool(decoded.get("ok", false)) else null
+
+
+func _publish_preparation_offer(state: RefCounted) -> void:
+	if not is_instance_valid(state):
+		return
+	_durable_run_state = state
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _publish_preparation_commit(state: RefCounted) -> void:
+	if not is_instance_valid(state) or not has_active_battle():
+		return
+	var record := state.get("battle_preparation") as RefCounted
+	if not is_instance_valid(record) or not _active_battle.apply_committed_preparation(record):
+		_fail_integration()
+		return
+	_durable_run_state = state
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _restore_persisted_preparation() -> void:
+	if not is_instance_valid(_durable_run_state) or has_active_battle():
+		return
+	var record := _durable_run_state.get("battle_preparation") as RefCounted
+	if is_instance_valid(record) and record.state != BattlePreparationRecord.State.NONE:
+		_on_battle_requested(record.encounter_coord, record.encounter_type)
 
 
 func _on_battle_completed(_outcome: BattleOutcome.Type) -> void:
@@ -594,7 +732,8 @@ func _commit_current_authoritative(event_name: String, consume_current: bool) ->
 func _build_candidate_state(
 	model: WorldRuntimeModel,
 	consume_current: bool,
-	roster: RunRoster = null
+	roster: RunRoster = null,
+	accrue_cache: bool = false
 ) -> RefCounted:
 	if not is_instance_valid(_durable_run_state) or not is_instance_valid(model):
 		return null
@@ -606,12 +745,26 @@ func _build_candidate_state(
 	data["boss_active"] = snapshot.sudden_death_active
 	data["boss_engaged"] = snapshot.boss_encounter_open
 	data["formation"] = _formation_ids(roster)
+	if accrue_cache:
+		var commander_id: StringName = (
+			CACHE_RULES_SCRIPT.BRAKKA_ID
+			if _roster.has_character(CACHE_RULES_SCRIPT.BRAKKA_ID)
+			else &""
+		)
+		var cache_state: Dictionary = CACHE_RULES_SCRIPT.after_accepted_move(
+			commander_id,
+			int(data.get("cache_move_progress", 0)),
+			bool(data.get("cache_ready", false))
+		)
+		data["cache_move_progress"] = int(cache_state.get("progress", 0))
+		data["cache_ready"] = bool(cache_state.get("ready", false))
 	if consume_current:
 		var consumed: Array = data.get("consumed_encounters", []) as Array
 		var coord_value: Array[int] = [snapshot.player_coord.x, snapshot.player_coord.y]
 		if not consumed.has(coord_value):
 			consumed.append(coord_value)
 		data["consumed_encounters"] = consumed
+		data["battle_preparation"] = PREPARATION_RECORD_SCRIPT.none().call("to_dictionary")
 	var decoded: Dictionary = RUN_STATE_SCRIPT.from_dictionary(data, _runtime_plan)
 	return decoded.get("value") as RefCounted if bool(decoded.get("ok", false)) else null
 
@@ -637,6 +790,14 @@ func _apply_snapshot(snapshot: WorldRuntimeSnapshot) -> void:
 		_fail_integration()
 		return
 	hud.set_formation(_roster.get_slot_snapshot())
+	var cache_progress: int = 0
+	var cache_ready: bool = false
+	if is_instance_valid(_durable_run_state):
+		cache_progress = int(_durable_run_state.get("cache_move_progress"))
+		cache_ready = bool(_durable_run_state.get("cache_ready"))
+	hud.set_cache_state(
+		_roster.has_character(CACHE_RULES_SCRIPT.BRAKKA_ID), cache_progress, cache_ready
+	)
 	var terrain_tags: Array[String] = []
 	var cells := _runtime_plan.get_cells()
 	var cell_data: Dictionary = cells.get(snapshot.player_coord, {})
