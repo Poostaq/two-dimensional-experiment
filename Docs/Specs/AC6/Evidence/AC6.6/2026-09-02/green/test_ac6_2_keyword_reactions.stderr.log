@@ -1,0 +1,42 @@
+ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:61)
+       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:81)
+       [2] _test_keyword_operation_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:475)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:26)
+ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:61)
+       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:81)
+       [2] _test_keyword_operation_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:476)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:26)
+ERROR: CharacterSkill keyword operations must be valid typed operations.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:205)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_keyword_skill_and_plan_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:412)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:27)
+ERROR: SkillEffectPlan requires valid targets and effect operations.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/skill_effect_plan.gd:77)
+       [1] create (res://Scripts/Battle/skill_effect_plan.gd:120)
+       [2] _test_keyword_skill_and_plan_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:457)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:27)
+ERROR: SkillEffectPlan requires valid targets and effect operations.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/skill_effect_plan.gd:77)
+       [1] create (res://Scripts/Battle/skill_effect_plan.gd:120)
+       [2] _test_keyword_skill_and_plan_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:459)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:27)
+ERROR: BattleReactionDefinition requires valid passive, trigger, frequency, and operation data.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/battle_reaction_definition.gd:62)
+       [1] create (res://Scripts/Battle/battle_reaction_definition.gd:82)
+       [2] _test_passive_reaction_dispatch_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:182)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:29)

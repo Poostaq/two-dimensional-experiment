@@ -1,0 +1,28 @@
+AC6.6 PROJECT GATE
+Godot: 4.7.2 stable
+Revision: 8bf18fc
+
+godotiq_validate(target="project", detail="brief")
+files_checked=144
+scenes_checked=12
+errors=0
+warnings=26 (pre-existing project convention warnings)
+info=6
+
+godotiq_check_errors(scope="project")
+scripts_checked=144
+parser_errors=0
+
+godotiq_signal_map(scope="all", find="orphans", detail="brief")
+signals_defined=30
+emissions=75
+connections=102
+orphans=0
+Note: reported missing names are built-in Control signals emitted by tests; no preparation signal is missing.
+
+godotiq_verify_project_runs(scene="main", check_scope="project", stop_after=true)
+verdict=PASS
+scene=res://Scenes/world_run_start.tscn
+runtime_errors=0
+script_errors=0
+debug_console_entries=0

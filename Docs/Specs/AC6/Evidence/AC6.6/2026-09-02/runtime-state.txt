@@ -1,0 +1,4 @@
+cache_progress: text=Cache 3/4 visible=true progress=3 ready=false
+offered: state=offered cache_ready=true locked=true setup_key=10ada942b7b270b162f12269eb5da5368267f757b5b146fa3005a31382dac9bb
+committed: state=committed cache_ready=false locked=false armor=brakka_rustbanner:0:2
+frontline_briefing: target=enemy_4 advantage=true cache_ready=false locked=false
