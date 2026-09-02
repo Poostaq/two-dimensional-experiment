@@ -101,6 +101,22 @@ func duplicate_operation() -> RefCounted:
 	return operation_script.call("create", _kind, _target_id, _magnitude, _duration, _source, _affected_skill_id, _arms_snared_follow_up)
 
 
+func with_target(resolved_target_id: StringName) -> RefCounted:
+	if resolved_target_id.is_empty() or not is_valid():
+		return null
+	var operation_script := load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
+	return operation_script.call(
+		"create",
+		_kind,
+		resolved_target_id,
+		_magnitude,
+		_duration,
+		_source,
+		_affected_skill_id,
+		_arms_snared_follow_up
+	)
+
+
 static func _is_valid_input(
 	operation_kind: int,
 	operation_target_id: StringName,

@@ -4,6 +4,7 @@ extends RefCounted
 enum Trigger {
 	DIRECT_HIT,
 	FORCED_MOVEMENT,
+	ACTION_START,
 }
 
 enum Frequency {
@@ -126,6 +127,32 @@ func with_owner(unit_id: StringName) -> RefCounted:
 	)
 
 
+func with_owner_and_operation(
+	unit_id: StringName,
+	resolved_operation: RefCounted
+) -> RefCounted:
+	if (
+		unit_id.is_empty()
+		or not is_valid()
+		or not is_instance_valid(resolved_operation)
+		or not resolved_operation.has_method("is_valid")
+		or not resolved_operation.has_method("duplicate_operation")
+		or not resolved_operation.call("is_valid")
+	):
+		return null
+	var definition_script: Script = load("res://Scripts/Battle/battle_reaction_definition.gd") as Script
+	return definition_script.call(
+		"create",
+		_passive_skill_id,
+		_trigger,
+		_frequency,
+		_priority,
+		resolved_operation,
+		_allow_reaction_chain,
+		unit_id
+	)
+
+
 static func _is_valid_input(
 	definition_passive_skill_id: StringName,
 	definition_trigger: int,
@@ -134,7 +161,7 @@ static func _is_valid_input(
 ) -> bool:
 	return (
 		not definition_passive_skill_id.is_empty()
-		and definition_trigger in [Trigger.DIRECT_HIT, Trigger.FORCED_MOVEMENT]
+		and definition_trigger in [Trigger.DIRECT_HIT, Trigger.FORCED_MOVEMENT, Trigger.ACTION_START]
 		and definition_frequency in [Frequency.ONCE_PER_ACTION, Frequency.ONCE_PER_ROUND, Frequency.ONCE_PER_BATTLE]
 		and is_instance_valid(definition_operation)
 		and definition_operation.has_method("is_valid")

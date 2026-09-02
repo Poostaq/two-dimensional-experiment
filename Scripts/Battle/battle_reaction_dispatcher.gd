@@ -2,6 +2,71 @@ class_name BattleReactionDispatcher
 extends RefCounted
 
 
+static func collect_action_start_reactions(
+	actor: BattleUnitState,
+	units: Array[BattleUnitState],
+	round_number: int
+) -> Array[Dictionary]:
+	var reactions: Array[Dictionary] = []
+	if (
+		not is_instance_valid(actor)
+		or not actor.is_active()
+		or round_number < 1
+		or not units.has(actor)
+	):
+		return reactions
+	for skill: CharacterSkill in actor.skills:
+		if not is_instance_valid(skill) or skill.kind != CharacterSkill.Kind.PASSIVE:
+			continue
+		var definition: RefCounted = skill.reaction_definition
+		if (
+			not _is_valid_reaction_definition(definition)
+			or int(definition.get("trigger")) != BattleReactionDefinition.Trigger.ACTION_START
+		):
+			continue
+		if not actor.mark_passive_reaction_guard(
+			definition.get("passive_skill_id"),
+			definition.get("frequency"),
+			round_number,
+			round_number
+		):
+			continue
+		var target: BattleUnitState = BattleFormationRules.closest_active_opponent(actor, units)
+		if not is_instance_valid(target):
+			reactions.append({
+				"definition": definition.call("with_owner", actor.unit_id),
+				"owner_id": actor.unit_id,
+				"target_id": &"",
+			})
+			continue
+		var operation: RefCounted = definition.get("operation")
+		var resolved_operation: RefCounted = operation.call("with_target", target.unit_id)
+		var resolved_definition: RefCounted = definition.call(
+			"with_owner_and_operation",
+			actor.unit_id,
+			resolved_operation
+		)
+		if not is_instance_valid(resolved_definition):
+			continue
+		reactions.append({
+			"definition": resolved_definition,
+			"owner_id": actor.unit_id,
+			"target_id": target.unit_id,
+		})
+	return reactions
+
+
+static func is_action_start_target_current(
+	owner: BattleUnitState,
+	target_id: StringName,
+	units: Array[BattleUnitState]
+) -> bool:
+	if target_id.is_empty():
+		return false
+	var current: BattleUnitState = BattleFormationRules.closest_active_opponent(owner, units)
+	return is_instance_valid(current) and current.unit_id == target_id
+
+
 static func collect_reactions(
 	trigger: BattleActionRecord,
 	units: Array[BattleUnitState],

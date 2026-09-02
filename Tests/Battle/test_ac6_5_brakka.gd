@@ -105,18 +105,112 @@ func _test_action_start_reaction_contract() -> void:
 	var operation_script := load(KEYWORD_OPERATION_PATH) as Script
 	var definition_script := load(REACTION_DEFINITION_PATH) as Script
 	var dispatcher_script := load(REACTION_DISPATCHER_PATH) as Script
-	_expect(operation_script.has_method("with_target"), "keyword operation exposes immutable retargeting")
+	var source := BattleKeywordSource.create(&"brakka", &"banner_holder", 4)
+	var template: RefCounted = operation_script.call("create", 1, &"brakka", 0, 1, source)
+	var has_retarget: bool = template.has_method("with_target")
+	var has_collect: bool = dispatcher_script.has_method("collect_action_start_reactions")
+	var has_revalidate: bool = dispatcher_script.has_method("is_action_start_target_current")
+	_expect(has_retarget, "keyword operation exposes immutable retargeting")
 	_expect(
 		definition_script.Trigger.size() == 3 and int(definition_script.Trigger.get("ACTION_START", -1)) == 2,
 		"reaction definition exposes ACTION_START without renumbering existing triggers"
 	)
+	_expect(has_collect, "dispatcher exposes action-start collection")
+	_expect(has_revalidate, "dispatcher exposes action-start target revalidation")
+	if (
+		not has_retarget
+		or not has_collect
+		or not has_revalidate
+		or definition_script.Trigger.size() != 3
+	):
+		return
+	var retargeted: RefCounted = template.call("with_target", &"enemy")
+	_expect(retargeted != null and retargeted.get("target_id") == &"enemy", "retargeting replaces target")
+	_expect(template.get("target_id") == &"brakka", "retargeting leaves template immutable")
 	_expect(
-		dispatcher_script.has_method("collect_action_start_reactions"),
-		"dispatcher exposes action-start collection"
+		retargeted.get("kind") == template.get("kind")
+		and retargeted.get("duration") == template.get("duration")
+		and retargeted.get("source").get("source_skill_id") == &"banner_holder",
+		"retargeting preserves operation data"
+	)
+	_expect(template.call("with_target", &"") == null, "retargeting rejects empty target")
+	var definition: RefCounted = definition_script.call("create", &"banner_holder", 2, 1, 0, template, false)
+	_expect(definition != null, "action-start definition validates")
+	var passive := CharacterSkill.create(
+		&"banner_holder",
+		"Banner Holder",
+		CharacterSkill.Kind.PASSIVE,
+		"Apply Advantage.",
+		"Closest active enemy.",
+		"Owner starts an action.",
+		"Once per round.",
+		-1,
+		-1,
+		-1,
+		CharacterSkill.Requirement.NONE,
+		-1,
+		-1,
+		0,
+		CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.NONE,
+		0,
+		0,
+		null,
+		[],
+		null,
+		definition
+	)
+	var brakka := BattleUnitState.new(
+		&"brakka",
+		"Brakka",
+		BattleUnitState.Side.PLAYER,
+		1,
+		7,
+		20,
+		[passive],
+		4,
+		2
+	)
+	var ally := _unit(&"ally", BattleUnitState.Side.PLAYER, 0)
+	var enemy_front := _unit(&"enemy_front", BattleUnitState.Side.ENEMY, 0)
+	var enemy_back := _unit(&"enemy_back", BattleUnitState.Side.ENEMY, 4)
+	var units := _units([enemy_front, ally, enemy_back, brakka])
+	var reactions: Array = dispatcher_script.call("collect_action_start_reactions", brakka, units, 1)
+	_expect(reactions.size() == 1, "one action-start Passive dispatches")
+	if not reactions.is_empty():
+		var candidate: Dictionary = reactions[0]
+		_expect(candidate.keys().size() == 3, "action-start candidate has exact fields")
+		_expect(candidate.get("owner_id") == &"brakka", "candidate binds owner")
+		_expect(candidate.get("target_id") == &"enemy_back", "candidate selects closest enemy")
+		var resolved: RefCounted = candidate.get("definition")
+		_expect(
+			resolved.get("operation").get("target_id") == &"enemy_back",
+			"candidate operation is immutably retargeted"
+		)
+	_expect(
+		dispatcher_script.call("collect_action_start_reactions", brakka, units, 1).is_empty(),
+		"once-per-round guard blocks a duplicate action start"
 	)
 	_expect(
-		dispatcher_script.has_method("is_action_start_target_current"),
-		"dispatcher exposes action-start target revalidation"
+		dispatcher_script.call("collect_action_start_reactions", brakka, units, 2).size() == 1,
+		"next round can dispatch again"
+	)
+	_expect(
+		dispatcher_script.call("is_action_start_target_current", brakka, &"enemy_back", units),
+		"unchanged closest target revalidates"
+	)
+	enemy_back.current_hp = 0
+	_expect(
+		not dispatcher_script.call("is_action_start_target_current", brakka, &"enemy_back", units),
+		"stale closest target fails without redirect"
+	)
+	brakka.clear_battle_local_state()
+	enemy_front.current_hp = 0
+	var no_enemy: Array = dispatcher_script.call("collect_action_start_reactions", brakka, units, 1)
+	_expect(no_enemy.size() == 1 and no_enemy[0].get("target_id") == &"", "no enemy emits one guarded no-result")
+	_expect(
+		dispatcher_script.call("collect_action_start_reactions", brakka, units, 1).is_empty(),
+		"no-result path still consumes the round guard"
 	)
 
 
