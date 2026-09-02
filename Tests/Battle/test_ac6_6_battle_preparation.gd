@@ -3,7 +3,8 @@ extends SceneTree
 
 const SETUP_PATH := "res://Scripts/Battle/battle_setup_identity.gd"
 const RECORD_PATH := "res://Scripts/Battle/battle_preparation_record.gd"
-const EXPECTED_TEST_COUNT := 21
+const TRANSACTION_PATH := "res://Scripts/Battle/battle_preparation_transaction.gd"
+const EXPECTED_TEST_COUNT := 33
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -23,6 +24,13 @@ func _run() -> void:
 	var record_script := load(RECORD_PATH) as GDScript
 	_test_setup_identity(setup_script)
 	_test_record_contract(record_script)
+	_expect(ResourceLoader.exists(TRANSACTION_PATH), "battle preparation transaction exists")
+	if ResourceLoader.exists(TRANSACTION_PATH):
+		_test_transaction(
+			setup_script,
+			record_script,
+			load(TRANSACTION_PATH) as GDScript
+		)
 	_finish()
 
 
@@ -121,6 +129,72 @@ func _test_record_contract(record_script: GDScript) -> void:
 		&"prep-boss", Vector2i.ZERO, WorldEncounterType.BOSS, "setup-b"
 	) as RefCounted
 	_expect(not is_instance_valid(boss_offer), "Boss preparation record rejects")
+
+
+func _test_transaction(
+	setup_script: GDScript,
+	record_script: GDScript,
+	transaction_script: GDScript
+) -> void:
+	var units := _make_units()
+	var identity := setup_script.capture(
+		Vector2i(2, -1), WorldEncounterType.COMBAT, units
+	) as RefCounted
+	var offered := record_script.offered(
+		&"prep-tx",
+		Vector2i(2, -1),
+		WorldEncounterType.COMBAT,
+		String(identity.get("canonical_key"))
+	) as RefCounted
+	var transaction := transaction_script.begin(offered, identity) as RefCounted
+	_expect(is_instance_valid(transaction), "matching offered transaction begins")
+	_expect(not bool(transaction.call("cancel")), "required transaction rejects cancellation")
+	_expect(
+		bool(transaction.call("select_choice", record_script.Choice.FRONTLINE_BRIEFING)),
+		"Frontline Briefing selects"
+	)
+	_expect(bool(transaction.call("select_target", &"enemy_a", units)), "active enemy target selects")
+	var result := transaction.call("commit", identity, units) as Dictionary
+	_expect(bool(result.get("ok", false)), "matching setup commits")
+	var committed := result.get("record") as RefCounted
+	_expect(
+		is_instance_valid(committed)
+			and int(committed.get("choice")) == int(record_script.Choice.FRONTLINE_BRIEFING)
+			and committed.get("target_unit_id") == &"enemy_a",
+		"commit preserves exact target"
+	)
+	_expect(
+		not bool(transaction.call("commit", identity, units).get("ok", true)),
+		"transaction cannot commit twice"
+	)
+	var stale_units := _make_units()
+	var stale_identity := setup_script.capture(
+		Vector2i(2, -1), WorldEncounterType.COMBAT, stale_units
+	) as RefCounted
+	var stale_offer := record_script.offered(
+		&"prep-stale",
+		Vector2i(2, -1),
+		WorldEncounterType.COMBAT,
+		String(stale_identity.get("canonical_key"))
+	) as RefCounted
+	var stale_tx := transaction_script.begin(stale_offer, stale_identity) as RefCounted
+	stale_tx.call("select_choice", record_script.Choice.FRONTLINE_BRIEFING)
+	stale_tx.call("select_target", &"enemy_a", stale_units)
+	stale_units[1].current_hp = 0
+	var changed_identity := setup_script.capture(
+		Vector2i(2, -1), WorldEncounterType.COMBAT, stale_units
+	) as RefCounted
+	var stale_result := stale_tx.call("commit", changed_identity, stale_units) as Dictionary
+	_expect(not bool(stale_result.get("ok", true)), "stale active state rejects commit")
+	_expect(stale_result.get("reason") == &"stale_setup", "stale setup has stable reason")
+	var ally_tx := transaction_script.begin(stale_offer, stale_identity) as RefCounted
+	ally_tx.call("select_choice", record_script.Choice.FRONTLINE_BRIEFING)
+	_expect(not bool(ally_tx.call("select_target", &"player_a", stale_units)), "allied target rejects")
+	var plating_tx := transaction_script.begin(stale_offer, stale_identity) as RefCounted
+	_expect(
+		bool(plating_tx.call("select_choice", record_script.Choice.SPARE_PLATING)),
+		"Spare Plating selects without target"
+	)
 
 
 func _make_units() -> Array[BattleUnitState]:

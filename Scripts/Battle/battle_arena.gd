@@ -19,6 +19,16 @@ const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 const SKILL_TOOLTIP_VIEWPORT_MARGIN: float = 12.0
 const SKILL_TOOLTIP_ANCHOR_GAP: float = 8.0
 
+static var PREPARATION_RECORD_SCRIPT: GDScript = load(
+	"res://Scripts/Battle/battle_preparation_record.gd"
+)
+static var SETUP_IDENTITY_SCRIPT: GDScript = load(
+	"res://Scripts/Battle/battle_setup_identity.gd"
+)
+static var KEYWORD_SOURCE_SCRIPT: GDScript = load(
+	"res://Scripts/Battle/battle_keyword_source.gd"
+)
+
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
 @onready var _player_formation: GridContainer = %PlayerFormation
 @onready var _enemy_formation: GridContainer = %EnemyFormation
@@ -85,6 +95,9 @@ var _hovered_skill_button: Button
 var _skill_tooltip_generation: int = 0
 var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
+var _preparation_required: bool = false
+var _preparation_record: RefCounted
+var _applied_preparation_ids: Dictionary[StringName, bool] = {}
 
 
 func _exit_tree() -> void:
@@ -136,6 +149,9 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_clear_skill_inspector()
 	_skill_transaction.reset()
 	_battle_revision = 0
+	_preparation_required = false
+	_preparation_record = null
+	_applied_preparation_ids.clear()
 	_feedback_generation += 1
 	_action_in_progress = false
 	_hovered_log_index = -1
@@ -171,6 +187,94 @@ func configure_party_units(player_units: Array[BattleUnitState]) -> void:
 			player.set_skills(fixture.skills)
 		battle_units.append(player)
 	configure_units(battle_units)
+
+
+func get_setup_identity() -> RefCounted:
+	return SETUP_IDENTITY_SCRIPT.capture(encounter_coordinate, encounter_type, _units)
+
+
+func configure_preparation(record: RefCounted) -> bool:
+	if (
+		not is_instance_valid(record)
+		or not record.call("is_valid")
+		or int(record.get("state")) != PREPARATION_RECORD_SCRIPT.State.OFFERED
+	):
+		return false
+	var identity: RefCounted = get_setup_identity()
+	if (
+		not is_instance_valid(identity)
+		or String(identity.get("canonical_key")) != String(record.get("setup_key"))
+	):
+		return false
+	_preparation_record = record
+	_preparation_required = true
+	return true
+
+
+func apply_committed_preparation(record: RefCounted) -> bool:
+	if (
+		not is_instance_valid(record)
+		or not record.call("is_valid")
+		or int(record.get("state")) != PREPARATION_RECORD_SCRIPT.State.COMMITTED
+	):
+		return false
+	var preparation_id := record.get("preparation_id") as StringName
+	if _applied_preparation_ids.has(preparation_id):
+		_preparation_required = false
+		return true
+	var identity: RefCounted = get_setup_identity()
+	if (
+		not is_instance_valid(identity)
+		or String(identity.get("canonical_key")) != String(record.get("setup_key"))
+	):
+		return false
+	var choice := int(record.get("choice"))
+	var targets: Array[BattleUnitState] = []
+	if choice == PREPARATION_RECORD_SCRIPT.Choice.FRONTLINE_BRIEFING:
+		var target := get_unit_by_id(record.get("target_unit_id") as StringName)
+		if (
+			not is_instance_valid(target)
+			or target.side != BattleUnitState.Side.ENEMY
+			or not target.is_active()
+		):
+			return false
+		targets.append(target)
+	elif choice == PREPARATION_RECORD_SCRIPT.Choice.SPARE_PLATING:
+		for unit: BattleUnitState in _units:
+			if (
+				is_instance_valid(unit)
+				and unit.side == BattleUnitState.Side.PLAYER
+				and unit.is_active()
+				and BattleFormationRules.is_front_slot(unit.slot_index)
+			):
+				targets.append(unit)
+		if targets.is_empty():
+			return false
+	else:
+		return false
+	if choice == PREPARATION_RECORD_SCRIPT.Choice.FRONTLINE_BRIEFING:
+		var source: RefCounted = KEYWORD_SOURCE_SCRIPT.create(
+			&"brakka_rustbanner", &"scrapline_quartermaster", 1
+		)
+		if not is_instance_valid(source) or not targets[0].apply_advantage(source, 1):
+			return false
+	else:
+		for target: BattleUnitState in targets:
+			target.add_armor(2)
+	_applied_preparation_ids[preparation_id] = true
+	_preparation_record = record
+	_preparation_required = false
+	if is_node_ready():
+		_refresh_turn_ui()
+	return true
+
+
+func is_preparation_required() -> bool:
+	return _preparation_required
+
+
+func is_battle_input_locked() -> bool:
+	return _preparation_required
 
 
 func get_turn_queue() -> Array[BattleUnitState]:
