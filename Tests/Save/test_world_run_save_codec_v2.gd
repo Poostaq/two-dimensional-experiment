@@ -80,6 +80,29 @@ func _run() -> void:
         )
         _expect(String(value.get("resolved_seed", "")) == "golden-alpha", "resolved seed round trips")
     var root := root_value as Dictionary
+    var legacy_v2 := root.duplicate(true)
+    var legacy_run_state := legacy_v2["world"]["run_state"] as Dictionary
+    legacy_run_state.erase("cache_move_progress")
+    legacy_run_state.erase("cache_ready")
+    legacy_run_state.erase("battle_preparation")
+    _expect(
+        bool(save_codec.decode_any((JSON.stringify(legacy_v2) + "\n").to_utf8_buffer()).get("ok", false)),
+        "older Save V2 defaults Cache and preparation"
+    )
+    var invalid_progress := root.duplicate(true)
+    invalid_progress["world"]["run_state"]["cache_move_progress"] = 4
+    _expect_code(
+        save_codec.decode_any((JSON.stringify(invalid_progress) + "\n").to_utf8_buffer()),
+        "SAVE_ENVELOPE_INVALID",
+        "out-of-range Cache progress"
+    )
+    var invalid_preparation := root.duplicate(true)
+    invalid_preparation["world"]["run_state"]["battle_preparation"] = {"state": "unknown"}
+    _expect_code(
+        save_codec.decode_any((JSON.stringify(invalid_preparation) + "\n").to_utf8_buffer()),
+        "SAVE_ENVELOPE_INVALID",
+        "unknown preparation state"
+    )
     var altered_sha := root.duplicate(true)
     altered_sha["world"]["canonical_plan_sha256"] = "00"
     _expect_code(

@@ -3,6 +3,10 @@ extends RefCounted
 
 const FORMATION_SLOT_COUNT := 6
 
+static var PREPARATION_RECORD_SCRIPT: GDScript = load(
+	"res://Scripts/Battle/battle_preparation_record.gd"
+)
+
 var player_coord: Vector2i
 var boss_coord: Vector2i
 var move_count: int
@@ -10,6 +14,9 @@ var boss_active: bool
 var boss_engaged: bool
 var consumed_encounters: Array[Vector2i] = []
 var formation: Array[StringName] = []
+var cache_move_progress: int = 0
+var cache_ready: bool = false
+var battle_preparation: RefCounted
 
 
 static func create(
@@ -19,9 +26,30 @@ static func create(
     new_boss_active: bool,
     new_boss_engaged: bool,
     new_consumed_encounters: Array[Vector2i],
-    new_formation: Array[StringName]
+    new_formation: Array[StringName],
+    new_cache_move_progress: int = 0,
+    new_cache_ready: bool = false,
+    new_battle_preparation: RefCounted = null
 ) -> RefCounted:
     if new_move_count < 0 or (new_boss_active and new_move_count < 30):
+        return null
+    if new_cache_move_progress < 0 or new_cache_move_progress > 3:
+        return null
+    var preparation: RefCounted = new_battle_preparation
+    if not is_instance_valid(preparation):
+        preparation = PREPARATION_RECORD_SCRIPT.none()
+    if not is_instance_valid(preparation) or not preparation.call("is_valid"):
+        return null
+    var preparation_state: int = int(preparation.get("state"))
+    if (
+        preparation_state == PREPARATION_RECORD_SCRIPT.State.OFFERED
+        and not new_cache_ready
+    ):
+        return null
+    if (
+        preparation_state == PREPARATION_RECORD_SCRIPT.State.COMMITTED
+        and new_cache_ready
+    ):
         return null
     if new_formation.size() != FORMATION_SLOT_COUNT:
         return null
@@ -41,6 +69,14 @@ static func create(
     state.boss_engaged = new_boss_engaged
     state.consumed_encounters = new_consumed_encounters.duplicate()
     state.formation = new_formation.duplicate()
+    state.cache_move_progress = new_cache_move_progress
+    state.cache_ready = new_cache_ready
+    var preparation_copy: Dictionary = PREPARATION_RECORD_SCRIPT.from_dictionary(
+        preparation.call("to_dictionary")
+    )
+    if not bool(preparation_copy.get("ok", false)):
+        return null
+    state.battle_preparation = preparation_copy["value"]
     return state
 
 
@@ -51,7 +87,14 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         return {"ok": false}
     var consumed_result := _decode_consumed(value.get("consumed_encounters"))
     var formation_result := _decode_formation(value.get("formation"))
-    if not consumed_result.get("ok", false) or not formation_result.get("ok", false):
+    var preparation_result: Dictionary = PREPARATION_RECORD_SCRIPT.from_dictionary(
+        value.get("battle_preparation", {"state": "none"})
+    )
+    if (
+        not consumed_result.get("ok", false)
+        or not formation_result.get("ok", false)
+        or not preparation_result.get("ok", false)
+    ):
         return {"ok": false}
     var state := create(
         player_result["coord"],
@@ -60,7 +103,10 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         bool(value.get("boss_active", false)),
         bool(value.get("boss_engaged", false)),
         consumed_result["coords"],
-        formation_result["slots"]
+        formation_result["slots"],
+        int(value.get("cache_move_progress", 0)),
+        bool(value.get("cache_ready", false)),
+        preparation_result["value"]
     )
     if not is_instance_valid(state) or not state.is_valid(plan):
         return {"ok": false}
@@ -94,6 +140,9 @@ func to_dictionary() -> Dictionary:
         "boss_engaged": boss_engaged,
         "consumed_encounters": consumed,
         "formation": slot_ids,
+        "cache_move_progress": cache_move_progress,
+        "cache_ready": cache_ready,
+        "battle_preparation": battle_preparation.call("to_dictionary"),
     }
 
 
