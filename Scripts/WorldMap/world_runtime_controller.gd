@@ -301,6 +301,10 @@ func _restore_roster(run_state: RefCounted) -> bool:
 	if ids.size() != RunRoster.MAX_ROSTER_SIZE:
 		return false
 	var available: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+	for commander_id: StringName in GoblinCommanderCatalog.get_commander_ids():
+		var commander_character := GoblinCommanderCatalog.create_by_commander_id(commander_id)
+		if is_instance_valid(commander_character):
+			available.append(commander_character)
 	for reward_id: StringName in [
 		RunCharacterCatalog.COMBAT_SCOUT_REWARD_ID,
 		RunCharacterCatalog.BOSS_CHAMPION_REWARD_ID,

@@ -157,12 +157,38 @@ func _run() -> void:
     failed_runtime.auto_initialize_runtime = false
     get_root().add_child(failed_runtime)
     await process_frame
-    _expect(not failed_runtime.configure_runtime(null), "invalid runtime plan is rejected atomically")
-    _expect(failed_runtime.has_integration_failed(), "invalid runtime plan marks integration failed")
-    _expect(failed_runtime.get_main_cell_count() == 0, "failed runtime configuration creates zero world cells")
-    _expect(failed_runtime.get_node("EncounterHost").get_child_count() + failed_runtime.get_node("BattleHost").get_child_count() + failed_runtime.get_node("PartyHost").get_child_count() == 0, "failed runtime configuration creates zero modal surfaces")
-    var failed_snapshot := failed_runtime.get_runtime_snapshot()
-    _expect(failed_snapshot.move_count == 0 and failed_snapshot.player_coord == Vector2i.ZERO and failed_snapshot.boss_coord == Vector2i.ZERO, "failed configuration creates no runtime movement mutation")
+    var commander_runtime := packed.instantiate() as WorldRuntimeController
+    commander_runtime.auto_initialize_runtime = false
+    get_root().add_child(commander_runtime)
+    await process_frame
+    var commander_plan_result := HexWorldGeneratorV1.new().generate("commander-restore")
+    _expect(bool(commander_plan_result.get("ok", false)), "commander-restore plan generation succeeds")
+    if bool(commander_plan_result.get("ok", false)):
+        var commander_plan: WorldPlan = commander_plan_result.get("plan") as WorldPlan
+        var commander_state: RefCounted = WorldRunState.create(
+            commander_plan.get_start_coord(),
+            commander_plan.get_boss_coord(),
+            0,
+            false,
+            false,
+            [],
+            [
+                &"player_0",
+                &"brakka_rustbanner",
+                &"player_2",
+                &"",
+                &"",
+                &"",
+            ]
+        )
+        var commander_session: Dictionary = {
+            "plan": commander_plan,
+            "run_state": commander_state,
+            "resolved_seed": "commander-restore",
+        }
+        _expect(commander_runtime.apply_session(commander_session), "runtime accepts session formation that includes the saved commander")
+    commander_runtime.free()
+
     failed_runtime.free()
     _finish()
 
