@@ -11,6 +11,10 @@ enum Screen {
     OVERWRITE_CONFIRM,
 }
 
+const TOOLTIP_WIDTH: float = 340.0
+const TOOLTIP_OFFSET := Vector2(10.0, 8.0)
+const TOOLTIP_VIEWPORT_MARGIN: float = 8.0
+
 static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
 static var EXIT_ADAPTER_SCRIPT: GDScript = load("res://Scripts/Run/world_exit_adapter.gd")
@@ -33,6 +37,8 @@ var _commander_ids: Array[StringName] = GoblinCommanderCatalog.get_commander_ids
 var _selected_commander_index: int = 0
 var _pending_commander_id: StringName = &""
 var _failure_overlay: Control
+var _presented_commander_skills: Array[CharacterSkill] = []
+var _active_tooltip_target: Control
 
 @onready var _background: ColorRect = $Background
 @onready var _main_center: CenterContainer = $MainCenter
@@ -61,6 +67,9 @@ var _failure_overlay: Control
     %CommanderSkill2,
     %CommanderSkill3,
 ]
+@onready var _commander_skill_tooltip: PanelContainer = %CommanderSkillTooltip
+@onready var _commander_skill_tooltip_name: Label = %CommanderSkillTooltipName
+@onready var _commander_skill_tooltip_body: Label = %CommanderSkillTooltipBody
 @onready var _overwrite_confirm_button: Button = %OverwriteConfirmButton
 @onready var _overwrite_cancel_button: Button = %OverwriteCancelButton
 @onready var _failure_host: Control = %FailureHost
@@ -93,6 +102,14 @@ func _ready() -> void:
     _back_button.pressed.connect(on_back_pressed)
     _previous_commander_button.pressed.connect(on_previous_commander_pressed)
     _next_commander_button.pressed.connect(on_next_commander_pressed)
+    for index: int in _commander_skill_buttons.size():
+        var button: Button = _commander_skill_buttons[index]
+        button.mouse_entered.connect(_show_commander_skill_tooltip.bind(index, button))
+        button.mouse_exited.connect(_hide_commander_skill_tooltip.bind(button))
+        button.focus_entered.connect(_show_commander_skill_tooltip.bind(index, button))
+        button.focus_exited.connect(_hide_commander_skill_tooltip.bind(button))
+    _commander_skill_tooltip_name.add_theme_font_size_override("font_size", 18)
+    _commander_skill_tooltip_body.add_theme_font_size_override("font_size", 16)
     _overwrite_confirm_button.pressed.connect(on_overwrite_confirm_pressed)
     _overwrite_cancel_button.pressed.connect(on_overwrite_cancel_pressed)
     screen_changed.connect(_show_screen)
@@ -306,21 +323,74 @@ func _refresh_commander_ui() -> void:
     )
     _commander_portrait.tooltip_text = String(presentation.get("portrait_label", ""))
     var skills: Array = presentation.get("skills", [])
+    _presented_commander_skills.clear()
+    for value: Variant in skills:
+        var presented_skill := value as CharacterSkill
+        if is_instance_valid(presented_skill):
+            _presented_commander_skills.append(presented_skill)
     var abbreviations: Array[String] = ["ST", "PB", "BN", "BH"]
     for index: int in _commander_skill_buttons.size():
         var button: Button = _commander_skill_buttons[index]
         button.text = abbreviations[index]
-        button.disabled = index >= skills.size()
-        if index >= skills.size():
-            button.tooltip_text = ""
-            continue
-        var skill := skills[index] as CharacterSkill
-        button.tooltip_text = "%s\n%s\n%s\n%s" % [
-            skill.display_name,
-            skill.cooldown_text,
-            skill.effect_text,
-            skill.targeting_text,
-        ]
+        button.disabled = index >= _presented_commander_skills.size()
+        button.tooltip_text = ""
+    if (
+        is_instance_valid(_active_tooltip_target)
+        and not _commander_skill_buttons.has(_active_tooltip_target)
+    ):
+        _active_tooltip_target = null
+        _commander_skill_tooltip.hide()
+
+
+func _show_commander_skill_tooltip(index: int, target: Control) -> void:
+    if index < 0 or index >= _presented_commander_skills.size():
+        return
+    var skill: CharacterSkill = _presented_commander_skills[index]
+    _active_tooltip_target = target
+    _commander_skill_tooltip_name.text = skill.display_name
+    _commander_skill_tooltip_body.text = "\n".join([
+        _format_cooldown(skill.cooldown_text),
+        skill.effect_text,
+        _format_target(skill.targeting_text),
+    ])
+    _commander_skill_tooltip.show()
+    _position_commander_skill_tooltip.call_deferred(target)
+
+
+func _hide_commander_skill_tooltip(target: Control) -> void:
+    if target != _active_tooltip_target:
+        return
+    _active_tooltip_target = null
+    _commander_skill_tooltip.hide()
+
+
+func _position_commander_skill_tooltip(target: Control) -> void:
+    if target != _active_tooltip_target or not _commander_skill_tooltip.visible:
+        return
+    _commander_skill_tooltip.reset_size()
+    _commander_skill_tooltip.size.x = TOOLTIP_WIDTH
+    var viewport_size := get_viewport_rect().size
+    var desired := target.global_position + Vector2(target.size.x, 0.0) + TOOLTIP_OFFSET
+    var minimum := Vector2.ONE * TOOLTIP_VIEWPORT_MARGIN
+    var maximum := viewport_size - _commander_skill_tooltip.size - minimum
+    maximum.x = maxf(maximum.x, minimum.x)
+    maximum.y = maxf(maximum.y, minimum.y)
+    _commander_skill_tooltip.global_position = desired.clamp(minimum, maximum)
+
+
+func _format_cooldown(value: String) -> String:
+    var compact := value.strip_edges()
+    if compact.begins_with("CD") and compact.substr(2).is_valid_int():
+        var turns := compact.substr(2).to_int()
+        return "Cooldown: %d %s" % [turns, "turn" if turns == 1 else "turns"]
+    if compact.begins_with("Cooldown:"):
+        return compact
+    return "Cooldown: %s" % compact
+
+
+func _format_target(value: String) -> String:
+    var target := value.strip_edges()
+    return target if target.begins_with("Target:") else "Target: %s" % target
 
 
 func _refresh_continue_button() -> void:

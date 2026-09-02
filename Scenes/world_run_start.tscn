@@ -813,10 +813,12 @@ layout_mode = 2
 
 [node name="CommanderSkillTooltipName" type="Label" parent="CommanderSkillTooltip/TooltipMargin/TooltipContent" unique_id=2075170128]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(316, 0)
 layout_mode = 2
 autowrap_mode = 3
 
 [node name="CommanderSkillTooltipBody" type="Label" parent="CommanderSkillTooltip/TooltipMargin/TooltipContent" unique_id=1561770585]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(316, 0)
 layout_mode = 2
 autowrap_mode = 3

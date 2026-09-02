@@ -180,7 +180,11 @@ func _run() -> void:
     )
     _expect(
         tooltip.global_position.y + tooltip.size.y <= viewport_size.y - 8.0,
-        "tooltip clamps to viewport bottom margin"
+        "tooltip clamps to viewport bottom margin: position=%s size=%s viewport=%s" % [
+            tooltip.global_position,
+            tooltip.size,
+            viewport_size,
+        ]
     )
     launcher.call("_hide_commander_skill_tooltip", second_skill)
     _expect(not tooltip.visible, "active target exit hides tooltip")
