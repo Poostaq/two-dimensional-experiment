@@ -32,6 +32,7 @@ func _run() -> void:
 	var plan := generated.get("plan") as WorldPlan
 	await _capture_cache_progress(plan)
 	await _capture_locked_preparation(plan)
+	await _capture_frontline_briefing(plan)
 	_write_summary()
 	if _failed:
 		quit(1)
@@ -97,6 +98,41 @@ func _capture_locked_preparation(plan: WorldPlan) -> void:
 		]
 	)
 	await _save_viewport("spare-plating-committed.png")
+	world.free()
+	await process_frame
+
+
+func _capture_frontline_briefing(plan: WorldPlan) -> void:
+	var world := await _create_world(plan, 0, true)
+	world.call("_on_battle_requested", plan.get_start_coord(), WorldEncounterType.COMBAT)
+	await process_frame
+	await process_frame
+	var arena := _get_arena(world)
+	var target: BattleUnitState
+	for unit: BattleUnitState in arena.get_turn_queue():
+		if unit.side == BattleUnitState.Side.ENEMY and unit.is_active():
+			target = unit
+			break
+	var identity := arena.get_setup_identity() as RefCounted
+	world.call(
+		"_on_preparation_commit_requested",
+		BattlePreparationRecord.Choice.FRONTLINE_BRIEFING,
+		target.unit_id,
+		identity.canonical_key
+	)
+	arena.inspect_unit(target.unit_id)
+	await process_frame
+	await process_frame
+	_summary_lines.append(
+		"frontline_briefing: target=%s advantage=%s cache_ready=%s locked=%s"
+		% [
+			target.unit_id,
+			target.has_advantage(1),
+			world.get_durable_run_state().get("cache_ready"),
+			arena.is_preparation_required(),
+		]
+	)
+	await _save_viewport("frontline-briefing-committed.png")
 	world.free()
 	await process_frame
 
