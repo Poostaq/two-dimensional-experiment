@@ -31,6 +31,49 @@ func _run() -> void:
 
 func _test_missing_commander_catalog_contract() -> void:
 	_expect(ResourceLoader.exists(COMMANDER_CATALOG_PATH), "commander catalog exists")
+	if not ResourceLoader.exists(COMMANDER_CATALOG_PATH):
+		return
+	var catalog := load(COMMANDER_CATALOG_PATH) as Script
+	_expect(
+		catalog.call("get_commander_ids") == _ids([EXPECTED_BRAKKA_ID]),
+		"Brakka is the only commander"
+	)
+	var brakka: RunCharacter = catalog.call("create_by_commander_id", EXPECTED_BRAKKA_ID)
+	_expect(is_instance_valid(brakka), "Brakka constructs")
+	if not is_instance_valid(brakka):
+		return
+	_expect(brakka.character_id == EXPECTED_BRAKKA_ID, "Brakka stable ID")
+	_expect(brakka.display_name == "Brakka Rustbanner", "Brakka display name")
+	_expect(
+		brakka.base_speed == 7 and brakka.max_hp == 20,
+		"Brakka retains Scrapshield speed and HP"
+	)
+	_expect(
+		brakka.power == 4 and brakka.defense == 2,
+		"Brakka retains Scrapshield Power and Defense"
+	)
+	_expect(brakka.race_id == &"goblin", "Brakka carries Goblin race identity")
+	var skill_ids: Array[StringName] = []
+	for skill: CharacterSkill in brakka.get_skills():
+		skill_ids.append(skill.skill_id)
+	_expect(
+		skill_ids == _ids([&"shield_tap", &"pack_brace", &"banner_nudge", &"banner_holder"]),
+		"Brakka retains three root skills and appends Banner Holder"
+	)
+	var presentation: Dictionary = catalog.call("get_presentation", EXPECTED_BRAKKA_ID)
+	_expect(presentation.get("title") == "Packmarshal · Goblin Commander", "presentation has title")
+	_expect(presentation.get("root_class_name") == "Scrapshield Bruiser", "presentation names root class")
+	var presented_skills: Array = presentation.get("skills", [])
+	presented_skills.clear()
+	_expect(
+		(catalog.call("get_presentation", EXPECTED_BRAKKA_ID).get("skills") as Array).size() == 4,
+		"presentation snapshots do not share their skill array"
+	)
+	_expect(
+		RunCharacterCatalog.create_by_class_id(EXPECTED_BRAKKA_ID) != null,
+		"root catalog resolves Brakka"
+	)
+	_expect(catalog.call("create_by_commander_id", &"unknown") == null, "unknown commander fails closed")
 
 
 func _test_closest_active_opponent_contract() -> void:
@@ -216,6 +259,13 @@ func _test_action_start_reaction_contract() -> void:
 
 func _unit(id: StringName, side: BattleUnitState.Side, slot_index: int) -> BattleUnitState:
 	return BattleUnitState.new(id, String(id), side, slot_index, 5, 20, [], 4, 0)
+
+
+func _ids(values: Array) -> Array[StringName]:
+	var result: Array[StringName] = []
+	for value: Variant in values:
+		result.append(value as StringName)
+	return result
 
 
 func _units(values: Array) -> Array[BattleUnitState]:

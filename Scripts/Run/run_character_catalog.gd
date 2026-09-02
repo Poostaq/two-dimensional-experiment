@@ -11,7 +11,11 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 	if is_instance_valid(character):
 		return character
 	var wave_b_script := load("res://Scripts/Run/goblin_wave_b_catalog.gd") as Script
-	return wave_b_script.create_by_class_id(class_id)
+	character = wave_b_script.create_by_class_id(class_id)
+	if is_instance_valid(character):
+		return character
+	var commander_script := load("res://Scripts/Run/goblin_commander_catalog.gd") as Script
+	return commander_script.create_by_commander_id(class_id)
 
 
 static func create_starters() -> Array[RunCharacter]:
