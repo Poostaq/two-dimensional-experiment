@@ -1,0 +1,13 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC6.3 Goblin wave A: 116/116 assertions passed.
+ERROR: CharacterSkill requires valid typed authored targeting, conditions, and effects.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:233)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_character_skill_authoring (res://Tests/Battle/test_ac6_3_goblin_wave_a.gd:183)
+       [3] _run (res://Tests/Battle/test_ac6_3_goblin_wave_a.gd:21)
+

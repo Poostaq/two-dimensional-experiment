@@ -1,0 +1,34 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC2.7 tests passed
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_blank_preview_rejection (res://Tests/Battle/test_ac2_7_skill_preview.gd:69)
+       [3] _run (res://Tests/Battle/test_ac2_7_skill_preview.gd:27)
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_blank_preview_rejection (res://Tests/Battle/test_ac2_7_skill_preview.gd:69)
+       [3] _run (res://Tests/Battle/test_ac2_7_skill_preview.gd:27)
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_blank_preview_rejection (res://Tests/Battle/test_ac2_7_skill_preview.gd:69)
+       [3] _run (res://Tests/Battle/test_ac2_7_skill_preview.gd:27)
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_blank_preview_rejection (res://Tests/Battle/test_ac2_7_skill_preview.gd:69)
+       [3] _run (res://Tests/Battle/test_ac2_7_skill_preview.gd:27)
+

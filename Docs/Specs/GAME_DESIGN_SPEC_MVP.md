@@ -212,6 +212,15 @@
 - [ ] AC5.2 — Unlocked characters, items, and event-driven progression persist across runs
 - [ ] AC5.3 — Run ID uniquely identifies a playable sequence; same ID = reproducible battles
 
+### Goblin Combat Vertical Slice
+- [x] AC6.1 — Shared Power, Defense, physical damage, default actions, formation movement, and committed-action history foundation
+- [x] AC6.2 — Shared Advantage, Snared, Armor, Bleed, temporary Speed, cooldown adjustment, and bounded Passive reaction foundation
+- [x] AC6.3 — Goblin Wave A classes and their nine authored skills
+- [x] AC6.4 — Goblin Wave B classes and their nine authored skills
+- [x] AC6.5 — Brakka Rustbanner is selectable before seed entry, starts in middle frontline slot 1, and Banner Holder deterministically applies Advantage once per round to the closest active enemy
+- [ ] AC6.6 — Scrapline Quartermaster Cache state and pre-battle preparation choice
+- [ ] AC6.7 — Full production Goblin integration, reward, save/reload, and next-battle gate
+
 ### Verification Paths
 
 | AC ID | Verification Type | Verification Path |
@@ -244,6 +253,7 @@
 | `AC5.1` | Manual runtime check | Finish or abandon one run, start a new run, and verify the prior run's roster does not carry over into the new run. |
 | `AC5.2` | Persistence check | Unlock content through victory or special events, start a new run, and verify the unlocked characters, items, and event-driven progression remain available. |
 | `AC5.3` | Determinism check | Replay the same Run ID using the same choices and verify the same encounter sequence, battle setup, and outcomes occur within the documented deterministic systems. |
+| `AC6.5` | Automated and runtime check | Run `Tests/Battle/test_ac6_5_brakka.gd`, `Tests/Run/test_world_run_start_service.gd`, `Tests/Run/test_world_production_launcher.gd`, `Tests/UI/test_world_run_start_scene.gd`, Save V2, roster, formation, and cutover runners. Then open Start New Run at 1152x648 and verify the portrait-adjacent disabled arrows, Brakka details, four focusable tooltip skill squares, seed below the columns, and Begin at the bottom. Confirm Brakka persists at formation slot 1 and Banner Holder applies Advantage once per round to the deterministic closest active enemy without consuming the action or redirecting stale targets. |
 
 ---
 

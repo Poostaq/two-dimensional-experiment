@@ -1,0 +1,27 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC2.8 skill targeting tests: PASS
+ERROR: CharacterSkill requires a valid typed mechanical definition.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:249)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_mechanical_definition_validation_and_copy (res://Tests/Battle/test_ac2_8_skill_targeting.gd:118)
+       [3] _run (res://Tests/Battle/test_ac2_8_skill_targeting.gd:25)
+ERROR: CharacterSkill requires a valid typed mechanical definition.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:249)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_mechanical_definition_validation_and_copy (res://Tests/Battle/test_ac2_8_skill_targeting.gd:128)
+       [3] _run (res://Tests/Battle/test_ac2_8_skill_targeting.gd:25)
+ERROR: CharacterSkill requires a valid typed mechanical definition.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:249)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_mechanical_definition_validation_and_copy (res://Tests/Battle/test_ac2_8_skill_targeting.gd:138)
+       [3] _run (res://Tests/Battle/test_ac2_8_skill_targeting.gd:25)
+

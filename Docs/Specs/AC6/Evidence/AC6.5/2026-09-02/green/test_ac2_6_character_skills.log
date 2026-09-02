@@ -1,0 +1,48 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC2.6 character skill tests: PASS (19/19)
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _create_test_skill (res://Tests/Battle/test_ac2_6_character_skills.gd:333)
+       [3] _test_runtime_safe_rejection (res://Tests/Battle/test_ac2_6_character_skills.gd:96)
+       [4] _run (res://Tests/Battle/test_ac2_6_character_skills.gd:22)
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _create_test_skill (res://Tests/Battle/test_ac2_6_character_skills.gd:333)
+       [3] _test_runtime_safe_rejection (res://Tests/Battle/test_ac2_6_character_skills.gd:97)
+       [4] _run (res://Tests/Battle/test_ac2_6_character_skills.gd:22)
+ERROR: CharacterSkill requires non-blank identity, preview fields, and a valid kind.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:184)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _create_test_skill (res://Tests/Battle/test_ac2_6_character_skills.gd:333)
+       [3] _test_runtime_safe_rejection (res://Tests/Battle/test_ac2_6_character_skills.gd:98)
+       [4] _run (res://Tests/Battle/test_ac2_6_character_skills.gd:22)
+ERROR: BattleUnitState requires zero to four unique, valid CharacterSkill entries.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] set_skills (res://Scripts/Battle/battle_unit_state.gd:95)
+       [1] _test_runtime_safe_rejection (res://Tests/Battle/test_ac2_6_character_skills.gd:105)
+       [2] _run (res://Tests/Battle/test_ac2_6_character_skills.gd:22)
+ERROR: BattleUnitState requires zero to four unique, valid CharacterSkill entries.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] set_skills (res://Scripts/Battle/battle_unit_state.gd:95)
+       [1] _test_runtime_safe_rejection (res://Tests/Battle/test_ac2_6_character_skills.gd:105)
+       [2] _run (res://Tests/Battle/test_ac2_6_character_skills.gd:22)
+ERROR: BattleUnitState requires zero to four unique, valid CharacterSkill entries.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] set_skills (res://Scripts/Battle/battle_unit_state.gd:95)
+       [1] _test_runtime_safe_rejection (res://Tests/Battle/test_ac2_6_character_skills.gd:105)
+       [2] _run (res://Tests/Battle/test_ac2_6_character_skills.gd:22)
+

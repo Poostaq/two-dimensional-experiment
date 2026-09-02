@@ -1,0 +1,4 @@
+feat/ac6-5-brakka
+Verification candidate: f3f2498
+Plan: Docs/superpowers/plans/2026-09-02-ac6-5-brakka.md
+Design: Docs/superpowers/specs/2026-09-01-ac6-5-brakka-design.md
