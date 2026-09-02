@@ -765,3 +765,49 @@ visible = false
 custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
+
+[node name="PreparationBlocker" type="PanelContainer" parent="." unique_id=453928630]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PreparationContent" type="VBoxContainer" parent="PreparationBlocker" unique_id=372416990]
+layout_mode = 2
+
+[node name="PreparationTitle" type="Label" parent="PreparationBlocker/PreparationContent" unique_id=1235617176]
+layout_mode = 2
+text = "Scrapline Quartermaster"
+horizontal_alignment = 1
+
+[node name="PreparationMessageLabel" type="Label" parent="PreparationBlocker/PreparationContent" unique_id=1476289450]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Choose a preparation before combat begins."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="FrontlineBriefingButton" type="Button" parent="PreparationBlocker/PreparationContent" unique_id=18287721]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Frontline Briefing — Choose an active enemy to begin with Advantage"
+
+[node name="SparePlatingButton" type="Button" parent="PreparationBlocker/PreparationContent" unique_id=199871684]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Spare Plating — Frontline allies begin with +2 Armor"
+
+[node name="PreparationConfirmButton" type="Button" parent="PreparationBlocker/PreparationContent" unique_id=1809002429]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Confirm Preparation"
+
+[node name="PreparationTargetOption" type="OptionButton" parent="PreparationBlocker/PreparationContent" unique_id=1559282964]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2

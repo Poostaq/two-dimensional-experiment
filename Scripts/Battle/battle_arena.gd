@@ -6,6 +6,7 @@ signal battle_completed(outcome: BattleOutcome.Type)
 signal reward_selected(option: BattleRewardOption)
 signal reward_confirmed(option: BattleRewardOption)
 signal recruitment_placement_requested(option: BattleRewardOption)
+signal preparation_commit_requested(choice: int, target_unit_id: StringName, expected_setup_key: String)
 
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
@@ -27,6 +28,9 @@ static var SETUP_IDENTITY_SCRIPT: GDScript = load(
 )
 static var KEYWORD_SOURCE_SCRIPT: GDScript = load(
 	"res://Scripts/Battle/battle_keyword_source.gd"
+)
+static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
+	"res://Scripts/Battle/battle_preparation_transaction.gd"
 )
 
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
@@ -67,6 +71,12 @@ static var KEYWORD_SOURCE_SCRIPT: GDScript = load(
 @onready var _skill_action_summary_label: Label = %SkillActionSummaryLabel
 @onready var _skill_confirm_button: Button = %SkillConfirmButton
 @onready var _skill_cancel_button: Button = %SkillCancelButton
+@onready var _preparation_blocker: PanelContainer = %PreparationBlocker
+@onready var _frontline_briefing_button: Button = %FrontlineBriefingButton
+@onready var _spare_plating_button: Button = %SparePlatingButton
+@onready var _preparation_target_option: OptionButton = %PreparationTargetOption
+@onready var _preparation_message_label: Label = %PreparationMessageLabel
+@onready var _preparation_confirm_button: Button = %PreparationConfirmButton
 
 var encounter_coordinate: Vector2i = Vector2i.ZERO
 var encounter_type: String = ""
@@ -97,6 +107,7 @@ var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
 var _preparation_required: bool = false
 var _preparation_record: RefCounted
+var _preparation_transaction: RefCounted
 var _applied_preparation_ids: Dictionary[StringName, bool] = {}
 
 
@@ -121,6 +132,10 @@ func _ready() -> void:
 	var confirm_callable := Callable(self, "confirm_reward_selection")
 	if not _confirm_reward_button.pressed.is_connected(confirm_callable):
 		_confirm_reward_button.pressed.connect(confirm_callable)
+	_frontline_briefing_button.pressed.connect(_on_frontline_briefing_pressed)
+	_spare_plating_button.pressed.connect(_on_spare_plating_pressed)
+	_preparation_target_option.item_selected.connect(_on_preparation_target_selected)
+	_preparation_confirm_button.pressed.connect(_on_preparation_confirm_pressed)
 	_clear_reward_ui()
 	_assign_slot_metadata(_player_formation, "player")
 	_assign_slot_metadata(_enemy_formation, "enemy")
@@ -152,6 +167,8 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_preparation_required = false
 	_preparation_record = null
 	_applied_preparation_ids.clear()
+	if is_node_ready():
+		_preparation_blocker.visible = false
 	_feedback_generation += 1
 	_action_in_progress = false
 	_hovered_log_index = -1
@@ -207,7 +224,16 @@ func configure_preparation(record: RefCounted) -> bool:
 	):
 		return false
 	_preparation_record = record
+	_preparation_transaction = PREPARATION_TRANSACTION_SCRIPT.begin(record, identity)
+	if not is_instance_valid(_preparation_transaction):
+		return false
 	_preparation_required = true
+	if is_node_ready():
+		_preparation_blocker.visible = true
+		_preparation_target_option.visible = false
+		_preparation_confirm_button.disabled = true
+		_preparation_message_label.text = "Choose a preparation before combat begins."
+		_advance_debug_button.disabled = true
 	return true
 
 
@@ -265,8 +291,63 @@ func apply_committed_preparation(record: RefCounted) -> bool:
 	_preparation_record = record
 	_preparation_required = false
 	if is_node_ready():
+		_preparation_blocker.visible = false
 		_refresh_turn_ui()
 	return true
+
+
+func _on_frontline_briefing_pressed() -> void:
+	if not is_instance_valid(_preparation_transaction):
+		return
+	_preparation_transaction.call("select_choice", PREPARATION_RECORD_SCRIPT.Choice.FRONTLINE_BRIEFING)
+	_preparation_target_option.clear()
+	for unit: BattleUnitState in _units:
+		if unit.side == BattleUnitState.Side.ENEMY and unit.is_active():
+			_preparation_target_option.add_item(unit.display_name)
+			_preparation_target_option.set_item_metadata(
+				_preparation_target_option.item_count - 1, unit.unit_id
+			)
+	_preparation_target_option.visible = true
+	_preparation_confirm_button.disabled = _preparation_target_option.item_count == 0
+	if _preparation_target_option.item_count > 0:
+		_on_preparation_target_selected(0)
+
+
+func _on_spare_plating_pressed() -> void:
+	if not is_instance_valid(_preparation_transaction):
+		return
+	_preparation_transaction.call("select_choice", PREPARATION_RECORD_SCRIPT.Choice.SPARE_PLATING)
+	_preparation_target_option.visible = false
+	_preparation_confirm_button.disabled = false
+	_preparation_message_label.text = "Frontline allies will begin with +2 Armor."
+
+
+func _on_preparation_target_selected(index: int) -> void:
+	if (
+		not is_instance_valid(_preparation_transaction)
+		or index < 0
+		or index >= _preparation_target_option.item_count
+	):
+		return
+	var target_id := _preparation_target_option.get_item_metadata(index) as StringName
+	if _preparation_transaction.call("select_target", target_id, _units):
+		_preparation_message_label.text = "Selected %s." % _preparation_target_option.get_item_text(index)
+
+
+func _on_preparation_confirm_pressed() -> void:
+	if not is_instance_valid(_preparation_transaction):
+		return
+	var identity: RefCounted = get_setup_identity()
+	var result := _preparation_transaction.call("commit", identity, _units) as Dictionary
+	if not bool(result.get("ok", false)):
+		_preparation_message_label.text = "Preparation is stale. Choose again."
+		return
+	var record := result.get("record") as RefCounted
+	preparation_commit_requested.emit(
+		int(record.get("choice")),
+		record.get("target_unit_id") as StringName,
+		String(record.get("setup_key"))
+	)
 
 
 func is_preparation_required() -> bool:
@@ -478,6 +559,8 @@ func get_battle_revision() -> int:
 
 
 func preview_default_attack(actor_id: StringName, target_id: StringName) -> Dictionary:
+	if _preparation_required:
+		return {}
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	var target: BattleUnitState = get_unit_by_id(target_id)
 	if not _is_valid_default_attack(actor, target):
@@ -494,7 +577,7 @@ func confirm_default_attack(
 	target_id: StringName,
 	expected_revision: int
 ) -> bool:
-	if _action_in_progress or expected_revision != _battle_revision:
+	if _preparation_required or _action_in_progress or expected_revision != _battle_revision:
 		return false
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	var target: BattleUnitState = get_unit_by_id(target_id)
@@ -615,6 +698,8 @@ func preview_formation_move(
 	destination_slot: int,
 	default_swap: bool
 ) -> Dictionary:
+	if _preparation_required:
+		return {}
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	if not _is_valid_move_actor(actor, destination_slot):
 		return {}
@@ -643,7 +728,7 @@ func confirm_formation_move(
 	expected_revision: int,
 	default_swap: bool
 ) -> bool:
-	if _action_in_progress or expected_revision != _battle_revision:
+	if _preparation_required or _action_in_progress or expected_revision != _battle_revision:
 		return false
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	if (
@@ -794,6 +879,8 @@ func get_skill_transaction_state() -> BattleSkillTransaction.State:
 
 
 func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
+	if _preparation_required:
+		return false
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	var skill: CharacterSkill = _find_skill(actor, skill_id)
 	var current: BattleUnitState = get_current_unit()
@@ -857,6 +944,8 @@ func cancel_skill_action() -> bool:
 
 
 func confirm_skill_action() -> bool:
+	if _preparation_required:
+		return false
 	var generation: int = _skill_transaction.generation
 	if not _skill_transaction.begin_confirmation(generation):
 		return false
@@ -1373,7 +1462,7 @@ func _update_indicator_tint(tint: TextureRect, role: StringName) -> void:
 
 
 func perform_debug_damage() -> void:
-	if is_battle_complete() or _action_in_progress:
+	if _preparation_required or is_battle_complete() or _action_in_progress:
 		return
 	var attacker: BattleUnitState = get_current_unit()
 	var receiver: BattleUnitState = BattleTargetSelector.find_closest_enemy(attacker, _units)
@@ -1421,7 +1510,7 @@ func clear_log_entry_preview() -> void:
 
 
 func advance_turn() -> void:
-	if is_battle_complete() or _turn_queue.is_empty():
+	if _preparation_required or is_battle_complete() or _turn_queue.is_empty():
 		return
 	_current_turn_index += 1
 	if _current_turn_index >= _turn_queue.size():
