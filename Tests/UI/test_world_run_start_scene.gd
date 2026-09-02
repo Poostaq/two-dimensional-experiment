@@ -18,6 +18,9 @@ const REQUIRED_UNIQUE_NODES: Array[StringName] = [
     &"CommanderSkill1",
     &"CommanderSkill2",
     &"CommanderSkill3",
+    &"CommanderSkillTooltip",
+    &"CommanderSkillTooltipName",
+    &"CommanderSkillTooltipBody",
     &"BeginButton",
     &"BackButton",
     &"OverwriteConfirmButton",
@@ -107,11 +110,80 @@ func _run() -> void:
         var button := launcher.get_node(NodePath("%CommanderSkill" + str(index))) as Button
         _expect(button.text == expected_texts[index], "skill square %d uses expected abbreviation" % index)
         _expect(button.focus_mode == Control.FOCUS_ALL, "skill square %d is keyboard focusable" % index)
-        _expect(not button.tooltip_text.is_empty(), "skill square %d has authoritative tooltip" % index)
         button.grab_focus()
         _expect(root.gui_get_focus_owner() == button, "skill square %d accepts keyboard focus" % index)
+    var arrow_border := previous.get_theme_stylebox("disabled") as StyleBoxFlat
+    _expect(previous.focus_mode == Control.FOCUS_NONE, "disabled previous arrow rejects keyboard focus")
+    _expect(next.focus_mode == Control.FOCUS_NONE, "disabled next arrow rejects keyboard focus")
+    _expect(
+        is_instance_valid(arrow_border) and arrow_border.border_width_left == 2,
+        "disabled carousel arrows retain a two-pixel border"
+    )
+    var active_style := (
+        launcher.get_node("%CommanderSkill0").get_theme_stylebox("normal") as StyleBoxFlat
+    )
     var passive := launcher.get_node("%CommanderSkill3") as Button
-    _expect(passive.has_theme_stylebox_override("normal"), "Banner Holder has distinct passive styling")
+    var passive_style := passive.get_theme_stylebox("normal") as StyleBoxFlat
+    _expect(
+        is_instance_valid(active_style) and active_style.border_width_left == 2,
+        "active skill has grey border"
+    )
+    _expect(
+        is_instance_valid(passive_style) and passive_style.border_width_left == 2,
+        "passive has matching border weight"
+    )
+    _expect(
+        active_style.border_color != passive_style.border_color,
+        "passive retains distinct gold accent"
+    )
+    _expect(
+        launcher.get_node("%BackButton").has_theme_stylebox_override("normal"),
+        "Back has screen border styling"
+    )
+    _expect(begin.has_theme_stylebox_override("normal"), "Begin has screen border styling")
+    var tooltip := launcher.get_node("%CommanderSkillTooltip") as PanelContainer
+    var tooltip_name := launcher.get_node("%CommanderSkillTooltipName") as Label
+    var tooltip_body := launcher.get_node("%CommanderSkillTooltipBody") as Label
+    var first_skill := launcher.get_node("%CommanderSkill0") as Button
+    launcher.call("_show_commander_skill_tooltip", 0, first_skill)
+    _expect(tooltip.visible, "hover handler shows tooltip without delay")
+    _expect(not tooltip_name.text.is_empty(), "tooltip shows the skill name")
+    _expect(
+        tooltip_body.text.contains("Cooldown: 1 turn"),
+        "cooldown uses readable singular wording"
+    )
+    _expect(tooltip_body.text.contains("Target:"), "target line always has its prefix")
+    _expect(
+        tooltip_body.autowrap_mode != TextServer.AUTOWRAP_OFF,
+        "tooltip body wraps"
+    )
+    _expect(tooltip.custom_minimum_size.x == 340.0, "tooltip width is capped at 340 pixels")
+    _expect(
+        tooltip_name.get_theme_font_size("font_size")
+        == tooltip_body.get_theme_font_size("font_size") + 2,
+        "tooltip name is two points larger than body copy"
+    )
+    var second_skill := launcher.get_node("%CommanderSkill1") as Button
+    launcher.call("_show_commander_skill_tooltip", 0, first_skill)
+    launcher.call("_show_commander_skill_tooltip", 1, second_skill)
+    launcher.call("_hide_commander_skill_tooltip", first_skill)
+    _expect(tooltip.visible, "stale exit cannot hide the newer tooltip target")
+    await process_frame
+    var viewport_size := launcher.get_viewport_rect().size
+    _expect(
+        tooltip.global_position.x >= 8.0 and tooltip.global_position.y >= 8.0,
+        "tooltip respects top-left viewport margin"
+    )
+    _expect(
+        tooltip.global_position.x + tooltip.size.x <= viewport_size.x - 8.0,
+        "tooltip clamps to viewport right margin"
+    )
+    _expect(
+        tooltip.global_position.y + tooltip.size.y <= viewport_size.y - 8.0,
+        "tooltip clamps to viewport bottom margin"
+    )
+    launcher.call("_hide_commander_skill_tooltip", second_skill)
+    _expect(not tooltip.visible, "active target exit hides tooltip")
     var selected_before: StringName = launcher.call("get_selected_commander_id")
     previous.emit_signal("pressed")
     next.emit_signal("pressed")
