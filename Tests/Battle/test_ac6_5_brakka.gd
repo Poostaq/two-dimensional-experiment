@@ -21,6 +21,7 @@ func _run() -> void:
 	_test_closest_active_opponent_contract()
 	_test_action_start_reaction_contract()
 	await _test_arena_banner_holder()
+	await _test_advantage_action_exclusions()
 	if _failures.is_empty():
 		print("AC6.5 Brakka: PASS (%d/%d)" % [_assertions, _assertions])
 		quit(0)
@@ -293,6 +294,15 @@ func _test_arena_banner_holder() -> void:
 	)
 	arena.call("configure_units", _units([enemy_front, enemy_back, brakka]))
 	_expect(enemy_back.has_advantage(1), "initial Brakka action start applies Advantage")
+	var advantage_source: RefCounted = enemy_back.get_advantage_source(1)
+	_expect(
+		is_instance_valid(advantage_source)
+		and advantage_source.get("source_unit_id") == EXPECTED_BRAKKA_ID
+		and advantage_source.get("source_skill_id") == &"banner_holder"
+		and int(advantage_source.get("source_power")) == 4,
+		"Banner Holder preserves Brakka source identity and Power"
+	)
+	_expect(not enemy_back.has_advantage(2), "Banner Holder Advantage expires after the authored round")
 	_expect(
 		arena.call("get_current_unit") == brakka,
 		"Banner Holder does not spend Brakka's action"
@@ -311,6 +321,11 @@ func _test_arena_banner_holder() -> void:
 		(arena.call("get_battle_log_entries") as Array).size() == log_count,
 		"same-round action-start replay is guarded"
 	)
+	arena.call("advance_turn")
+	arena.call("advance_turn")
+	arena.call("advance_turn")
+	_expect(arena.get("round_number") == 2, "turn boundaries advance to Brakka's next round")
+	_expect(enemy_back.has_advantage(2), "Banner Holder triggers again on Brakka's next round")
 
 	enemy_back.clear_battle_local_state()
 	brakka.clear_battle_local_state()
@@ -334,6 +349,21 @@ func _test_arena_banner_holder() -> void:
 			String(logs.back().get("message_text")) == "Banner Holder found no active enemy.",
 			"stale target uses the authored no-result log"
 		)
+
+	enemy_back.current_hp = enemy_back.max_hp
+	enemy_back.clear_battle_local_state()
+	brakka.clear_battle_local_state()
+	var distance_candidates: Array = dispatcher.call(
+		"collect_action_start_reactions",
+		brakka,
+		candidate_units,
+		1
+	)
+	var distance_logs_before: int = (arena.call("get_battle_log_entries") as Array).size()
+	enemy_back.slot_index = 3
+	arena.call("_resolve_action_start_candidate", distance_candidates[0])
+	_expect(not enemy_front.has_advantage(2) and not enemy_back.has_advantage(2), "stale distance target does not redirect or mutate")
+	_expect((arena.call("get_battle_log_entries") as Array).size() == distance_logs_before + 1, "stale distance emits one no-result log")
 
 	var no_enemy_arena := packed.instantiate() as Control
 	root.add_child(no_enemy_arena)
@@ -360,6 +390,81 @@ func _test_arena_banner_holder() -> void:
 		)
 	arena.queue_free()
 	no_enemy_arena.queue_free()
+	await process_frame
+
+
+func _test_advantage_action_exclusions() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var source: RefCounted = BattleKeywordSource.create(&"source", &"advantage", 4)
+
+	var attack_arena := packed.instantiate() as BattleArena
+	root.add_child(attack_arena)
+	await process_frame
+	var attacker := _unit(&"attacker", BattleUnitState.Side.PLAYER, 0)
+	attacker.speed = 10
+	var attack_target := _unit(&"attack_target", BattleUnitState.Side.ENEMY, 0)
+	attack_target.apply_advantage(source, 1)
+	attack_arena.configure_units(_units([attacker, attack_target]))
+	var attack_preview: Dictionary = attack_arena.preview_default_attack(attacker.unit_id, attack_target.unit_id)
+	_expect(not attack_preview.is_empty(), "Default Attack preview accepts an advantaged target")
+	_expect(
+		attack_arena.confirm_default_attack(attacker.unit_id, attack_target.unit_id, attack_preview.get("revision", -1)),
+		"Default Attack commits against an advantaged target"
+	)
+	_expect(attack_target.has_advantage(1), "Default Attack does not consume Advantage")
+	attack_arena.queue_free()
+	await process_frame
+
+	var swap_arena := packed.instantiate() as BattleArena
+	root.add_child(swap_arena)
+	await process_frame
+	var mover := _unit(&"mover", BattleUnitState.Side.PLAYER, 0)
+	mover.speed = 10
+	var ally := _unit(&"ally", BattleUnitState.Side.PLAYER, 1)
+	ally.apply_advantage(source, 1)
+	var swap_enemy := _unit(&"swap_enemy", BattleUnitState.Side.ENEMY, 0)
+	swap_arena.configure_units(_units([mover, ally, swap_enemy]))
+	var swap_preview: Dictionary = swap_arena.preview_formation_move(mover.unit_id, 1, true)
+	_expect(not swap_preview.is_empty(), "Default Swap preview accepts an advantaged occupant")
+	_expect(
+		swap_arena.confirm_formation_move(
+			mover.unit_id,
+			swap_preview.get("source_slot", -1),
+			1,
+			swap_preview.get("occupant_id", &""),
+			swap_preview.get("revision", -1),
+			true
+		),
+		"Default Swap commits with an advantaged occupant"
+	)
+	_expect(ally.has_advantage(1), "Default Swap does not consume Advantage")
+	swap_arena.queue_free()
+	await process_frame
+
+	var skill_arena := packed.instantiate() as BattleArena
+	root.add_child(skill_arena)
+	await process_frame
+	var character: RunCharacter = RunCharacterCatalog.create_by_class_id(&"wirefang_skirmisher")
+	var skill_actor := BattleUnitState.new(
+		character.character_id,
+		character.display_name,
+		BattleUnitState.Side.PLAYER,
+		0,
+		character.base_speed,
+		character.max_hp,
+		character.get_skills(),
+		character.power,
+		character.defense,
+		character.race_id
+	)
+	var skill_target := _unit(&"skill_target", BattleUnitState.Side.ENEMY, 0)
+	skill_target.apply_advantage(source, 1)
+	skill_arena.configure_units(_units([skill_actor, skill_target]))
+	_expect(skill_arena.begin_skill_action(skill_actor.unit_id, &"cheap_finish"), "eligible Active starts against Advantage")
+	_expect(skill_arena.select_skill_target(skill_target.unit_id), "eligible Active locks advantaged target")
+	_expect(skill_arena.confirm_skill_action(), "eligible Active commits against Advantage")
+	_expect(not skill_target.has_advantage(1), "eligible Active consumes Advantage")
+	skill_arena.queue_free()
 	await process_frame
 
 
