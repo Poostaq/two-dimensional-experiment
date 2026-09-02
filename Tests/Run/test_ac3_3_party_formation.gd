@@ -1,7 +1,7 @@
 class_name Ac3_3PartyFormationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 37
+const EXPECTED_TEST_COUNT := 41
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -100,6 +100,14 @@ func _run() -> void:
 		"non-full roster replacement is rejected"
 	)
 	_expect(not roster.has_character(&"player_0"), "dismissed character is absent and may be eligible later")
+
+	var commander_starters: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+	commander_starters[1] = GoblinCommanderCatalog.create_by_commander_id(GoblinCommanderCatalog.BRAKKA_ID)
+	var commander_roster := RunRoster.new(commander_starters)
+	_expect(_id_at(commander_roster.get_slot_snapshot(), 1) == &"brakka_rustbanner", "Brakka starts in middle frontline")
+	_expect(commander_roster.try_move(1, 4, &"brakka_rustbanner") == RunRoster.MoveResult.MOVED, "Brakka follows normal move operation")
+	_expect(commander_roster.try_move(4, 0, &"brakka_rustbanner") == RunRoster.MoveResult.SWAPPED, "Brakka follows normal swap operation")
+	_expect(_ids(commander_roster.get_characters()).count(&"brakka_rustbanner") == 1 and _id_at(commander_roster.get_slot_snapshot(), 0) == &"brakka_rustbanner", "Brakka stable ID moves without duplication")
 
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])

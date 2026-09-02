@@ -33,7 +33,7 @@ func _run() -> void:
         return
     var formation: Array[StringName] = [
         &"starter_vanguard",
-        &"starter_scout",
+        &"brakka_rustbanner",
         &"",
         &"starter_mage",
         &"",
@@ -51,6 +51,10 @@ func _run() -> void:
     )
     _expect(is_instance_valid(state), "valid durable run state is created")
     var bytes: PackedByteArray = save_codec.encode(generated["plan"], "golden-alpha", state)
+    _expect(
+        bytes == save_codec.encode(generated["plan"], "golden-alpha", state),
+        "Brakka Save V2 encoding is byte-stable"
+    )
     var root_value: Variant = JSON.parse_string(bytes.get_string_from_utf8())
     _expect(root_value is Dictionary, "Save V2 is JSON")
     if root_value is Dictionary:
@@ -65,6 +69,10 @@ func _run() -> void:
         _expect(
             decoded_state.call("canonical_key") == state.call("canonical_key"),
             "runtime state round trips"
+        )
+        _expect(
+            decoded_state.get("formation")[1] == &"brakka_rustbanner",
+            "Brakka stable ID round trips in middle frontline"
         )
         _expect(
             plan_codec.serialize(value.get("plan")) == plan_codec.serialize(generated["plan"]),

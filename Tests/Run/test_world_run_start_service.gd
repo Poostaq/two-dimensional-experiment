@@ -7,6 +7,17 @@ var _commit_count: int = 0
 var _committed_plan: RefCounted
 
 
+class GeneratorSpy:
+    extends RefCounted
+
+    var call_count: int = 0
+
+
+    func generate(_seed_text: String, _config: Dictionary) -> Dictionary:
+        call_count += 1
+        return {}
+
+
 func _init() -> void:
     call_deferred("_run")
 
@@ -19,12 +30,46 @@ func _run() -> void:
         return
     var service: RefCounted = service_script.new(Callable(self, "_commit_plan"))
 
-    var success: Dictionary = service.start("golden-alpha", {}, "RETURN_RESULT")
+    var success: Dictionary = service.call(
+        "start",
+        "golden-alpha",
+        {},
+        "RETURN_RESULT",
+        &"brakka_rustbanner"
+    )
     _assert_true(success.get("ok", false), "successful run start")
     _assert_equal(_commit_count, 1, "success commits once")
     _assert_true(_committed_plan != null, "complete plan committed")
     if _committed_plan != null:
         _assert_equal(_committed_plan.get_cells().size(), 217, "committed cell count")
+    if success.get("ok", false):
+        var formation: Array[StringName] = success["run_state"].formation
+        _assert_equal(formation[0], &"player_0", "left frontline starter retained")
+        _assert_equal(formation[1], &"brakka_rustbanner", "Brakka occupies middle frontline")
+        _assert_equal(formation[2], &"player_2", "right frontline starter retained")
+
+    var generator_spy := GeneratorSpy.new()
+    var rejecting_service: RefCounted = service_script.new(
+        Callable(self, "_commit_plan"),
+        generator_spy
+    )
+    var commits_before: int = _commit_count
+    var invalid: Dictionary = rejecting_service.call(
+        "start",
+        "golden-alpha",
+        {},
+        "RETURN_RESULT",
+        &"unknown"
+    )
+    _assert_true(not invalid.get("ok", true), "unknown commander rejected")
+    _assert_equal(generator_spy.call_count, 0, "invalid commander does not generate")
+    _assert_equal(_commit_count, commits_before, "invalid commander does not commit")
+    _assert_equal(invalid["error"].feature_namespace, "run-start", "invalid commander namespace")
+    _assert_equal(
+        invalid["error"].failed_constraint,
+        "invalid_commander_id=unknown",
+        "invalid commander constraint"
+    )
 
     var before := {
         "save_bytes": PackedByteArray([1, 2, 3]),

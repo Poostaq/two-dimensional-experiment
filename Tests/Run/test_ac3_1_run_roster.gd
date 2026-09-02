@@ -1,7 +1,7 @@
 class_name Ac3_1RunRosterTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 13
+const EXPECTED_TEST_COUNT := 14
 
 var _failures: Array[String] = []
 
@@ -20,6 +20,7 @@ func _initialize() -> void:
 	_test_invalid_rejection()
 	_test_roster_snapshot_is_defensive()
 	_test_battle_conversion_is_fresh()
+	_test_brakka_battle_conversion()
 	if _failures.is_empty():
 		print("AC3.1 run roster tests: PASS (%d/%d)" % [EXPECTED_TEST_COUNT, EXPECTED_TEST_COUNT])
 		quit(0)
@@ -140,6 +141,28 @@ func _test_battle_conversion_is_fresh() -> void:
 	_expect(second[0] != first[0], "later battle receives a fresh state object")
 	_expect(second[0].current_hp == second[0].max_hp, "battle HP does not leak")
 	_expect(second[0].get_skill_cooldown(&"test") == 0, "battle cooldown does not leak")
+
+
+func _test_brakka_battle_conversion() -> void:
+	var starters: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+	starters[1] = GoblinCommanderCatalog.create_by_commander_id(GoblinCommanderCatalog.BRAKKA_ID)
+	var roster := RunRoster.new(starters)
+	var first: Array[BattleUnitState] = roster.create_battle_units()
+	var second: Array[BattleUnitState] = roster.create_battle_units()
+	var first_brakka: BattleUnitState = first[1]
+	var second_brakka: BattleUnitState = second[1]
+	var skill_ids: Array[StringName] = []
+	for skill: CharacterSkill in first_brakka.skills:
+		skill_ids.append(skill.skill_id)
+	_expect(first_brakka != second_brakka, "Brakka conversion returns independent battle units")
+	_expect(first_brakka.unit_id == &"brakka_rustbanner" and first_brakka.slot_index == 1, "Brakka converts in middle frontline")
+	_expect(first_brakka.race_id == &"goblin", "Brakka conversion preserves Goblin race")
+	_expect(first_brakka.get_base_speed() == 7 and first_brakka.max_hp == 20, "Brakka conversion preserves speed and HP")
+	_expect(first_brakka.power == 4 and first_brakka.defense == 2, "Brakka conversion preserves Power and Defense")
+	_expect(
+		skill_ids == [&"shield_tap", &"pack_brace", &"banner_nudge", &"banner_holder"],
+		"Brakka conversion preserves exact four-skill order"
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

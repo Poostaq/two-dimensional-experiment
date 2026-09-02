@@ -17,7 +17,25 @@ func _init(commit_callback: Callable, generator: RefCounted = null) -> void:
     _generator = generator if generator != null else GENERATOR_SCRIPT.new()
 
 
-func start(seed_text: String, config: Dictionary = {}, policy: String = RETURN_RESULT) -> Dictionary:
+func start(
+    seed_text: String,
+    config: Dictionary = {},
+    policy: String = RETURN_RESULT,
+    commander_id: StringName = GoblinCommanderCatalog.BRAKKA_ID
+) -> Dictionary:
+    var commander: RunCharacter = GoblinCommanderCatalog.create_by_commander_id(commander_id)
+    if not is_instance_valid(commander):
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                1,
+                "run-start",
+                "invalid_commander_id=%s" % String(commander_id)
+            ),
+        }
     if policy != RETURN_RESULT:
         return {
             "ok": false,
@@ -54,6 +72,19 @@ func start(seed_text: String, config: Dictionary = {}, policy: String = RETURN_R
     var formation: Array[StringName] = []
     formation.resize(RunRoster.MAX_ROSTER_SIZE)
     var starters: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+    if starters.size() <= 1:
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                plan.get_seed_hex(),
+                plan.get_version(),
+                "run-start",
+                "starter_formation_missing_middle_frontline"
+            ),
+        }
+    starters[1] = commander
     for slot_index: int in starters.size():
         formation[slot_index] = starters[slot_index].character_id
     var run_state: RefCounted = RUN_STATE_SCRIPT.create(
