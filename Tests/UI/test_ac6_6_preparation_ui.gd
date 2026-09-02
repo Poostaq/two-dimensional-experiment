@@ -3,7 +3,7 @@ extends SceneTree
 
 const ARENA_SCENE := "res://Scenes/battle_arena.tscn"
 const RECORD_SCRIPT := preload("res://Scripts/Battle/battle_preparation_record.gd")
-const EXPECTED_TEST_COUNT := 9
+const EXPECTED_TEST_COUNT := 11
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -34,6 +34,15 @@ func _run() -> void:
 	_expect(arena.configure_preparation(offered), "offered preparation configures")
 	var blocker := arena.get_node_or_null("%PreparationBlocker") as Control
 	_expect(is_instance_valid(blocker) and blocker.visible, "preparation blocker is visible")
+	var content := blocker.find_child("PreparationContent", true, false) as Control
+	var dialog := content.get_parent() as PanelContainer if is_instance_valid(content) else null
+	_expect(is_instance_valid(dialog) and dialog != blocker, "preparation content has an opaque dialog panel")
+	_expect(
+		is_instance_valid(dialog)
+			and dialog.size_flags_horizontal == Control.SIZE_SHRINK_CENTER
+			and dialog.size_flags_vertical == Control.SIZE_SHRINK_CENTER,
+		"preparation dialog is centered over the battle"
+	)
 	_expect(
 		is_instance_valid(arena.get_node_or_null("%FrontlineBriefingButton"))
 			and is_instance_valid(arena.get_node_or_null("%SparePlatingButton"))
