@@ -29,6 +29,9 @@ var _repository: RefCounted
 var _exit_adapter: RefCounted
 var _world_factory: PackedScene
 var _pending_seed: String = ""
+var _commander_ids: Array[StringName] = GoblinCommanderCatalog.get_commander_ids()
+var _selected_commander_index: int = 0
+var _pending_commander_id: StringName = &""
 var _failure_overlay: Control
 
 @onready var _background: ColorRect = $Background
@@ -103,32 +106,61 @@ func open_new_run() -> void:
 
 func back_to_main() -> void:
     _pending_seed = ""
+    _pending_commander_id = &""
+    _selected_commander_index = 0
     _set_screen(Screen.MAIN)
 
 
-func request_start(seed_text: String) -> Dictionary:
+func get_commander_ids() -> Array[StringName]:
+    return _commander_ids.duplicate()
+
+
+func get_selected_commander_id() -> StringName:
+    return _selected_commander_id()
+
+
+func request_start(seed_text: String, commander_id: StringName = &"") -> Dictionary:
+    var resolved_commander_id: StringName = (
+        commander_id if not commander_id.is_empty() else _selected_commander_id()
+    )
+    if not _commander_ids.has(resolved_commander_id):
+        return {
+            "ok": false,
+            "confirmation_required": false,
+            "error": WORLD_ERROR_SCRIPT.new(
+                WORLD_ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                "",
+                1,
+                "production-launcher",
+                "invalid_commander_id=%s" % String(resolved_commander_id)
+            ),
+        }
     var resolved_seed := _resolve_seed(seed_text)
     if has_saved_run():
         _pending_seed = resolved_seed
+        _pending_commander_id = resolved_commander_id
         _set_screen(Screen.OVERWRITE_CONFIRM)
         return {
             "ok": false,
             "confirmation_required": true,
             "error": null,
         }
-    return _create_and_persist(resolved_seed)
+    return _create_and_persist(resolved_seed, resolved_commander_id)
 
 
 func confirm_overwrite() -> Dictionary:
     if _screen != Screen.OVERWRITE_CONFIRM or _pending_seed.is_empty():
         return {"ok": false, "confirmation_required": false, "error": null}
     var resolved_seed := _pending_seed
+    var commander_id := _pending_commander_id
     _pending_seed = ""
-    return _create_and_persist(resolved_seed)
+    _pending_commander_id = &""
+    return _create_and_persist(resolved_seed, commander_id)
 
 
 func cancel_overwrite() -> void:
     _pending_seed = ""
+    _pending_commander_id = &""
     _set_screen(Screen.NEW_RUN)
 
 
@@ -176,8 +208,14 @@ func on_overwrite_cancel_pressed() -> void:
     cancel_overwrite()
 
 
-func _create_and_persist(resolved_seed: String) -> Dictionary:
-    var started: Dictionary = _start_service.call("start", resolved_seed)
+func _create_and_persist(resolved_seed: String, commander_id: StringName) -> Dictionary:
+    var started: Dictionary = _start_service.call(
+        "start",
+        resolved_seed,
+        {},
+        "RETURN_RESULT",
+        commander_id
+    )
     if not bool(started.get("ok", false)):
         _emit_failure(started.get("error") as RefCounted)
         _set_screen(Screen.NEW_RUN)
@@ -275,6 +313,16 @@ func _on_launch_failed(error: RefCounted) -> void:
     _failure_overlay.call("present", error, String(ProjectSettings.get_setting(
         "application/config/version", "development"
     )))
+
+
+func _selected_commander_id() -> StringName:
+    if _commander_ids.is_empty():
+        return &""
+    return _commander_ids[_selected_commander_index]
+
+
+func _can_cycle_commanders() -> bool:
+    return _commander_ids.size() > 1
 
 
 func _resolve_seed(seed_text: String) -> String:
