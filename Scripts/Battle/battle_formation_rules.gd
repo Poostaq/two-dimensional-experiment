@@ -27,6 +27,48 @@ static func lane_distance(first_slot: int, second_slot: int) -> int:
 	return absi(lane_of(first_slot) - lane_of(second_slot))
 
 
+static func closest_active_opponent(
+	actor: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> BattleUnitState:
+	if (
+		not is_instance_valid(actor)
+		or not actor.is_active()
+		or not is_valid_slot(actor.slot_index)
+	):
+		return null
+	var winner: BattleUnitState = null
+	for candidate: BattleUnitState in units:
+		if (
+			not is_instance_valid(candidate)
+			or not candidate.is_active()
+			or candidate.side == actor.side
+			or not is_valid_slot(candidate.slot_index)
+		):
+			continue
+		if not is_instance_valid(winner) or _opponent_comes_before(actor, candidate, winner):
+			winner = candidate
+	return winner
+
+
+static func _opponent_comes_before(
+	actor: BattleUnitState,
+	first: BattleUnitState,
+	second: BattleUnitState
+) -> bool:
+	var first_distance: int = lane_distance(actor.slot_index, first.slot_index)
+	var second_distance: int = lane_distance(actor.slot_index, second.slot_index)
+	if first_distance != second_distance:
+		return first_distance < second_distance
+	var first_row: int = 0 if is_front_slot(first.slot_index) else 1
+	var second_row: int = 0 if is_front_slot(second.slot_index) else 1
+	if first_row != second_row:
+		return first_row < second_row
+	if first.slot_index != second.slot_index:
+		return first.slot_index < second.slot_index
+	return String(first.unit_id) < String(second.unit_id)
+
+
 static func is_move_one(from_slot: int, to_slot: int) -> bool:
 	if not is_valid_slot(from_slot) or not is_valid_slot(to_slot) or from_slot == to_slot:
 		return false
