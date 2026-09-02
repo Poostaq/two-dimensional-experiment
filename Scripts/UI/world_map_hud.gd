@@ -8,6 +8,7 @@ const BOSS_THRESHOLD := 30
 @onready var _move_count_label: Label = %MoveCountLabel
 @onready var _remaining_label: Label = %RemainingLabel
 @onready var _boss_state_label: Label = %BossStateLabel
+@onready var _cache_status_label: Label = %CacheStatusLabel
 @onready var _instruction_label: Label = %InstructionLabel
 @onready var _context_label: Label = %ContextLabel
 @onready var _manage_party_button: Button = %ManagePartyButton
@@ -33,6 +34,13 @@ func set_turn_state(move_count: int, boss_active: bool) -> void:
 		else "%d MOVES UNTIL BOSS ACTIVATES" % remaining
 	)
 	_boss_state_label.text = "BOSS DORMANT"
+
+
+func set_cache_state(has_brakka: bool, progress: int, ready: bool) -> void:
+	_cache_status_label.visible = has_brakka
+	if not has_brakka:
+		return
+	_cache_status_label.text = "Cache Ready" if ready else "Cache %d/4" % clampi(progress, 0, 3)
 
 
 func set_formation(slots: Array[RunCharacter]) -> void:
