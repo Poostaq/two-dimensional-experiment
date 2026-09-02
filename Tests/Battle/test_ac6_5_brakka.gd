@@ -20,6 +20,7 @@ func _run() -> void:
 	_test_missing_commander_catalog_contract()
 	_test_closest_active_opponent_contract()
 	_test_action_start_reaction_contract()
+	await _test_arena_banner_holder()
 	if _failures.is_empty():
 		print("AC6.5 Brakka: PASS (%d/%d)" % [_assertions, _assertions])
 		quit(0)
@@ -255,6 +256,111 @@ func _test_action_start_reaction_contract() -> void:
 		dispatcher_script.call("collect_action_start_reactions", brakka, units, 1).is_empty(),
 		"no-result path still consumes the round guard"
 	)
+
+
+func _test_arena_banner_holder() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as Control
+	root.add_child(arena)
+	await process_frame
+	var catalog := load(COMMANDER_CATALOG_PATH) as Script
+	var character: RunCharacter = catalog.call("create_by_commander_id", EXPECTED_BRAKKA_ID)
+	var brakka := BattleUnitState.new(
+		character.character_id,
+		character.display_name,
+		BattleUnitState.Side.PLAYER,
+		1,
+		character.base_speed,
+		character.max_hp,
+		character.get_skills(),
+		character.power,
+		character.defense,
+		character.race_id
+	)
+	var enemy_front := BattleUnitState.new(
+		&"enemy_front",
+		"Enemy Front 1",
+		BattleUnitState.Side.ENEMY,
+		0,
+		1
+	)
+	var enemy_back := BattleUnitState.new(
+		&"enemy_back",
+		"Enemy Back 2",
+		BattleUnitState.Side.ENEMY,
+		4,
+		1
+	)
+	arena.call("configure_units", _units([enemy_front, enemy_back, brakka]))
+	_expect(enemy_back.has_advantage(1), "initial Brakka action start applies Advantage")
+	_expect(
+		arena.call("get_current_unit") == brakka,
+		"Banner Holder does not spend Brakka's action"
+	)
+	var logs: Array = arena.call("get_battle_log_entries")
+	_expect(logs.size() == 1, "Banner Holder appends one battle log entry")
+	if not logs.is_empty():
+		_expect(
+			String(logs.back().get("message_text"))
+			== "Brakka Rustbanner's Banner Holder applied Advantage to Enemy Back 2.",
+			"Banner Holder success log is exact"
+		)
+	var log_count: int = logs.size()
+	arena.call("_resolve_current_action_start_reactions")
+	_expect(
+		(arena.call("get_battle_log_entries") as Array).size() == log_count,
+		"same-round action-start replay is guarded"
+	)
+
+	enemy_back.clear_battle_local_state()
+	brakka.clear_battle_local_state()
+	var dispatcher := load(REACTION_DISPATCHER_PATH) as Script
+	var candidate_units := _units([enemy_front, enemy_back, brakka])
+	var candidates: Array = dispatcher.call(
+		"collect_action_start_reactions",
+		brakka,
+		candidate_units,
+		1
+	)
+	_expect(candidates.size() == 1, "stale fixture collects one candidate")
+	enemy_back.current_hp = 0
+	var stale_logs_before: int = (arena.call("get_battle_log_entries") as Array).size()
+	arena.call("_resolve_action_start_candidate", candidates[0])
+	_expect(not enemy_front.has_advantage(1), "stale target does not redirect Advantage")
+	logs = arena.call("get_battle_log_entries")
+	_expect(logs.size() == stale_logs_before + 1, "stale target appends one no-result log")
+	if logs.size() > stale_logs_before:
+		_expect(
+			String(logs.back().get("message_text")) == "Banner Holder found no active enemy.",
+			"stale target uses the authored no-result log"
+		)
+
+	var no_enemy_arena := packed.instantiate() as Control
+	root.add_child(no_enemy_arena)
+	await process_frame
+	var no_enemy_brakka := BattleUnitState.new(
+		character.character_id,
+		character.display_name,
+		BattleUnitState.Side.PLAYER,
+		1,
+		character.base_speed,
+		character.max_hp,
+		character.get_skills(),
+		character.power,
+		character.defense,
+		character.race_id
+	)
+	no_enemy_arena.call("configure_units", _units([no_enemy_brakka]))
+	var no_enemy_logs: Array = no_enemy_arena.call("get_battle_log_entries")
+	_expect(no_enemy_logs.size() == 1, "no-enemy action start logs once")
+	if not no_enemy_logs.is_empty():
+		_expect(
+			String(no_enemy_logs.back().get("message_text")) == "Banner Holder found no active enemy.",
+			"no-enemy log is exact"
+		)
+	arena.queue_free()
+	no_enemy_arena.queue_free()
+	await process_frame
 
 
 func _unit(id: StringName, side: BattleUnitState.Side, slot_index: int) -> BattleUnitState:

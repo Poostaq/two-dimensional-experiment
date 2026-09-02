@@ -151,6 +151,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_turn_queue = BattleTurnQueue.build(_units)
 	_current_turn_index = 0
 	round_number = 1
+	_resolve_current_action_start_reactions()
 	if is_node_ready():
 		_refresh_turn_ui()
 
@@ -990,6 +991,78 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	return true
 
 
+func _resolve_current_action_start_reactions() -> void:
+	if is_battle_complete():
+		return
+	var actor: BattleUnitState = get_current_unit()
+	if not is_instance_valid(actor) or not actor.is_active():
+		return
+	var dispatcher_script: Script = load("res://Scripts/Battle/battle_reaction_dispatcher.gd") as Script
+	var candidates: Array = dispatcher_script.call(
+		"collect_action_start_reactions",
+		actor,
+		_units,
+		round_number
+	)
+	for candidate: Dictionary in candidates:
+		_resolve_action_start_candidate(candidate)
+
+
+func _resolve_action_start_candidate(candidate: Dictionary) -> void:
+	var owner_id: StringName = candidate.get("owner_id", &"")
+	var target_id: StringName = candidate.get("target_id", &"")
+	var definition: RefCounted = candidate.get("definition") as RefCounted
+	var owner: BattleUnitState = get_unit_by_id(owner_id)
+	if not is_instance_valid(owner) or not is_instance_valid(definition):
+		return
+	if int(definition.get("trigger")) != BattleReactionDefinition.Trigger.ACTION_START:
+		return
+	var passive_skill: CharacterSkill = _find_skill(owner, definition.get("passive_skill_id"))
+	if not is_instance_valid(passive_skill):
+		return
+	var dispatcher_script: Script = load("res://Scripts/Battle/battle_reaction_dispatcher.gd") as Script
+	if (
+		target_id.is_empty()
+		or not dispatcher_script.call("is_action_start_target_current", owner, target_id, _units)
+	):
+		_append_action_start_message("%s found no active enemy." % passive_skill.display_name)
+		return
+	var operation: RefCounted = definition.get("operation") as RefCounted
+	var keyword_deltas: Array[Dictionary] = []
+	if (
+		not is_instance_valid(operation)
+		or int(operation.get("kind")) != BattleKeywordOperation.Kind.APPLY_ADVANTAGE
+		or not _apply_keyword_operation(operation, round_number, keyword_deltas, true)
+	):
+		_append_action_start_message("%s found no active enemy." % passive_skill.display_name)
+		return
+	var target: BattleUnitState = get_unit_by_id(target_id)
+	if not is_instance_valid(target):
+		_append_action_start_message("%s found no active enemy." % passive_skill.display_name)
+		return
+	_battle_revision += 1
+	_append_action_start_message(
+		"%s's %s applied Advantage to %s." % [
+			owner.display_name,
+			passive_skill.display_name,
+			target.display_name,
+		]
+	)
+
+
+func _append_action_start_message(message_text: String) -> void:
+	var entry: BattleLogEntry = BattleLogEntry.message(
+		_battle_log_entries.size() + 1,
+		round_number,
+		message_text
+	)
+	if not is_instance_valid(entry):
+		return
+	_battle_log_entries.append(entry)
+	if is_node_ready():
+		_append_log_control(entry, _battle_log_entries.size() - 1)
+
+
 func _apply_keyword_operation(
 	operation: RefCounted,
 	action_round: int,
@@ -1254,6 +1327,7 @@ func advance_turn() -> void:
 		_turn_queue = BattleTurnQueue.build(_units)
 		_current_turn_index = 0
 	_battle_revision += 1
+	_resolve_current_action_start_reactions()
 	notify_authoritative_battle_change(false)
 	_refresh_turn_ui()
 
@@ -1484,6 +1558,7 @@ func _advance_after_action(attacker_id: StringName) -> void:
 			break
 	if attacker_index < 0:
 		_current_turn_index = 0
+		_resolve_current_action_start_reactions()
 		return
 	_current_turn_index = attacker_index + 1
 	if _current_turn_index >= _turn_queue.size():
@@ -1491,6 +1566,7 @@ func _advance_after_action(attacker_id: StringName) -> void:
 		round_number += 1
 		_expire_round_modifiers(completed_round)
 		_current_turn_index = 0
+	_resolve_current_action_start_reactions()
 
 
 func _expire_round_modifiers(completed_round: int) -> void:
@@ -1861,13 +1937,20 @@ func _expire_feedback(generation: int) -> void:
 
 
 func _append_log_control(entry: BattleLogEntry, entry_index: int) -> void:
+	var row := Label.new()
+	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if entry.kind == BattleLogEntry.Kind.MESSAGE:
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.text = entry.message_text
+		_battle_log_entries_container.add_child(row)
+		await get_tree().process_frame
+		_battle_log_scroll.scroll_vertical = int(_battle_log_scroll.get_v_scroll_bar().max_value)
+		return
 	var attacker := get_unit_by_id(entry.attacker_id)
 	var receiver := get_unit_by_id(entry.receiver_id)
 	if not is_instance_valid(attacker) or not is_instance_valid(receiver):
 		return
-	var row := Label.new()
 	row.mouse_filter = Control.MOUSE_FILTER_STOP
-	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	row.text = "R%d · %s dealt %d damage to %s · %d/%d HP%s" % [
 		entry.round_number,
 		attacker.display_name,

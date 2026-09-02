@@ -7,7 +7,7 @@ const TARGET_PATH := "res://Scripts/Battle/battle_target_selector.gd"
 const DAMAGE_PATH := "res://Scripts/Battle/battle_damage_resolver.gd"
 const LOG_PATH := "res://Scripts/Battle/battle_log_entry.gd"
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 18
+const EXPECTED_TEST_COUNT := 24
 const STARTING_HP := 20
 const DEBUG_DAMAGE := 7
 
@@ -29,6 +29,7 @@ func _run() -> void:
 	_target_script = load(TARGET_PATH) as GDScript if ResourceLoader.exists(TARGET_PATH) else null
 	_damage_script = load(DAMAGE_PATH) as GDScript if ResourceLoader.exists(DAMAGE_PATH) else null
 	_log_script = load(LOG_PATH) as GDScript if ResourceLoader.exists(LOG_PATH) else null
+	_test_typed_message_log()
 	_test_debug_units_start_at_full_hp()
 	_test_fixed_damage_reduces_hp()
 	_test_damage_clamps_at_zero()
@@ -49,6 +50,42 @@ func _run() -> void:
 	await _test_reconfigure_resets_battle_state()
 	_report()
 	quit(1 if not _failures.is_empty() else 0)
+
+
+func _test_typed_message_log() -> void:
+	var has_message_factory: bool = _log_script != null and _log_script.has_method("message")
+	_assert(has_message_factory, "message log factory exists", "expected BattleLogEntry.message")
+	if not has_message_factory:
+		for skipped_index: int in 5:
+			_assert(false, "message log contract %d" % skipped_index, "message factory is unavailable")
+		return
+	var message: RefCounted = _log_script.call(
+		"message",
+		2,
+		1,
+		"Banner Holder found no active enemy."
+	)
+	_assert(message != null, "message log constructs", "expected valid authored message entry")
+	_assert(int(message.get("kind")) == 1, "message log has typed kind", "expected Kind.MESSAGE")
+	_assert(
+		String(message.get("message_text")) == "Banner Holder found no active enemy.",
+		"message text is authoritative",
+		"expected exact authored text"
+	)
+	_assert(
+		_log_script.call("message", 3, 1, "") == null,
+		"empty message is rejected",
+		"expected null for empty authored message"
+	)
+	var attacker := _unit(&"attacker", 0, 0)
+	var receiver := _unit(&"receiver", 1, 0)
+	var result: RefCounted = _damage_script.call("apply_damage", attacker, receiver, 1)
+	var damage: RefCounted = _log_script.new(1, 1, result)
+	_assert(
+		int(damage.get("kind")) == 0 and String(damage.get("message_text")).is_empty(),
+		"damage log remains backward compatible",
+		"expected Kind.DAMAGE with no message text"
+	)
 
 
 func _unit(id: StringName, side: int, slot_index: int, speed: int = 5) -> RefCounted:
