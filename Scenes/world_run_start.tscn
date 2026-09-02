@@ -30,6 +30,20 @@ corner_radius_bottom_left = 12
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 18
 
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_fupo4"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slwwx"]
+bg_color = Color(0.18, 0.12, 0.04, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.95, 0.72, 0.2, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kfx8h"]
 bg_color = Color(0.09411765, 0.13333334, 0.19215687, 1)
 border_width_left = 1
@@ -143,46 +157,136 @@ theme_override_constants/margin_right = 48
 theme_override_constants/margin_bottom = 42
 
 [node name="NewRunContent" type="VBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin" unique_id=1809188953]
+custom_minimum_size = Vector2(980, 540)
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 16
 
-[node name="NewRunTitle" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1830517438]
+[node name="NewRunTitle" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=433828123]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.8627451, 0.9254902, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "START NEW RUN"
+text = "New Run"
 horizontal_alignment = 1
 
-[node name="SeedLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=629032007]
+[node name="CommanderColumns" type="HBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=2063974457]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.5647059, 0.654902, 0.7529412, 1)
-theme_override_font_sizes/font_size = 14
-text = "WORLD SEED"
 
-[node name="SeedInput" type="LineEdit" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=766796348]
+[node name="CommanderPortraitColumn" type="VBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns" unique_id=2146278562]
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 2
+
+[node name="CommanderCarousel" type="HBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn" unique_id=942283266]
+layout_mode = 2
+alignment = 1
+
+[node name="PreviousCommanderButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn/CommanderCarousel" unique_id=1780223611]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 250)
+layout_mode = 2
+disabled = true
+text = "‹"
+
+[node name="CommanderPortrait" type="TextureRect" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn/CommanderCarousel" unique_id=1401115145]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(280, 250)
+layout_mode = 2
+tooltip_text = "Brakka Rustbanner portrait placeholder"
+texture = SubResource("GradientTexture2D_fupo4")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="NextCommanderButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn/CommanderCarousel" unique_id=2002342925]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(54, 250)
+layout_mode = 2
+disabled = true
+text = "›"
+
+[node name="CommanderNameLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn" unique_id=501923162]
 unique_name_in_owner = true
 layout_mode = 2
-placeholder_text = "Leave blank for a random world"
-clear_button_enabled = true
+text = "Brakka Rustbanner"
+horizontal_alignment = 1
 
-[node name="SeedHint" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=2091054211]
+[node name="CommanderTitleLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn" unique_id=478493061]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_color = Color(0.43529412, 0.50980395, 0.6, 1)
-text = "The resolved seed is stored with your run."
+text = "Packmarshal · Goblin Commander"
+horizontal_alignment = 1
+
+[node name="CommanderDetailsColumn" type="VBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns" unique_id=670965883]
+custom_minimum_size = Vector2(430, 0)
+layout_mode = 2
+
+[node name="CommanderSummaryLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=2133025567]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(430, 120)
+layout_mode = 2
+text = "Commander details"
 autowrap_mode = 2
 
-[node name="SeedSpacer" type="Control" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=432435744]
-layout_mode = 2
-
-[node name="StartButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=22799963]
+[node name="CommanderRootClassLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=174742041]
 unique_name_in_owner = true
 layout_mode = 2
-text = "GENERATE WORLD"
+text = "Root class"
+autowrap_mode = 2
 
-[node name="BackButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1691449921]
-unique_name_in_owner = true
+[node name="CommanderSkills" type="HBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=753514882]
 layout_mode = 2
-text = "BACK"
+alignment = 1
+
+[node name="CommanderSkill0" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=2107590647]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+tooltip_text = "Shield Tap"
+text = "ST"
+
+[node name="CommanderSkill1" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=734834760]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+tooltip_text = "Pack Brace"
+text = "PB"
+
+[node name="CommanderSkill2" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=1763306320]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+tooltip_text = "Banner Nudge"
+text = "BN"
+
+[node name="CommanderSkill3" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=164937252]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(88, 88)
+layout_mode = 2
+tooltip_text = "Banner Holder"
+theme_override_styles/normal = SubResource("StyleBoxFlat_slwwx")
+text = "BH"
+
+[node name="SeedLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=896854935]
+layout_mode = 2
+text = "World seed · optional"
+
+[node name="SeedInput" type="LineEdit" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1924172961]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+placeholder_text = "Leave blank for a random seed"
+
+[node name="NewRunActions" type="HBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=295002313]
+layout_mode = 2
+alignment = 2
+
+[node name="BackButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/NewRunActions" unique_id=28331010]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 48)
+layout_mode = 2
+text = "Back"
+
+[node name="BeginButton" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/NewRunActions" unique_id=512324735]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(180, 48)
+layout_mode = 2
+text = "Begin"
 
 [node name="OverwriteDimmer" type="ColorRect" parent="." unique_id=1290756472]
 visible = false

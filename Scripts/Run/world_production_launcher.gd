@@ -46,8 +46,21 @@ var _failure_overlay: Control
 @onready var _start_new_run_button: Button = %StartNewRunButton
 @onready var _exit_button: Button = %ExitButton
 @onready var _seed_input: LineEdit = %SeedInput
-@onready var _start_button: Button = %StartButton
+@onready var _begin_button: Button = %BeginButton
 @onready var _back_button: Button = %BackButton
+@onready var _previous_commander_button: Button = %PreviousCommanderButton
+@onready var _next_commander_button: Button = %NextCommanderButton
+@onready var _commander_portrait: TextureRect = %CommanderPortrait
+@onready var _commander_name_label: Label = %CommanderNameLabel
+@onready var _commander_title_label: Label = %CommanderTitleLabel
+@onready var _commander_summary_label: Label = %CommanderSummaryLabel
+@onready var _commander_root_class_label: Label = %CommanderRootClassLabel
+@onready var _commander_skill_buttons: Array[Button] = [
+    %CommanderSkill0,
+    %CommanderSkill1,
+    %CommanderSkill2,
+    %CommanderSkill3,
+]
 @onready var _overwrite_confirm_button: Button = %OverwriteConfirmButton
 @onready var _overwrite_cancel_button: Button = %OverwriteCancelButton
 @onready var _failure_host: Control = %FailureHost
@@ -76,8 +89,10 @@ func _ready() -> void:
     _continue_button.pressed.connect(on_continue_pressed)
     _start_new_run_button.pressed.connect(on_start_new_run_pressed)
     _exit_button.pressed.connect(on_exit_pressed)
-    _start_button.pressed.connect(on_start_pressed)
+    _begin_button.pressed.connect(on_start_pressed)
     _back_button.pressed.connect(on_back_pressed)
+    _previous_commander_button.pressed.connect(on_previous_commander_pressed)
+    _next_commander_button.pressed.connect(on_next_commander_pressed)
     _overwrite_confirm_button.pressed.connect(on_overwrite_confirm_pressed)
     _overwrite_cancel_button.pressed.connect(on_overwrite_cancel_pressed)
     screen_changed.connect(_show_screen)
@@ -85,6 +100,7 @@ func _ready() -> void:
     launch_failed.connect(_on_launch_failed)
     _show_screen(int(_screen))
     _refresh_continue_button()
+    _refresh_commander_ui()
 
 
 func _fit_to_viewport() -> void:
@@ -200,6 +216,20 @@ func on_back_pressed() -> void:
     back_to_main()
 
 
+func on_previous_commander_pressed() -> void:
+    if not _can_cycle_commanders():
+        return
+    _selected_commander_index = wrapi(_selected_commander_index - 1, 0, _commander_ids.size())
+    _refresh_commander_ui()
+
+
+func on_next_commander_pressed() -> void:
+    if not _can_cycle_commanders():
+        return
+    _selected_commander_index = wrapi(_selected_commander_index + 1, 0, _commander_ids.size())
+    _refresh_commander_ui()
+
+
 func on_overwrite_confirm_pressed() -> void:
     confirm_overwrite()
 
@@ -249,7 +279,48 @@ func _show_screen(screen: int) -> void:
     if screen == int(Screen.MAIN):
         _refresh_continue_button()
     elif screen == int(Screen.NEW_RUN):
+        _refresh_commander_ui()
         _seed_input.grab_focus()
+
+
+func _refresh_commander_ui() -> void:
+    if not is_node_ready():
+        return
+    var can_cycle: bool = _can_cycle_commanders()
+    _previous_commander_button.disabled = not can_cycle
+    _next_commander_button.disabled = not can_cycle
+    var presentation: Dictionary = GoblinCommanderCatalog.get_presentation(_selected_commander_id())
+    var valid: bool = not presentation.is_empty()
+    _begin_button.disabled = not valid
+    if not valid:
+        _commander_name_label.text = "Commander unavailable"
+        _commander_title_label.text = ""
+        _commander_summary_label.text = ""
+        _commander_root_class_label.text = ""
+        return
+    _commander_name_label.text = String(presentation.get("display_name", ""))
+    _commander_title_label.text = String(presentation.get("title", ""))
+    _commander_summary_label.text = String(presentation.get("summary", ""))
+    _commander_root_class_label.text = "Root class · %s" % String(
+        presentation.get("root_class_name", "")
+    )
+    _commander_portrait.tooltip_text = String(presentation.get("portrait_label", ""))
+    var skills: Array = presentation.get("skills", [])
+    var abbreviations: Array[String] = ["ST", "PB", "BN", "BH"]
+    for index: int in _commander_skill_buttons.size():
+        var button: Button = _commander_skill_buttons[index]
+        button.text = abbreviations[index]
+        button.disabled = index >= skills.size()
+        if index >= skills.size():
+            button.tooltip_text = ""
+            continue
+        var skill := skills[index] as CharacterSkill
+        button.tooltip_text = "%s\n%s\n%s\n%s" % [
+            skill.display_name,
+            skill.cooldown_text,
+            skill.effect_text,
+            skill.targeting_text,
+        ]
 
 
 func _refresh_continue_button() -> void:

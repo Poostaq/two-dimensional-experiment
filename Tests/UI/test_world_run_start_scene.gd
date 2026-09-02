@@ -7,7 +7,18 @@ const REQUIRED_UNIQUE_NODES: Array[StringName] = [
     &"StartNewRunButton",
     &"ExitButton",
     &"SeedInput",
-    &"StartButton",
+    &"CommanderPortrait",
+    &"PreviousCommanderButton",
+    &"NextCommanderButton",
+    &"CommanderNameLabel",
+    &"CommanderTitleLabel",
+    &"CommanderSummaryLabel",
+    &"CommanderRootClassLabel",
+    &"CommanderSkill0",
+    &"CommanderSkill1",
+    &"CommanderSkill2",
+    &"CommanderSkill3",
+    &"BeginButton",
     &"BackButton",
     &"OverwriteConfirmButton",
     &"OverwriteCancelButton",
@@ -33,9 +44,12 @@ func _run() -> void:
     if not is_instance_valid(launcher):
         _finish()
         return
+    var all_required_nodes_exist: bool = true
     for node_name: StringName in REQUIRED_UNIQUE_NODES:
         var node := launcher.get_node_or_null(NodePath("%" + String(node_name)))
-        _expect(is_instance_valid(node), "unique node %s exists" % node_name)
+        var exists: bool = is_instance_valid(node)
+        all_required_nodes_exist = all_required_nodes_exist and exists
+        _expect(exists, "unique node %s exists" % node_name)
     var main_screen := launcher.get_node_or_null("%MainScreen") as Control
     var new_run_screen := launcher.get_node_or_null("%NewRunScreen") as Control
     var overwrite_screen := launcher.get_node_or_null("%OverwriteScreen") as Control
@@ -71,7 +85,39 @@ func _run() -> void:
         and failure_host.mouse_filter == Control.MOUSE_FILTER_IGNORE,
         "empty failure host does not intercept launcher input"
     )
-    launcher.free()
+    if not all_required_nodes_exist:
+        launcher.free()
+        _finish()
+        return
+    root.add_child(launcher)
+    await process_frame
+    launcher.call("open_new_run")
+    await process_frame
+    var previous := launcher.get_node("%PreviousCommanderButton") as Button
+    var next := launcher.get_node("%NextCommanderButton") as Button
+    var portrait := launcher.get_node("%CommanderPortrait") as TextureRect
+    var seed := launcher.get_node("%SeedInput") as LineEdit
+    var begin := launcher.get_node("%BeginButton") as Button
+    _expect(previous.disabled and next.disabled, "single-entry carousel arrows are disabled")
+    _expect(portrait.texture != null, "portrait uses an embedded placeholder texture")
+    _expect(begin.text == "Begin", "final action is Begin")
+    _expect(seed.global_position.y < begin.global_position.y, "seed input precedes Begin in setup flow")
+    var expected_texts: Array[String] = ["ST", "PB", "BN", "BH"]
+    for index: int in expected_texts.size():
+        var button := launcher.get_node(NodePath("%CommanderSkill" + str(index))) as Button
+        _expect(button.text == expected_texts[index], "skill square %d uses expected abbreviation" % index)
+        _expect(button.focus_mode == Control.FOCUS_ALL, "skill square %d is keyboard focusable" % index)
+        _expect(not button.tooltip_text.is_empty(), "skill square %d has authoritative tooltip" % index)
+        button.grab_focus()
+        _expect(root.gui_get_focus_owner() == button, "skill square %d accepts keyboard focus" % index)
+    var passive := launcher.get_node("%CommanderSkill3") as Button
+    _expect(passive.has_theme_stylebox_override("normal"), "Banner Holder has distinct passive styling")
+    var selected_before: StringName = launcher.call("get_selected_commander_id")
+    previous.emit_signal("pressed")
+    next.emit_signal("pressed")
+    _expect(launcher.call("get_selected_commander_id") == selected_before, "disabled arrows do not change selection")
+    launcher.queue_free()
+    await process_frame
     _finish()
 
 
