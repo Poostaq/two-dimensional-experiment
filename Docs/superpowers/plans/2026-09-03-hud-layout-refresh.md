@@ -279,3 +279,67 @@ git commit -m "fix: preserve HUD edge alignment in runtime"
 ```
 
 If no integration adjustment was required, do not create an empty commit.
+
+### Task 5: Render first names without expanding party slots
+
+**Files:**
+- Modify: `Tests/UI/test_world_map_hud.gd`
+- Modify: `Scripts/UI/world_map_hud.gd`
+
+- [ ] **Step 1: Add the failing first-name and fixed-width expectations**
+
+Change `EXPECTED_TEST_COUNT` from `42` to `43`. Replace the occupied front/back slot expectations with first-name expectations:
+
+```gdscript
+	_expect(
+		(hud.get_node("%FrontSlot0") as Label).text == starters[0].display_name.get_slice(" ", 0),
+		"formation slot 0 shows the champion first name"
+	)
+	_expect(
+		(hud.get_node("%BackSlot0") as Label).text == starters[1].display_name.get_slice(" ", 0),
+		"formation slot 3 shows the champion first name"
+	)
+	_expect(
+		is_equal_approx((hud.get_node("%FrontSlot0") as Label).size.x, 106.0),
+		"champion text never expands the party slot"
+	)
+```
+
+- [ ] **Step 2: Validate and run the red test**
+
+Run GodotIQ `validate(target="Tests/UI/test_world_map_hud.gd", detail="brief")` and `check_errors(scope="Tests/UI/test_world_map_hud.gd")`, then run:
+
+```powershell
+& 'D:\Program Files (x86)\Steam\steamapps\common\Godot Engine\godot.windows.opt.tools.64.exe' --headless --path . --script res://Tests/UI/test_world_map_hud.gd
+```
+
+Expected: exit code `1` because occupied slots still display complete multi-word names.
+
+- [ ] **Step 3: Implement first-name rendering in `_slot_text`**
+
+After the existing invalid/empty guard in `Scripts/UI/world_map_hud.gd`, replace the full-name return with:
+
+```gdscript
+	return slots[index].display_name.get_slice(" ", 0)
+```
+
+This preserves `Empty`, leaves single-word names unchanged, and introduces no layout sizing logic.
+
+- [ ] **Step 4: Validate the changed script immediately**
+
+Run GodotIQ `validate(target="Scripts/UI/world_map_hud.gd", detail="brief")`, followed by `check_errors(scope="Scripts/UI/world_map_hud.gd")`. Expected: zero convention or parser errors.
+
+- [ ] **Step 5: Run focused green verification**
+
+Run the HUD test and cache regression test with the explicit Godot executable. Expected: `World map HUD tests: PASS (43/43)` and `PASS test_ac6_6_cache_hud (5/5)`.
+
+- [ ] **Step 6: Commit the behavior and test together**
+
+```powershell
+git add -- Tests/UI/test_world_map_hud.gd Scripts/UI/world_map_hud.gd
+git commit -m "feat: show champion first names in HUD"
+```
+
+- [ ] **Step 7: Repeat final project verification**
+
+Run the three focused HUD/minimap tests, GodotIQ project validation, project error checking, orphan-signal checking, and `verify_project_runs` for `res://Scenes/world_map_runtime.tscn`. Expected: all focused tests pass, project compilation has zero errors, the HUD signal has no orphans, and the runtime launch passes.
