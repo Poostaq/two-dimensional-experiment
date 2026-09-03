@@ -2,7 +2,7 @@ class_name WorldMapHudTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_hud.tscn"
-const EXPECTED_TEST_COUNT := 25
+const EXPECTED_TEST_COUNT := 42
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -23,11 +23,31 @@ func _run() -> void:
 	get_root().add_child(hud)
 	await process_frame
 
-	_expect((hud.get_node("%BackLineLabel") as Label).text == "BACK LINE", "back line is labeled")
-	_expect((hud.get_node("%FrontLineLabel") as Label).text == "FRONT LINE", "front line is labeled")
+	var top_bar := hud.get_node("TopBar") as Control
+	var cache := hud.get_node("%CacheStatusLabel") as Control
+	var remaining := hud.get_node("%RemainingLabel") as Control
+	var boss := hud.get_node("%BossStateLabel") as Control
+	var formation := hud.get_node("FormationPanel") as Control
+	var manage_button := hud.get_node("%ManagePartyButton") as Control
+	_expect(is_equal_approx(_rect(top_bar).position.x, 0.0), "top bar is flush left")
+	_expect(is_equal_approx(_rect(top_bar).size.x, hud.size.x), "top bar spans the viewport")
+	_expect(_rect(top_bar).size.y <= 48.0, "top bar is compact")
+	_expect(_rect(cache).position.x < hud.size.x * 0.25, "Cache information is left aligned")
+	_expect(_rect(remaining).end.x <= _rect(boss).position.x, "boss countdown precedes boss state")
+	_expect(_rect(boss).end.x >= hud.size.x - 24.0, "boss information is right aligned")
+	_expect(is_equal_approx(_rect(formation).position.x, 0.0), "party preview is flush left")
+	_expect(_rect(formation).size.x <= 260.0, "party preview is narrow")
+	_expect(_rect(formation).encloses(_rect(manage_button)), "Manage Party is inside party preview")
+	_expect(_rect(manage_button).size.x < _rect(formation).size.x, "Manage Party is narrower than party preview")
+	_expect(abs(_rect(manage_button).get_center().x - _rect(formation).get_center().x) <= 1.0, "Manage Party is centered")
+
+	_expect((hud.get_node("%BackLineLabel") as Label).text == "BACK", "back column is labeled Back")
+	_expect((hud.get_node("%FrontLineLabel") as Label).text == "FRONT", "front column is labeled Front")
 	for index: int in 3:
 		_expect(is_instance_valid(hud.get_node_or_null("%%BackSlot%d" % index)), "back slot %d exists" % index)
 		_expect(is_instance_valid(hud.get_node_or_null("%%FrontSlot%d" % index)), "front slot %d exists" % index)
+		_expect(_has_visible_border(hud.get_node("%%BackSlot%d" % index) as Label), "back slot %d has a border" % index)
+		_expect(_has_visible_border(hud.get_node("%%FrontSlot%d" % index) as Label), "front slot %d has a border" % index)
 
 	hud.call("set_turn_state", 29, false)
 	_expect((hud.get_node("%MoveCountLabel") as Label).text == "MOVES 29 / 30", "move count and threshold are exact")
@@ -82,6 +102,21 @@ func _run() -> void:
 	hud.queue_free()
 	await process_frame
 	_finish()
+
+
+func _rect(control: Control) -> Rect2:
+	return control.get_global_rect()
+
+
+func _has_visible_border(label: Label) -> bool:
+	var style := label.get_theme_stylebox("normal") as StyleBoxFlat
+	return (
+		is_instance_valid(style)
+		and style.border_width_left > 0
+		and style.border_width_top > 0
+		and style.border_width_right > 0
+		and style.border_width_bottom > 0
+	)
 
 
 func _on_party_requested() -> void:
