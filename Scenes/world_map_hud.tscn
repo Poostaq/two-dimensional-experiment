@@ -208,3 +208,13 @@ offset_top = 556.0
 offset_right = 1102.0
 offset_bottom = 604.0
 text = "Manage Party"
+
+[node name="CacheStatusLabel" type="Label" parent="." unique_id=1391572355]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+offset_left = 520.0
+offset_top = 12.0
+offset_right = 700.0
+offset_bottom = 42.0
+text = "Cache 0/4"

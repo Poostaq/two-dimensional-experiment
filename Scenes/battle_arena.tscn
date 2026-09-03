@@ -2,6 +2,22 @@
 
 [ext_resource type="Script" uid="uid://dc8oesxwyoqtj" path="res://Scripts/Battle/battle_arena.gd" id="1_j6q3v"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6q3v"]
+content_margin_left = 24.0
+content_margin_top = 20.0
+content_margin_right = 24.0
+content_margin_bottom = 20.0
+bg_color = Color(0.025, 0.035, 0.05, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.22, 0.72, 0.64, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
 [node name="BattleArena" type="Control" unique_id=676541279]
 layout_mode = 3
 anchors_preset = 15
@@ -765,3 +781,55 @@ visible = false
 custom_minimum_size = Vector2(268, 0)
 layout_mode = 2
 autowrap_mode = 2
+
+[node name="PreparationBlocker" type="PanelContainer" parent="." unique_id=453928630]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PreparationDialog" type="PanelContainer" parent="PreparationBlocker" unique_id=694287438]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_j6q3v")
+
+[node name="PreparationContent" type="VBoxContainer" parent="PreparationBlocker/PreparationDialog" unique_id=372416990]
+layout_mode = 2
+
+[node name="PreparationTitle" type="Label" parent="PreparationBlocker/PreparationDialog/PreparationContent" unique_id=1235617176]
+layout_mode = 2
+text = "Scrapline Quartermaster"
+horizontal_alignment = 1
+
+[node name="PreparationMessageLabel" type="Label" parent="PreparationBlocker/PreparationDialog/PreparationContent" unique_id=1476289450]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Choose a preparation before combat begins."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="FrontlineBriefingButton" type="Button" parent="PreparationBlocker/PreparationDialog/PreparationContent" unique_id=18287721]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Frontline Briefing — Choose an active enemy to begin with Advantage"
+
+[node name="SparePlatingButton" type="Button" parent="PreparationBlocker/PreparationDialog/PreparationContent" unique_id=199871684]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Spare Plating — Frontline allies begin with +2 Armor"
+
+[node name="PreparationConfirmButton" type="Button" parent="PreparationBlocker/PreparationDialog/PreparationContent" unique_id=1809002429]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Confirm Preparation"
+
+[node name="PreparationTargetOption" type="OptionButton" parent="PreparationBlocker/PreparationDialog/PreparationContent" unique_id=1559282964]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2

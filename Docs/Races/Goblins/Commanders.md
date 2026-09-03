@@ -42,10 +42,9 @@ Brakka is a front-line anchor and coalition tempo setter. She keeps the complete
 	- Frontline Briefing: choose one active enemy to start battle with Advantage.
 	- Spare Plating: all frontline allies start battle with +2 Armor.
 - No tile reveal, no movement range increase, and no move_count behavior changes.
-- Requires a pre-encounter modifier hook for battle-start bonuses.
-- If the hook is unavailable, use the contract-safe fallback: consume Cache to reduce one selected allied skill cooldown by 1 at battle start, once per battle.
+- Uses the implemented pre-Combat preparation hook for battle-start bonuses.
 
-**Implementation status:** Design only. Current `WorldRunState` and save codec provide candidate persistence seams but do not contain Cache fields. Current battle entry provides a candidate transition seam but no typed preparation transaction, choice UI, battle-action lock, or verified battle-start modifier hook. AC6.6 cannot pass until those owners and tests exist.
+**Implementation status:** Implemented and evidenced by AC6.6. Cache progress/readiness and the canonical preparation record persist in `WorldRunState`; the production world controller performs atomic offer/commit publication; the battle arena blocks actions until a durable choice is applied; and Safe/Boss encounters bypass preparation without consuming Cache. See `Docs/Specs/AC6/Evidence/AC6.6/2026-09-02/manual-runtime-check.md`.
 
 **Intent:** Keep Goblin commander identity as coalition setup through practical preparation rather than visibility, while preserving Harpy movement scouting and Werewolf hunt-pressure identity.
 
