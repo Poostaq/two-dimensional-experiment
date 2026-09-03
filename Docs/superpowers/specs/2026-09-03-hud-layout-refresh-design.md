@@ -34,6 +34,10 @@ The column headings read only `Back` and `Front`; the word `Line` is removed. Ea
 
 The Manage Party button is part of the same bordered party-preview panel and appears below the slot grid. It is centered horizontally, uses approximately 60 percent of the panel width, and does not span the full panel.
 
+### Champion names
+
+Occupied party slots display only the champion's first name, defined as the text before the first whitespace in the character's display name. Single-word names remain unchanged. This keeps every slot at its authored width and preserves a consistent font size; slot controls must never expand to accommodate a longer display name.
+
 ## Implementation Approach
 
 The layout remains scene-native. Anchors, offsets, container relationships, minimum sizes, and theme/style overrides in `Scenes/world_map_hud.tscn` define the presentation. `Scripts/UI/world_map_hud.gd` should change only if a node-path adjustment is required by the scene hierarchy; no script-driven viewport sizing will be added.
@@ -53,6 +57,7 @@ Verification will include:
 - automated assertions for cache-left and boss-right alignment;
 - automated assertions for the narrower, left-aligned party panel;
 - checks that headings are `Back` and `Front`, all six slots have borders, and the centered Manage Party button is inside and narrower than the party panel;
+- checks that multi-word champion names render as their first name while slot width remains fixed;
 - GodotIQ scene validation and project error checks;
 - a runtime launch with no parser or runtime errors;
 - visual inspection at 1152×648 and at least one alternate viewport width.
