@@ -8,8 +8,10 @@ custom_minimum_size = Vector2(300, 300)
 clip_contents = true
 layout_mode = 3
 anchors_preset = 0
+offset_top = 48.0
 offset_right = 300.0
-offset_bottom = 300.0
+offset_bottom = 348.0
+scale = Vector2(0.75, 0.75)
 script = ExtResource("1_02oyi")
 
 [node name="Background" type="ColorRect" parent="." unique_id=1499415123]

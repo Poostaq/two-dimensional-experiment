@@ -69,7 +69,7 @@ func set_party_available(value: bool) -> void:
 func _slot_text(slots: Array[RunCharacter], index: int) -> String:
 	if index < 0 or index >= slots.size() or not is_instance_valid(slots[index]):
 		return "Empty"
-	return slots[index].display_name
+	return slots[index].display_name.get_slice(" ", 0)
 
 
 func _on_manage_party_pressed() -> void:
