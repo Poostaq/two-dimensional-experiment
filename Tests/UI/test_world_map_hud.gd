@@ -2,7 +2,7 @@ class_name WorldMapHudTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_hud.tscn"
-const EXPECTED_TEST_COUNT := 42
+const EXPECTED_TEST_COUNT := 43
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -64,16 +64,20 @@ func _run() -> void:
 	slots[3] = starters[1]
 	hud.call("set_formation", slots)
 	_expect(
-		(hud.get_node("%FrontSlot0") as Label).text == starters[0].display_name,
-		"formation slot 0 appears in front slot 0"
+		(hud.get_node("%FrontSlot0") as Label).text == starters[0].display_name.get_slice(" ", 0),
+		"formation slot 0 shows the champion first name"
 	)
 	_expect(
 		(hud.get_node("%FrontSlot1") as Label).text == "Empty",
 		"empty front slot is explicit"
 	)
 	_expect(
-		(hud.get_node("%BackSlot0") as Label).text == starters[1].display_name,
-		"formation slot 3 appears in back slot 0"
+		(hud.get_node("%BackSlot0") as Label).text == starters[1].display_name.get_slice(" ", 0),
+		"formation slot 3 shows the champion first name"
+	)
+	_expect(
+		is_equal_approx((hud.get_node("%FrontSlot0") as Label).size.x, 106.0),
+		"champion text never expands the party slot"
 	)
 	_expect(
 		(hud.get_node("%BackSlot1") as Label).text == "Empty",
