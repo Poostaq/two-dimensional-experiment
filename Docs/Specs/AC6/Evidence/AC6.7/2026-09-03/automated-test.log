@@ -1,0 +1,27 @@
+AC6.7 automated verification — 2026-09-03
+Branch: feat/ac6-7-goblin-integration
+Implementation commit: f35c5025006255357b821c60882a75214cf2fd92
+Godot: 4.7.2.stable.steam.ed1daf0bf
+
+Focused AC6 runners:
+PASS AC6.1 combat foundation (40/40)
+PASS AC6.2 keyword reactions (113/113)
+PASS AC6.3 Goblin wave A (119/119)
+PASS AC6.4 Goblin wave B (93/93)
+PASS AC6.5 Brakka (70/70)
+PASS AC6.6 quartermaster state (17/17)
+PASS AC6.6 battle preparation (33/33)
+PASS AC6.6 runtime integration (36/36)
+PASS AC6.7 Goblin integration (104/104)
+
+Deterministic rerun:
+PASS test_ac6_7_goblin_integration (104/104)
+Exit code: 0
+
+Retained suite:
+Command: every sorted Tests/**/test_*.gd runner, launched as a waited Godot headless process
+TOTAL=61 PASS=61 FAIL=0 NO_PASS_LINE=0
+
+Notes:
+- AC6.2 and AC6.3 deliberately emit rejection-path diagnostics while exiting 0 with their exact PASS totals.
+- The first full-suite run exposed two pre-existing test expectation regressions on origin/main. The compact-name HUD assertion now follows commit 1965521, and the world-runtime expected count now matches the 43 assertions left by commit 1e48a5f. Both corrected runners and the complete suite pass.
