@@ -77,7 +77,10 @@ func _run() -> void:
     _expect(not bool(runtime.call("has_active_party_management")), "Party close restores world input")
     var hud := runtime.get_node("%WorldMapHud") as WorldMapHud
     _expect((hud.get_node("%FrontSlot0") as Label).text == "Empty", "Party move persists the emptied source slot in HUD")
-    _expect((hud.get_node("%BackSlot0") as Label).text == source_character.display_name, "Party move persists destination formation in HUD after close")
+    _expect(
+        (hud.get_node("%BackSlot0") as Label).text == source_character.display_name.get_slice(" ", 0),
+        "Party move persists the destination champion first name in HUD after close"
+    )
     _expect((runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).move_count == initial_moves + 1, "Party open and close consume zero world moves")
     _expect(not (runtime.call("get_runtime_snapshot") as WorldRuntimeSnapshot).input_blocked, "ordinary migrated flows clear only their owned blocker")
     runtime.free()

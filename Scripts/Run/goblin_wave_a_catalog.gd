@@ -16,7 +16,8 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 				20,
 				_scrapshield_skills(),
 				4,
-				2
+				2,
+				&"goblin"
 			)
 		WIREFANG_SKIRMISHER_ID:
 			return RunCharacter.new(
@@ -26,7 +27,8 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 				14,
 				_wirefang_skills(),
 				6,
-				0
+				0,
+				&"goblin"
 			)
 		SNAREWRIGHT_ID:
 			return RunCharacter.new(
@@ -36,7 +38,8 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 				16,
 				_snarewright_skills(),
 				4,
-				1
+				1,
+				&"goblin"
 			)
 		_:
 			return null

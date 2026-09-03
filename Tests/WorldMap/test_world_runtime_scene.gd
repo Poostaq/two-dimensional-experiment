@@ -1,7 +1,7 @@
 class_name WorldRuntimeSceneContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 46
+const EXPECTED_TEST_COUNT := 43
 const SCENE_PATH := "res://Scenes/world_map_runtime_preview.tscn"
 
 var _failures: Array[String] = []

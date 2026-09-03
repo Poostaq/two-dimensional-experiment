@@ -507,6 +507,7 @@ func _test_wave_a_catalog() -> void:
 		_expect(character.power == contract["power"], "%s Power matches" % class_id)
 		_expect(character.base_speed == contract["speed"], "%s Speed matches" % class_id)
 		_expect(character.defense == contract["defense"], "%s Defense matches" % class_id)
+		_expect(character.race_id == &"goblin", "%s Goblin race identity matches" % class_id)
 		var skills: Array[CharacterSkill] = character.get_skills()
 		var skill_ids: Array[StringName] = []
 		for skill: CharacterSkill in skills:
