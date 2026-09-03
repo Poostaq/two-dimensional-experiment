@@ -38,10 +38,6 @@ unique_name_in_owner = true
 
 [node name="WorldMinimap" parent="UI" unique_id=349734234 instance=ExtResource("5_owo7d")]
 unique_name_in_owner = true
-offset_left = 16.0
-offset_top = 48.0
-offset_right = 316.0
-offset_bottom = 348.0
 
 [node name="EncounterHost" type="Node" parent="." unique_id=1732862383]
 

@@ -2,7 +2,7 @@ class_name WorldMinimapTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_minimap.tscn"
-const EXPECTED_TEST_COUNT := 28
+const EXPECTED_TEST_COUNT := 29
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -78,6 +78,15 @@ func _run() -> void:
 
 	minimap.queue_free()
 	await process_frame
+
+	var runtime_packed := load("res://Scenes/world_map_runtime_preview.tscn") as PackedScene
+	var runtime := runtime_packed.instantiate() as WorldRuntimeController
+	get_root().add_child(runtime)
+	await process_frame
+	await process_frame
+	var composed_minimap := runtime.get_node("%WorldMinimap") as WorldMinimap
+	_expect(is_equal_approx(composed_minimap.get_global_rect().position.x, 0.0), "composed minimap is flush left")
+	runtime.free()
 	_finish()
 
 
