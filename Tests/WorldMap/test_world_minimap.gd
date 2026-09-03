@@ -2,7 +2,7 @@ class_name WorldMinimapTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_minimap.tscn"
-const EXPECTED_TEST_COUNT := 24
+const EXPECTED_TEST_COUNT := 28
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -28,6 +28,12 @@ func _run() -> void:
 	var minimap := packed.instantiate() as Control
 	get_root().add_child(minimap)
 	await process_frame
+
+	var minimap_rect := minimap.get_global_rect()
+	_expect(is_equal_approx(minimap_rect.position.x, 0.0), "minimap is flush left")
+	_expect(is_equal_approx(minimap_rect.position.y, 48.0), "minimap touches the top bar")
+	_expect(is_equal_approx(minimap_rect.size.x, 225.0), "minimap width is 75 percent")
+	_expect(is_equal_approx(minimap_rect.size.y, 225.0), "minimap height is 75 percent")
 
 	_expect(bool(minimap.call("configure", plan, plan.get_start_coord(), plan.get_boss_coord())), "valid plan configures")
 	_expect(int(minimap.call("get_cell_count")) == 217, "minimap contains all 217 cells")
