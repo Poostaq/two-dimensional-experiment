@@ -29,4 +29,5 @@ Move an entry here when the project lead makes a durable decision. Record the de
 - Any occupied member, including a starter, may be replaced through one atomic roster mutation.
 - The dismissed character may be recruited again later when no copy is currently owned.
 - Equipment and progression cleanup remain deferred until those systems own authoritative run state.
+- Goblin leveling, tier upgrades, evolution, commander specialization, XP, and mechanical-unit progression remain explicitly deferred after AC6; AC6 implements battle identity and run-local state only.
 - **Authority:** `Docs/superpowers/specs/2026-08-14-ac3-2-full-roster-replacement-design.md`.

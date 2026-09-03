@@ -1,0 +1,2 @@
+Branch: feat/ac6-7-goblin-integration
+Implementation commit: f35c5025006255357b821c60882a75214cf2fd92

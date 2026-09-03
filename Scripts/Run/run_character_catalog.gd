@@ -3,6 +3,18 @@ extends RefCounted
 
 const COMBAT_SCOUT_REWARD_ID := &"combat_recruit_scout"
 const BOSS_CHAMPION_REWARD_ID := &"boss_recruit_champion"
+const GOBLIN_CLASS_IDS: Array[StringName] = [
+	&"scrapshield_bruiser",
+	&"wirefang_skirmisher",
+	&"snarewright",
+	&"scrapbroker",
+	&"shivrunner",
+	&"mobcaller",
+]
+
+
+static func get_goblin_class_ids() -> Array[StringName]:
+	return GOBLIN_CLASS_IDS.duplicate()
 
 
 static func create_by_class_id(class_id: StringName) -> RunCharacter:

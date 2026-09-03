@@ -46,6 +46,8 @@ Brakka is a front-line anchor and coalition tempo setter. She keeps the complete
 
 **Implementation status:** Implemented and evidenced by AC6.6. Cache progress/readiness and the canonical preparation record persist in `WorldRunState`; the production world controller performs atomic offer/commit publication; the battle arena blocks actions until a durable choice is applied; and Safe/Boss encounters bypass preparation without consuming Cache. See `Docs/Specs/AC6/Evidence/AC6.6/2026-09-02/manual-runtime-check.md`.
 
+**Integration status:** AC6.7 proves Brakka's three-plus-one loadout, Banner Holder trigger, reward and mixed-party transition, Cache reload, preparation commit, persistent formation, and clean next-battle state through the production world scene. See `Docs/Specs/AC6/Evidence/AC6.7/2026-09-03/manual-runtime-check.md`.
+
 **Intent:** Keep Goblin commander identity as coalition setup through practical preparation rather than visibility, while preserving Harpy movement scouting and Werewolf hunt-pressure identity.
 
 Commander leveling, XP, specialization, and respec rules in the progression brief are design candidates only and remain deferred for re-evaluation.

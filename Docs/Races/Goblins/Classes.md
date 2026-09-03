@@ -4,7 +4,7 @@
 
 This is the implementation-target Goblin roster. It reconciles Set 1 from `CLASS_SKILL_REVISION_MATRICES_V1.md` with the current `SkillAuthoringContract.md` and enemy-debuff Advantage contract in `SkillKeywords.md`.
 
-These are design requirements, not shipped-behavior claims. As of 2026-08-29 the Goblin catalog, keyword states, reactions, and skill-specific queue rebuilds described here have no AC6 implementation evidence.
+All six Set 1 classes and their 18 authored skills are implemented and evidenced by AC6.3, AC6.4, and the AC6.7 production integration gate. The production world can restore regular Goblins from durable formation IDs, and every class carries canonical `goblin` race identity. See `Docs/Specs/AC6/Evidence/AC6.7/2026-09-03/manual-runtime-check.md`.
 
 Regular units have exactly three battle skills. Commanders retain their root class's three skills and add one commander skill. Movement is an optional defensive action for Goblins, not their primary combat identity. No Goblin skill directly displaces an enemy.
 

@@ -219,7 +219,7 @@
 - [x] AC6.4 — Goblin Wave B classes and their nine authored skills
 - [x] AC6.5 — Brakka Rustbanner is selectable before seed entry, starts in middle frontline slot 1, and Banner Holder deterministically applies Advantage once per round to the closest active enemy
 - [x] AC6.6 — Scrapline Quartermaster Cache state and pre-battle preparation choice
-- [ ] AC6.7 — Full production Goblin integration, reward, save/reload, and next-battle gate
+- [x] AC6.7 — Full production Goblin integration, reward, save/reload, and next-battle gate
 
 ### Verification Paths
 
