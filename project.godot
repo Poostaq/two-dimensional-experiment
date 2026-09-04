@@ -21,6 +21,11 @@ GodotIQRuntime="*uid://c3ssorc8mpio8"
 
 [display]
 
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1920
+window/size/window_height_override=1080
+window/size/mode=0
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
