@@ -44,6 +44,8 @@ class DisplaySettingsSpy:
 
     var committed: Dictionary = {"resolution": Vector2i(1920, 1080), "mode": 0}
     var apply_count: int = 0
+    var load_status: StringName = &"defaults_restored"
+    var save_ok: bool = true
 
 
     func get_supported_resolutions() -> Array[Vector2i]:
@@ -61,7 +63,7 @@ class DisplaySettingsSpy:
     func load_and_apply() -> Dictionary:
         return {
             "ok": true,
-            "load_status": &"missing",
+            "load_status": load_status,
             "config": committed.duplicate(true),
         }
 
@@ -75,7 +77,7 @@ class DisplaySettingsSpy:
         committed = {"resolution": resolution, "mode": mode}
         return {
             "ok": true,
-            "save_ok": true,
+            "save_ok": save_ok,
             "config": committed.duplicate(true),
         }
 
@@ -92,8 +94,9 @@ func _run() -> void:
     var packed := load(SCENE_PATH) as PackedScene
     var launcher := packed.instantiate() as Control
     _expect(is_instance_valid(launcher), "run-start scene instantiates")
+    var display_settings := DisplaySettingsSpy.new()
     if is_instance_valid(launcher):
-        launcher.set("_display_settings", DisplaySettingsSpy.new())
+        launcher.set("_display_settings", display_settings)
     if not is_instance_valid(launcher):
         _finish()
         return
@@ -150,6 +153,7 @@ func _run() -> void:
     var display_mode := launcher.get_node("%DisplayModeOption") as OptionButton
     var apply_settings := launcher.get_node("%ApplySettingsButton") as Button
     var back_settings := launcher.get_node("%BackSettingsButton") as Button
+    var settings_status := launcher.get_node("%SettingsStatusLabel") as Label
     _expect(resolution.item_count == 3, "resolution selector has exactly three choices")
     _expect(resolution.get_item_text(0) == "1280 × 720", "first resolution is 1280x720")
     _expect(resolution.get_item_text(1) == "1920 × 1080", "second resolution is 1920x1080")
@@ -163,6 +167,10 @@ func _run() -> void:
     _expect(not main_screen.visible, "Settings hides Main screen")
     _expect(resolution.selected == 1, "default resolution is 1920x1080")
     _expect(display_mode.selected == 0, "default display mode is Windowed")
+    _expect(
+        settings_status.text.contains("Defaults restored"),
+        "invalid saved settings produce a load-specific warning"
+    )
     var viewport_rect := Rect2(Vector2.ZERO, launcher.get_viewport_rect().size)
     for control: Control in [resolution, display_mode, apply_settings, back_settings]:
         _expect(
@@ -177,6 +185,24 @@ func _run() -> void:
     await process_frame
     _expect(resolution.selected == 1, "Back discards pending resolution")
     _expect(display_mode.selected == 0, "Back discards pending mode")
+    resolution.select(0)
+    display_mode.select(1)
+    apply_settings.pressed.emit()
+    await process_frame
+    _expect(
+        settings_status.text == "Display settings applied.",
+        "successful Apply clears the load warning"
+    )
+    display_settings.save_ok = false
+    resolution.select(2)
+    display_mode.select(0)
+    apply_settings.pressed.emit()
+    await process_frame
+    _expect(
+        settings_status.text.contains("could not be saved"),
+        "save failure produces a save-specific error"
+    )
+    display_settings.save_ok = true
     resolution.select(0)
     display_mode.select(1)
     apply_settings.pressed.emit()
