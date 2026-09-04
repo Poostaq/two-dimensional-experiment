@@ -35,6 +35,52 @@ class StartServiceSpy:
         return delegate.call("start", requested_seed, config, policy, requested_commander_id)
 
 
+class DisplaySettingsSpy:
+    extends RefCounted
+
+    var committed: Dictionary = {"resolution": Vector2i(1920, 1080), "mode": 0}
+    var apply_count: int = 0
+    var last_resolution := Vector2i.ZERO
+    var last_mode: int = -1
+    var save_ok: bool = true
+
+
+    func get_supported_resolutions() -> Array[Vector2i]:
+        return [
+            Vector2i(1280, 720),
+            Vector2i(1920, 1080),
+            Vector2i(2560, 1440),
+        ]
+
+
+    func get_supported_modes() -> Array[int]:
+        return [0, 1]
+
+
+    func load_and_apply() -> Dictionary:
+        return {
+            "ok": true,
+            "load_status": &"missing",
+            "config": committed.duplicate(true),
+        }
+
+
+    func get_committed_config() -> Dictionary:
+        return committed.duplicate(true)
+
+
+    func apply_and_save(resolution: Vector2i, mode: int) -> Dictionary:
+        apply_count += 1
+        last_resolution = resolution
+        last_mode = mode
+        committed = {"resolution": resolution, "mode": mode}
+        return {
+            "ok": true,
+            "save_ok": save_ok,
+            "config": committed.duplicate(true),
+        }
+
+
 func _init() -> void:
     call_deferred("_run")
 
@@ -58,8 +104,9 @@ func _run() -> void:
     var blank_service := StartServiceSpy.new(blank_service_delegate)
     var blank_exit: RefCounted = exit_script.new()
     blank_exit.set("terminate_process", false)
+    var blank_display := DisplaySettingsSpy.new()
     var blank_launcher: Control = launcher_script.new(
-        blank_service, blank_repository, blank_exit, null
+        blank_service, blank_repository, blank_exit, null, blank_display
     )
     blank_launcher.connect("session_ready", Callable(self, "_capture_session"))
 
@@ -99,8 +146,40 @@ func _run() -> void:
     var service := StartServiceSpy.new(service_delegate)
     var exit_adapter: RefCounted = exit_script.new()
     exit_adapter.set("terminate_process", false)
-    var launcher: Control = launcher_script.new(service, repository, exit_adapter, null)
+    var display_spy := DisplaySettingsSpy.new()
+    var launcher: Control = launcher_script.new(
+        service, repository, exit_adapter, null, display_spy
+    )
     launcher.connect("session_ready", Callable(self, "_capture_session"))
+    _expect(launcher_script.Screen.has("SETTINGS"), "launcher exposes SETTINGS screen")
+    launcher.call("open_settings")
+    _expect(
+        int(launcher.call("get_screen")) == int(launcher_script.Screen.SETTINGS),
+        "Settings opens from MAIN"
+    )
+    launcher.call("back_from_settings")
+    _expect(
+        int(launcher.call("get_screen")) == int(launcher_script.Screen.MAIN),
+        "Settings Back returns to recorded MAIN"
+    )
+    launcher.call("open_settings")
+    var applied: Dictionary = launcher.call(
+        "apply_display_settings", Vector2i(1280, 720), 1
+    )
+    _expect(applied.get("ok", false), "launcher delegates valid display settings")
+    _expect(display_spy.apply_count == 1, "Apply delegates exactly once")
+    _expect(display_spy.last_resolution == Vector2i(1280, 720), "Apply forwards resolution")
+    _expect(display_spy.last_mode == 1, "Apply forwards mode")
+    launcher.call("back_from_settings")
+    _expect(display_spy.apply_count == 1, "Back performs no settings write")
+    display_spy.save_ok = false
+    launcher.call("open_settings")
+    var save_failure: Dictionary = launcher.call(
+        "apply_display_settings", Vector2i(1920, 1080), 0
+    )
+    _expect(save_failure.get("ok", false), "save failure retains successful runtime apply")
+    _expect(not save_failure.get("save_ok", true), "save failure remains explicit")
+    launcher.call("back_from_settings")
     launcher.call("open_new_run")
     var explicit_result: Dictionary = launcher.call(
         "request_start",

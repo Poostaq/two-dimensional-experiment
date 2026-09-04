@@ -8,6 +8,7 @@ signal launch_failed(error: RefCounted)
 enum Screen {
     MAIN,
     NEW_RUN,
+    SETTINGS,
     OVERWRITE_CONFIRM,
 }
 
@@ -19,6 +20,9 @@ static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_st
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
 static var EXIT_ADAPTER_SCRIPT: GDScript = load("res://Scripts/Run/world_exit_adapter.gd")
 static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v2.gd")
+static var DISPLAY_SETTINGS_SCRIPT: GDScript = load(
+    "res://Scripts/Settings/display_settings_service.gd"
+)
 static var FAILURE_OVERLAY_SCENE: PackedScene = load(
     "res://Scenes/world_generation_failure_overlay.tscn"
 )
@@ -32,6 +36,9 @@ var _start_service: RefCounted
 var _repository: RefCounted
 var _exit_adapter: RefCounted
 var _world_factory: PackedScene
+var _display_settings: RefCounted
+var _settings_return_screen: Screen = Screen.MAIN
+var _settings_load_status: StringName = &"missing"
 var _pending_seed: String = ""
 var _commander_ids: Array[StringName] = GoblinCommanderCatalog.get_commander_ids()
 var _selected_commander_index: int = 0
@@ -80,7 +87,8 @@ func _init(
     start_service: RefCounted = null,
     repository: RefCounted = null,
     exit_adapter: RefCounted = null,
-    world_factory: PackedScene = null
+    world_factory: PackedScene = null,
+    display_settings: RefCounted = null
 ) -> void:
     _start_service = (
         start_service
@@ -90,9 +98,16 @@ func _init(
     _repository = repository if is_instance_valid(repository) else REPOSITORY_SCRIPT.new()
     _exit_adapter = exit_adapter if is_instance_valid(exit_adapter) else EXIT_ADAPTER_SCRIPT.new()
     _world_factory = world_factory if world_factory != null else WORLD_SCENE
+    _display_settings = (
+        display_settings
+        if is_instance_valid(display_settings)
+        else DISPLAY_SETTINGS_SCRIPT.new()
+    )
 
 
 func _ready() -> void:
+    var display_load: Dictionary = _display_settings.call("load_and_apply")
+    _settings_load_status = display_load.get("load_status", &"defaults_restored")
     get_viewport().size_changed.connect(_fit_to_viewport)
     _fit_to_viewport()
     _continue_button.pressed.connect(on_continue_pressed)
@@ -142,6 +157,27 @@ func back_to_main() -> void:
     _pending_commander_id = &""
     _selected_commander_index = 0
     _set_screen(Screen.MAIN)
+
+
+func open_settings() -> void:
+    if _screen == Screen.OVERWRITE_CONFIRM:
+        return
+    _settings_return_screen = _screen
+    _set_screen(Screen.SETTINGS)
+
+
+func back_from_settings() -> void:
+    if _screen != Screen.SETTINGS:
+        return
+    _set_screen(_settings_return_screen)
+
+
+func apply_display_settings(resolution: Vector2i, mode: int) -> Dictionary:
+    return _display_settings.call("apply_and_save", resolution, mode) as Dictionary
+
+
+func get_display_settings_config() -> Dictionary:
+    return _display_settings.call("get_committed_config") as Dictionary
 
 
 func get_commander_ids() -> Array[StringName]:
