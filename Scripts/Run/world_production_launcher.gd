@@ -50,6 +50,7 @@ var _active_tooltip_target: Control
 @onready var _background: ColorRect = $Background
 @onready var _main_center: CenterContainer = $MainCenter
 @onready var _new_run_center: CenterContainer = $NewRunCenter
+@onready var _settings_center: CenterContainer = $SettingsCenter
 @onready var _main_screen: Control = %MainScreen
 @onready var _new_run_screen: Control = %NewRunScreen
 @onready var _overwrite_screen: Control = %OverwriteScreen
@@ -57,7 +58,14 @@ var _active_tooltip_target: Control
 @onready var _overwrite_center: CenterContainer = $OverwriteCenter
 @onready var _continue_button: Button = %ContinueButton
 @onready var _start_new_run_button: Button = %StartNewRunButton
+@onready var _settings_button: Button = %SettingsButton
 @onready var _exit_button: Button = %ExitButton
+@onready var _settings_screen: Control = %SettingsScreen
+@onready var _resolution_option: OptionButton = %ResolutionOption
+@onready var _display_mode_option: OptionButton = %DisplayModeOption
+@onready var _apply_settings_button: Button = %ApplySettingsButton
+@onready var _back_settings_button: Button = %BackSettingsButton
+@onready var _settings_status_label: Label = %SettingsStatusLabel
 @onready var _seed_input: LineEdit = %SeedInput
 @onready var _begin_button: Button = %BeginButton
 @onready var _back_button: Button = %BackButton
@@ -108,11 +116,16 @@ func _init(
 func _ready() -> void:
     var display_load: Dictionary = _display_settings.call("load_and_apply")
     _settings_load_status = display_load.get("load_status", &"defaults_restored")
+    _populate_settings_options()
+    _configure_settings_focus()
     get_viewport().size_changed.connect(_fit_to_viewport)
     _fit_to_viewport()
     _continue_button.pressed.connect(on_continue_pressed)
     _start_new_run_button.pressed.connect(on_start_new_run_pressed)
+    _settings_button.pressed.connect(on_settings_pressed)
     _exit_button.pressed.connect(on_exit_pressed)
+    _apply_settings_button.pressed.connect(on_apply_settings_pressed)
+    _back_settings_button.pressed.connect(on_back_settings_pressed)
     _begin_button.pressed.connect(on_start_pressed)
     _back_button.pressed.connect(on_back_pressed)
     _previous_commander_button.pressed.connect(on_previous_commander_pressed)
@@ -257,6 +270,39 @@ func on_start_new_run_pressed() -> void:
     open_new_run()
 
 
+func on_settings_pressed() -> void:
+    open_settings()
+
+
+func on_apply_settings_pressed() -> void:
+    var resolutions: Array = _display_settings.call("get_supported_resolutions")
+    var modes: Array = _display_settings.call("get_supported_modes")
+    if (
+        _resolution_option.selected < 0
+        or _resolution_option.selected >= resolutions.size()
+        or _display_mode_option.selected < 0
+        or _display_mode_option.selected >= modes.size()
+    ):
+        _settings_status_label.text = "Unable to apply unsupported display settings."
+        return
+    var resolution: Vector2i = resolutions[_resolution_option.selected]
+    var mode: int = int(modes[_display_mode_option.selected])
+    var result := apply_display_settings(resolution, mode)
+    if not bool(result.get("ok", false)):
+        _settings_status_label.text = "Unable to apply unsupported display settings."
+    elif not bool(result.get("save_ok", false)):
+        _settings_status_label.text = (
+            "Display changed, but settings could not be saved. Try Apply again."
+        )
+    else:
+        _settings_load_status = &"ok"
+        _settings_status_label.text = "Display settings applied."
+
+
+func on_back_settings_pressed() -> void:
+    back_from_settings()
+
+
 func on_exit_pressed() -> void:
     request_exit()
 
@@ -325,15 +371,65 @@ func _create_and_persist(resolved_seed: String, commander_id: StringName) -> Dic
 func _show_screen(screen: int) -> void:
     _main_screen.visible = screen == int(Screen.MAIN)
     _new_run_screen.visible = screen == int(Screen.NEW_RUN)
+    _settings_center.visible = screen == int(Screen.SETTINGS)
+    _settings_screen.visible = screen == int(Screen.SETTINGS)
     var show_overwrite := screen == int(Screen.OVERWRITE_CONFIRM)
     _overwrite_screen.visible = show_overwrite
     _overwrite_dimmer.visible = show_overwrite
     _overwrite_center.visible = show_overwrite
     if screen == int(Screen.MAIN):
         _refresh_continue_button()
+        _settings_button.grab_focus()
     elif screen == int(Screen.NEW_RUN):
         _refresh_commander_ui()
         _seed_input.grab_focus()
+    elif screen == int(Screen.SETTINGS):
+        _sync_settings_controls()
+        _resolution_option.grab_focus()
+
+
+func _populate_settings_options() -> void:
+    _resolution_option.clear()
+    for label: String in ["1280 × 720", "1920 × 1080", "2560 × 1440"]:
+        _resolution_option.add_item(label)
+    _display_mode_option.clear()
+    for label: String in ["Windowed", "Fullscreen"]:
+        _display_mode_option.add_item(label)
+
+
+func _configure_settings_focus() -> void:
+    _resolution_option.focus_neighbor_bottom = _resolution_option.get_path_to(
+        _display_mode_option
+    )
+    _display_mode_option.focus_neighbor_top = _display_mode_option.get_path_to(
+        _resolution_option
+    )
+    _display_mode_option.focus_neighbor_bottom = _display_mode_option.get_path_to(
+        _apply_settings_button
+    )
+    _apply_settings_button.focus_neighbor_top = _apply_settings_button.get_path_to(
+        _display_mode_option
+    )
+    _apply_settings_button.focus_neighbor_right = _apply_settings_button.get_path_to(
+        _back_settings_button
+    )
+    _back_settings_button.focus_neighbor_left = _back_settings_button.get_path_to(
+        _apply_settings_button
+    )
+
+
+func _sync_settings_controls() -> void:
+    var config := get_display_settings_config()
+    var resolutions: Array = _display_settings.call("get_supported_resolutions")
+    var modes: Array = _display_settings.call("get_supported_modes")
+    _resolution_option.select(resolutions.find(config.get("resolution", Vector2i.ZERO)))
+    _display_mode_option.select(modes.find(int(config.get("mode", -1))))
+    if _settings_load_status == &"defaults_restored":
+        _settings_status_label.text = (
+            "Saved display settings could not be loaded. Defaults restored."
+        )
+    elif not _settings_status_label.text.begins_with("Display changed"):
+        _settings_status_label.text = ""
 
 
 func _refresh_commander_ui() -> void:
@@ -466,6 +562,7 @@ func _set_launcher_surface_visible(value: bool) -> void:
     _background.visible = value
     _main_center.visible = value
     _new_run_center.visible = value
+    _settings_center.visible = value and _screen == Screen.SETTINGS
     if not value:
         _overwrite_dimmer.hide()
         _overwrite_center.hide()

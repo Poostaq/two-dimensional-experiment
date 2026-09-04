@@ -557,6 +557,12 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "EXIT GAME"
 
+[node name="SettingsButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=1851526908]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(360, 52)
+layout_mode = 2
+text = "Settings"
+
 [node name="NewRunCenter" type="CenterContainer" parent="." unique_id=324202246]
 layout_mode = 0
 anchor_right = 1.0
@@ -822,3 +828,77 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(316, 0)
 layout_mode = 2
 autowrap_mode = 3
+
+[node name="SettingsCenter" type="CenterContainer" parent="." unique_id=1740887688]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="SettingsScreen" type="PanelContainer" parent="SettingsCenter" unique_id=1161100941]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(520, 420)
+layout_mode = 2
+
+[node name="SettingsMargin" type="MarginContainer" parent="SettingsCenter/SettingsScreen" unique_id=1477428154]
+layout_mode = 2
+
+[node name="SettingsVBox" type="VBoxContainer" parent="SettingsCenter/SettingsScreen/SettingsMargin" unique_id=1359249228]
+layout_mode = 2
+
+[node name="SettingsTitle" type="Label" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=1622099705]
+layout_mode = 2
+text = "Settings"
+horizontal_alignment = 1
+
+[node name="ResolutionLabel" type="Label" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=2061710985]
+layout_mode = 2
+text = "Resolution"
+
+[node name="ResolutionOption" type="OptionButton" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=1941497423]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+selected = 1
+item_count = 3
+popup/item_0/id = 0
+popup/item_1/id = 1
+popup/item_2/id = 2
+
+[node name="DisplayModeLabel" type="Label" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=1929680096]
+layout_mode = 2
+text = "Display Mode"
+
+[node name="DisplayModeOption" type="OptionButton" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=1926608261]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+selected = 0
+item_count = 2
+popup/item_0/id = 0
+popup/item_1/id = 1
+
+[node name="SettingsStatusLabel" type="Label" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=327473466]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 44)
+layout_mode = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 2
+
+[node name="SettingsButtons" type="HBoxContainer" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox" unique_id=566182653]
+layout_mode = 2
+alignment = 1
+
+[node name="ApplySettingsButton" type="Button" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox/SettingsButtons" unique_id=1909923998]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 48)
+layout_mode = 2
+text = "Apply"
+
+[node name="BackSettingsButton" type="Button" parent="SettingsCenter/SettingsScreen/SettingsMargin/SettingsVBox/SettingsButtons" unique_id=1893672213]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 48)
+layout_mode = 2
+text = "Back"

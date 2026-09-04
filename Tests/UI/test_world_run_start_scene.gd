@@ -5,7 +5,14 @@ const SCENE_PATH := "res://Scenes/world_run_start.tscn"
 const REQUIRED_UNIQUE_NODES: Array[StringName] = [
     &"ContinueButton",
     &"StartNewRunButton",
+    &"SettingsButton",
     &"ExitButton",
+    &"SettingsScreen",
+    &"ResolutionOption",
+    &"DisplayModeOption",
+    &"ApplySettingsButton",
+    &"BackSettingsButton",
+    &"SettingsStatusLabel",
     &"SeedInput",
     &"CommanderPortrait",
     &"PreviousCommanderButton",
@@ -32,6 +39,47 @@ const REQUIRED_UNIQUE_NODES: Array[StringName] = [
 var _failures: int = 0
 
 
+class DisplaySettingsSpy:
+    extends RefCounted
+
+    var committed: Dictionary = {"resolution": Vector2i(1920, 1080), "mode": 0}
+    var apply_count: int = 0
+
+
+    func get_supported_resolutions() -> Array[Vector2i]:
+        return [
+            Vector2i(1280, 720),
+            Vector2i(1920, 1080),
+            Vector2i(2560, 1440),
+        ]
+
+
+    func get_supported_modes() -> Array[int]:
+        return [0, 1]
+
+
+    func load_and_apply() -> Dictionary:
+        return {
+            "ok": true,
+            "load_status": &"missing",
+            "config": committed.duplicate(true),
+        }
+
+
+    func get_committed_config() -> Dictionary:
+        return committed.duplicate(true)
+
+
+    func apply_and_save(resolution: Vector2i, mode: int) -> Dictionary:
+        apply_count += 1
+        committed = {"resolution": resolution, "mode": mode}
+        return {
+            "ok": true,
+            "save_ok": true,
+            "config": committed.duplicate(true),
+        }
+
+
 func _init() -> void:
     call_deferred("_run")
 
@@ -44,6 +92,8 @@ func _run() -> void:
     var packed := load(SCENE_PATH) as PackedScene
     var launcher := packed.instantiate() as Control
     _expect(is_instance_valid(launcher), "run-start scene instantiates")
+    if is_instance_valid(launcher):
+        launcher.set("_display_settings", DisplaySettingsSpy.new())
     if not is_instance_valid(launcher):
         _finish()
         return
@@ -93,6 +143,51 @@ func _run() -> void:
         _finish()
         return
     root.add_child(launcher)
+    await process_frame
+    var settings_button := launcher.get_node("%SettingsButton") as Button
+    var settings_screen := launcher.get_node("%SettingsScreen") as Control
+    var resolution := launcher.get_node("%ResolutionOption") as OptionButton
+    var display_mode := launcher.get_node("%DisplayModeOption") as OptionButton
+    var apply_settings := launcher.get_node("%ApplySettingsButton") as Button
+    var back_settings := launcher.get_node("%BackSettingsButton") as Button
+    _expect(resolution.item_count == 3, "resolution selector has exactly three choices")
+    _expect(resolution.get_item_text(0) == "1280 × 720", "first resolution is 1280x720")
+    _expect(resolution.get_item_text(1) == "1920 × 1080", "second resolution is 1920x1080")
+    _expect(resolution.get_item_text(2) == "2560 × 1440", "third resolution is 2560x1440")
+    _expect(display_mode.item_count == 2, "mode selector has exactly two choices")
+    _expect(display_mode.get_item_text(0) == "Windowed", "Windowed is first")
+    _expect(display_mode.get_item_text(1) == "Fullscreen", "Fullscreen is second")
+    settings_button.pressed.emit()
+    await process_frame
+    _expect(settings_screen.visible, "Settings button opens Settings screen")
+    _expect(not main_screen.visible, "Settings hides Main screen")
+    _expect(resolution.selected == 1, "default resolution is 1920x1080")
+    _expect(display_mode.selected == 0, "default display mode is Windowed")
+    var viewport_rect := Rect2(Vector2.ZERO, launcher.get_viewport_rect().size)
+    for control: Control in [resolution, display_mode, apply_settings, back_settings]:
+        _expect(
+            viewport_rect.encloses(control.get_global_rect()),
+            "%s fits inside the viewport" % control.name
+        )
+    resolution.select(2)
+    display_mode.select(1)
+    back_settings.pressed.emit()
+    await process_frame
+    settings_button.pressed.emit()
+    await process_frame
+    _expect(resolution.selected == 1, "Back discards pending resolution")
+    _expect(display_mode.selected == 0, "Back discards pending mode")
+    resolution.select(0)
+    display_mode.select(1)
+    apply_settings.pressed.emit()
+    await process_frame
+    back_settings.pressed.emit()
+    await process_frame
+    settings_button.pressed.emit()
+    await process_frame
+    _expect(resolution.selected == 0, "Apply commits selected resolution")
+    _expect(display_mode.selected == 1, "Apply commits selected mode")
+    back_settings.pressed.emit()
     await process_frame
     launcher.call("open_new_run")
     await process_frame
