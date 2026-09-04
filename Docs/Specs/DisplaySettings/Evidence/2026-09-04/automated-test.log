@@ -1,0 +1,30 @@
+Display Resolution Settings automated verification
+Date: 2026-09-04
+Branch: plan/display-resolution-settings
+Tested implementation: 906bcd2
+Godot: 4.7.2.stable.steam.ed1daf0bf
+
+PASS  Tests/Settings/test_display_settings_service.gd
+      Persistent catalog/default/fallback/save-error/fake-adapter checks.
+PASS  Tests/Settings/test_display_settings_runtime.gd
+      6/6 real DisplayServer resolution/mode combinations plus restart.
+PASS  Tests/Run/test_world_production_launcher.gd
+      Launcher navigation, delegation, save-failure, and retained run flow.
+PASS  Tests/UI/test_world_run_start_scene.gd
+      Settings controls, selector contents, Apply/Back, status semantics, and fit.
+PASS  Tests/UI/test_world_map_hud.gd
+      World map HUD tests: 43/43.
+PASS  Tests/Battle/test_ac2_7_skill_preview.gd
+      AC2.7 tooltip content/lifecycle/viewport tests.
+PASS  Tests/Battle/test_ac2_8_skill_scene.gd
+      AC2.8 skill scene tests.
+PASS  Tests/Run/test_world_cutover_entry.gd
+      Production world cutover entry tests.
+
+GodotIQ project validation:
+- 149 scripts and 12 scenes checked.
+- 0 errors.
+- 32 pre-existing findings match the 145-script/12-scene baseline:
+  26 warnings and 6 informational items.
+- Project parser/error check: 0.
+- Orphan signal check: 0 orphans.

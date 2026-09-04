@@ -1,0 +1,4 @@
+Tested implementation commit: 906bcd2
+Branch: plan/display-resolution-settings
+Design: Docs/superpowers/specs/2026-09-04-display-resolution-settings-design.md
+Plan: Docs/superpowers/plans/2026-09-04-display-resolution-settings.md
