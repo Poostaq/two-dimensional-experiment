@@ -46,6 +46,7 @@ var _pending_commander_id: StringName = &""
 var _failure_overlay: Control
 var _presented_commander_skills: Array[CharacterSkill] = []
 var _active_tooltip_target: Control
+var _hovered_tooltip_target: Control
 
 @onready var _background: ColorRect = $Background
 @onready var _main_center: CenterContainer = $MainCenter
@@ -132,10 +133,15 @@ func _ready() -> void:
     _next_commander_button.pressed.connect(on_next_commander_pressed)
     for index: int in _commander_skill_buttons.size():
         var button: Button = _commander_skill_buttons[index]
-        button.mouse_entered.connect(_show_commander_skill_tooltip.bind(index, button))
+        button.mouse_entered.connect(
+            _on_commander_skill_mouse_entered.bind(index, button)
+        )
         button.mouse_exited.connect(_hide_commander_skill_tooltip.bind(button))
         button.focus_entered.connect(_show_commander_skill_tooltip.bind(index, button))
-        button.focus_exited.connect(_hide_commander_skill_tooltip.bind(button))
+        button.focus_exited.connect(_on_commander_skill_focus_exited.bind(button))
+    _commander_skill_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    for child: Node in _commander_skill_tooltip.find_children("*", "Control"):
+        (child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
     _commander_skill_tooltip_name.add_theme_font_size_override("font_size", 18)
     _commander_skill_tooltip_body.add_theme_font_size_override("font_size", 16)
     _overwrite_confirm_button.pressed.connect(on_overwrite_confirm_pressed)
@@ -471,7 +477,13 @@ func _refresh_commander_ui() -> void:
         and not _commander_skill_buttons.has(_active_tooltip_target)
     ):
         _active_tooltip_target = null
+        _hovered_tooltip_target = null
         _commander_skill_tooltip.hide()
+
+
+func _on_commander_skill_mouse_entered(index: int, target: Control) -> void:
+    _hovered_tooltip_target = target
+    _show_commander_skill_tooltip(index, target)
 
 
 func _show_commander_skill_tooltip(index: int, target: Control) -> void:
@@ -489,8 +501,17 @@ func _show_commander_skill_tooltip(index: int, target: Control) -> void:
     _position_commander_skill_tooltip.call_deferred(target)
 
 
+func _on_commander_skill_focus_exited(target: Control) -> void:
+    if target != _active_tooltip_target or target == _hovered_tooltip_target:
+        return
+    _active_tooltip_target = null
+    _commander_skill_tooltip.hide()
+
+
 func _hide_commander_skill_tooltip(target: Control) -> void:
-    if target != _active_tooltip_target:
+    if target == _hovered_tooltip_target:
+        _hovered_tooltip_target = null
+    if target != _active_tooltip_target or target.has_focus():
         return
     _active_tooltip_target = null
     _commander_skill_tooltip.hide()
