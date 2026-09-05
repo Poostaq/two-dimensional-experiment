@@ -6,25 +6,26 @@ The commander carousel skill tooltip flickers when it appears beneath the pointe
 
 ## Desired behavior
 
-- Show a skill tooltip when its skill button is hovered or focused.
-- Keep it visible while the pointer is over either the originating skill button or the tooltip.
-- Allow the pointer to cross the 10-pixel visual gap between those controls without closing the tooltip.
-- Hide it 100 milliseconds after both controls are no longer hovered, unless keyboard focus still owns it.
-- Switching commander or tooltip targets must not let a stale hide request close the current tooltip.
+- Show a skill tooltip when its skill button is hovered or keyboard-focused.
+- Keep it visible only while the originating skill button is hovered or focused.
+- Make the tooltip and every descendant completely transparent to mouse input.
+- Hide it immediately once the originating skill button is neither hovered nor focused.
+- A stale exit from an old skill button must not hide a newer skill's tooltip.
 
 ## Design
 
-`WorldProductionLauncher` will treat the active skill button and tooltip as one logical hover region. Mouse exit schedules a single short deferred hide. Mouse entry on either control cancels that request. When the delay expires, the launcher rechecks the active target, pointer ownership, and focus before hiding, preventing stale callbacks from affecting a newer tooltip.
+`WorldProductionLauncher` will make the tooltip root and all descendant `Control` nodes use `MOUSE_FILTER_IGNORE`. The active skill button alone owns pointer visibility. Its mouse entry shows the tooltip, while mouse exit hides it unless that same button still owns keyboard focus. Focus entry also shows it, and focus exit hides it unless the pointer is still over that button.
 
-The existing tooltip layout and 10-pixel offset remain unchanged. No invisible bridge node or overlap is introduced, so the interaction does not depend on a specific layout geometry.
+The existing tooltip layout and 10-pixel offset remain unchanged. No delay, invisible bridge, overlap, tooltip-hover state, or timer is needed because the informational tooltip cannot intercept pointer events.
 
 ## Verification
 
 Add a focused regression test to `test_world_run_start_scene.gd` that proves:
 
-1. Leaving a skill button does not hide its tooltip immediately.
-2. Entering the tooltip during the grace period keeps it visible.
-3. Leaving both regions hides it after the grace period.
-4. A pending hide for an old target cannot hide a newly selected tooltip.
+1. The tooltip root and descendants ignore mouse input.
+2. Hovering or focusing a skill button shows its tooltip.
+3. Leaving an unfocused skill button hides its tooltip immediately.
+4. Losing focus while the pointer remains over the same skill keeps the tooltip visible.
+5. A stale exit from an old target cannot hide a newly selected tooltip.
 
 Run the focused UI test, project validation and parser checks, then exercise the commander carousel in Play mode and confirm stable tooltip behavior with no debug-console errors.
