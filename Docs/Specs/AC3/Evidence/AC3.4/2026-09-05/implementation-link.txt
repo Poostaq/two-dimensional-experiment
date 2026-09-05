@@ -1,0 +1,15 @@
+AC3.4 Default Actions
+Branch: feat/ac3-4-default-actions
+Implementation commit: b2a1166
+
+Production:
+- Scenes/battle_arena.tscn
+- Scripts/Battle/battle_arena.gd
+
+Automated verification:
+- Tests/Battle/test_ac3_4_default_actions.gd
+- Tests/Battle/test_ac6_1_combat_foundation.gd
+- Tests/Battle/test_active_turn_skill_lock.gd
+
+Plan:
+- Docs/superpowers/plans/2026-09-05-ac3-4-default-actions.md

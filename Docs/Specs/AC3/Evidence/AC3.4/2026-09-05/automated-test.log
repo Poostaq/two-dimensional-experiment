@@ -1,0 +1,22 @@
+AC3.4 automated verification — 2026-09-05
+Branch: feat/ac3-4-default-actions
+Implementation commit: b2a1166
+Godot: 4.7.2.stable.steam.ed1daf0bf
+
+Focused:
+- test_ac3_4_default_actions.gd: PASS 5/5, exit 0
+- test_ac6_1_combat_foundation.gd: PASS 40/40, exit 0
+- test_active_turn_skill_lock.gd: PASS 5/5, exit 0
+
+Regression:
+- Every Tests/Battle/test_*.gd runner exited 0.
+- Expected rejection-path push_error output remains present in retained validation-contract runners.
+- FAILED_COUNT=0.
+
+GodotIQ:
+- battle_arena.gd validation: 0 issues
+- battle_arena.gd parser check: 0 errors
+- test_ac3_4_default_actions.gd validation: 0 issues
+- test_ac3_4_default_actions.gd parser check: 0 errors
+- battle_arena.tscn validation: 0 issues
+- current-scene startup: PASS, 0 runtime errors, 0 script errors
