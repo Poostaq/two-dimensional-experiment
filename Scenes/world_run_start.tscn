@@ -552,16 +552,15 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "START NEW RUN"
 
+[node name="SettingsButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=1851526908]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Settings"
+
 [node name="ExitButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=1769241077]
 unique_name_in_owner = true
 layout_mode = 2
 text = "EXIT GAME"
-
-[node name="SettingsButton" type="Button" parent="MainCenter/MainScreen/MainMargin/MainContent" unique_id=1851526908]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(360, 52)
-layout_mode = 2
-text = "Settings"
 
 [node name="NewRunCenter" type="CenterContainer" parent="." unique_id=324202246]
 layout_mode = 0
