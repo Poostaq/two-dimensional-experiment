@@ -20,6 +20,8 @@ const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 const SKILL_TOOLTIP_VIEWPORT_MARGIN: float = 12.0
 const SKILL_TOOLTIP_ANCHOR_GAP: float = 8.0
 
+enum DefaultActionMode { NONE, ATTACK, SWAP }
+
 static var PREPARATION_RECORD_SCRIPT: GDScript = load(
 	"res://Scripts/Battle/battle_preparation_record.gd"
 )
@@ -71,6 +73,13 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 @onready var _skill_action_summary_label: Label = %SkillActionSummaryLabel
 @onready var _skill_confirm_button: Button = %SkillConfirmButton
 @onready var _skill_cancel_button: Button = %SkillCancelButton
+@onready var _default_attack_button: Button = %DefaultAttackButton
+@onready var _default_swap_button: Button = %DefaultSwapButton
+@onready var _default_action_message_label: Label = %DefaultActionMessageLabel
+@onready var _default_action_summary_label: Label = %DefaultActionSummaryLabel
+@onready var _default_action_confirmation: HBoxContainer = %DefaultActionConfirmation
+@onready var _default_action_confirm_button: Button = %DefaultActionConfirmButton
+@onready var _default_action_cancel_button: Button = %DefaultActionCancelButton
 @onready var _preparation_blocker: PanelContainer = %PreparationBlocker
 @onready var _frontline_briefing_button: Button = %FrontlineBriefingButton
 @onready var _spare_plating_button: Button = %SparePlatingButton
@@ -105,6 +114,8 @@ var _hovered_skill_button: Button
 var _skill_tooltip_generation: int = 0
 var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
+var _default_action_mode: DefaultActionMode = DefaultActionMode.NONE
+var _default_action_preview: Dictionary = {}
 var _preparation_required: bool = false
 var _preparation_record: RefCounted
 var _preparation_transaction: RefCounted
@@ -113,6 +124,7 @@ var _applied_preparation_ids: Dictionary[StringName, bool] = {}
 
 func _exit_tree() -> void:
 	_skill_transaction.reset()
+	_clear_default_action_state()
 	_clear_committed_action_history()
 
 
@@ -129,6 +141,10 @@ func _ready() -> void:
 	var skill_cancel_callable := Callable(self, "cancel_skill_action")
 	if not _skill_cancel_button.pressed.is_connected(skill_cancel_callable):
 		_skill_cancel_button.pressed.connect(skill_cancel_callable)
+	_default_attack_button.pressed.connect(_on_default_attack_pressed)
+	_default_swap_button.pressed.connect(_on_default_swap_pressed)
+	_default_action_confirm_button.pressed.connect(_confirm_default_action)
+	_default_action_cancel_button.pressed.connect(_cancel_default_action)
 	var confirm_callable := Callable(self, "confirm_reward_selection")
 	if not _confirm_reward_button.pressed.is_connected(confirm_callable):
 		_confirm_reward_button.pressed.connect(confirm_callable)
@@ -161,6 +177,7 @@ func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 
 func configure_units(units: Array[BattleUnitState]) -> void:
 	_clear_reward_ui()
+	_clear_default_action_state()
 	_clear_skill_inspector()
 	_skill_transaction.reset()
 	_battle_revision = 0
@@ -1512,6 +1529,7 @@ func clear_log_entry_preview() -> void:
 func advance_turn() -> void:
 	if _preparation_required or is_battle_complete() or _turn_queue.is_empty():
 		return
+	_clear_default_action_state()
 	_current_turn_index += 1
 	if _current_turn_index >= _turn_queue.size():
 		var completed_round: int = round_number
@@ -1740,6 +1758,7 @@ func _clear_reward_ui(reset_latch: bool = true) -> void:
 
 
 func _advance_after_action(attacker_id: StringName) -> void:
+	_clear_default_action_state()
 	_turn_queue = BattleTurnQueue.build(_units)
 	if _turn_queue.is_empty():
 		_current_turn_index = 0
@@ -1801,6 +1820,9 @@ func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
 	if click == null or click.button_index != MOUSE_BUTTON_LEFT or not click.pressed:
 		return
 	var unit_id := slot.get_meta("unit_id", &"") as StringName
+	if _default_action_mode != DefaultActionMode.NONE:
+		_select_default_action_target(unit_id, int(slot.get_meta("slot_index", -1)))
+		return
 	if unit_id.is_empty():
 		return
 	if _skill_transaction.state == BattleSkillTransaction.State.TARGETING:
@@ -1819,6 +1841,135 @@ func _on_slot_mouse_exited(_slot: Control) -> void:
 	clear_skill_target_hover()
 
 
+func _on_default_attack_pressed() -> void:
+	_begin_default_action(DefaultActionMode.ATTACK)
+
+
+func _on_default_swap_pressed() -> void:
+	_begin_default_action(DefaultActionMode.SWAP)
+
+
+func _begin_default_action(mode: DefaultActionMode) -> void:
+	if not _can_current_player_act():
+		return
+	_skill_transaction.reset()
+	_render_skill_transaction()
+	_default_action_mode = mode
+	_default_action_preview.clear()
+	_default_action_message_label.text = (
+		"Select an active enemy."
+		if mode == DefaultActionMode.ATTACK
+		else "Select an adjacent active ally."
+	)
+	_render_default_action()
+
+
+func _select_default_action_target(unit_id: StringName, slot_index: int) -> void:
+	var current: BattleUnitState = get_current_unit()
+	if not is_instance_valid(current):
+		_cancel_default_action()
+		return
+	if _default_action_mode == DefaultActionMode.ATTACK:
+		_default_action_preview = preview_default_attack(current.unit_id, unit_id)
+	else:
+		_default_action_preview = preview_formation_move(current.unit_id, slot_index, true)
+	if _default_action_preview.is_empty():
+		_default_action_message_label.text = "That target is not valid for this action."
+	else:
+		_default_action_message_label.text = "Review the selected target."
+	_render_default_action()
+
+
+func _confirm_default_action() -> void:
+	if _default_action_preview.is_empty():
+		return
+	var confirmed: bool = false
+	if _default_action_mode == DefaultActionMode.ATTACK:
+		confirmed = confirm_default_attack(
+			_default_action_preview.get(&"actor_id", &""),
+			_default_action_preview.get(&"target_id", &""),
+			int(_default_action_preview.get(&"revision", -1))
+		)
+	elif _default_action_mode == DefaultActionMode.SWAP:
+		confirmed = confirm_formation_move(
+			_default_action_preview.get(&"actor_id", &""),
+			int(_default_action_preview.get(&"source_slot", -1)),
+			int(_default_action_preview.get(&"destination_slot", -1)),
+			_default_action_preview.get(&"occupant_id", &""),
+			int(_default_action_preview.get(&"revision", -1)),
+			true
+		)
+	if confirmed:
+		_cancel_default_action()
+	else:
+		_default_action_preview.clear()
+		_default_action_message_label.text = "Battle state changed; choose the action again."
+		_render_default_action()
+
+
+func _cancel_default_action() -> void:
+	_clear_default_action_state()
+	_render_default_action()
+
+
+func _clear_default_action_state() -> void:
+	_default_action_mode = DefaultActionMode.NONE
+	_default_action_preview.clear()
+
+
+func _can_current_player_act() -> bool:
+	var current: BattleUnitState = get_current_unit()
+	return (
+		is_instance_valid(current)
+		and current.is_active()
+		and current.side == BattleUnitState.Side.PLAYER
+		and not is_battle_input_locked()
+	)
+
+
+func _has_adjacent_active_ally(actor: BattleUnitState) -> bool:
+	if not is_instance_valid(actor):
+		return false
+	for unit: BattleUnitState in _units:
+		if (
+			is_instance_valid(unit)
+			and unit.unit_id != actor.unit_id
+			and unit.side == actor.side
+			and unit.is_active()
+			and BattleFormationRules.is_move_one(actor.slot_index, unit.slot_index)
+		):
+			return true
+	return false
+
+
+func _render_default_action() -> void:
+	if not is_node_ready():
+		return
+	var current: BattleUnitState = get_current_unit()
+	var available: bool = _can_current_player_act()
+	_default_attack_button.disabled = not available
+	_default_swap_button.disabled = not available or not _has_adjacent_active_ally(current)
+	var selecting: bool = _default_action_mode != DefaultActionMode.NONE
+	_default_action_confirmation.visible = selecting
+	_default_action_confirm_button.disabled = _default_action_preview.is_empty()
+	_default_action_cancel_button.disabled = not selecting
+	_default_action_summary_label.visible = not _default_action_preview.is_empty()
+	if _default_action_preview.is_empty():
+		_default_action_summary_label.text = ""
+	elif _default_action_mode == DefaultActionMode.ATTACK:
+		var target: BattleUnitState = get_unit_by_id(_default_action_preview.get(&"target_id", &""))
+		_default_action_summary_label.text = "Attack %s" % target.display_name
+	else:
+		var ally: BattleUnitState = get_unit_by_id(_default_action_preview.get(&"occupant_id", &""))
+		_default_action_summary_label.text = "Swap with %s" % ally.display_name
+	if not selecting:
+		_default_action_message_label.text = (
+			"Choose an action for the current character."
+			if available
+			else "Default actions are unavailable for the current turn."
+		)
+
+
 func _refresh_context() -> void:
 	if encounter_type.is_empty():
 		_encounter_type_label.text = "Battle"
@@ -1828,6 +1979,7 @@ func _refresh_context() -> void:
 
 func _refresh_turn_ui() -> void:
 	_round_label.text = "Round %d" % round_number
+	_render_default_action()
 	_render_units()
 	_sync_skill_inspector_to_current_turn()
 	_refresh_result_ui()
