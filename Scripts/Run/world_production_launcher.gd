@@ -15,7 +15,6 @@ enum Screen {
 const TOOLTIP_WIDTH: float = 340.0
 const TOOLTIP_OFFSET := Vector2(10.0, 8.0)
 const TOOLTIP_VIEWPORT_MARGIN: float = 8.0
-const TOOLTIP_HIDE_DELAY_SECONDS: float = 0.1
 
 static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
@@ -47,9 +46,7 @@ var _pending_commander_id: StringName = &""
 var _failure_overlay: Control
 var _presented_commander_skills: Array[CharacterSkill] = []
 var _active_tooltip_target: Control
-var _active_tooltip_target_mouse_inside: bool = false
-var _commander_skill_tooltip_mouse_inside: bool = false
-var _tooltip_hide_request_id: int = 0
+var _hovered_tooltip_target: Control
 
 @onready var _background: ColorRect = $Background
 @onready var _main_center: CenterContainer = $MainCenter
@@ -142,15 +139,9 @@ func _ready() -> void:
         button.mouse_exited.connect(_hide_commander_skill_tooltip.bind(button))
         button.focus_entered.connect(_show_commander_skill_tooltip.bind(index, button))
         button.focus_exited.connect(_on_commander_skill_focus_exited.bind(button))
-    _commander_skill_tooltip.mouse_filter = Control.MOUSE_FILTER_STOP
+    _commander_skill_tooltip.mouse_filter = Control.MOUSE_FILTER_IGNORE
     for child: Node in _commander_skill_tooltip.find_children("*", "Control"):
         (child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-    _commander_skill_tooltip.mouse_entered.connect(
-        _on_commander_skill_tooltip_mouse_entered
-    )
-    _commander_skill_tooltip.mouse_exited.connect(
-        _on_commander_skill_tooltip_mouse_exited
-    )
     _commander_skill_tooltip_name.add_theme_font_size_override("font_size", 18)
     _commander_skill_tooltip_body.add_theme_font_size_override("font_size", 16)
     _overwrite_confirm_button.pressed.connect(on_overwrite_confirm_pressed)
@@ -485,15 +476,13 @@ func _refresh_commander_ui() -> void:
         is_instance_valid(_active_tooltip_target)
         and not _commander_skill_buttons.has(_active_tooltip_target)
     ):
-        _tooltip_hide_request_id += 1
         _active_tooltip_target = null
-        _active_tooltip_target_mouse_inside = false
-        _commander_skill_tooltip_mouse_inside = false
+        _hovered_tooltip_target = null
         _commander_skill_tooltip.hide()
 
 
 func _on_commander_skill_mouse_entered(index: int, target: Control) -> void:
-    _active_tooltip_target_mouse_inside = true
+    _hovered_tooltip_target = target
     _show_commander_skill_tooltip(index, target)
 
 
@@ -501,7 +490,6 @@ func _show_commander_skill_tooltip(index: int, target: Control) -> void:
     if index < 0 or index >= _presented_commander_skills.size():
         return
     var skill: CharacterSkill = _presented_commander_skills[index]
-    _tooltip_hide_request_id += 1
     _active_tooltip_target = target
     _commander_skill_tooltip_name.text = skill.display_name
     _commander_skill_tooltip_body.text = "\n".join([
@@ -514,39 +502,16 @@ func _show_commander_skill_tooltip(index: int, target: Control) -> void:
 
 
 func _on_commander_skill_focus_exited(target: Control) -> void:
-    _schedule_commander_skill_tooltip_hide(target)
-
-
-func _on_commander_skill_tooltip_mouse_entered() -> void:
-    _commander_skill_tooltip_mouse_inside = true
-    _tooltip_hide_request_id += 1
-
-
-func _on_commander_skill_tooltip_mouse_exited() -> void:
-    _commander_skill_tooltip_mouse_inside = false
-    _schedule_commander_skill_tooltip_hide(_active_tooltip_target)
+    if target != _active_tooltip_target or target == _hovered_tooltip_target:
+        return
+    _active_tooltip_target = null
+    _commander_skill_tooltip.hide()
 
 
 func _hide_commander_skill_tooltip(target: Control) -> void:
-    if target != _active_tooltip_target:
-        return
-    _active_tooltip_target_mouse_inside = false
-    _schedule_commander_skill_tooltip_hide(target)
-
-
-func _schedule_commander_skill_tooltip_hide(target: Control) -> void:
-    if not is_instance_valid(target):
-        return
-    _tooltip_hide_request_id += 1
-    var request_id: int = _tooltip_hide_request_id
-    await get_tree().create_timer(TOOLTIP_HIDE_DELAY_SECONDS).timeout
-    if request_id != _tooltip_hide_request_id or target != _active_tooltip_target:
-        return
-    if (
-        _active_tooltip_target_mouse_inside
-        or _commander_skill_tooltip_mouse_inside
-        or target.has_focus()
-    ):
+    if target == _hovered_tooltip_target:
+        _hovered_tooltip_target = null
+    if target != _active_tooltip_target or target.has_focus():
         return
     _active_tooltip_target = null
     _commander_skill_tooltip.hide()
