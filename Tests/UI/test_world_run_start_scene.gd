@@ -285,11 +285,21 @@ func _run() -> void:
         "tooltip name is two points larger than body copy"
     )
     var second_skill := launcher.get_node("%CommanderSkill1") as Button
-    launcher.call("_show_commander_skill_tooltip", 0, first_skill)
-    launcher.call("_show_commander_skill_tooltip", 1, second_skill)
+    launcher.call("_on_commander_skill_mouse_entered", 0, first_skill)
     launcher.call("_hide_commander_skill_tooltip", first_skill)
-    _expect(tooltip.visible, "stale exit cannot hide the newer tooltip target")
-    await process_frame
+    _expect(tooltip.visible, "skill exit keeps tooltip visible during grace period")
+    launcher.call("_on_commander_skill_tooltip_mouse_entered")
+    await create_timer(0.12).timeout
+    _expect(tooltip.visible, "tooltip entry cancels the pending hide")
+    launcher.call("_on_commander_skill_tooltip_mouse_exited")
+    await create_timer(0.12).timeout
+    _expect(not tooltip.visible, "leaving both hover regions hides after grace period")
+
+    launcher.call("_on_commander_skill_mouse_entered", 0, first_skill)
+    launcher.call("_hide_commander_skill_tooltip", first_skill)
+    launcher.call("_on_commander_skill_mouse_entered", 1, second_skill)
+    await create_timer(0.12).timeout
+    _expect(tooltip.visible, "stale hide request cannot hide a newer tooltip target")
     var viewport_size := launcher.get_viewport_rect().size
     _expect(
         tooltip.global_position.x >= 8.0 and tooltip.global_position.y >= 8.0,
@@ -308,7 +318,8 @@ func _run() -> void:
         ]
     )
     launcher.call("_hide_commander_skill_tooltip", second_skill)
-    _expect(not tooltip.visible, "active target exit hides tooltip")
+    await create_timer(0.12).timeout
+    _expect(not tooltip.visible, "active target exit hides tooltip after grace period")
     var selected_before: StringName = launcher.call("get_selected_commander_id")
     previous.emit_signal("pressed")
     next.emit_signal("pressed")
