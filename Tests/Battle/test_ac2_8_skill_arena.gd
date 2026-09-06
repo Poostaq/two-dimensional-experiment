@@ -63,6 +63,10 @@ func _test_confirmed_damage_resolves_once(arena: BattleArena) -> void:
 	_expect(arena.select_skill_target(&"enemy_target"), "Valid enemy should lock.")
 	_expect(arena.confirm_skill_action(), "Confirmed skill should resolve.")
 	_expect(enemy.current_hp == 13, "Shield Bash should apply exactly 7 damage.")
+	_expect(
+		_effect_border_color(_effect_border_overlay(arena, &"enemy_target")) == Color(1.0, 0.35, 0.4, 1.0),
+		"Shield Bash should mark the damaged enemy with a red border."
+	)
 	_expect(actor.get_skill_cooldown(&"shield_bash") == 1, "Shield Bash should apply one-action cooldown.")
 	_expect(arena.get_battle_revision() == 1, "Atomic committed action should increment revision once.")
 	_expect(arena.get_committed_action_history_snapshot().size() == 1, "Confirmed damage skill should create one logical action log.")
@@ -246,8 +250,20 @@ func _test_rally_expires_at_round_end(arena: BattleArena) -> void:
 	_expect(arena.confirm_skill_action(), "Rally should resolve.")
 	_expect(actor.get_effective_speed() == 12, "Rally should affect its user.")
 	_expect(ally.get_effective_speed() == 7, "Rally should affect every active ally.")
+	_expect(
+		_effect_border_color(_effect_border_overlay(arena, &"player_rally")) == Color(0.25, 0.95, 0.45, 1.0),
+		"Rally should mark the user with a green border."
+	)
+	_expect(
+		_effect_border_color(_effect_border_overlay(arena, &"player_ally")) == Color(0.25, 0.95, 0.45, 1.0),
+		"Rally should mark the ally with a green border."
+	)
 	while arena.round_number == 1:
 		arena.advance_turn()
+	_expect(
+		not is_instance_valid(_effect_border_overlay(arena, &"player_rally")) or not _effect_border_overlay(arena, &"player_rally").visible,
+		"Rally effect border should clear on the next turn change."
+	)
 	_expect(actor.get_effective_speed() == 10, "Rally should expire from its user at round end.")
 	_expect(ally.get_effective_speed() == 5, "Rally should expire from allies at round end.")
 	_expect(arena.get_battle_revision() > 1, "Authoritative turn advancement should increment revision.")
@@ -328,3 +344,20 @@ func _test_shadow_lunge_round_gate_and_farthest_lock(arena: BattleArena) -> void
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		failures.append(message)
+
+
+func _effect_border_overlay(arena: BattleArena, unit_id: StringName) -> Panel:
+	if arena == null:
+		return null
+	var slots: Array[Control] = arena.get_player_slots() + arena.get_enemy_slots()
+	for slot: Control in slots:
+		if slot.get_meta("unit_id", &"") == unit_id:
+			return slot.get_node_or_null("EffectStatusBorderOverlay") as Panel
+	return null
+
+
+func _effect_border_color(overlay: Panel) -> Color:
+	if overlay == null:
+		return Color.TRANSPARENT
+	var style := overlay.get_theme_stylebox("panel") as StyleBoxFlat
+	return style.border_color if is_instance_valid(style) else Color.TRANSPARENT

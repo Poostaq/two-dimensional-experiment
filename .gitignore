@@ -5,6 +5,7 @@
 # Godot export/build outputs
 /.export/
 /export/
+/export_presets.cfg
 
 # Local environment and editor files
 .venv/

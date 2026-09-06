@@ -1182,9 +1182,10 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_action_in_progress = false
 		return false
 	_dispatch_passive_reactions(action_record, action_round, keyword_deltas)
-	_set_effect_highlights(
-		_collect_effect_highlight_colors(keyword_deltas)
-	)
+	var effect_highlight_colors := _collect_effect_highlight_colors(keyword_deltas)
+	for target_id: StringName in action_speed_target_ids:
+		effect_highlight_colors[target_id] = EFFECT_POSITIVE_BORDER_COLOR
+	_set_effect_highlights(effect_highlight_colors)
 	var action_entry := BattleActionLogEntry.new(
 		_battle_action_log_entries.size() + 1,
 		action_round,
@@ -1547,6 +1548,10 @@ func advance_turn() -> void:
 		_expire_round_modifiers(completed_round)
 		_turn_queue = BattleTurnQueue.build(_units)
 		_current_turn_index = 0
+	if _effect_highlight_turns_remaining > 0:
+		_effect_highlight_turns_remaining -= 1
+		if _effect_highlight_turns_remaining == 0:
+			_clear_effect_highlights()
 	_battle_revision += 1
 	_resolve_current_action_start_reactions()
 	notify_authoritative_battle_change(false)

@@ -178,10 +178,25 @@ func _test_advance_button_moves_once() -> void:
 func _test_highlight_moves() -> void:
 	var arena: Control = await _instantiate_arena()
 	var before: Control = _highlighted_slot(arena)
+	var before_border := _current_border_overlay(before)
 	if arena != null and arena.has_method("advance_turn"):
 		arena.call("advance_turn")
 	var after: Control = _highlighted_slot(arena)
-	_assert(before != null and after != null and before != after and not bool(before.get_meta("is_current_unit", false)) and bool(after.get_meta("is_current_unit", false)), "highlight moves", "exact highlight must move to the new unit")
+	var after_border := _current_border_overlay(after)
+	_assert(
+		before != null
+		and after != null
+		and before != after
+		and not bool(before.get_meta("is_current_unit", false))
+		and bool(after.get_meta("is_current_unit", false))
+		and before_border != null
+		and after_border != null
+		and not before_border.visible
+		and after_border.visible
+		and _border_color(after_border) == Color.WHITE,
+		"highlight moves",
+		"exact highlight must move to the new unit and show a white border"
+	)
 	if arena != null:
 		arena.queue_free()
 
@@ -193,6 +208,19 @@ func _highlighted_slot(arena: Control) -> Control:
 		if bool(slot.get_meta("is_current_unit", false)):
 			return slot
 	return null
+
+
+func _current_border_overlay(slot: Control) -> Panel:
+	if slot == null:
+		return null
+	return slot.get_node_or_null("CurrentUnitBorderOverlay") as Panel
+
+
+func _border_color(overlay: Panel) -> Color:
+	if overlay == null:
+		return Color.TRANSPARENT
+	var style := overlay.get_theme_stylebox("panel") as StyleBoxFlat
+	return style.border_color if is_instance_valid(style) else Color.TRANSPARENT
 
 
 func _test_round_wraps() -> void:
