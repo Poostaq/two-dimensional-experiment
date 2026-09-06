@@ -225,6 +225,10 @@ func _run() -> void:
     _expect(previous.disabled and next.disabled, "single-entry carousel arrows are disabled")
     _expect(portrait.texture != null, "portrait uses an embedded placeholder texture")
     _expect(
+        String(portrait.texture.resource_path) == "res://Assets/brakka.png",
+        "portrait uses the Brakka asset"
+    )
+    _expect(
         summary.text == "Brakka Rustbanner\nPackmarshal - Goblin Commander\nClass - Scrapshield Bruiser",
         "selected commander info is rendered in the right-hand info block"
     )

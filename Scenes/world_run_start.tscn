@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dh21nsecrn53v"]
 
 [ext_resource type="Script" uid="uid://dsyvtiyhnikkc" path="res://Scripts/Run/world_production_launcher.gd" id="1_fupo4"]
+[ext_resource type="CompressedTexture2D" uid="uid://bjq0wu4o51pha" path="res://Assets/brakka.png" id="2_brakka"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t0187"]
 bg_color = Color(0.0627451, 0.10980392, 0.16470589, 1)
@@ -619,7 +620,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 250)
 layout_mode = 2
 tooltip_text = "Brakka Rustbanner portrait placeholder"
-texture = SubResource("GradientTexture2D_fupo4")
+texture = ExtResource("2_brakka")
 expand_mode = 1
 stretch_mode = 5
 
