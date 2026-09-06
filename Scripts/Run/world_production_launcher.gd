@@ -459,12 +459,41 @@ func _refresh_commander_ui() -> void:
         var presented_skill := value as CharacterSkill
         if is_instance_valid(presented_skill):
             _presented_commander_skills.append(presented_skill)
-    var abbreviations: Array[String] = ["ST", "PB", "BN", "BH"]
     for index: int in _commander_skill_buttons.size():
         var button: Button = _commander_skill_buttons[index]
-        button.text = abbreviations[index]
-        button.disabled = index >= _presented_commander_skills.size()
+        var skill_text: String = ""
+        if index < _presented_commander_skills.size():
+            skill_text = _presented_commander_skills[index].display_name
+        button.text = ""
+        button.disabled = false
+        button.focus_mode = Control.FOCUS_ALL
+        button.mouse_filter = Control.MOUSE_FILTER_STOP
         button.tooltip_text = ""
+
+        var normal_style: StyleBoxFlat = button.get_theme_stylebox("normal") as StyleBoxFlat
+        if is_instance_valid(normal_style):
+            button.add_theme_stylebox_override("hover", normal_style)
+            button.add_theme_stylebox_override("focus", normal_style)
+            button.add_theme_stylebox_override("pressed", normal_style)
+            button.add_theme_stylebox_override("disabled", normal_style)
+
+        var name_label: Label = button.get_node_or_null("SkillTextLabel") as Label
+        if name_label == null:
+            name_label = Label.new()
+            name_label.name = "SkillTextLabel"
+            name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+            name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+            name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+            name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+            name_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+            name_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+            name_label.offset_left = 6.0
+            name_label.offset_top = 8.0
+            name_label.offset_right = -6.0
+            name_label.offset_bottom = -8.0
+            button.add_child(name_label)
+        name_label.text = skill_text
+        name_label.visible = not skill_text.is_empty()
     if (
         is_instance_valid(_active_tooltip_target)
         and not _commander_skill_buttons.has(_active_tooltip_target)
@@ -475,11 +504,15 @@ func _refresh_commander_ui() -> void:
 
 
 func _on_commander_skill_mouse_entered(index: int, target: Control) -> void:
+    if target == null or not is_instance_valid(target):
+        return
     _hovered_tooltip_target = target
     _show_commander_skill_tooltip(index, target)
 
 
 func _show_commander_skill_tooltip(index: int, target: Control) -> void:
+    if target == null or not is_instance_valid(target):
+        return
     if index < 0 or index >= _presented_commander_skills.size():
         return
     var skill: CharacterSkill = _presented_commander_skills[index]

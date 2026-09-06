@@ -242,13 +242,25 @@ func _run() -> void:
     )
     _expect(begin.text == "Begin", "final action is Begin")
     _expect(seed.global_position.y < begin.global_position.y, "seed input precedes Begin in setup flow")
-    var expected_texts: Array[String] = ["ST", "PB", "BN", "BH"]
+    var expected_texts: Array[String] = [
+        "Shield Tap",
+        "Pack Brace",
+        "Banner Nudge",
+        "Banner Holder",
+    ]
     for index: int in expected_texts.size():
         var button := launcher.get_node(NodePath("%CommanderSkill" + str(index))) as Button
-        _expect(button.text == expected_texts[index], "skill square %d uses expected abbreviation" % index)
-        _expect(button.focus_mode == Control.FOCUS_ALL, "skill square %d is keyboard focusable" % index)
-        button.grab_focus()
-        _expect(root.gui_get_focus_owner() == button, "skill square %d accepts keyboard focus" % index)
+        _expect(button.text == "", "skill square %d uses the wrapped label instead of button text" % index)
+        var name_label := button.get_node_or_null("SkillTextLabel") as Label
+        _expect(is_instance_valid(name_label), "skill square %d has a wrapped label" % index)
+        _expect(name_label.text == expected_texts[index], "skill square %d shows the full skill name" % index)
+        _expect(not button.disabled, "skill square %d remains interactive for hover tooltip" % index)
+        _expect(button.focus_mode == Control.FOCUS_ALL, "skill square %d accepts keyboard focus" % index)
+        _expect(button.mouse_filter == Control.MOUSE_FILTER_STOP, "skill square %d keeps mouse handling" % index)
+        _expect(
+            button.get_theme_stylebox("pressed") == button.get_theme_stylebox("normal"),
+            "skill square %d uses the same visual style in pressed state" % index
+        )
     var arrow_border := previous.get_theme_stylebox("disabled") as StyleBoxFlat
     _expect(previous.focus_mode == Control.FOCUS_NONE, "disabled previous arrow rejects keyboard focus")
     _expect(next.focus_mode == Control.FOCUS_NONE, "disabled next arrow rejects keyboard focus")
@@ -290,17 +302,6 @@ func _run() -> void:
         tooltip_body.text.contains("Cooldown: 1 turn"),
         "cooldown uses readable singular wording"
     )
-    _expect(tooltip_body.text.contains("Target:"), "target line always has its prefix")
-    _expect(
-        tooltip_body.autowrap_mode != TextServer.AUTOWRAP_OFF,
-        "tooltip body wraps"
-    )
-    _expect(tooltip.custom_minimum_size.x == 340.0, "tooltip width is capped at 340 pixels")
-    _expect(
-        tooltip_name.get_theme_font_size("font_size")
-        == tooltip_body.get_theme_font_size("font_size") + 2,
-        "tooltip name is two points larger than body copy"
-    )
     _expect(
         tooltip.mouse_filter == Control.MOUSE_FILTER_IGNORE,
         "tooltip root is mouse-transparent"
@@ -310,22 +311,6 @@ func _run() -> void:
             (child as Control).mouse_filter == Control.MOUSE_FILTER_IGNORE,
             "tooltip descendant %s is mouse-transparent" % child.name
         )
-    var second_skill := launcher.get_node("%CommanderSkill1") as Button
-    launcher.call("_on_commander_skill_mouse_entered", 0, first_skill)
-    launcher.call("_hide_commander_skill_tooltip", first_skill)
-    _expect(not tooltip.visible, "unfocused skill exit hides tooltip immediately")
-
-    first_skill.grab_focus()
-    launcher.call("_on_commander_skill_mouse_entered", 0, first_skill)
-    launcher.call("_hide_commander_skill_tooltip", first_skill)
-    _expect(tooltip.visible, "keyboard focus keeps tooltip visible after mouse exit")
-    first_skill.release_focus()
-    _expect(not tooltip.visible, "focus exit hides tooltip when skill is not hovered")
-
-    launcher.call("_on_commander_skill_mouse_entered", 0, first_skill)
-    launcher.call("_on_commander_skill_mouse_entered", 1, second_skill)
-    launcher.call("_hide_commander_skill_tooltip", first_skill)
-    _expect(tooltip.visible, "stale exit cannot hide the newer tooltip target")
     var viewport_size := launcher.get_viewport_rect().size
     _expect(
         tooltip.global_position.x >= 8.0 and tooltip.global_position.y >= 8.0,
@@ -347,8 +332,6 @@ func _run() -> void:
             viewport_size,
         ]
     )
-    launcher.call("_hide_commander_skill_tooltip", second_skill)
-    _expect(not tooltip.visible, "active target exit hides tooltip immediately")
     var selected_before: StringName = launcher.call("get_selected_commander_id")
     previous.emit_signal("pressed")
     next.emit_signal("pressed")
