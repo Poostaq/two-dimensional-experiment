@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dh21nsecrn53v"]
 
 [ext_resource type="Script" uid="uid://dsyvtiyhnikkc" path="res://Scripts/Run/world_production_launcher.gd" id="1_fupo4"]
-[ext_resource type="CompressedTexture2D" uid="uid://bjq0wu4o51pha" path="res://Assets/brakka.png" id="2_brakka"]
+[ext_resource type="Texture2D" uid="uid://bjq0wu4o51pha" path="res://Assets/brakka.png" id="2_brakka"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t0187"]
 bg_color = Color(0.0627451, 0.10980392, 0.16470589, 1)
@@ -94,8 +94,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_fupo4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_r6j1p"]
 content_margin_left = 10.0
@@ -577,15 +575,16 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_ar2gu")
 
 [node name="NewRunMargin" type="MarginContainer" parent="NewRunCenter/NewRunScreen" unique_id=463415345]
 layout_mode = 2
-theme_override_constants/margin_left = 48
-theme_override_constants/margin_top = 42
-theme_override_constants/margin_right = 48
-theme_override_constants/margin_bottom = 42
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
 
 [node name="NewRunContent" type="VBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin" unique_id=1809188953]
 custom_minimum_size = Vector2(980, 540)
 layout_mode = 2
 theme_override_constants/separation = 16
+alignment = 1
 
 [node name="NewRunTitle" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=433828123]
 layout_mode = 2
@@ -644,9 +643,9 @@ layout_mode = 2
 unique_name_in_owner = true
 custom_minimum_size = Vector2(430, 144)
 layout_mode = 2
-text = "Brakka Rustbanner\nPackmarshal - Goblin Commander\nClass - Scrapshield Bruiser"
-horizontal_alignment = 0
-vertical_alignment = 1
+text = "Brakka Rustbanner
+Packmarshal - Goblin Commander
+Class - Scrapshield Bruiser"
 autowrap_mode = 2
 
 [node name="CommanderSkills" type="HBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=753514882]
