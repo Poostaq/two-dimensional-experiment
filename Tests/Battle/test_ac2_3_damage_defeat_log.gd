@@ -267,6 +267,24 @@ func _test_resolution_feedback() -> void:
 	var attacker: Variant = arena.call("get_unit_by_id", &"player_4") if arena != null and arena.has_method("get_unit_by_id") else null
 	var receiver: Variant = _target_for_first_fixture(arena)
 	_assert(_feedback_matches(arena, attacker, receiver, "-7"), "resolution feedback", "expected green attacker, red receiver, and -7")
+	var receiver_slot := _slot_for(arena, receiver)
+	var receiver_border := receiver_slot.get_node_or_null("EffectStatusBorderOverlay") as Panel if receiver_slot != null else null
+	var receiver_border_style := receiver_border.get_theme_stylebox("panel") as StyleBoxFlat if receiver_border != null else null
+	_assert(
+		_feedback_matches(arena, attacker, receiver, "-7")
+		and receiver_border != null
+		and receiver_border.visible
+		and is_instance_valid(receiver_border_style)
+		and receiver_border_style.border_color == Color(1.0, 0.35, 0.4, 1.0),
+		"resolution feedback",
+		"expected green attacker, red receiver, and -7"
+	)
+	await create_timer(0.9).timeout
+	_assert(
+		receiver_border == null or not receiver_border.visible,
+		"resolution feedback clears",
+		"expected red receiver border to disappear with damage feedback"
+	)
 	_free_arena(arena)
 
 
@@ -290,7 +308,18 @@ func _test_hover_exit_restores_current() -> void:
 	await create_timer(0.9).timeout
 	var current: Variant = arena.call("get_current_unit") if arena != null else null
 	var slot := _slot_for(arena, current)
-	_assert(slot != null and slot.get_meta("highlight_role", &"") == &"current", "hover exit restores current", "expected gold current-unit state")
+	var border := slot.get_node_or_null("CurrentUnitBorderOverlay") as Panel if slot != null else null
+	var border_style := border.get_theme_stylebox("panel") as StyleBoxFlat if border != null else null
+	_assert(
+		slot != null
+		and slot.get_meta("highlight_role", &"") == &"current"
+		and border != null
+		and border.visible
+		and is_instance_valid(border_style)
+		and border_style.border_color == Color.WHITE,
+		"hover exit restores current",
+		"expected active-unit white border after preview clears"
+	)
 	_free_arena(arena)
 
 

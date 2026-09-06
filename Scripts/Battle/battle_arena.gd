@@ -10,9 +10,13 @@ signal preparation_commit_requested(choice: int, target_unit_id: StringName, exp
 
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
-const CURRENT_SLOT_COLOR := Color(1.0, 0.82, 0.32, 1.0)
+const CURRENT_SLOT_BORDER_COLOR := Color.WHITE
+const EFFECT_POSITIVE_BORDER_COLOR := Color(0.25, 0.95, 0.45, 1.0)
+const EFFECT_NEGATIVE_BORDER_COLOR := Color(1.0, 0.35, 0.4, 1.0)
+const CURRENT_SLOT_BORDER_WIDTH := 3
 const ATTACKER_SLOT_COLOR := Color(0.35, 0.9, 0.5, 1.0)
 const RECEIVER_SLOT_COLOR := Color(1.0, 0.35, 0.4, 1.0)
+const EFFECT_HIGHLIGHT_TURN_ADVANCES := 2
 const FEEDBACK_DURATION_SECONDS := 0.8
 const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
 const SKILL_BUTTON_SIZE := Vector2(88.0, 88.0)
@@ -116,6 +120,8 @@ var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
 var _default_action_mode: DefaultActionMode = DefaultActionMode.NONE
 var _default_action_preview: Dictionary = {}
+var _effect_highlight_target_colors: Dictionary[StringName, Color] = {}
+var _effect_highlight_turns_remaining: int = 0
 var _preparation_required: bool = false
 var _preparation_record: RefCounted
 var _preparation_transaction: RefCounted
@@ -178,6 +184,7 @@ func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 func configure_units(units: Array[BattleUnitState]) -> void:
 	_clear_reward_ui()
 	_clear_default_action_state()
+	_clear_effect_highlights()
 	_clear_skill_inspector()
 	_skill_transaction.reset()
 	_battle_revision = 0
@@ -1175,6 +1182,9 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_action_in_progress = false
 		return false
 	_dispatch_passive_reactions(action_record, action_round, keyword_deltas)
+	_set_effect_highlights(
+		_collect_effect_highlight_colors(keyword_deltas)
+	)
 	var action_entry := BattleActionLogEntry.new(
 		_battle_action_log_entries.size() + 1,
 		action_round,
@@ -1695,6 +1705,7 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	_battle_outcome = outcome
 	_turn_queue.clear()
 	_current_turn_index = 0
+	_clear_effect_highlights()
 	for unit: BattleUnitState in _units:
 		if is_instance_valid(unit):
 			unit.clear_battle_local_state()
@@ -1778,6 +1789,10 @@ func _advance_after_action(attacker_id: StringName) -> void:
 		round_number += 1
 		_expire_round_modifiers(completed_round)
 		_current_turn_index = 0
+	if _effect_highlight_turns_remaining > 0:
+		_effect_highlight_turns_remaining -= 1
+		if _effect_highlight_turns_remaining == 0:
+			_clear_effect_highlights()
 	_resolve_current_action_start_reactions()
 
 
@@ -2236,9 +2251,18 @@ func _refresh_highlights() -> void:
 	var current_unit := get_current_unit()
 	var current_slot := _get_slot_for_unit(current_unit)
 	if is_instance_valid(current_slot):
-		current_slot.self_modulate = CURRENT_SLOT_COLOR
-		current_slot.set_meta("is_current_unit", true)
-		current_slot.set_meta("highlight_role", &"current")
+		_apply_current_slot_highlight(current_slot)
+	for target_id: StringName in _effect_highlight_target_colors.keys():
+		var target_unit := get_unit_by_id(target_id)
+		var target_slot := _get_slot_for_unit(target_unit)
+		if not is_instance_valid(target_slot):
+			continue
+		var effect_overlay := _get_or_create_effect_slot_border_overlay(target_slot)
+		effect_overlay.add_theme_stylebox_override(
+			"panel",
+			_effect_border_style(_effect_highlight_target_colors[target_id])
+		)
+		effect_overlay.visible = true
 
 
 func _reset_slot_highlights() -> void:
@@ -2246,8 +2270,121 @@ func _reset_slot_highlights() -> void:
 		slot.self_modulate = NEUTRAL_SLOT_COLOR
 		slot.set_meta("is_current_unit", false)
 		slot.set_meta("highlight_role", &"neutral")
+		var border_overlay := slot.get_node_or_null("CurrentUnitBorderOverlay") as Panel
+		if is_instance_valid(border_overlay):
+			border_overlay.visible = false
+		var effect_overlay := slot.get_node_or_null("EffectStatusBorderOverlay") as Panel
+		if is_instance_valid(effect_overlay):
+			effect_overlay.visible = false
 		var damage_label := slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
 		damage_label.text = ""
+
+
+func _apply_current_slot_highlight(slot: Control) -> void:
+	slot.self_modulate = Color.WHITE
+	slot.set_meta("is_current_unit", true)
+	slot.set_meta("highlight_role", &"current")
+	var border_overlay := _get_or_create_current_slot_border_overlay(slot)
+	border_overlay.visible = true
+
+
+func _get_or_create_current_slot_border_overlay(slot: Control) -> Panel:
+	var existing := slot.get_node_or_null("CurrentUnitBorderOverlay") as Panel
+	if is_instance_valid(existing):
+		return existing
+	var overlay := Panel.new()
+	overlay.name = "CurrentUnitBorderOverlay"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 11
+	overlay.visible = false
+	overlay.add_theme_stylebox_override("panel", _current_slot_border_style())
+	slot.add_child(overlay)
+	return overlay
+
+
+func _get_or_create_effect_slot_border_overlay(slot: Control) -> Panel:
+	var existing := slot.get_node_or_null("EffectStatusBorderOverlay") as Panel
+	if is_instance_valid(existing):
+		return existing
+	var overlay := Panel.new()
+	overlay.name = "EffectStatusBorderOverlay"
+	overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.z_index = 12
+	overlay.visible = false
+	slot.add_child(overlay)
+	return overlay
+
+
+func _current_slot_border_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.border_color = CURRENT_SLOT_BORDER_COLOR
+	style.set_border_width_all(CURRENT_SLOT_BORDER_WIDTH)
+	style.bg_color = Color.TRANSPARENT
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	return style
+
+
+func _effect_border_style(border_color: Color) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.border_color = border_color
+	style.set_border_width_all(CURRENT_SLOT_BORDER_WIDTH)
+	style.bg_color = Color.TRANSPARENT
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	return style
+
+
+func _set_effect_highlights(target_colors: Dictionary[StringName, Color]) -> void:
+	_effect_highlight_target_colors = target_colors.duplicate()
+	_effect_highlight_turns_remaining = (
+		EFFECT_HIGHLIGHT_TURN_ADVANCES if not _effect_highlight_target_colors.is_empty() else 0
+	)
+	if is_node_ready():
+		_refresh_highlights()
+
+
+func _clear_effect_highlights() -> void:
+	if _effect_highlight_target_colors.is_empty() and _effect_highlight_turns_remaining == 0:
+		return
+	_effect_highlight_target_colors.clear()
+	_effect_highlight_turns_remaining = 0
+	if is_node_ready():
+		_refresh_highlights()
+
+
+func _collect_effect_highlight_colors(
+	keyword_deltas: Array[Dictionary]
+) -> Dictionary[StringName, Color]:
+	var effect_colors: Dictionary[StringName, Color] = {}
+	for delta: Dictionary in keyword_deltas:
+		var target_id: StringName = delta.get(&"target_id", &"")
+		if target_id.is_empty():
+			continue
+		var effect_color := _effect_color_for_keyword_kind(int(delta.get(&"kind", -1)))
+		if effect_color == Color.TRANSPARENT:
+			continue
+		if not effect_colors.has(target_id) or effect_colors[target_id] != EFFECT_NEGATIVE_BORDER_COLOR:
+			effect_colors[target_id] = effect_color
+	return effect_colors
+
+
+func _effect_color_for_keyword_kind(kind: int) -> Color:
+	match kind:
+		BattleKeywordOperation.Kind.ADD_ARMOR:
+			return EFFECT_POSITIVE_BORDER_COLOR
+		BattleKeywordOperation.Kind.APPLY_ADVANTAGE:
+			return EFFECT_POSITIVE_BORDER_COLOR
+		BattleKeywordOperation.Kind.REDUCE_COOLDOWN:
+			return EFFECT_POSITIVE_BORDER_COLOR
+		_:
+			return Color.TRANSPARENT
 
 
 func _apply_entry_feedback(entry: BattleLogEntry) -> void:
@@ -2261,6 +2398,13 @@ func _apply_entry_feedback(entry: BattleLogEntry) -> void:
 	if is_instance_valid(receiver_slot):
 		receiver_slot.self_modulate = RECEIVER_SLOT_COLOR
 		receiver_slot.set_meta("highlight_role", &"receiver")
+		if entry.applied_damage > 0:
+			var effect_overlay := _get_or_create_effect_slot_border_overlay(receiver_slot)
+			effect_overlay.add_theme_stylebox_override(
+				"panel",
+				_effect_border_style(EFFECT_NEGATIVE_BORDER_COLOR)
+			)
+			effect_overlay.visible = true
 		var damage_label := receiver_slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
 		damage_label.text = "-%d" % entry.applied_damage
 
@@ -2341,6 +2485,7 @@ func _on_advance_debug_pressed() -> void:
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
 	_skill_transaction.reset()
+	_clear_effect_highlights()
 	_clear_committed_action_history()
 	_render_skill_transaction()
 	_clear_reward_ui()
