@@ -73,10 +73,7 @@ var _hovered_tooltip_target: Control
 @onready var _previous_commander_button: Button = %PreviousCommanderButton
 @onready var _next_commander_button: Button = %NextCommanderButton
 @onready var _commander_portrait: TextureRect = %CommanderPortrait
-@onready var _commander_name_label: Label = %CommanderNameLabel
-@onready var _commander_title_label: Label = %CommanderTitleLabel
 @onready var _commander_summary_label: Label = %CommanderSummaryLabel
-@onready var _commander_root_class_label: Label = %CommanderRootClassLabel
 @onready var _commander_skill_buttons: Array[Button] = [
     %CommanderSkill0,
     %CommanderSkill1,
@@ -448,17 +445,13 @@ func _refresh_commander_ui() -> void:
     var valid: bool = not presentation.is_empty()
     _begin_button.disabled = not valid
     if not valid:
-        _commander_name_label.text = "Commander unavailable"
-        _commander_title_label.text = ""
         _commander_summary_label.text = ""
-        _commander_root_class_label.text = ""
         return
-    _commander_name_label.text = String(presentation.get("display_name", ""))
-    _commander_title_label.text = String(presentation.get("title", ""))
-    _commander_summary_label.text = String(presentation.get("summary", ""))
-    _commander_root_class_label.text = "Root class · %s" % String(
-        presentation.get("root_class_name", "")
-    )
+    _commander_summary_label.text = "\n".join([
+        String(presentation.get("display_name", "")),
+        String(presentation.get("title", "")).replace(" · ", " - "),
+        "Class - %s" % String(presentation.get("root_class_name", "")),
+    ])
     _commander_portrait.tooltip_text = String(presentation.get("portrait_label", ""))
     var skills: Array = presentation.get("skills", [])
     _presented_commander_skills.clear()

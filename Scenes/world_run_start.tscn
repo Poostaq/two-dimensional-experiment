@@ -635,33 +635,17 @@ theme_override_styles/focus = SubResource("StyleBoxFlat_qnwr8")
 disabled = true
 text = "›"
 
-[node name="CommanderNameLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn" unique_id=501923162]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Brakka Rustbanner"
-horizontal_alignment = 1
-
-[node name="CommanderTitleLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderPortraitColumn" unique_id=478493061]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Packmarshal · Goblin Commander"
-horizontal_alignment = 1
-
 [node name="CommanderDetailsColumn" type="VBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns" unique_id=670965883]
 custom_minimum_size = Vector2(430, 0)
 layout_mode = 2
 
 [node name="CommanderSummaryLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=2133025567]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(430, 120)
+custom_minimum_size = Vector2(430, 144)
 layout_mode = 2
-text = "Commander details"
-autowrap_mode = 2
-
-[node name="CommanderRootClassLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=174742041]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Root class"
+text = "Brakka Rustbanner\nPackmarshal - Goblin Commander\nClass - Scrapshield Bruiser"
+horizontal_alignment = 0
+vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="CommanderSkills" type="HBoxContainer" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn" unique_id=753514882]
@@ -707,6 +691,10 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_g7fog")
 theme_override_styles/hover = SubResource("StyleBoxFlat_wmnon")
 theme_override_styles/focus = SubResource("StyleBoxFlat_oy3ff")
 text = "BH"
+
+[node name="CommanderSeedSeparator" type="HSeparator" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1872023928]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="SeedLabel" type="Label" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=896854935]
 layout_mode = 2

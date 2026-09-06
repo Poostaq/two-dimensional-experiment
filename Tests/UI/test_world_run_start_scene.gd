@@ -17,10 +17,8 @@ const REQUIRED_UNIQUE_NODES: Array[StringName] = [
     &"CommanderPortrait",
     &"PreviousCommanderButton",
     &"NextCommanderButton",
-    &"CommanderNameLabel",
-    &"CommanderTitleLabel",
     &"CommanderSummaryLabel",
-    &"CommanderRootClassLabel",
+    &"CommanderSeedSeparator",
     &"CommanderSkill0",
     &"CommanderSkill1",
     &"CommanderSkill2",
@@ -220,10 +218,24 @@ func _run() -> void:
     var previous := launcher.get_node("%PreviousCommanderButton") as Button
     var next := launcher.get_node("%NextCommanderButton") as Button
     var portrait := launcher.get_node("%CommanderPortrait") as TextureRect
+    var summary := launcher.get_node("%CommanderSummaryLabel") as Label
+    var separator := launcher.get_node("%CommanderSeedSeparator") as HSeparator
     var seed := launcher.get_node("%SeedInput") as LineEdit
     var begin := launcher.get_node("%BeginButton") as Button
     _expect(previous.disabled and next.disabled, "single-entry carousel arrows are disabled")
     _expect(portrait.texture != null, "portrait uses an embedded placeholder texture")
+    _expect(
+        summary.text == "Brakka Rustbanner\nPackmarshal - Goblin Commander\nClass - Scrapshield Bruiser",
+        "selected commander info is rendered in the right-hand info block"
+    )
+    _expect(
+        separator.global_position.y > portrait.global_position.y,
+        "separator sits below the commander carousel"
+    )
+    _expect(
+        seed.global_position.y > separator.global_position.y,
+        "seed input appears below the commander selection section"
+    )
     _expect(begin.text == "Begin", "final action is Begin")
     _expect(seed.global_position.y < begin.global_position.y, "seed input precedes Begin in setup flow")
     var expected_texts: Array[String] = ["ST", "PB", "BN", "BH"]
@@ -267,6 +279,7 @@ func _run() -> void:
     var tooltip_body := launcher.get_node("%CommanderSkillTooltipBody") as Label
     var first_skill := launcher.get_node("%CommanderSkill0") as Button
     launcher.call("_show_commander_skill_tooltip", 0, first_skill)
+    await process_frame
     _expect(tooltip.visible, "hover handler shows tooltip without delay")
     _expect(not tooltip_name.text.is_empty(), "tooltip shows the skill name")
     _expect(
@@ -312,7 +325,11 @@ func _run() -> void:
     var viewport_size := launcher.get_viewport_rect().size
     _expect(
         tooltip.global_position.x >= 8.0 and tooltip.global_position.y >= 8.0,
-        "tooltip respects top-left viewport margin"
+        "tooltip respects top-left viewport margin: position=%s size=%s viewport=%s" % [
+            tooltip.global_position,
+            tooltip.size,
+            launcher.get_viewport_rect().size,
+        ]
     )
     _expect(
         tooltip.global_position.x + tooltip.size.x <= viewport_size.x - 8.0,
