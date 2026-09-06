@@ -658,8 +658,10 @@ custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 tooltip_text = "Shield Tap"
 theme_override_styles/normal = SubResource("StyleBoxFlat_j3br0")
-theme_override_styles/hover = SubResource("StyleBoxFlat_dk8v3")
-theme_override_styles/focus = SubResource("StyleBoxFlat_is7iv")
+theme_override_styles/hover = SubResource("StyleBoxFlat_j3br0")
+theme_override_styles/focus = SubResource("StyleBoxFlat_j3br0")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_j3br0")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_j3br0")
 text = "ST"
 
 [node name="CommanderSkill1" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=734834760]
@@ -668,8 +670,10 @@ custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 tooltip_text = "Pack Brace"
 theme_override_styles/normal = SubResource("StyleBoxFlat_2j6yo")
-theme_override_styles/hover = SubResource("StyleBoxFlat_3iavx")
-theme_override_styles/focus = SubResource("StyleBoxFlat_qjbey")
+theme_override_styles/hover = SubResource("StyleBoxFlat_2j6yo")
+theme_override_styles/focus = SubResource("StyleBoxFlat_2j6yo")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_2j6yo")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_2j6yo")
 text = "PB"
 
 [node name="CommanderSkill2" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=1763306320]
@@ -678,8 +682,10 @@ custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 tooltip_text = "Banner Nudge"
 theme_override_styles/normal = SubResource("StyleBoxFlat_ljxsx")
-theme_override_styles/hover = SubResource("StyleBoxFlat_1iegp")
-theme_override_styles/focus = SubResource("StyleBoxFlat_80dl3")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ljxsx")
+theme_override_styles/focus = SubResource("StyleBoxFlat_ljxsx")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ljxsx")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_ljxsx")
 text = "BN"
 
 [node name="CommanderSkill3" type="Button" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent/CommanderColumns/CommanderDetailsColumn/CommanderSkills" unique_id=164937252]
@@ -688,8 +694,10 @@ custom_minimum_size = Vector2(88, 88)
 layout_mode = 2
 tooltip_text = "Banner Holder"
 theme_override_styles/normal = SubResource("StyleBoxFlat_g7fog")
-theme_override_styles/hover = SubResource("StyleBoxFlat_wmnon")
-theme_override_styles/focus = SubResource("StyleBoxFlat_oy3ff")
+theme_override_styles/hover = SubResource("StyleBoxFlat_g7fog")
+theme_override_styles/focus = SubResource("StyleBoxFlat_g7fog")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_g7fog")
+theme_override_styles/disabled = SubResource("StyleBoxFlat_g7fog")
 text = "BH"
 
 [node name="CommanderSeedSeparator" type="HSeparator" parent="NewRunCenter/NewRunScreen/NewRunMargin/NewRunContent" unique_id=1872023928]
