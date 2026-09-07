@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "id": "spec-validation",
-  "display_name": "Spec Validation",
-  "description": "Validates specifications for completeness, consistency, measurable criteria, traceability, and current governance compliance.",
+  "id": "design-document-review",
+  "display_name": "Design Document Review",
+  "description": "Reviews design documents for clarity, feasibility, traceability, and completeness before implementation begins.",
   "write_policy": "read_only",
   "capabilities": ["repo.read", "repo.search", "godot.inspect", "godot.validate"],
   "skills": ["project-stage-audit", "reverse-document-system", "spec-to-test-traceability"]
