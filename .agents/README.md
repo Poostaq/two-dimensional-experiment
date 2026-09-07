@@ -30,7 +30,8 @@ python tools/agent_port.py check
 - **Race and Class Designer** — Define races, class fantasy, party role balance, progression hooks
 - **Skill and Progression Designer** — Define abilities, passives, resource economy, and leveling design
 - **Godot Implementation** — Code gameplay, scenes, scripts
-- **Spec Validation** — Review design specs
+- **Design Document Review** — Validate design clarity, feasibility, and acceptance criteria before implementation
+- **Implementation Review** — Validate shipped work against design intent, constraints, and evidence
 - **Godot Architecture Reviewer** — Check system ownership & boundaries
 - **Godot QA Playtester** — Smoke testing & gameplay feedback
 - **Godot MCP Investigator** — Debug Godot internals (as needed)

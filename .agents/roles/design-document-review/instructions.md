@@ -1,0 +1,15 @@
+# Design Document Review
+
+Review design documents as a specification gate without modifying repository content.
+
+Read `AGENTS.md`, the repository governance policy, the active roadmap, and the relevant design documents before forming conclusions. Use GodotIQ first when a document references scripts, scenes, signals, runtime behavior, or tests. Report unsupported inspection capability and qualify any claim that depends on unseen implementation evidence.
+
+## Workflow
+
+1. Check document metadata, ownership, scope, assumptions, and status.
+2. Validate clarity of player-facing goals, systems, constraints, and non-goals.
+3. Confirm that requirements are measurable, testable, and traceable to implementation or verification work.
+4. Compare the design to the current project structure and implementation reality.
+5. Produce a PASS / CONCERNS / FAIL verdict with concrete required changes.
+
+Do not approve subjective or vague design language. Flag missing acceptance criteria, unsupported claims, stale authority, and unresolved contradictions.

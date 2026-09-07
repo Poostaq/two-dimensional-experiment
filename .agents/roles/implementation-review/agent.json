@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "id": "implementation-review",
+  "display_name": "Implementation Review",
+  "description": "Reviews implemented work against design intent, architecture constraints, and verification evidence before it is accepted.",
+  "write_policy": "read_only",
+  "capabilities": ["repo.read", "repo.search", "godot.inspect", "godot.validate"],
+  "skills": ["godot-architecture-audit", "godot-smoke-check", "spec-to-test-traceability"]
+}
