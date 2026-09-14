@@ -1,7 +1,7 @@
 class_name Ac3_3PartyFormationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 41
+const EXPECTED_TEST_COUNT := 43
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -33,6 +33,12 @@ func _run() -> void:
 	_expect(_id_at(roster.get_slot_snapshot(), 0) == &"scout" and _id_at(roster.get_slot_snapshot(), 5) == &"player_0", "swap updates both slots")
 	_expect(roster.try_move(5, 4, &"player_0") == RunRoster.MoveResult.MOVED, "empty drop moves")
 	_expect(roster.get_character_at(5) == null and roster.get_character_at(4).character_id == &"player_0", "move leaves source empty")
+	var moved_hp: Dictionary[StringName, int] = {
+		&"scout": 4, &"player_0": 5, &"player_1": 6, &"player_2": 7,
+	}
+	var moved_units: Array[BattleUnitState] = roster.create_battle_units(moved_hp)
+	_expect(_unit_at(moved_units, 0).current_hp == 4, "swap preserves run health mapping by character ID")
+	_expect(_unit_at(moved_units, 4).current_hp == 5, "move preserves run health mapping by character ID")
 	_expect(roster.try_move(4, 4, &"player_0") == RunRoster.MoveResult.SAME_SLOT, "same-slot move is rejected")
 	_expect(roster.try_move(5, 3, &"player_0") == RunRoster.MoveResult.EMPTY_SOURCE, "empty source is rejected")
 	_expect(roster.try_move(4, 3, &"stale") == RunRoster.MoveResult.STALE_SOURCE, "stale source identity is rejected")
