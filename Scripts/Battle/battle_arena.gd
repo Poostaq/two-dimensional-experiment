@@ -106,6 +106,7 @@ var _feedback_generation: int = 0
 var _transient_log_entry: BattleLogEntry
 var _action_in_progress: bool = false
 var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
+var _terminal_player_health_snapshot: Array[Dictionary] = []
 var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
 var _pending_recruitment_option: BattleRewardOption
@@ -204,6 +205,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 		_clear_log_controls()
 		_clear_all_damage_feedback()
 	_battle_outcome = BattleOutcome.Type.IN_PROGRESS
+	_terminal_player_health_snapshot.clear()
 	_units = units.duplicate()
 	_turn_queue = BattleTurnQueue.build(_units)
 	_current_turn_index = 0
@@ -420,6 +422,13 @@ func get_battle_outcome() -> BattleOutcome.Type:
 
 func is_battle_complete() -> bool:
 	return _battle_outcome != BattleOutcome.Type.IN_PROGRESS
+
+
+func get_terminal_player_health_snapshot() -> Array[Dictionary]:
+	var snapshot: Array[Dictionary] = []
+	for entry: Dictionary in _terminal_player_health_snapshot:
+		snapshot.append(entry.duplicate(true))
+	return snapshot
 
 
 func get_reward_options() -> Array[BattleRewardOption]:
@@ -1708,6 +1717,14 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	if is_battle_complete() or outcome == BattleOutcome.Type.IN_PROGRESS:
 		return
 	_battle_outcome = outcome
+	_terminal_player_health_snapshot.clear()
+	for unit: BattleUnitState in _units:
+		if is_instance_valid(unit) and unit.side == BattleUnitState.Side.PLAYER:
+			_terminal_player_health_snapshot.append({
+				"character_id": unit.unit_id,
+				"final_hp": unit.current_hp,
+				"max_hp": unit.max_hp,
+			})
 	_turn_queue.clear()
 	_current_turn_index = 0
 	_clear_effect_highlights()

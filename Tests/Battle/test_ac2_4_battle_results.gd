@@ -4,7 +4,7 @@ extends SceneTree
 const OUTCOME_PATH := "res://Scripts/Battle/battle_outcome.gd"
 const UNIT_PATH := "res://Scripts/Battle/battle_unit_state.gd"
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 9
+const EXPECTED_TEST_COUNT := 12
 const IN_PROGRESS := 0
 const VICTORY := 1
 const DEFEAT := 2
@@ -30,6 +30,9 @@ func _run() -> void:
 	await _test_completed_battle_is_immutable()
 	await _test_reconfigure_resets_outcome()
 	await _test_result_presentation_is_binary()
+	await _test_terminal_player_health_snapshot_is_empty_before_completion()
+	await _test_terminal_player_health_snapshot_includes_all_configured_players()
+	await _test_terminal_player_health_snapshot_is_defensive_and_stable()
 	_report()
 	quit(1 if not _failures.is_empty() else 0)
 
@@ -78,6 +81,15 @@ func _get_outcome(arena: Control) -> int:
 func _perform_damage(arena: Control) -> void:
 	if is_instance_valid(arena) and arena.has_method("perform_debug_damage"):
 		arena.call("perform_debug_damage")
+
+
+func _get_health_snapshot(arena: Control) -> Array[Dictionary]:
+	if not is_instance_valid(arena) or not arena.has_method("get_terminal_player_health_snapshot"):
+		return []
+	var snapshot: Array[Dictionary] = []
+	for entry: Variant in arena.call("get_terminal_player_health_snapshot") as Array:
+		snapshot.append(entry as Dictionary)
+	return snapshot
 
 
 func _free_arena(arena: Control) -> void:
@@ -217,6 +229,67 @@ func _test_result_presentation_is_binary() -> void:
 	)
 	_free_arena(victory_arena)
 	_free_arena(defeat_arena)
+
+
+func _test_terminal_player_health_snapshot_is_empty_before_completion() -> void:
+	var arena := await _instantiate_arena()
+	var player := _unit(&"player", BattleUnitState.Side.PLAYER, 0)
+	var enemy := _unit(&"enemy", BattleUnitState.Side.ENEMY, 0)
+	_configure(arena, [player, enemy])
+	_assert(
+		arena.has_method("get_terminal_player_health_snapshot")
+		and _get_health_snapshot(arena).is_empty(),
+		"terminal player health is unavailable before completion",
+		"expected the public snapshot API to return an empty array while battle is active"
+	)
+	_free_arena(arena)
+
+
+func _test_terminal_player_health_snapshot_includes_all_configured_players() -> void:
+	var arena := await _instantiate_arena()
+	var survivor := _unit(&"survivor", BattleUnitState.Side.PLAYER, 0, 9)
+	survivor.max_hp = 41
+	survivor.current_hp = 19
+	var defeated := _unit(&"defeated", BattleUnitState.Side.PLAYER, 1, 7)
+	defeated.max_hp = 37
+	defeated.current_hp = 0
+	var enemy := _unit(&"enemy", BattleUnitState.Side.ENEMY, 0, 8)
+	enemy.current_hp = 6
+	_configure(arena, [survivor, defeated, enemy])
+	_perform_damage(arena)
+	var snapshot := _get_health_snapshot(arena)
+	_assert(
+		snapshot == [
+			{"character_id": &"survivor", "final_hp": 19, "max_hp": 41},
+			{"character_id": &"defeated", "final_hp": 0, "max_hp": 37},
+		],
+		"terminal player health includes all configured players",
+		"expected stable unit ids and final/max HP for players only, including defeated units"
+	)
+	_free_arena(arena)
+
+
+func _test_terminal_player_health_snapshot_is_defensive_and_stable() -> void:
+	var arena := await _instantiate_arena()
+	var player := _unit(&"player", BattleUnitState.Side.PLAYER, 0, 9)
+	player.max_hp = 43
+	player.current_hp = 21
+	var enemy := _unit(&"enemy", BattleUnitState.Side.ENEMY, 0, 8)
+	enemy.current_hp = 6
+	_configure(arena, [player, enemy])
+	_perform_damage(arena)
+	var first := _get_health_snapshot(arena)
+	first[0]["final_hp"] = -999
+	first.append({"character_id": &"injected", "final_hp": 1, "max_hp": 1})
+	player.current_hp = 1
+	_assert(
+		_get_health_snapshot(arena) == [
+			{"character_id": &"player", "final_hp": 21, "max_hp": 43},
+		],
+		"terminal player health is defensive and stable",
+		"caller or post-completion unit mutation must not alter the latched snapshot"
+	)
+	_free_arena(arena)
 
 
 func _assert(condition: bool, test_name: String, reason: String) -> void:
