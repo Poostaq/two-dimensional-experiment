@@ -837,7 +837,7 @@ func _initialize_or_validate_durable_health(run_state: RefCounted) -> bool:
 	var expected_ids: Dictionary[StringName, RunCharacter] = {}
 	for character: RunCharacter in _roster.get_characters():
 		expected_ids[character.character_id] = character
-	if current.is_empty():
+	if not bool(run_state.call("has_character_hp_snapshot")):
 		var initialized: Dictionary[StringName, int] = {}
 		for character_id: StringName in expected_ids:
 			initialized[character_id] = expected_ids[character_id].max_hp

@@ -33,10 +33,43 @@ func _run() -> void:
 		_finish()
 		return
 	var plan := generated.get("plan") as WorldPlan
+	await _verify_missing_and_present_empty_health(plan)
 	await _verify_legacy_initialization_and_victory(plan)
 	await _verify_non_victory_and_autosave_recovery(plan)
 	await _verify_recruitment_identity_health(plan)
 	_finish()
+
+
+func _verify_missing_and_present_empty_health(plan: WorldPlan) -> void:
+	var missing_data: Dictionary = _create_legacy_state(plan).call("to_dictionary")
+	missing_data.erase("character_hp")
+	var missing_decoded: Dictionary = RUN_STATE_SCRIPT.from_dictionary(missing_data, plan)
+	var missing_state := missing_decoded.get("value") as RefCounted
+	_expect(
+		bool(missing_decoded.get("ok", false))
+		and not bool(missing_state.call("has_character_hp_snapshot")),
+		"missing legacy health preserves absent-field provenance"
+	)
+	var migrated := await _create_world(plan, FakeRepository.new(), missing_state)
+	_expect(is_instance_valid(migrated), "missing legacy health initializes successfully")
+	if is_instance_valid(migrated):
+		_expect(
+			bool(migrated.get_durable_run_state().call("has_character_hp_snapshot")),
+			"migration publishes present full health in durable state"
+		)
+		migrated.free()
+
+	var present_data: Dictionary = _create_legacy_state(plan).call("to_dictionary")
+	present_data["character_hp"] = {}
+	var present_decoded: Dictionary = RUN_STATE_SCRIPT.from_dictionary(present_data, plan)
+	var present_state := present_decoded.get("value") as RefCounted
+	_expect(
+		bool(present_decoded.get("ok", false))
+		and bool(present_state.call("has_character_hp_snapshot")),
+		"present empty health preserves present-field provenance"
+	)
+	var rejected := await _create_world(plan, FakeRepository.new(), present_state)
+	_expect(not is_instance_valid(rejected), "present empty health rejects a nonempty roster")
 
 
 func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
@@ -174,52 +207,63 @@ func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:
 func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	var repository := FakeRepository.new()
 	var world := await _create_world(plan, repository, _create_legacy_state(plan))
-	var recruit := RunCharacterCatalog.create_for_reward(&"combat_recruit_scout")
-	var add_candidate := RunRoster.new(world.get("_roster").get_slot_snapshot())
-	_expect(
-		add_candidate.try_add_at(recruit, 3) == RunRoster.AddResult.ADDED,
-		"recruitment add fixture is valid"
-	)
-	world.set("_pending_recruit", recruit)
-	world.call("_commit_recruitment_candidate", add_candidate)
+	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	await process_frame
+	var arena := _get_arena(world)
+	arena.call("_complete_battle", BattleOutcome.Type.VICTORY)
+	await process_frame
+	arena.select_reward(&"combat_recruit_scout")
+	arena.confirm_reward_selection()
+	await process_frame
+	_expect(world.has_active_party_management(), "recruit reward opens production placement UI")
+	var party := world.get_node("PartyHost").get_child(0) as PartyManagement
+	party.request_placement(3, &"scout")
 	await process_frame
 	var added: Dictionary[StringName, int] = world.get_durable_run_state().call(
 		"get_character_hp_snapshot"
 	)
-	_expect(added.get(recruit.character_id, -1) == recruit.max_hp, "recruitment adds new ID at max HP")
-	var move_id := recruit.character_id
-	world.call("_on_party_move_requested", 3, 4, move_id)
+	var recruit := RunCharacterCatalog.create_for_reward(&"combat_recruit_scout")
+	_expect(added.get(recruit.character_id, -1) == recruit.max_hp, "public recruitment adds new ID at max HP")
+	world.open_party_management()
+	await process_frame
+	var normal_party := world.get_node("PartyHost").get_child(0) as PartyManagement
+	normal_party.move_requested.emit(3, 4, recruit.character_id)
 	await process_frame
 	_expect(
 		world.get_durable_run_state().call("get_character_hp_snapshot") == added,
-		"formation moves do not change identity health"
+		"public formation move does not change identity health"
 	)
+	normal_party.close_requested.emit()
+	await process_frame
 	world.free()
 
 	var full_formation := RunCharacterCatalog.get_goblin_class_ids()
 	var full_state := _create_state(plan, full_formation)
 	repository = FakeRepository.new()
 	world = await _create_world(plan, repository, full_state)
-	var replacement := RunCharacterCatalog.create_for_reward(&"combat_recruit_scout")
-	var replace_candidate := RunRoster.new(world.get("_roster").get_slot_snapshot())
-	var dismissed: RunCharacter = replace_candidate.get_character_at(0)
-	_expect(
-		replace_candidate.try_replace_at(replacement, 0, dismissed.character_id)
-		== RunRoster.ReplaceResult.REPLACED,
-		"replacement fixture is valid"
-	)
-	world.set("_pending_recruit", replacement)
-	world.call("_commit_recruitment_candidate", replace_candidate)
+	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	await process_frame
+	arena = _get_arena(world)
+	arena.call("_complete_battle", BattleOutcome.Type.VICTORY)
+	await process_frame
+	arena.select_reward(&"combat_recruit_scout")
+	arena.confirm_reward_selection()
+	await process_frame
+	_expect(world.has_active_party_management(), "full roster reward opens production replacement UI")
+	party = world.get_node("PartyHost").get_child(0) as PartyManagement
+	var dismissed_id: StringName = world.get_durable_run_state().get("formation")[0]
+	party.request_replacement(0, dismissed_id, &"scout")
 	await process_frame
 	var replaced: Dictionary[StringName, int] = world.get_durable_run_state().call(
 		"get_character_hp_snapshot"
 	)
-	_expect(not replaced.has(dismissed.character_id), "replacement removes dismissed identity health")
+	_expect(not replaced.has(dismissed_id), "public replacement removes dismissed identity health")
 	_expect(
-		replaced.get(replacement.character_id, -1) == replacement.max_hp,
-		"replacement adds recruit at max HP"
+		replaced.get(recruit.character_id, -1) == recruit.max_hp,
+		"public replacement adds recruit at max HP"
 	)
 	world.free()
+
 
 func _create_legacy_state(plan: WorldPlan) -> RefCounted:
 	var formation: Array[StringName] = []

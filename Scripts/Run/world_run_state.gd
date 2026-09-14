@@ -18,6 +18,7 @@ var cache_move_progress: int = 0
 var cache_ready: bool = false
 var battle_preparation: RefCounted
 var _character_hp: Dictionary[StringName, int] = {}
+var _character_hp_present: bool = false
 
 
 static func create(
@@ -88,6 +89,7 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         return {"ok": false}
     var consumed_result := _decode_consumed(value.get("consumed_encounters"))
     var formation_result := _decode_formation(value.get("formation"))
+    var health_was_present: bool = value.has("character_hp")
     var health_result := _decode_character_hp(value.get("character_hp", {}))
     var preparation_result: Dictionary = PREPARATION_RECORD_SCRIPT.from_dictionary(
         value.get("battle_preparation", {"state": "none"})
@@ -115,6 +117,7 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         return {"ok": false}
     if not state.set_character_hp_snapshot(health_result["health"]):
         return {"ok": false}
+    state.set("_character_hp_present", health_was_present)
     return {"ok": true, "value": state}
 
 
@@ -130,6 +133,10 @@ func is_valid(plan: WorldPlan) -> bool:
     return true
 
 
+func has_character_hp_snapshot() -> bool:
+    return _character_hp_present
+
+
 func get_character_hp_snapshot() -> Dictionary[StringName, int]:
     var snapshot: Dictionary[StringName, int] = {}
     for character_id: StringName in _character_hp:
@@ -138,6 +145,7 @@ func get_character_hp_snapshot() -> Dictionary[StringName, int]:
 
 
 func set_character_hp_snapshot(candidate: Dictionary[StringName, int]) -> bool:
+    _character_hp_present = true
     var snapshot: Dictionary[StringName, int] = {}
     for character_id: StringName in candidate:
         var hp: int = candidate[character_id]

@@ -1,7 +1,7 @@
 class_name Ac3_5PostBattleRecoveryTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 18
+const EXPECTED_TEST_COUNT := 21
 const RUN_STATE_PATH := "res://Scripts/Run/world_run_state.gd"
 
 var _failures: Array[String] = []
@@ -25,11 +25,13 @@ func _run() -> void:
 	var state_script := load(RUN_STATE_PATH) as GDScript
 	var state := state_script.new() as WorldRunState
 	state.battle_preparation = BattlePreparationRecord.none()
+	_expect(not bool(state.call("has_character_hp_snapshot")), "unset health records missing-field provenance")
 	var health: Dictionary[StringName, int] = {
 		&"starter_vanguard": 17,
 		&"starter_mage": 9,
 	}
 	_expect(state.set_character_hp_snapshot(health), "valid typed health snapshot is accepted")
+	_expect(bool(state.call("has_character_hp_snapshot")), "health setter records present-field provenance")
 	health[&"starter_vanguard"] = 1
 	var first_snapshot: Dictionary[StringName, int] = state.get_character_hp_snapshot()
 	_expect(first_snapshot[&"starter_vanguard"] == 17, "setter defensively copies health")
@@ -61,6 +63,7 @@ func _run() -> void:
 	_expect(not state.set_character_hp_snapshot(invalid_empty), "empty stable ID is rejected")
 	var invalid_hp: Dictionary[StringName, int] = {&"starter_vanguard": 0}
 	_expect(not state.set_character_hp_snapshot(invalid_hp), "HP below one is rejected")
+	_expect(bool(state.call("has_character_hp_snapshot")), "rejected setter preserves present provenance")
 
 	if _assertions != EXPECTED_TEST_COUNT:
 		_failures.append("expected %d assertions, ran %d" % [EXPECTED_TEST_COUNT, _assertions])
