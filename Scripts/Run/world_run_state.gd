@@ -17,6 +17,8 @@ var formation: Array[StringName] = []
 var cache_move_progress: int = 0
 var cache_ready: bool = false
 var battle_preparation: RefCounted
+var _character_hp: Dictionary[StringName, int] = {}
+var _character_hp_present: bool = false
 
 
 static func create(
@@ -87,12 +89,15 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         return {"ok": false}
     var consumed_result := _decode_consumed(value.get("consumed_encounters"))
     var formation_result := _decode_formation(value.get("formation"))
+    var health_was_present: bool = value.has("character_hp")
+    var health_result := _decode_character_hp(value.get("character_hp", {}))
     var preparation_result: Dictionary = PREPARATION_RECORD_SCRIPT.from_dictionary(
         value.get("battle_preparation", {"state": "none"})
     )
     if (
         not consumed_result.get("ok", false)
         or not formation_result.get("ok", false)
+        or not health_result.get("ok", false)
         or not preparation_result.get("ok", false)
     ):
         return {"ok": false}
@@ -110,6 +115,9 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
     )
     if not is_instance_valid(state) or not state.is_valid(plan):
         return {"ok": false}
+    if not state.set_character_hp_snapshot(health_result["health"]):
+        return {"ok": false}
+    state.set("_character_hp_present", health_was_present)
     return {"ok": true, "value": state}
 
 
@@ -125,6 +133,29 @@ func is_valid(plan: WorldPlan) -> bool:
     return true
 
 
+func has_character_hp_snapshot() -> bool:
+    return _character_hp_present
+
+
+func get_character_hp_snapshot() -> Dictionary[StringName, int]:
+    var snapshot: Dictionary[StringName, int] = {}
+    for character_id: StringName in _character_hp:
+        snapshot[character_id] = _character_hp[character_id]
+    return snapshot
+
+
+func set_character_hp_snapshot(candidate: Dictionary[StringName, int]) -> bool:
+    _character_hp_present = true
+    var snapshot: Dictionary[StringName, int] = {}
+    for character_id: StringName in candidate:
+        var hp: int = candidate[character_id]
+        if character_id.is_empty() or hp < 1:
+            return false
+        snapshot[character_id] = hp
+    _character_hp = snapshot
+    return true
+
+
 func to_dictionary() -> Dictionary:
     var consumed: Array[Array] = []
     for coord: Vector2i in consumed_encounters:
@@ -132,6 +163,13 @@ func to_dictionary() -> Dictionary:
     var slot_ids: Array[String] = []
     for character_id: StringName in formation:
         slot_ids.append(String(character_id))
+    var health_ids: Array[String] = []
+    for character_id: StringName in _character_hp:
+        health_ids.append(String(character_id))
+    health_ids.sort()
+    var serialized_health: Dictionary = {}
+    for character_id: String in health_ids:
+        serialized_health[character_id] = _character_hp[StringName(character_id)]
     return {
         "player_coord": [player_coord.x, player_coord.y],
         "boss_coord": [boss_coord.x, boss_coord.y],
@@ -140,6 +178,7 @@ func to_dictionary() -> Dictionary:
         "boss_engaged": boss_engaged,
         "consumed_encounters": consumed,
         "formation": slot_ids,
+        "character_hp": serialized_health,
         "cache_move_progress": cache_move_progress,
         "cache_ready": cache_ready,
         "battle_preparation": battle_preparation.call("to_dictionary"),
@@ -168,6 +207,20 @@ static func _decode_consumed(value: Variant) -> Dictionary:
             return {"ok": false}
         coords.append(result["coord"])
     return {"ok": true, "coords": coords}
+
+
+static func _decode_character_hp(value: Variant) -> Dictionary:
+    if not value is Dictionary:
+        return {"ok": false}
+    var health: Dictionary[StringName, int] = {}
+    for character_id: Variant in value:
+        if not character_id is String or String(character_id).is_empty():
+            return {"ok": false}
+        var hp: Variant = value[character_id]
+        if (not hp is int and not hp is float) or float(hp) != floorf(float(hp)) or int(hp) < 1:
+            return {"ok": false}
+        health[StringName(character_id)] = int(hp)
+    return {"ok": true, "health": health}
 
 
 static func _decode_formation(value: Variant) -> Dictionary:

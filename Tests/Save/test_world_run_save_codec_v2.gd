@@ -50,6 +50,12 @@ func _run() -> void:
         formation
     )
     _expect(is_instance_valid(state), "valid durable run state is created")
+    var character_hp: Dictionary[StringName, int] = {
+        &"starter_vanguard": 18,
+        &"brakka_rustbanner": 11,
+        &"starter_mage": 7,
+    }
+    _expect(state.call("set_character_hp_snapshot", character_hp), "run health snapshot is accepted")
     var bytes: PackedByteArray = save_codec.encode(generated["plan"], "golden-alpha", state)
     _expect(
         bytes == save_codec.encode(generated["plan"], "golden-alpha", state),
@@ -75,6 +81,10 @@ func _run() -> void:
             "Brakka stable ID round trips in middle frontline"
         )
         _expect(
+            decoded_state.call("get_character_hp_snapshot") == character_hp,
+            "character health round trips through Save V2"
+        )
+        _expect(
             plan_codec.serialize(value.get("plan")) == plan_codec.serialize(generated["plan"]),
             "canonical plan bytes round trip"
         )
@@ -85,10 +95,35 @@ func _run() -> void:
     legacy_run_state.erase("cache_move_progress")
     legacy_run_state.erase("cache_ready")
     legacy_run_state.erase("battle_preparation")
-    _expect(
-        bool(save_codec.decode_any((JSON.stringify(legacy_v2) + "\n").to_utf8_buffer()).get("ok", false)),
-        "older Save V2 defaults Cache and preparation"
+    legacy_run_state.erase("character_hp")
+    var legacy_result: Dictionary = save_codec.decode_any(
+        (JSON.stringify(legacy_v2) + "\n").to_utf8_buffer()
     )
+    _expect(
+        bool(legacy_result.get("ok", false)),
+        "older Save V2 defaults Cache, preparation, and health"
+    )
+    if bool(legacy_result.get("ok", false)):
+        var legacy_value := legacy_result.get("value", {}) as Dictionary
+        var legacy_state := legacy_value.get("run_state") as RefCounted
+        _expect(
+            legacy_state.call("get_character_hp_snapshot").is_empty(),
+            "legacy Save V2 migrates absent health to an empty snapshot"
+        )
+    for malformed_health: Variant in [
+        [],
+        {"": 10},
+        {"starter_vanguard": "18"},
+        {"starter_vanguard": 10.5},
+        {"starter_vanguard": 0},
+    ]:
+        var invalid_health := root.duplicate(true)
+        invalid_health["world"]["run_state"]["character_hp"] = malformed_health
+        _expect_code(
+            save_codec.decode_any((JSON.stringify(invalid_health) + "\n").to_utf8_buffer()),
+            "SAVE_ENVELOPE_INVALID",
+            "malformed character health %s" % var_to_str(malformed_health)
+        )
     var invalid_progress := root.duplicate(true)
     invalid_progress["world"]["run_state"]["cache_move_progress"] = 4
     _expect_code(

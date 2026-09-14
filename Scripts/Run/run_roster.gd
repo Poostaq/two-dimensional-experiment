@@ -147,13 +147,27 @@ func get_characters() -> Array[RunCharacter]:
 	return characters
 
 
-func create_battle_units() -> Array[BattleUnitState]:
+func create_battle_units(
+	character_hp: Dictionary[StringName, int] = {}
+) -> Array[BattleUnitState]:
+	if not character_hp.is_empty():
+		if character_hp.size() != size():
+			return []
+		for character: RunCharacter in _slots:
+			if not is_instance_valid(character):
+				continue
+			if character.character_id.is_empty() or not character_hp.has(character.character_id):
+				return []
+			var current_hp: int = character_hp[character.character_id]
+			if current_hp < 1 or current_hp > character.max_hp:
+				return []
+
 	var units: Array[BattleUnitState] = []
 	for slot_index: int in MAX_ROSTER_SIZE:
-		var character := _slots[slot_index]
+		var character: RunCharacter = _slots[slot_index]
 		if not is_instance_valid(character):
 			continue
-		units.append(BattleUnitState.new(
+		var unit: BattleUnitState = BattleUnitState.new(
 			character.character_id,
 			character.display_name,
 			BattleUnitState.Side.PLAYER,
@@ -164,7 +178,10 @@ func create_battle_units() -> Array[BattleUnitState]:
 			character.power,
 			character.defense,
 			character.race_id
-		))
+		)
+		if not character_hp.is_empty():
+			unit.current_hp = character_hp[character.character_id]
+		units.append(unit)
 	return units
 
 

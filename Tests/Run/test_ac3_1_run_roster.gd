@@ -1,7 +1,7 @@
 class_name Ac3_1RunRosterTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 14
+const EXPECTED_TEST_COUNT := 16
 
 var _failures: Array[String] = []
 
@@ -20,6 +20,8 @@ func _initialize() -> void:
 	_test_invalid_rejection()
 	_test_roster_snapshot_is_defensive()
 	_test_battle_conversion_is_fresh()
+	_test_battle_conversion_uses_run_health()
+	_test_battle_conversion_rejects_invalid_health_maps()
 	_test_brakka_battle_conversion()
 	if _failures.is_empty():
 		print("AC3.1 run roster tests: PASS (%d/%d)" % [EXPECTED_TEST_COUNT, EXPECTED_TEST_COUNT])
@@ -141,6 +143,35 @@ func _test_battle_conversion_is_fresh() -> void:
 	_expect(second[0] != first[0], "later battle receives a fresh state object")
 	_expect(second[0].current_hp == second[0].max_hp, "battle HP does not leak")
 	_expect(second[0].get_skill_cooldown(&"test") == 0, "battle cooldown does not leak")
+
+
+func _test_battle_conversion_uses_run_health() -> void:
+	var roster := RunRoster.new()
+	var character_hp: Dictionary[StringName, int] = {
+		&"player_0": 1,
+		&"player_1": 7,
+		&"player_2": 12,
+	}
+	var units: Array[BattleUnitState] = roster.create_battle_units(character_hp)
+	_expect(units.size() == 3, "valid run health creates every occupied battle unit")
+	for unit: BattleUnitState in units:
+		_expect(unit.current_hp == character_hp[unit.unit_id], "battle conversion applies HP by character ID")
+
+
+func _test_battle_conversion_rejects_invalid_health_maps() -> void:
+	var roster := RunRoster.new()
+	var incomplete: Dictionary[StringName, int] = {&"player_0": 1, &"player_1": 2}
+	var unknown_extra: Dictionary[StringName, int] = {
+		&"player_0": 1, &"player_1": 2, &"player_2": 3, &"unknown": 1,
+	}
+	var empty_id: Dictionary[StringName, int] = {&"player_0": 1, &"player_1": 2, &"": 1}
+	var zero_hp: Dictionary[StringName, int] = {&"player_0": 0, &"player_1": 2, &"player_2": 3}
+	var excessive_hp: Dictionary[StringName, int] = {&"player_0": 999, &"player_1": 2, &"player_2": 3}
+	_expect(roster.create_battle_units(incomplete).is_empty(), "incomplete run health is rejected atomically")
+	_expect(roster.create_battle_units(unknown_extra).is_empty(), "unknown extra run health is rejected atomically")
+	_expect(roster.create_battle_units(empty_id).is_empty(), "empty-ID run health is rejected atomically")
+	_expect(roster.create_battle_units(zero_hp).is_empty(), "zero run health is rejected atomically")
+	_expect(roster.create_battle_units(excessive_hp).is_empty(), "run health above character maximum is rejected atomically")
 
 
 func _test_brakka_battle_conversion() -> void:
