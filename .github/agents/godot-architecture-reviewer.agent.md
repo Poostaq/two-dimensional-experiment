@@ -3,6 +3,7 @@ name: "Godot Architecture Reviewer"
 description: "Reviews Godot manager ownership, scene composition, Resources, signals, determinism, and architectural regressions."
 tools:
   - godot/*
+  - godotiq/*
   - read
   - search
 ---

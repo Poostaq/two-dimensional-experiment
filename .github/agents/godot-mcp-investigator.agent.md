@@ -5,6 +5,7 @@ tools:
   - edit
   - execute
   - godot/*
+  - godotiq/*
   - read
   - search
 ---

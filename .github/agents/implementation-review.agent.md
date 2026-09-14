@@ -3,6 +3,7 @@ name: "Implementation Review"
 description: "Reviews implemented work against design intent, architecture constraints, and verification evidence before it is accepted."
 tools:
   - godot/*
+  - godotiq/*
   - read
   - search
 ---

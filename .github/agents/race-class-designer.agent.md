@@ -2,6 +2,7 @@
 name: "Race and Class Designer"
 description: "Designs coherent fantasy races, class archetypes, role balance, progression hooks, and party identity before implementation."
 tools:
+  - edit
   - read
   - search
   - todo

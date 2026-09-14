@@ -3,6 +3,7 @@ name: "Design Document Review"
 description: "Reviews design documents for clarity, feasibility, traceability, and completeness before implementation begins."
 tools:
   - godot/*
+  - godotiq/*
   - read
   - search
 ---

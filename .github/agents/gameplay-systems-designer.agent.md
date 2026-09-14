@@ -3,6 +3,7 @@ name: "Gameplay Systems Designer"
 description: "Formalizes gameplay mechanics, formulas, dependencies, edge cases, feedback loops, and tuning ranges."
 tools:
   - godot/*
+  - godotiq/*
   - read
   - search
 ---

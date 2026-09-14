@@ -3,6 +3,7 @@ name: "Godot QA Playtester"
 description: "Executes Godot runtime, input, state, error, and targeted regression checks against measurable acceptance criteria."
 tools:
   - godot/*
+  - godotiq/*
   - read
   - search
 ---
