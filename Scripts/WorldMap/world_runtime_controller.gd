@@ -24,6 +24,9 @@ static var SAVE_COORDINATOR_SCRIPT: GDScript = load(
 )
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 static var CACHE_RULES_SCRIPT: GDScript = load("res://Scripts/Run/quartermaster_cache_rules.gd")
+static var RECOVERY_RULES_SCRIPT: GDScript = load(
+	"res://Scripts/Run/post_battle_recovery_rules.gd"
+)
 static var PREPARATION_RECORD_SCRIPT: GDScript = load(
 	"res://Scripts/Battle/battle_preparation_record.gd"
 )
@@ -48,6 +51,7 @@ var _pending_candidate_model: WorldRuntimeModel
 var _pending_move_result: WorldMoveResult
 var _autosave_overlay: WorldAutosaveFailureOverlay
 var _session_applied: bool = false
+var _active_battle_recovery_handled: bool = false
 
 @export var auto_initialize_runtime: bool = true
 
@@ -81,6 +85,8 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 	var plan := session.get("plan") as WorldPlan
 	var run_state := session.get("run_state") as RefCounted
 	if not _restore_roster(run_state):
+		return false
+	if not _initialize_or_validate_durable_health(run_state):
 		return false
 	if not configure_runtime(plan):
 		return false
@@ -364,6 +370,7 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	if has_active_battle():
 		return
 	_recruitment_state = RecruitmentState.IDLE
+	_active_battle_recovery_handled = false
 	if has_active_encounter():
 		_active_encounter.queue_free()
 		_active_encounter = null
@@ -371,7 +378,16 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	_active_battle = BATTLE_SCENE.instantiate() as BattleArena
 	get_node("BattleHost").add_child(_active_battle)
 	_active_battle.configure(coord, normalized_encounter)
-	_active_battle.configure_party_units(_roster.create_battle_units())
+	var durable_health: Dictionary[StringName, int] = {}
+	if is_instance_valid(_durable_run_state):
+		durable_health = _durable_run_state.call("get_character_hp_snapshot")
+	var battle_units: Array[BattleUnitState] = _roster.create_battle_units(durable_health)
+	if battle_units.size() != _roster.size():
+		_active_battle.queue_free()
+		_active_battle = null
+		_fail_integration()
+		return
+	_active_battle.configure_party_units(battle_units)
 	_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
 	_active_battle.exit_requested.connect(_on_battle_closed)
 	_active_battle.battle_completed.connect(_on_battle_completed)
@@ -513,8 +529,40 @@ func _restore_persisted_preparation() -> void:
 		_on_battle_requested(record.encounter_coord, record.encounter_type)
 
 
-func _on_battle_completed(_outcome: BattleOutcome.Type) -> void:
-	pass
+func _on_battle_completed(outcome: BattleOutcome.Type) -> void:
+	if (
+		outcome != BattleOutcome.Type.VICTORY
+		or _active_battle_recovery_handled
+		or not has_active_battle()
+	):
+		return
+	var recovered_health := _calculate_recovered_health(
+		_active_battle.get_terminal_player_health_snapshot()
+	)
+	if recovered_health.is_empty():
+		_fail_integration()
+		return
+	var candidate_state := _build_candidate_state(
+		_model, false, null, false, recovered_health
+	)
+	if not is_instance_valid(candidate_state):
+		_fail_integration()
+		return
+	_active_battle_recovery_handled = true
+	if not is_instance_valid(_save_coordinator):
+		_publish_current_state(candidate_state)
+		return
+	var saved: Dictionary = _save_coordinator.call(
+		"commit_candidate",
+		candidate_state,
+		Callable(self, "_publish_current_state"),
+		"battle_victory_recovery"
+	)
+	if bool(saved.get("ok", false)):
+		return
+	_model.set_surface_blocked(true)
+	_apply_snapshot(_model.get_snapshot())
+	autosave_failed.emit(saved.get("error") as RefCounted)
 
 
 func _on_reward_selected(option: BattleRewardOption) -> void:
@@ -737,7 +785,8 @@ func _build_candidate_state(
 	model: WorldRuntimeModel,
 	consume_current: bool,
 	roster: RunRoster = null,
-	accrue_cache: bool = false
+	accrue_cache: bool = false,
+	health_override: Dictionary[StringName, int] = {}
 ) -> RefCounted:
 	if not is_instance_valid(_durable_run_state) or not is_instance_valid(model):
 		return null
@@ -749,6 +798,16 @@ func _build_candidate_state(
 	data["boss_active"] = snapshot.sudden_death_active
 	data["boss_engaged"] = snapshot.boss_encounter_open
 	data["formation"] = _formation_ids(roster)
+	var source_roster: RunRoster = roster if is_instance_valid(roster) else _roster
+	var reconciled_health: Dictionary[StringName, int] = _reconcile_health_for_roster(
+		source_roster, health_override
+	)
+	if reconciled_health.is_empty():
+		return null
+	var serialized_health: Dictionary = {}
+	for character_id: StringName in reconciled_health:
+		serialized_health[String(character_id)] = reconciled_health[character_id]
+	data["character_hp"] = serialized_health
 	if accrue_cache:
 		var commander_id: StringName = (
 			CACHE_RULES_SCRIPT.BRAKKA_ID
@@ -771,6 +830,78 @@ func _build_candidate_state(
 		data["battle_preparation"] = PREPARATION_RECORD_SCRIPT.none().call("to_dictionary")
 	var decoded: Dictionary = RUN_STATE_SCRIPT.from_dictionary(data, _runtime_plan)
 	return decoded.get("value") as RefCounted if bool(decoded.get("ok", false)) else null
+
+
+func _initialize_or_validate_durable_health(run_state: RefCounted) -> bool:
+	var current: Dictionary[StringName, int] = run_state.call("get_character_hp_snapshot")
+	var expected_ids: Dictionary[StringName, RunCharacter] = {}
+	for character: RunCharacter in _roster.get_characters():
+		expected_ids[character.character_id] = character
+	if current.is_empty():
+		var initialized: Dictionary[StringName, int] = {}
+		for character_id: StringName in expected_ids:
+			initialized[character_id] = expected_ids[character_id].max_hp
+		return bool(run_state.call("set_character_hp_snapshot", initialized))
+	if current.size() != expected_ids.size():
+		return false
+	for character_id: StringName in current:
+		if not expected_ids.has(character_id):
+			return false
+		var hp: int = current[character_id]
+		if hp < 1 or hp > expected_ids[character_id].max_hp:
+			return false
+	return true
+
+
+func _reconcile_health_for_roster(
+	roster: RunRoster,
+	health_override: Dictionary[StringName, int] = {}
+) -> Dictionary[StringName, int]:
+	if not is_instance_valid(roster):
+		return {}
+	var existing: Dictionary[StringName, int] = health_override
+	if existing.is_empty() and is_instance_valid(_durable_run_state):
+		existing = _durable_run_state.call("get_character_hp_snapshot")
+	var result: Dictionary[StringName, int] = {}
+	for character: RunCharacter in roster.get_characters():
+		var hp: int = int(existing.get(character.character_id, character.max_hp))
+		if hp < 1 or hp > character.max_hp:
+			return {}
+		result[character.character_id] = hp
+	if not health_override.is_empty() and existing.size() != result.size():
+		return {}
+	return result
+
+
+func _calculate_recovered_health(
+	terminal_snapshot: Array[Dictionary]
+) -> Dictionary[StringName, int]:
+	if terminal_snapshot.size() != _roster.size():
+		return {}
+	var roster_by_id: Dictionary[StringName, RunCharacter] = {}
+	for character: RunCharacter in _roster.get_characters():
+		roster_by_id[character.character_id] = character
+	var recovered: Dictionary[StringName, int] = {}
+	for entry: Dictionary in terminal_snapshot:
+		var character_id: StringName = entry.get("character_id", &"") as StringName
+		if character_id.is_empty() or recovered.has(character_id) or not roster_by_id.has(character_id):
+			return {}
+		var character: RunCharacter = roster_by_id[character_id]
+		var final_hp_value: Variant = entry.get("final_hp")
+		var max_hp_value: Variant = entry.get("max_hp")
+		if (
+			not final_hp_value is int
+			or not max_hp_value is int
+			or int(max_hp_value) != character.max_hp
+		):
+			return {}
+		var next_hp: int = RECOVERY_RULES_SCRIPT.calculate_next_hp(
+			character_id, int(final_hp_value), int(max_hp_value)
+		)
+		if next_hp < 1:
+			return {}
+		recovered[character_id] = next_hp
+	return recovered if recovered.size() == roster_by_id.size() else {}
 
 
 func _formation_ids(roster: RunRoster = null) -> Array[String]:
