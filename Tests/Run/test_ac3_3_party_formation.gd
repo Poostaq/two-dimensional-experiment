@@ -1,7 +1,7 @@
 class_name Ac3_3PartyFormationTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 43
+const EXPECTED_TEST_COUNT := 45
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -69,6 +69,26 @@ func _run() -> void:
 		and replacement_unit.power == 7
 		and replacement_unit.defense == 2,
 		"battle conversion preserves Power and Defense"
+	)
+	var replacement_hp: Dictionary[StringName, int] = {
+		&"scout": 4,
+		&"player_1": 6,
+		&"player_2": 7,
+		&"fifth": 8,
+		&"replacement": 9,
+		&"sixth": 10,
+	}
+	var replacement_units: Array[BattleUnitState] = roster.create_battle_units(replacement_hp)
+	_expect(
+		_unit_at(replacement_units, 4).current_hp == 9,
+		"replacement battle HP is resolved by recruit identity"
+	)
+	var stale_replacement_hp: Dictionary[StringName, int] = replacement_hp.duplicate()
+	stale_replacement_hp.erase(&"replacement")
+	stale_replacement_hp[&"player_0"] = 9
+	_expect(
+		roster.create_battle_units(stale_replacement_hp).is_empty(),
+		"dismissed character health is rejected after replacement"
 	)
 
 	var replaced_snapshot := roster.get_slot_snapshot()
