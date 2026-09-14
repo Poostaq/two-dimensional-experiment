@@ -4,7 +4,7 @@ extends SceneTree
 const OUTCOME_PATH := "res://Scripts/Battle/battle_outcome.gd"
 const UNIT_PATH := "res://Scripts/Battle/battle_unit_state.gd"
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 12
+const EXPECTED_TEST_COUNT := 13
 const IN_PROGRESS := 0
 const VICTORY := 1
 const DEFEAT := 2
@@ -32,6 +32,7 @@ func _run() -> void:
 	await _test_result_presentation_is_binary()
 	await _test_terminal_player_health_snapshot_is_empty_before_completion()
 	await _test_terminal_player_health_snapshot_includes_all_configured_players()
+	await _test_terminal_player_health_snapshot_retains_removed_players()
 	await _test_terminal_player_health_snapshot_is_defensive_and_stable()
 	_report()
 	quit(1 if not _failures.is_empty() else 0)
@@ -193,9 +194,10 @@ func _test_reconfigure_resets_outcome() -> void:
 	var fresh_enemy := _unit(&"fresh_enemy", BattleUnitState.Side.ENEMY, 0, 8)
 	_configure(arena, [player, fresh_enemy])
 	_assert(
-		_get_outcome(arena) == IN_PROGRESS,
-		"reconfigure resets outcome",
-		"new battle must start IN_PROGRESS"
+		_get_outcome(arena) == IN_PROGRESS
+		and _get_health_snapshot(arena).is_empty(),
+		"reconfigure resets outcome and terminal snapshot",
+		"new battle must start IN_PROGRESS with no prior terminal health"
 	)
 	_free_arena(arena)
 
@@ -265,6 +267,31 @@ func _test_terminal_player_health_snapshot_includes_all_configured_players() -> 
 		],
 		"terminal player health includes all configured players",
 		"expected stable unit ids and final/max HP for players only, including defeated units"
+	)
+	_free_arena(arena)
+
+
+func _test_terminal_player_health_snapshot_retains_removed_players() -> void:
+	var arena := await _instantiate_arena()
+	var survivor := _unit(&"survivor", BattleUnitState.Side.PLAYER, 0, 9)
+	survivor.max_hp = 41
+	survivor.current_hp = 19
+	var removed := _unit(&"removed", BattleUnitState.Side.PLAYER, 1, 7)
+	removed.max_hp = 35
+	removed.current_hp = 11
+	var enemy := _unit(&"enemy", BattleUnitState.Side.ENEMY, 0, 8)
+	enemy.current_hp = 6
+	_configure(arena, [survivor, removed, enemy])
+	var removal_succeeded := bool(arena.call("remove_battle_unit", removed.unit_id))
+	_perform_damage(arena)
+	_assert(
+		removal_succeeded
+		and _get_health_snapshot(arena) == [
+			{"character_id": &"survivor", "final_hp": 19, "max_hp": 41},
+			{"character_id": &"removed", "final_hp": 11, "max_hp": 35},
+		],
+		"terminal player health retains removed configured players",
+		"removing a player from active battle lists must not erase recovery identity or HP"
 	)
 	_free_arena(arena)
 

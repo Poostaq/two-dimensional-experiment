@@ -96,6 +96,7 @@ var encounter_type: String = ""
 var round_number: int = 1
 
 var _units: Array[BattleUnitState] = []
+var _configured_player_units: Array[BattleUnitState] = []
 var _turn_queue: Array[BattleUnitState] = []
 var _current_turn_index: int = 0
 var _battle_log_entries: Array[BattleLogEntry] = []
@@ -206,7 +207,11 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 		_clear_all_damage_feedback()
 	_battle_outcome = BattleOutcome.Type.IN_PROGRESS
 	_terminal_player_health_snapshot.clear()
+	_configured_player_units.clear()
 	_units = units.duplicate()
+	for unit: BattleUnitState in _units:
+		if is_instance_valid(unit) and unit.side == BattleUnitState.Side.PLAYER:
+			_configured_player_units.append(unit)
 	_turn_queue = BattleTurnQueue.build(_units)
 	_current_turn_index = 0
 	round_number = 1
@@ -1718,8 +1723,8 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 		return
 	_battle_outcome = outcome
 	_terminal_player_health_snapshot.clear()
-	for unit: BattleUnitState in _units:
-		if is_instance_valid(unit) and unit.side == BattleUnitState.Side.PLAYER:
+	for unit: BattleUnitState in _configured_player_units:
+		if is_instance_valid(unit):
 			_terminal_player_health_snapshot.append({
 				"character_id": unit.unit_id,
 				"final_hp": unit.current_hp,
