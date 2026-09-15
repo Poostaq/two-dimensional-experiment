@@ -34,29 +34,29 @@ Slot presence and session validity are distinct:
 
 ## Signal and Transition Ordering
 
-Godot signal delivery is synchronous in this flow. Each public operation must establish its final launcher and world state before emitting an externally observable completion or failure signal. World creation is a private operation, not a side effect delegated to a `session_ready` listener.
+Godot signal delivery is synchronous in this flow. `session_ready` means that a validated session is available to launch; it does not mean the world scene has already opened. The launcher's internal `_on_session_ready` listener is intentionally the mechanism that creates and applies the world during the `emit()` call.
 
-- Continue success: validate and decode → instantiate the world → add it to `WorldHost` → apply the session → hide the launcher surface → emit `session_ready(session)` → return success. No screen change occurs; the Main screen remains the logical return target while hidden.
-- New-run success: generate and validate → encode → complete atomic replacement → instantiate/apply world → hide the launcher surface → emit `session_ready(session)` → return success. No success signal may precede the durable write or successful world application.
-- Continue failure: set `Screen.MAIN` and refresh Continue to disabled → emit `launch_failed(error)` → the connected handler presents the failure overlay → return failure.
-- Begin or Confirm failure: set `Screen.NEW_RUN` and clear any consumed pending confirmation → emit `launch_failed(error)` → present the failure overlay → return failure.
+- Continue success: validate and decode → emit `session_ready(session)` → `_on_session_ready` instantiates the world, adds it to `WorldHost`, applies the session, and hides the launcher surface → return session success. No screen change occurs; Main remains the logical return target while hidden.
+- New-run success: generate and validate → encode → complete atomic replacement → emit `session_ready(session)` → `_on_session_ready` instantiates/applies the world and hides the launcher surface → return session success. No `session_ready` may precede the durable write.
+- Continue load failure: emit `launch_failed(error)` so the synchronous listener presents the failure overlay → establish `Screen.MAIN` → return failure. No world is created and no write occurs.
+- Begin or Confirm generation/persistence failure: emit `launch_failed(error)` → establish `Screen.NEW_RUN` → return failure. Confirm has already consumed its pending input.
 - Cancel: clear pending confirmation → set `Screen.NEW_RUN` and emit its `screen_changed` notification synchronously → return without `session_ready` or `launch_failed`.
-- World instantiation or `apply_session()` failure: remove the unusable world, restore the launcher surface on the operation's logical screen, emit `launch_failed(error)`, and return failure. It must not emit `session_ready`.
+- World instantiation or `apply_session()` failure: `session_ready` has already fired because the session itself is valid. `_on_session_ready` removes the unusable world and synchronously emits `launch_failed(error)`. The launcher surface remains visible on the operation's logical screen. Observers receive exactly one `session_ready` followed by exactly one `launch_failed`. The public operation still reports session success because persistence or validation succeeded; `launch_failed` is the authoritative presentation-failure result.
 
 ## Operation Contracts
 
 ### Continue Run
 
 - Input: no arguments; current repository slot.
-- Success: follows the success ordering above, returns `{ok: true, value: session, error: null}`, emits `session_ready(session)` exactly once, and launches the decoded durable checkpoint. `session` contains `plan`, `resolved_seed`, and `run_state`.
-- Load failure: follows the failure ordering above, returns `{ok: false, value: null, error: typed_error}`, emits `launch_failed(typed_error)` exactly once, remains on the main screen with Continue disabled, emits no `session_ready`, and performs no write.
-- World-application failure: restores the visible Main surface, returns `{ok: false, value: null, error: typed_error}`, emits exactly one `launch_failed`, emits no `session_ready`, and performs no write.
+- Session success: follows the success ordering above, returns `{ok: true, value: session, error: null}` and emits `session_ready(session)` exactly once. `session` contains `plan`, `resolved_seed`, and `run_state`.
+- Load failure: follows the failure ordering above, returns `{ok: false, value: null, error: typed_error}`, emits `launch_failed(typed_error)` exactly once, ends on Main with Continue disabled, emits no `session_ready`, and performs no write.
+- World-application failure after session success: keeps the launcher visible, returns the session-success dictionary, emits one `session_ready` followed by exactly one `launch_failed`, and performs no write. Consumers use `launch_failed`, rather than the returned session result, to detect this presentation failure.
 
 ### Begin New Run
 
 - Input: seed text and a commander ID from `GoblinCommanderCatalog`; blank seed text is resolved to non-empty generated seed text.
 - Invalid commander: returns `{ok: false, confirmation_required: false, error: typed_error}`, generates nothing, writes nothing, and launches nothing.
-- No slot bytes: constructs and persists immediately. Success follows the new-run success ordering, returns `{ok: true, value: session, error: null}`, and emits `session_ready` once. Generation or persistence failure first establishes `NEW_RUN`, then returns `{ok: false, error: typed_error}`, emits `launch_failed` once, and emits no session.
+- No slot bytes: constructs and persists immediately. Success follows the new-run success ordering, returns `{ok: true, value: session, error: null}`, and emits `session_ready` once. Generation or persistence failure emits `launch_failed` once, establishes `NEW_RUN`, returns `{ok: false, error: typed_error}`, and emits no session.
 - Existing slot bytes, whether valid or corrupt: writes nothing, stores only the resolved seed and commander as pending launcher state, changes to `OVERWRITE_CONFIRM`, and returns `{ok: false, confirmation_required: true, error: null}`.
 
 ### Cancel Overwrite
@@ -69,7 +69,7 @@ Godot signal delivery is synchronous in this flow. Each public operation must es
 - Input: pending seed and commander established by Begin while on `OVERWRITE_CONFIRM`.
 - Invalid state or missing pending input: returns `{ok: false, confirmation_required: false, error: null}`, emits nothing, and writes nothing.
 - Success: consumes pending input once, builds a fresh session, atomically replaces the slot, returns `{ok: true, value: session, error: null}`, and emits `session_ready` exactly once.
-- Generation or replacement failure: consumes pending input, returns to `NEW_RUN`, then emits `launch_failed` once and returns `{ok: false, value: null, error: typed_error}`. It emits no session and preserves the prior durable bytes, so retry requires another Begin request and confirmation.
+- Generation or replacement failure: consumes pending input, emits `launch_failed` once, returns to `NEW_RUN`, and returns `{ok: false, value: null, error: typed_error}`. It emits no session and preserves the prior durable bytes, so retry requires another Begin request and confirmation.
 
 ## User Flow
 
@@ -116,7 +116,7 @@ Create `Tests/Run/test_ac5_1_independent_run_lifecycle.gd` as the focused accept
 - `test_failed_generation_preserves_previous_session`: typed generation error; old bytes still decode to the original canonical key; no session emitted.
 - `test_failed_atomic_replace_preserves_previous_session`: typed persistence error; old bytes still decode to the original canonical key; no session emitted.
 - `test_replacement_does_not_carry_run_state`: replacement has canonical starter formation and initial coordinates, move count, boss flags, encounters, HP provenance, cache, and preparation despite the old fixture containing non-default values and a recruited character.
-- `test_lifecycle_signal_ordering`: signal observers see the final `Screen` value; `session_ready` observers see replacement bytes committed, the applied world in `WorldHost`, and the launcher hidden; world-application failure restores the launcher, emits only `launch_failed`, and returns failure.
+- `test_lifecycle_signal_ordering`: `session_ready` observers see replacement bytes already committed; after synchronous signal delivery completes, the internal listener has applied the world and hidden the launcher. World-application failure keeps the launcher visible and records `session_ready` followed by `launch_failed`. Load, generation, and persistence failures record only `launch_failed` and end on their documented screen.
 
 Add `Tests/Fixtures/Run/AC5.1/progressed-session-v2.json` as a fixed valid Save V2 fixture containing a non-default seed, recruited character, rearranged formation, HP snapshot, consumed encounter, advanced movement/boss state, cache progress, and committed preparation. Add `Tests/Fixtures/Run/AC5.1/corrupt-session.json` as invalid JSON bytes. Fixture hashes are recorded with the evidence so accidental fixture drift fails review.
 
