@@ -1,6 +1,6 @@
 # AC5.1 Independent Run Lifecycle Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` and execute this plan inline in the active session, task-by-task, with review checkpoints. Do not use subagent-driven execution or delegate implementation tasks. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Certify and, only where evidence requires it, complete the existing single-slot lifecycle so Continue restores the last valid durable checkpoint and confirmed Start New Run atomically replaces it with an independent seeded run.
 
