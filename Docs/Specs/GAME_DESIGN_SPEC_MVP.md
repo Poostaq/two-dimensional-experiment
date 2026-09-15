@@ -9,7 +9,7 @@
 
 ## 1. GAME OVERVIEW
 
-**Fantasy Turn-Based Roguelike** — Player starts with 1 character and traverses a deterministic 25-hex map arranged as a 5x5 layout, recruiting up to 6 units to fight in turn-based combat with player-selected actions. The player starts in one corner hex, and the final boss objective is in the opposite corner. The player has at most 15 moves to engage the boss under normal conditions. If the boss is not engaged by then, Sudden Death begins: the boss becomes empowered and tracks the player, moving immediately after each player move until combat is forced. Win the final boss battle to complete the run. Lose when all units fall in combat (units revive between battles, encouraging risk/reward). Meta-progression unlocks new characters and items for future runs.
+**Fantasy Turn-Based Roguelike** — Player starts with 1 character and traverses a deterministic 25-hex map arranged as a 5x5 layout, recruiting up to 6 units to fight in turn-based combat with player-selected actions. The player starts in one corner hex, and the final boss objective is in the opposite corner. The player has at most 15 moves to engage the boss under normal conditions. If the boss is not engaged by then, Sudden Death begins: the boss becomes empowered and tracks the player, moving immediately after each player move until combat is forced. Win the final boss battle to complete the run. Lose when all units fall in combat (units revive between battles, encouraging risk/reward). Cross-run unlock design is a later consideration, not an MVP acceptance criterion.
 
 ---
 
@@ -20,7 +20,7 @@
 - **Unit Recruitment** — Acquire additional units from seeded encounters, rewards, or other run-based opportunities up to a roster cap of 6; if the roster is full, the player must dismiss one character before taking a new one
 - **Party Management** — Player can freely rearrange the active 6-character lineup before and after fights through a party-management UI for tactical preparation
 - **Equipment & Stat Management** — Characters have predetermined base stats; equipment can be freely removed and reassigned between eligible characters, and usually grants stat bonuses or mechanical changes while respecting item restrictions such as race
-- **Meta-Progression** — Winning runs unlock specific characters or items for future runs, while other characters or items can be unlocked by completing special events
+- **Meta-Progression** — Cross-run unlocks are deferred to a later consideration pass; the MVP currently focuses on run-local structure, deterministic progression, and combat loop behavior
 
 ---
 
@@ -199,12 +199,10 @@
 - [x] AC3.4 — Every character has a default attack and a default adjacent-swap action in addition to its character-specific skills
 - [x] AC3.5 — After battle victory, characters who passed out return for the next battle at 50% health, with lower recovery allowed on harder difficulties
 
-### Meta-Progression
-- [ ] AC4.1 — Winning the final battle unlocks specific characters or items for future runs
-- [ ] AC4.2 — Special events can unlock additional characters or items outside of run completion rewards
-- [ ] AC4.3 — Meta-progression unlocks persist across future runs
+### To Consider: Meta-Progression
+See [Docs/TO_CONSIDER.md](../TO_CONSIDER.md) for the deferred unlock questions that were previously grouped as AC4.
 
-### Roguelike Structure
+### Next Implementation: Roguelike Structure
 - [ ] AC5.1 — Each run is seeded and independent; prior run roster does not carry over
 - [ ] AC5.2 — Unlocked characters, items, and event-driven progression persist across runs
 - [ ] AC5.3 — Run ID uniquely identifies a playable sequence; same ID = reproducible battles
@@ -241,9 +239,6 @@
 | `AC3.3` | Automated and manual runtime check | Run `Tests/Run/test_ac3_3_party_formation.gd`, `Tests/UI/test_ac3_3_party_management.gd`, and `Tests/Map/test_ac3_3_party_management_integration.gd` to verify fixed six-slot formation storage, exact battle slot conversion, immediate drag-to-swap and drag-to-empty movement, defensive rejection, map-button gating, click inspection, selection cleanup, and cancellable chosen-slot recruitment. Then use the persistent Manage Party button before and after fights, inspect a character, rearrange occupied and empty slots with real pointer input, reopen with no selection, and confirm the next battle uses the exact formation. Finally cancel one recruitment placement without mutation, place the recruit into a chosen empty slot, and confirm the following battle uses that slot. |
 | `AC3.4` | Automated and manual runtime check | Run `Tests/Battle/test_ac3_4_default_actions.gd` to verify separate default-action controls alongside four character-specific skills, attack preview/confirmation, adjacent allied swap, invalid-target atomicity, and turn-change cleanup. Retain `Tests/Battle/test_ac6_1_combat_foundation.gd` for domain transaction coverage and `Tests/Battle/test_active_turn_skill_lock.gd` for active-turn ownership. Then enter battle at 1152×648 and confirm Attack and Swap remain readable, use battlefield-slot targeting, advance exactly once on confirmation, and are unavailable outside an active player turn. Evidence: `Docs/Specs/AC3/Evidence/AC3.4/2026-09-05/`. |
 | `AC3.5` | Automated integration and runtime smoke check | Run `Tests/Run/test_ac3_5_post_battle_recovery.gd` and `Tests/WorldMap/test_ac3_5_recovery_integration.gd` to verify victory-only recovery, rounded-up half health for passed-out characters, full health for survivors, identity-preserving next-battle setup, save/reload durability, idempotence, and failure atomicity. Retain the focused AC2.4, AC2.5, AC3.1, AC3.3, AC6.7, world-battle-entry, and Save V2 regression runners, then launch the production main scene and confirm a clean debug console. Evidence: `Docs/Specs/AC3/Evidence/AC3.5/2026-09-14/`. Harder-difficulty reduction remains deferred because difficulty modes are not implemented. |
-| `AC4.1` | Manual persistence check | Complete a full run, then start a new run and verify the specific character or item unlocked by the victory is now available in future-run content pools. |
-| `AC4.2` | Manual persistence check | Complete a special event with an unlock condition, then start a new run and verify the corresponding unlocked character or item is available. |
-| `AC4.3` | Persistence check | Unlock a character or item, save or exit the game, reload, and verify the unlock remains available across sessions and future runs. |
 | `AC5.1` | Manual runtime check | Finish or abandon one run, start a new run, and verify the prior run's roster does not carry over into the new run. |
 | `AC5.2` | Persistence check | Unlock content through victory or special events, start a new run, and verify the unlocked characters, items, and event-driven progression remain available. |
 | `AC5.3` | Determinism check | Replay the same Run ID using the same choices and verify the same encounter sequence, battle setup, and outcomes occur within the documented deterministic systems. |
@@ -260,10 +255,13 @@
 | **Phase 1: Core Loop** | 25-hex map traversal, seeded encounters, movement rules, and encounter overlay flow | 2–3 weeks |
 | **Phase 2: Combat** | Turn-based combat engine, 6v6 slot arena, turn order, player actions, power scaling, cooldowns, combos, default actions, positional logic | 4–6 weeks |
 | **Phase 3: Progression** | Character progression models, equipment system, stat scaling, battle recovery rules, reward integration | 2–4 weeks |
-| **Phase 4: Meta-Loop** | Run completion unlocks, special event unlocks, persistence, save/load, unlock tracking | 2–3 weeks |
-| **Phase 5: Polish & QA** | Party-management UI, combat UX, balancing, bug fixing, determinism validation, content tuning | 2–4 weeks |
+| **Phase 4: Roguelike Structure** | Run independence, seeded run identity, persistent unlock state, save/load, unlock tracking | 2–3 weeks |
+| **Phase 5: Meta-Progression (To Consider)** | Run completion unlocks, special event unlocks, future cross-run reward tuning | TBD |
+| **Phase 6: Polish & QA** | Party-management UI, combat UX, balancing, bug fixing, determinism validation, content tuning | 2–4 weeks |
 
 Recruitment flow and roster management are not part of Phase 1 completion criteria and remain deferred to later phases.
+
+Meta-progression is intentionally deferred to the consideration register until the unlocked-content model is explicitly chosen.
 
 **Total Estimate:** 12–20 weeks solo development
 
@@ -273,7 +271,7 @@ Recruitment flow and roster management are not part of Phase 1 completion criter
 
 1. ✅ **Spec Validation** — Review this spec for completeness, consistency, and traceability
 2. **Godot Setup** — Initialize project structure (managers, scenes, Resources)
-3. **Phase 1 Implementation** — Map + movement + basic recruitment
+3. **Phase 4 Implementation** — Roguelike structure, seeded run identity, and run-local persistence
 4. **Playtesting** — Manual QA after each phase; validate acceptance criteria
 
 ---

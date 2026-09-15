@@ -47,6 +47,18 @@ This is the living register for deliberately deferred product decisions. A quest
   - Can equipment be unequipped and reassigned freely, or are there timing, location, cost, or binding restrictions?
   - What happens to equipped items when a character is dismissed, defeated, transformed, or otherwise leaves the roster?
 
+### TC-006 — How should cross-run unlocks and meta-progression work?
+
+- **Raised from:** Former AC4.1–AC4.3.
+- **Current rule:** Cross-run unlock design is not part of the next implementation target and remains deferred until the unlock model is explicitly chosen.
+- **Decision needed by:** Any implementation of victory unlocks, special-event unlocks, or cross-run unlock persistence.
+- **Questions to resolve:**
+  - What content can unlock across runs: characters, items, events, modes, or other rewards?
+  - Are unlocks granted only by final victory, by special events, or by both?
+  - Do unlocks persist in save data, profile data, or a separate meta-progression store?
+  - Can unlocks be revoked, reset, or migrated when the content model changes?
+  - What presentation surface communicates unlocked content to the player between runs?
+
 ## Resolved questions
 
 Move an entry here when the project lead makes a durable decision. Record the decision date, affected acceptance criteria, and the specification or implementation link that made it authoritative.
