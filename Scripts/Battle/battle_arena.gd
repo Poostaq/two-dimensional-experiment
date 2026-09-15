@@ -2058,9 +2058,9 @@ func _render_units() -> void:
 		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
 		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
 		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
-		name_label.text = "Unoccupied"
-		speed_label.text = "Speed —"
-		health_label.text = "HP —"
+		name_label.text = ""
+		speed_label.text = ""
+		health_label.text = ""
 		slot.set_meta("unit_id", &"")
 	for unit: BattleUnitState in _units:
 		if not is_instance_valid(unit):
