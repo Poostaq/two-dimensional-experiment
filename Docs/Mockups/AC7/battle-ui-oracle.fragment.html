@@ -1,0 +1,181 @@
+<div id="living-lanes-v3" aria-label="Living Lanes battle UI comparison">
+  <nav class="ll-tabs" aria-label="Action bar mockup variant">
+    <button type="button" class="ll-tab is-active" data-variant="skills">A · Character skills</button>
+    <button type="button" class="ll-tab" data-variant="unified">B · Skills + default actions</button>
+  </nav>
+
+  <header class="ll-header"><span>ROUND III</span><strong>LIVING LANES</strong><span>ASHEN HOLLOW</span></header>
+
+  <div class="ll-turns" aria-label="Turn order">
+    <span class="ll-turn-label">TURN ORDER</span>
+    <button type="button" class="ll-turn current" data-unit="mira" aria-label="Mira is acting now"><span class="ll-face ally">M</span><span><b>NOW</b>Mira</span></button>
+    <span class="ll-arrow">›</span>
+    <button type="button" class="ll-turn" data-unit="hound"><span class="ll-face enemy">A</span><span><b>2</b>Ash Hound</span></button>
+    <span class="ll-arrow">›</span>
+    <button type="button" class="ll-turn" data-unit="torren"><span class="ll-face ally">T</span><span><b>3</b>Torren</span></button>
+    <span class="ll-arrow">›</span>
+    <button type="button" class="ll-turn" data-unit="hexer"><span class="ll-face enemy">H</span><span><b>4</b>Hexer</span></button>
+    <span class="ll-arrow">›</span>
+    <button type="button" class="ll-turn" data-unit="ilyra"><span class="ll-face ally">I</span><span><b>5</b>Ilyra</span></button>
+  </div>
+
+  <main class="ll-stage">
+    <section class="ll-lane allied-back" aria-label="Allied backline">
+      <span class="ll-lane-title">ALLIED BACKLINE</span>
+      <button type="button" class="ll-unit active-unit" data-actor="mira"><span class="ll-status"><i data-lucide="droplets" aria-hidden="true"></i><i data-lucide="feather" aria-hidden="true"></i></span><span class="ll-figure archer"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Mira</b><small>Archer</small></span><span class="ll-hp"><i style="width:90%"></i></span><span class="ll-hp-text">18 / 20</span></button>
+      <button type="button" class="ll-unit" data-actor="ilyra"><span class="ll-status"><i data-lucide="sparkles" aria-hidden="true"></i><i data-lucide="chevrons-up" aria-hidden="true"></i></span><span class="ll-figure mystic"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Ilyra</b><small>Mystic</small></span><span class="ll-hp"><i style="width:94%"></i></span><span class="ll-hp-text">15 / 16</span></button>
+    </section>
+    <section class="ll-lane allied-front" aria-label="Allied frontline">
+      <span class="ll-lane-title">ALLIED FRONTLINE</span>
+      <button type="button" class="ll-unit" data-actor="torren"><span class="ll-status"><i data-lucide="shield" aria-hidden="true"></i></span><span class="ll-figure guard"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Torren</b><small>Guard</small></span><span class="ll-hp"><i style="width:87%"></i></span><span class="ll-hp-text">27 / 31</span></button>
+      <button type="button" class="ll-unit" data-actor="bran"><span class="ll-status"><i data-lucide="flame" aria-hidden="true"></i><em>2</em></span><span class="ll-figure striker"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Bran</b><small>Striker</small></span><span class="ll-hp"><i style="width:88%"></i></span><span class="ll-hp-text">21 / 24</span></button>
+    </section>
+    <section class="ll-intent" aria-label="Selected action preview"><span>QUICK STRIKE</span><strong>→</strong><b>6–8</b><small>92% HIT</small></section>
+    <section class="ll-lane enemy-front" aria-label="Enemy frontline">
+      <span class="ll-lane-title">ENEMY FRONTLINE</span>
+      <button type="button" class="ll-unit target-unit" data-actor="hound"><span class="ll-status hostile"><i data-lucide="crosshair" aria-hidden="true"></i></span><span class="ll-figure hound"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Ash Hound</b><small>Skirmisher</small></span><span class="ll-hp hostile-hp"><i style="width:61%"></i></span><span class="ll-hp-text">11 / 18</span></button>
+      <button type="button" class="ll-unit" data-actor="cinder"><span class="ll-status hostile"><i data-lucide="flame" aria-hidden="true"></i></span><span class="ll-figure cinder"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Cinderling</b><small>Support</small></span><span class="ll-hp hostile-hp"><i style="width:67%"></i></span><span class="ll-hp-text">8 / 12</span></button>
+    </section>
+    <section class="ll-lane enemy-back" aria-label="Enemy backline">
+      <span class="ll-lane-title">ENEMY BACKLINE</span>
+      <button type="button" class="ll-unit" data-actor="hexer"><span class="ll-status hostile"><i data-lucide="orbit" aria-hidden="true"></i><em>3</em></span><span class="ll-figure hexer"><i class="head"></i><i class="body"></i><i class="weapon"></i></span><span class="ll-name"><b>Hexer</b><small>Controller</small></span><span class="ll-hp hostile-hp"><i style="width:100%"></i></span><span class="ll-hp-text">14 / 14</span></button>
+    </section>
+  </main>
+
+  <div class="ll-readout" aria-live="polite"><b>Mira Ashbow</b><span>Backline archer · active turn</span><span>Bleed 2 · Evasion 12</span></div>
+
+  <div class="ll-bars">
+    <section class="ll-actionbar skills-only is-active" data-bar="skills" aria-label="Character skills action bar">
+      <span class="bar-label">MIRA’S SKILLS</span>
+      <button type="button" class="ll-action selected" data-name="Quick Strike" data-preview="92% hit · 6–8 damage · recovery 3"><kbd>1</kbd><i data-lucide="swords" aria-hidden="true"></i><span><b>Quick Strike</b><small>Fast attack</small></span></button>
+      <button type="button" class="ll-action" data-name="Rally" data-preview="All allies gain +2 Speed for 2 rounds"><kbd>2</kbd><i data-lucide="flag" aria-hidden="true"></i><span><b>Rally</b><small>Party boon</small></span></button>
+      <button type="button" class="ll-action" data-name="Pinning Shot" data-preview="78% hit · delays target by 2 turns"><kbd>3</kbd><i data-lucide="crosshair" aria-hidden="true"></i><span><b>Pinning Shot</b><small>Delay target</small></span></button>
+      <button type="button" class="ll-action" data-name="Evasion" data-preview="Passive · +12 dodge while in backline"><kbd>4</kbd><i data-lucide="wind" aria-hidden="true"></i><span><b>Evasion</b><small>Passive</small></span></button>
+      <div class="ll-detail"><span>QUICK STRIKE → ASH HOUND</span><strong>6–8</strong><small>92% hit · recovery 3</small></div>
+      <button type="button" class="ll-commit">COMMIT</button>
+    </section>
+
+    <section class="ll-actionbar unified" data-bar="unified" aria-label="Unified skills and default actions bar" hidden>
+      <span class="bar-label">AVAILABLE ACTIONS</span>
+      <button type="button" class="ll-action skill-action selected" data-name="Quick Strike" data-preview="92% hit · 6–8 damage · recovery 3"><kbd>1</kbd><i data-lucide="swords" aria-hidden="true"></i><span><b>Quick Strike</b><small>Class skill</small></span></button>
+      <button type="button" class="ll-action skill-action" data-name="Rally" data-preview="All allies gain +2 Speed for 2 rounds"><kbd>2</kbd><i data-lucide="flag" aria-hidden="true"></i><span><b>Rally</b><small>Class skill</small></span></button>
+      <button type="button" class="ll-action skill-action" data-name="Pinning Shot" data-preview="78% hit · delays target by 2 turns"><kbd>3</kbd><i data-lucide="crosshair" aria-hidden="true"></i><span><b>Pinning Shot</b><small>Class skill</small></span></button>
+      <button type="button" class="ll-action skill-action" data-name="Evasion" data-preview="Passive · +12 dodge while in backline"><kbd>4</kbd><i data-lucide="wind" aria-hidden="true"></i><span><b>Evasion</b><small>Passive</small></span></button>
+      <span class="action-divider" aria-hidden="true"><i></i><em>DEFAULT</em><i></i></span>
+      <button type="button" class="ll-action default-action icon-action" aria-label="Default Attack" data-tooltip="Attack — basic weapon attack, 5–7 damage, no cooldown" data-name="Attack" data-preview="Basic weapon attack · no cooldown · 5–7 damage"><i data-lucide="sword" aria-hidden="true"></i></button>
+      <button type="button" class="ll-action default-action icon-action" aria-label="Default Move" data-tooltip="Move — relocate to an open formation slot; ends turn" data-name="Move" data-preview="Move to an open formation slot · ends turn"><i data-lucide="move" aria-hidden="true"></i></button>
+      <div class="ll-detail"><span>QUICK STRIKE → ASH HOUND</span><strong>6–8</strong><small>92% hit · recovery 3</small></div>
+      <button type="button" class="ll-commit">COMMIT</button>
+    </section>
+  </div>
+
+  <button type="button" class="debug-handle" aria-expanded="false" aria-controls="battle-debug-drawer" aria-label="Open battle debug panel"><i data-lucide="chevron-left" aria-hidden="true"></i><span>DEBUG</span></button>
+  <aside id="battle-debug-drawer" class="debug-drawer" aria-label="Battle debug panel" aria-hidden="true">
+    <header class="debug-head"><span><i data-lucide="bug" aria-hidden="true"></i><b>BATTLE DEBUG</b></span><button type="button" class="debug-close" aria-label="Close battle debug panel"><i data-lucide="x" aria-hidden="true"></i></button></header>
+    <section class="debug-state" aria-label="Current battle state">
+      <span class="debug-section-title">LIVE STATE</span>
+      <dl><div><dt>Phase</dt><dd>PlayerAction</dd></div><div><dt>Round</dt><dd>3</dd></div><div><dt>Active actor</dt><dd>Mira</dd></div><div><dt>Actor ID</dt><dd>player_back_2</dd></div><div><dt>Selected action</dt><dd class="debug-action-value">Quick Strike</dd></div><div><dt>Target</dt><dd>Ash Hound</dd></div><div><dt>Seed</dt><dd>0x7A31C9</dd></div><div><dt>Pending events</dt><dd>0</dd></div></dl>
+    </section>
+    <section class="debug-queue" aria-label="Initiative queue">
+      <span class="debug-section-title">INITIATIVE QUEUE</span>
+      <ol><li><b>0</b><span>Mira</span><em>9 SPD</em></li><li><b>1</b><span>Ash Hound</span><em>8 SPD</em></li><li><b>2</b><span>Torren</span><em>7 SPD</em></li><li><b>3</b><span>Hexer</span><em>6 SPD</em></li></ol>
+    </section>
+    <section class="debug-log" aria-label="Battle log">
+      <span class="debug-section-title">BATTLE LOG</span>
+      <div class="debug-log-entries" aria-live="polite"><p><time>R3 · 00</time><span>Mira’s turn started.</span></p><p><time>R2 · 06</time><span>Ash Hound used Pounce on Torren for 4.</span></p><p><time>R2 · 05</time><span>Ilyra applied Rally to 4 allies.</span></p><p><time>R2 · 04</time><span>Hexer began channeling Ashen Hex.</span></p></div>
+    </section>
+    <section class="debug-actions" aria-label="Debug commands">
+      <span class="debug-section-title">COMMANDS</span>
+      <div><button type="button" data-debug-command="damage"><i data-lucide="heart-crack" aria-hidden="true"></i>Damage closest enemy</button><button type="button" data-debug-command="advance"><i data-lucide="skip-forward" aria-hidden="true"></i>Advance turn</button><button type="button" class="danger-command" data-debug-command="exit"><i data-lucide="door-open" aria-hidden="true"></i>Exit battle</button></div>
+    </section>
+  </aside>
+</div>
+
+<style>
+#living-lanes-v3{--ink:#e8dfca;--muted:#9f967f;--void:#0d1014;--surface:#15191e;--raised:#1d2226;--line:#48493e;--gold:#d5ad57;--gold-dark:#725727;--ally:#79a8b7;--ally-deep:#2c424a;--enemy:#bc6a57;--enemy-deep:#492c29;--green:#789a65;color:var(--ink);font-family:Georgia,"Times New Roman",serif;background:var(--void);border:1px solid var(--line);box-shadow:0 18px 45px rgba(0,0,0,.4);overflow:hidden}
+#living-lanes-v3 *{box-sizing:border-box}#living-lanes-v3 button{font:inherit;color:inherit}.ll-tabs{display:flex;background:#090b0e;border-bottom:1px solid var(--line)}.ll-tab{flex:1;min-height:44px;border:0;background:#12161a;color:var(--muted);cursor:pointer;letter-spacing:.06em}.ll-tab:hover,.ll-tab:focus,.ll-tab.is-active{background:#29261d;color:var(--gold)}.ll-header{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;border-bottom:1px solid var(--line);color:var(--muted);font-size:11px;letter-spacing:.12em}.ll-header strong{color:var(--ink);font-weight:500;font-size:13px}.ll-turns{min-height:78px;display:flex;align-items:center;justify-content:center;gap:8px;padding:9px 12px;background:linear-gradient(180deg,#171b20,#101317);border-bottom:1px solid var(--line)}.ll-turn-label{margin-right:5px;color:var(--muted);font-size:10px;letter-spacing:.11em}.ll-arrow{color:var(--gold-dark);font-size:22px}.ll-turn{position:relative;display:flex;align-items:center;gap:7px;min-height:50px;padding:5px 9px;border:1px solid transparent;background:transparent;color:var(--muted);cursor:pointer}.ll-turn>span:last-child{display:flex;flex-direction:column;text-align:left;font-size:12px}.ll-turn b{font-size:9px;color:var(--gold);font-weight:500}.ll-turn:hover,.ll-turn:focus{border-color:var(--gold-dark);background:#24251f;color:var(--ink)}.ll-turn.current{border:2px solid var(--gold);background:#2c271b;color:var(--ink);box-shadow:0 0 0 2px #0d1014,0 0 20px rgba(213,173,87,.27)}.ll-turn.current:after{content:"";position:absolute;left:50%;bottom:-11px;transform:translateX(-50%);border:5px solid transparent;border-top-color:var(--gold)}.ll-face{width:35px;height:35px;display:grid;place-items:center;border-radius:50%;font-weight:500}.ll-face.ally{background:var(--ally-deep);color:#c4e7ee}.ll-face.enemy{background:var(--enemy-deep);color:#f2b8aa}.ll-stage{min-height:400px;display:grid;grid-template-columns:1fr 1fr 84px 1fr 1fr;gap:7px;padding:14px;background:radial-gradient(circle at 50% 50%,#322d22,#11151a 56%)}.ll-lane{display:flex;flex-direction:column;justify-content:center;gap:8px;padding:6px;border-inline:1px solid rgba(255,255,255,.07)}.ll-lane-title{text-align:center;color:var(--muted);font-size:9px;letter-spacing:.1em}.ll-unit{position:relative;min-height:155px;display:grid;grid-template-rows:1fr auto auto auto;justify-items:center;align-items:end;padding:5px;border:1px solid transparent;background:transparent;cursor:pointer}.ll-unit:hover,.ll-unit:focus,.ll-unit.queue-hover{border-color:var(--gold);background:rgba(213,173,87,.08);box-shadow:0 0 15px rgba(213,173,87,.18);z-index:2}.ll-unit.queue-hover{animation:lane-pulse .8s ease-in-out infinite alternate}.ll-unit.active-unit{border-color:var(--ally);box-shadow:inset 0 0 0 2px var(--ally-deep)}.ll-unit.active-unit:before{content:"ACTING";position:absolute;top:4px;left:5px;color:#c4e7ee;font-size:8px;letter-spacing:.1em}.ll-unit.target-unit{border-color:var(--enemy);box-shadow:inset 0 0 0 2px var(--enemy-deep)}.ll-figure{position:relative;width:54px;height:78px;display:block;filter:drop-shadow(0 9px 6px rgba(0,0,0,.58));transform-origin:bottom}.ll-unit:hover .ll-figure,.ll-unit.queue-hover .ll-figure{transform:translateY(-5px) scale(1.05)}.ll-figure i{position:absolute;display:block}.ll-figure .head{width:21px;height:23px;border-radius:50% 45%;left:17px;top:2px;background:#ad7b5d;border:2px solid #291e19}.ll-figure .body{width:36px;height:57px;left:9px;top:20px;background:var(--ally-deep);clip-path:polygon(24% 0,76% 0,100% 100%,0 100%)}.ll-figure .weapon{width:5px;height:62px;right:0;top:9px;background:#8e7443;transform:rotate(12deg)}.guard .body{background:#4b5966}.guard .weapon{width:27px;height:41px;right:-5px;top:30px;border-radius:50% 50% 35% 35%;background:#6d6249}.mystic .body{background:#51425c}.striker .body{background:#6b443c}.striker .weapon{width:28px;height:6px;right:-9px;top:40px;transform:none}.hound .head{width:32px;height:20px;left:11px;top:23px;border-radius:60% 25%;background:#773f34}.hound .body{width:50px;height:30px;left:2px;top:40px;background:#562f2a;clip-path:polygon(10% 0,90% 0,100% 70%,75% 100%,15% 80%,0 45%)}.hound .weapon{width:20px;height:14px;right:0;top:20px;background:#773f34;clip-path:polygon(0 100%,50% 0,100% 100%)}.cinder .body{background:#7e4025;clip-path:polygon(50% 0,100% 40%,75% 100%,25% 100%,0 40%)}.cinder .head{background:#ad5b31}.hexer .body{background:#5e3234}.hexer .head{background:#765047}.ll-name{display:flex;flex-direction:column;text-align:center;font-size:12px}.ll-name small{color:var(--muted);font:10px Arial,sans-serif}.ll-hp{width:72%;height:5px;background:#2a2b28;margin-top:3px}.ll-hp i{display:block;height:100%;background:var(--green)}.ll-hp.hostile-hp i{background:var(--enemy)}.ll-hp-text{font:10px Arial,sans-serif;color:var(--muted)}.ll-status{position:absolute;right:4px;top:4px;display:flex;gap:3px;z-index:2}.ll-status svg{width:16px;height:16px;padding:2px;background:#252b2e;border:1px solid #67747a;border-radius:50%;color:#c4e7ee}.ll-status.hostile svg{border-color:#7b4b43;color:#f2b8aa}.ll-status em{font:10px Arial,sans-serif;color:var(--gold)}.ll-intent{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:var(--muted)}.ll-intent span{color:var(--gold);font-size:10px;letter-spacing:.08em}.ll-intent strong{color:var(--gold);font-size:27px;font-weight:400}.ll-intent b{font-size:25px;font-weight:400}.ll-intent small{font:10px Arial,sans-serif}.ll-readout{min-height:36px;display:flex;align-items:center;gap:14px;padding:7px 14px;border-block:1px solid var(--line);background:#121519;color:var(--muted);font:12px Arial,sans-serif}.ll-readout b{color:var(--ink)}.ll-bars{background:#0e1114}.ll-actionbar{display:grid;grid-template-columns:92px repeat(4,minmax(100px,1fr)) minmax(170px,1.25fr) 88px;gap:6px;padding:9px}.bar-label{align-self:center;color:var(--muted);font-size:9px;letter-spacing:.1em;text-align:center}.ll-action{display:grid;grid-template-columns:auto auto 1fr;gap:7px;align-items:center;min-height:58px;padding:7px;border:1px solid var(--line);background:#191d21;text-align:left;cursor:pointer}.ll-action:hover,.ll-action:focus,.ll-action.selected{border-color:var(--gold);background:#2a261c}.ll-action kbd{color:var(--gold)}.ll-action svg{width:18px}.ll-action span{display:flex;flex-direction:column}.ll-action b{font-size:11px;font-weight:500}.ll-action small{font:10px Arial,sans-serif;color:var(--muted)}.ll-detail{display:grid;grid-template-columns:1fr auto;gap:2px 8px;align-content:center;padding:0 7px;border-left:1px solid var(--line)}.ll-detail span{grid-column:1/3;color:var(--gold);font-size:10px}.ll-detail strong{font-size:25px;font-weight:400}.ll-detail small{color:var(--muted);font:10px Arial,sans-serif}.ll-commit{border:1px solid var(--gold);background:#6d5325;color:#fff4d0;letter-spacing:.07em;cursor:pointer}.ll-commit:hover,.ll-commit:focus{background:#8b6b31}.ll-actionbar.unified{grid-template-columns:86px repeat(3,minmax(92px,1fr)) 42px repeat(2,minmax(92px,1fr)) minmax(145px,1.15fr) 80px}.action-divider{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--muted);font-size:8px;letter-spacing:.08em}.action-divider i{height:15px;border-left:1px solid var(--gold-dark)}.default-action{background:#161b1a;border-color:#3f5449}.default-action kbd{color:#9bc4a9}.default-action:hover,.default-action:focus,.default-action.selected{border-color:#81aa91;background:#1e2b25}.unified[data-default-position="leading"] .skill-action{order:3}.unified[data-default-position="leading"] .default-action{order:1}.unified[data-default-position="leading"] .action-divider{order:2}.unified[data-default-position="leading"] .bar-label{order:0}.unified[data-default-position="leading"] .ll-detail{order:4}.unified[data-default-position="leading"] .ll-commit{order:5}.unified[data-separator="gap"] .action-divider{visibility:hidden}.unified[data-separator="label"] .action-divider i{display:none}@keyframes lane-pulse{from{outline:1px solid var(--gold-dark);outline-offset:0}to{outline:2px solid var(--gold);outline-offset:4px}}@media(prefers-reduced-motion:reduce){.ll-unit.queue-hover{animation:none}}@media(max-width:820px){.ll-turn-label,.ll-arrow{display:none}.ll-turns{justify-content:flex-start;gap:2px}.ll-turn{padding:4px}.ll-turn>span:last-child{display:none}.ll-stage{grid-template-columns:1fr 1fr 56px 1fr 1fr}.ll-actionbar,.ll-actionbar.unified{grid-template-columns:repeat(3,1fr)}.bar-label{grid-column:1/4}.ll-detail{grid-column:1/3}.ll-commit{min-height:44px}.action-divider{display:none}}@media(max-width:540px){.ll-header span{display:none}.ll-stage{grid-template-columns:1fr}.ll-intent{min-height:65px}.ll-actionbar,.ll-actionbar.unified{grid-template-columns:1fr}.bar-label,.ll-detail{grid-column:1}.ll-readout{align-items:flex-start;flex-direction:column;gap:2px}.ll-commit{min-height:44px}}
+#living-lanes-v3 [hidden]{display:none!important}
+#living-lanes-v3 .ll-actionbar.unified{grid-template-columns:76px repeat(4,minmax(88px,1fr)) 38px repeat(2,44px) minmax(140px,1.1fr) 78px}
+#living-lanes-v3 .icon-action{display:grid;place-items:center;align-self:center;width:44px;height:44px;min-height:44px;padding:0}
+#living-lanes-v3 .icon-action svg{width:19px;height:19px}
+#living-lanes-v3{position:relative}
+#living-lanes-v3 .debug-handle{position:absolute;right:0;top:214px;z-index:12;width:30px;min-height:96px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;border:1px solid var(--gold-dark);border-right:0;background:#211d15;color:var(--gold);cursor:pointer;transition:right .2s ease}
+#living-lanes-v3 .debug-handle span{font:9px Arial,sans-serif;letter-spacing:.1em;writing-mode:vertical-rl}
+#living-lanes-v3 .debug-handle svg{width:16px;height:16px}
+#living-lanes-v3.debug-open .debug-handle{right:354px}
+#living-lanes-v3.debug-open .debug-handle svg{transform:rotate(180deg)}
+#living-lanes-v3 .debug-drawer{position:absolute;z-index:11;top:44px;right:0;bottom:0;width:354px;display:flex;flex-direction:column;background:#101419;border-left:1px solid var(--gold-dark);box-shadow:-16px 0 30px rgba(0,0,0,.42);transform:translateX(100%);visibility:hidden;transition:transform .2s ease,visibility 0s linear .2s;font:11px Arial,sans-serif;color:#c9c2b2}
+#living-lanes-v3.debug-open .debug-drawer{transform:translateX(0);visibility:visible;transition:transform .2s ease}
+#living-lanes-v3 .debug-head{min-height:46px;display:flex;align-items:center;justify-content:space-between;padding:8px 11px;border-bottom:1px solid #3a3d39;background:#171c21}
+#living-lanes-v3 .debug-head span{display:flex;align-items:center;gap:7px;color:var(--gold);letter-spacing:.08em}
+#living-lanes-v3 .debug-head b{font-weight:500}.debug-head svg{width:16px;height:16px}
+#living-lanes-v3 .debug-close{width:32px;height:32px;display:grid;place-items:center;border:0;background:transparent;color:#9f967f;cursor:pointer}
+#living-lanes-v3 .debug-state,#living-lanes-v3 .debug-queue,#living-lanes-v3 .debug-log,#living-lanes-v3 .debug-actions{padding:10px 12px;border-bottom:1px solid #303431}
+#living-lanes-v3 .debug-section-title{display:block;margin-bottom:7px;color:#827d70;font-size:9px;letter-spacing:.12em}
+#living-lanes-v3 .debug-state dl{display:grid;grid-template-columns:1fr 1fr;gap:1px;margin:0;background:#2c302d}
+#living-lanes-v3 .debug-state dl div{min-width:0;padding:6px 7px;background:#151a1e}
+#living-lanes-v3 .debug-state dt{color:#827d70;font-size:9px}
+#living-lanes-v3 .debug-state dd{margin:3px 0 0;color:#e8dfca;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#living-lanes-v3 .debug-queue ol{list-style:none;margin:0;padding:0}
+#living-lanes-v3 .debug-queue li{display:grid;grid-template-columns:24px 1fr auto;align-items:center;gap:7px;padding:4px 2px;border-bottom:1px solid #262a28}
+#living-lanes-v3 .debug-queue li b{color:var(--gold);font-weight:400}.debug-queue li em{color:#827d70;font-style:normal}
+#living-lanes-v3 .debug-log{min-height:0;flex:1;display:flex;flex-direction:column}
+#living-lanes-v3 .debug-log-entries{min-height:120px;max-height:184px;overflow:auto;background:#0b0e11;border:1px solid #2a2e2d;padding:4px 7px}
+#living-lanes-v3 .debug-log-entries p{display:grid;grid-template-columns:53px 1fr;gap:7px;margin:0;padding:5px 0;border-bottom:1px solid #222625}
+#living-lanes-v3 .debug-log-entries time{color:#81795f}.debug-log-entries span{color:#bcb6a8}
+#living-lanes-v3 .debug-actions{border-bottom:0}
+#living-lanes-v3 .debug-actions>div{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+#living-lanes-v3 .debug-actions button{min-height:38px;display:flex;align-items:center;justify-content:center;gap:5px;border:1px solid #434843;background:#1a1f22;color:#c9c2b2;cursor:pointer;font-size:10px}
+#living-lanes-v3 .debug-actions button:hover,#living-lanes-v3 .debug-actions button:focus{border-color:var(--gold);color:#f0e7d1}
+#living-lanes-v3 .debug-actions button svg{width:14px}.debug-actions .danger-command{grid-column:1/3;border-color:#70423b;color:#d49a8d}
+@media(max-width:820px){#living-lanes-v3 .ll-actionbar.unified{grid-template-columns:repeat(3,1fr)}#living-lanes-v3 .icon-action{width:44px;justify-self:center}}
+@media(max-width:540px){#living-lanes-v3 .ll-actionbar.unified{grid-template-columns:1fr}#living-lanes-v3 .icon-action{justify-self:start}#living-lanes-v3 .debug-drawer{width:calc(100% - 30px)}#living-lanes-v3.debug-open .debug-handle{right:calc(100% - 30px)}}
+</style>
+
+<script>
+(() => {
+  const root = document.getElementById('living-lanes-v3');
+  const tabs = [...root.querySelectorAll('.ll-tab')];
+  const bars = [...root.querySelectorAll('.ll-actionbar')];
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    tabs.forEach(peer => peer.classList.toggle('is-active', peer === tab));
+    bars.forEach(bar => {
+      const active = bar.dataset.bar === tab.dataset.variant;
+      bar.hidden = !active;
+      bar.classList.toggle('is-active', active);
+    });
+  }));
+  const copy = {
+    mira:['Mira Ashbow','Backline archer · active turn','Bleed 2 · Evasion 12'],
+    hound:['Ash Hound','Frontline skirmisher · acts next','Pounce prepared · HP 11/18'],
+    torren:['Torren Stoneward','Frontline guard · third turn','Guarding Mira · HP 27/31'],
+    hexer:['Ashen Hexer','Backline controller · fourth turn','Channeling Hex · resolves in 3'],
+    ilyra:['Ilyra','Backline mystic · fifth turn','Rally active · HP 15/16']
+  };
+  function highlight(id,on){root.querySelectorAll(`[data-actor="${id}"]`).forEach(unit=>unit.classList.toggle('queue-hover',on));if(on&&copy[id]){const parts=root.querySelectorAll('.ll-readout>*');parts[0].textContent=copy[id][0];parts[1].textContent=copy[id][1];parts[2].textContent=copy[id][2];}}
+  root.querySelectorAll('.ll-turn[data-unit]').forEach(token=>{
+    ['mouseenter','focus'].forEach(event=>token.addEventListener(event,()=>highlight(token.dataset.unit,true)));
+    ['mouseleave','blur'].forEach(event=>token.addEventListener(event,()=>highlight(token.dataset.unit,false)));
+  });
+  root.querySelectorAll('.ll-action').forEach(action=>action.addEventListener('click',()=>{
+    const bar=action.closest('.ll-actionbar');bar.querySelectorAll('.ll-action').forEach(peer=>peer.classList.toggle('selected',peer===action));const detail=bar.querySelector('.ll-detail');detail.querySelector('span').textContent=action.dataset.name.toUpperCase();detail.querySelector('small').textContent=action.dataset.preview;
+    root.querySelector('.debug-action-value').textContent=action.dataset.name;
+  }));
+  const debugHandle=root.querySelector('.debug-handle');
+  const debugDrawer=root.querySelector('.debug-drawer');
+  const debugClose=root.querySelector('.debug-close');
+  function setDebugOpen(open){root.classList.toggle('debug-open',open);debugHandle.setAttribute('aria-expanded',String(open));debugHandle.setAttribute('aria-label',open?'Close battle debug panel':'Open battle debug panel');debugDrawer.setAttribute('aria-hidden',String(!open));}
+  debugHandle.addEventListener('click',()=>setDebugOpen(!root.classList.contains('debug-open')));
+  debugClose.addEventListener('click',()=>setDebugOpen(false));
+  root.querySelectorAll('[data-debug-command]').forEach(command=>command.addEventListener('click',()=>{
+    const entries=root.querySelector('.debug-log-entries');
+    const messages={damage:'Debug: Ash Hound took 5 direct damage.',advance:'Debug: advanced to Ash Hound turn.',exit:'Debug: exit battle requested.'};
+    const row=document.createElement('p');row.innerHTML=`<time>R3 · DBG</time><span>${messages[command.dataset.debugCommand]}</span>`;entries.prepend(row);
+  }));
+  const unified=root.querySelector('.ll-actionbar.unified');
+  const tweakState={defaultPosition:'trailing',separator:'full'};
+  function renderTweak(){unified.dataset.defaultPosition=tweakState.defaultPosition;unified.dataset.separator=tweakState.separator;}
+  renderTweak();
+  if(globalThis.Tweak){const tweak=new Tweak({container:unified,onChange:renderTweak});tweak.addSelect(tweakState,'defaultPosition',{label:'Default action position',options:[{label:'After skills',value:'trailing'},{label:'Before skills',value:'leading'}],reference:'actions.default_position'});tweak.addSelect(tweakState,'separator',{label:'Action group separator',options:[{label:'Lines + label',value:'full'},{label:'Label only',value:'label'},{label:'Spacing only',value:'gap'}],reference:'actions.separator'});}
+})();
+</script>
