@@ -217,7 +217,7 @@ See [Docs/TO_CONSIDER.md](../TO_CONSIDER.md) for the deferred unlock questions t
 - [x] AC6.7 — Full production Goblin integration, reward, save/reload, and next-battle gate
 
 ### Battle UI Presentation
-- [ ] AC7.1 — Battles present both six-slot formations as readable backline/frontline character lanes with character identity, HP, role, and active status iconography visible without opening a separate screen
+- [x] AC7.1 — Battles present both six-slot formations as readable backline/frontline character lanes with character identity, HP, role, and active status iconography visible without opening a separate screen ([verification](AC7/Evidence/AC7.1/verification.md))
 - [ ] AC7.2 — The turn-order ribbon gives the current actor a persistent framed `NOW` treatment and highlights the corresponding battlefield character while its turn-order entry is hovered or keyboard-focused
 - [ ] AC7.3 — The active player character's full skill controls share one action bar with compact, accessible Default Attack and Default Swap icon actions, while preserving the existing preview, target, confirm, cancel, and turn-lock behavior
 - [ ] AC7.4 — A collapsed edge handle opens an overlay debug drawer containing the battle log, live battle state, initiative queue, and existing debug commands without shifting or resizing the player-facing battle layout

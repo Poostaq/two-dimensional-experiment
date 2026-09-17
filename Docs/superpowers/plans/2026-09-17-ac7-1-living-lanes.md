@@ -1,5 +1,7 @@
 # AC7.1 Living Lanes Implementation Plan
 
+**Execution status:** Completed inline on `feature/ac7-1-living-lanes`, implementation commit `671612c`. All five task groups are complete. See [verification and documented plan adjustments](../../Specs/AC7/Evidence/AC7.1/verification.md) for test results, screenshots, and the correction to the original slot-array ordering assumption below. The task checklists remain as the original execution instructions.
+
 > **For agentic workers:** Use `superpowers:executing-plans` to implement this plan task by task, with `superpowers:test-driven-development` for behavior changes. Steps use checkboxes for tracking. Follow repository AGENTS.md; use the primary workspace and a dedicated branch, never a worktree.
 
 **Goal:** Show both six-slot battle formations as four readable character lanes with identity, role, HP, and current status iconography visible in the battle screen.
