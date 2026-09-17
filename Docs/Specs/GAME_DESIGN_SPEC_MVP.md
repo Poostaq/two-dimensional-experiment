@@ -216,6 +216,13 @@ See [Docs/TO_CONSIDER.md](../TO_CONSIDER.md) for the deferred unlock questions t
 - [x] AC6.6 — Scrapline Quartermaster Cache state and pre-battle preparation choice
 - [x] AC6.7 — Full production Goblin integration, reward, save/reload, and next-battle gate
 
+### Battle UI Presentation
+- [ ] AC7.1 — Battles present both six-slot formations as readable backline/frontline character lanes with character identity, HP, role, and active status iconography visible without opening a separate screen
+- [ ] AC7.2 — The turn-order ribbon gives the current actor a persistent framed `NOW` treatment and highlights the corresponding battlefield character while its turn-order entry is hovered or keyboard-focused
+- [ ] AC7.3 — The active player character's full skill controls share one action bar with compact, accessible Default Attack and Default Swap icon actions, while preserving the existing preview, target, confirm, cancel, and turn-lock behavior
+- [ ] AC7.4 — A collapsed edge handle opens an overlay debug drawer containing the battle log, live battle state, initiative queue, and existing debug commands without shifting or resizing the player-facing battle layout
+- [ ] AC7.5 — Battles use one deterministic, accessible visual-state language for the current actor, turn-order preview, hovered-skill target preview, selected-action valid targets, selected targets, Default Attack targets, Default Swap targets, invalid or unavailable units, and actions with no legal targets; transient highlights clear correctly when hover, focus, selection, turn, phase, or battle state changes
+
 ### Verification Paths
 
 | AC ID | Verification Type | Verification Path |
@@ -243,6 +250,11 @@ See [Docs/TO_CONSIDER.md](../TO_CONSIDER.md) for the deferred unlock questions t
 | `AC5.2` | Persistence check | Unlock content through victory or special events, start a new run, and verify the unlocked characters, items, and event-driven progression remain available. |
 | `AC5.3` | Determinism check | Replay the same Run ID using the same choices and verify the same encounter sequence, battle setup, and outcomes occur within the documented deterministic systems. |
 | `AC6.5` | Automated and runtime check | Run `Tests/Battle/test_ac6_5_brakka.gd`, `Tests/Run/test_world_run_start_service.gd`, `Tests/Run/test_world_production_launcher.gd`, `Tests/UI/test_world_run_start_scene.gd`, Save V2, roster, formation, and cutover runners. Then open Start New Run at 1152x648 and verify the portrait-adjacent disabled arrows, Brakka details, four focusable tooltip skill squares, seed below the columns, and Begin at the bottom. Confirm Brakka persists at formation slot 1 and Banner Holder applies Advantage once per round to the deterministic closest active enemy without consuming the action or redirecting stale targets. |
+| `AC7.1` | Automated scene/UI contract and visual runtime check | Run `Tests/Battle/test_ac7_1_living_lanes.gd` to verify two lanes per side, six stable slot identities, character presentation, HP/status refresh, empty and defeated states, and unchanged slot ordering. At 1152×648, confirm all combatants and the action bar remain readable without clipping. |
+| `AC7.2` | Automated interaction and manual pointer/keyboard check | Run `Tests/Battle/test_ac7_2_turn_order_ribbon.gd` to verify current-turn framing, `NOW` labeling, queue refresh, hover/focus-to-character linkage, cleanup, and defeated-unit exclusion. Then exercise pointer hover and keyboard focus across player and enemy entries and confirm exactly one battlefield character is emphasized. |
+| `AC7.3` | Automated regression and accessibility runtime check | Run `Tests/Battle/test_ac7_3_unified_action_bar.gd`, `Tests/Battle/test_ac3_4_default_actions.gd`, `Tests/Battle/test_ac2_6_character_skills.gd`, and `Tests/Battle/test_active_turn_skill_lock.gd`. Confirm full character-skill buttons coexist with compact Attack and Swap icons, accessible names/tooltips, one shared selection state, and unchanged preview/confirm/cancel mechanics. |
+| `AC7.4` | Automated drawer-state and runtime integration check | Run `Tests/Battle/test_ac7_4_debug_drawer.gd` and `Tests/Battle/test_ac2_3_damage_defeat_log.gd` to verify collapsed-by-default state, edge-handle toggle, overlay geometry, live state/queue/log refresh, existing debug-command routing, focus return, battle-reset cleanup, and absence from production input flow when closed. |
+| `AC7.5` | Automated state-resolution, interaction, accessibility, and visual runtime check | Run `Tests/Battle/test_ac7_5_battle_visual_states.gd` to verify the visual-state matrix, layered-state precedence, hovered-skill previews, committed selection stability, Attack/Swap differentiation, no-legal-target reasons, pointer/keyboard parity, and cleanup after hover exit, focus loss, cancel, confirmation, turn change, defeat, phase transition, and battle reset. At 1152×648, exercise self-, ally-, enemy-, multi-, and no-valid-target actions and confirm every state is recognizable by shape/icon/text as well as color, no stale highlight remains, and selected/current/valid states stay distinguishable when they overlap. |
 
 ---
 
