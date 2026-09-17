@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AC7 Battle UI Visual Oracle</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #efe4c8;
+      --muted: #a99d88;
+      --panel: #171817;
+      --panel-2: #21201d;
+      --line: #5b5140;
+      --gold: #e6b95c;
+      --gold-soft: #80662e;
+      --enemy: #a34d49;
+      --ally: #518d7e;
+      --preview: #d7e3da;
+      --valid: #73c9b3;
+      --selected: #f0d16f;
+      --swap: #78aee8;
+      --danger: #d4665e;
+      --dead: #514c47;
+      --shadow: rgba(0, 0, 0, .62);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      background: #0c0d0c;
+      color: var(--ink);
+      font-family: Georgia, "Times New Roman", serif;
+    }
+    button { font: inherit; color: inherit; }
+    button:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+    .oracle-shell {
+      width: min(1440px, 100%);
+      margin: 0 auto;
+      min-height: 900px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 35%, rgba(102, 85, 48, .18), transparent 36%),
+        linear-gradient(rgba(12, 14, 13, .73), rgba(12, 14, 13, .9)),
+        repeating-linear-gradient(90deg, #161815 0 2px, #10110f 2px 7px);
+      border: 1px solid #39362f;
+      box-shadow: 0 18px 70px #000;
+    }
+
+    .battle-header {
+      min-height: 124px;
+      padding: 18px 72px 14px;
+      background: linear-gradient(#24231f, #141512);
+      border-bottom: 1px solid var(--line);
+      box-shadow: 0 8px 24px var(--shadow);
+      position: relative;
+      z-index: 5;
+    }
+    .battle-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .battle-title strong { font-size: 17px; font-weight: 500; }
+    .battle-title span { color: var(--muted); font-size: 12px; }
+
+    .turn-ribbon {
+      display: flex;
+      gap: 9px;
+      justify-content: center;
+      align-items: center;
+    }
+    .turn-entry {
+      width: 116px;
+      height: 60px;
+      border: 1px solid #5f5748;
+      border-radius: 3px;
+      background: #24231f;
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      align-items: center;
+      padding: 6px;
+      cursor: pointer;
+      position: relative;
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .turn-entry:hover, .turn-entry:focus-visible { transform: translateY(-3px); background: #302d27; }
+    .turn-entry.now {
+      border: 2px solid var(--gold);
+      box-shadow: 0 0 0 2px #3d321b, 0 0 18px rgba(230, 185, 92, .28);
+    }
+    .turn-entry.now::before {
+      content: "NOW";
+      position: absolute;
+      top: -10px;
+      right: 5px;
+      padding: 1px 5px;
+      background: var(--gold);
+      color: #19140c;
+      font: 700 9px Arial, sans-serif;
+      letter-spacing: .12em;
+    }
+    .turn-portrait {
+      width: 36px;
+      height: 44px;
+      display: grid;
+      place-items: center;
+      background: #111;
+      border: 1px solid #696052;
+      font: 500 18px Arial, sans-serif;
+    }
+    .turn-entry[data-side="ally"] .turn-portrait { color: #93cabb; }
+    .turn-entry[data-side="enemy"] .turn-portrait { color: #db8982; }
+    .turn-name { font-size: 12px; line-height: 1.1; }
+    .turn-speed { margin-top: 4px; color: var(--muted); font: 10px Arial, sans-serif; }
+
+    .battlefield {
+      min-height: 558px;
+      padding: 52px 86px 34px;
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) 108px minmax(360px, 1fr);
+      gap: 24px;
+      align-items: center;
+      position: relative;
+    }
+    .battlefield::after {
+      content: "";
+      position: absolute;
+      inset: 54px 50% 45px auto;
+      width: 1px;
+      background: linear-gradient(transparent, #70644d, transparent);
+      opacity: .5;
+    }
+    .side-title {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .16em;
+      font: 10px Arial, sans-serif;
+      margin-bottom: 12px;
+    }
+    .formation { display: grid; gap: 18px; }
+    .lane {
+      min-height: 190px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      align-items: end;
+      padding: 20px 14px 10px;
+      position: relative;
+      border-bottom: 1px solid #524a3c;
+      background: linear-gradient(180deg, transparent, rgba(59, 51, 37, .18));
+    }
+    .lane::before {
+      content: attr(data-lane);
+      position: absolute;
+      top: 2px;
+      left: 10px;
+      color: #8b816f;
+      font: 9px Arial, sans-serif;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+    }
+    .versus {
+      align-self: center;
+      text-align: center;
+      color: #8a7651;
+      font-size: 26px;
+      letter-spacing: .18em;
+      text-shadow: 0 2px 8px #000;
+    }
+
+    .unit {
+      min-width: 0;
+      height: 150px;
+      border: 1px solid #5a554c;
+      border-radius: 50% 50% 4px 4px / 18% 18% 4px 4px;
+      background: linear-gradient(165deg, #292a26, #151615 68%);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 60px 8px 8px;
+      box-shadow: 0 12px 22px rgba(0, 0, 0, .5);
+      transition: transform .12s ease, filter .12s ease, box-shadow .12s ease;
+    }
+    .unit::before {
+      content: attr(data-glyph);
+      position: absolute;
+      top: 13px;
+      left: 50%;
+      transform: translateX(-50%);
+      font: 500 43px Arial, sans-serif;
+      color: #c9bea5;
+      text-shadow: 0 4px 0 #0c0d0c;
+    }
+    .unit.enemy::before { color: #c58b82; }
+    .unit .unit-name { text-align: center; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .unit .unit-role { color: var(--muted); text-align: center; font: 9px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+    .hp-track { height: 7px; margin-top: 7px; background: #090a09; border: 1px solid #4d493f; }
+    .hp-fill { display: block; height: 100%; background: #8b3734; }
+    .hp-text { text-align: center; margin-top: 3px; color: #d6cdbb; font: 9px Arial, sans-serif; }
+    .statuses { position: absolute; top: 56px; right: 5px; display: flex; gap: 3px; }
+    .status { width: 18px; height: 18px; display: grid; place-items: center; background: #171816; border: 1px solid #736950; font: 10px Arial, sans-serif; }
+
+    .unit.actor {
+      box-shadow: 0 0 0 3px #2a2112, 0 0 0 5px var(--gold), 0 12px 22px #000, 0 0 26px rgba(230,185,92,.25);
+    }
+    .unit.actor::after {
+      content: "ACTIVE";
+      position: absolute;
+      top: -14px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 2px 7px;
+      background: var(--gold);
+      color: #1a140a;
+      font: 700 9px Arial, sans-serif;
+      letter-spacing: .1em;
+    }
+    .unit.preview { transform: translateY(-7px); filter: brightness(1.2); box-shadow: 0 0 0 3px var(--preview), 0 0 22px rgba(215,227,218,.38); }
+    .unit.valid { box-shadow: inset 0 0 0 4px var(--valid), 0 0 22px rgba(115,201,179,.25); cursor: crosshair; }
+    .unit.valid::marker { content: none; }
+    .unit.valid .state-glyph::before { content: "◇ VALID"; color: var(--valid); }
+    .unit.attack-valid { box-shadow: inset 0 0 0 4px var(--danger), 0 0 22px rgba(212,102,94,.25); }
+    .unit.attack-valid .state-glyph::before { content: "⌖ ATTACK"; color: #ee8b82; }
+    .unit.swap-valid { box-shadow: inset 0 0 0 4px var(--swap), 0 0 22px rgba(120,174,232,.25); }
+    .unit.swap-valid .state-glyph::before { content: "⇄ SWAP"; color: #9bc8f5; }
+    .unit.target-selected { box-shadow: inset 0 0 0 4px var(--selected), 0 0 0 3px #201a0e, 0 0 24px rgba(240,209,111,.5); }
+    .unit.target-selected .state-glyph::before { content: "◎ SELECTED"; color: var(--selected); }
+    .unit.unavailable { filter: grayscale(1) brightness(.52); border-style: dashed; }
+    .unit.unavailable .state-glyph::before { content: "⊘ UNAVAILABLE"; color: #b0a79a; }
+    .state-glyph {
+      position: absolute;
+      top: -5px;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      white-space: nowrap;
+      font: 700 9px Arial, sans-serif;
+      letter-spacing: .08em;
+      text-shadow: 0 1px 3px #000;
+    }
+
+    .action-dock {
+      min-height: 218px;
+      padding: 16px 74px 22px;
+      background: linear-gradient(#171815, #0f100e);
+      border-top: 1px solid var(--line);
+      box-shadow: 0 -8px 26px var(--shadow);
+      position: relative;
+      z-index: 6;
+    }
+    .actor-summary { display: flex; justify-content: space-between; margin-bottom: 10px; color: var(--muted); font: 11px Arial, sans-serif; }
+    .actor-summary strong { color: var(--ink); font-weight: 500; }
+    .actions { display: flex; gap: 16px; align-items: stretch; }
+    .skills { display: grid; grid-template-columns: repeat(4, minmax(116px, 1fr)); gap: 10px; flex: 1; }
+    .skill, .utility-action {
+      border: 1px solid #665d4d;
+      background: linear-gradient(#2b2924, #1a1a17);
+      cursor: pointer;
+      position: relative;
+    }
+    .skill { min-height: 105px; padding: 12px 10px 9px; text-align: left; }
+    .skill:hover, .skill:focus-visible, .skill.selected { border-color: var(--gold); background: linear-gradient(#383328, #211f1a); }
+    .skill.selected { box-shadow: inset 0 -4px var(--gold); }
+    .skill strong { display: block; margin-bottom: 7px; font-size: 14px; font-weight: 500; }
+    .skill small { color: var(--muted); font: 10px Arial, sans-serif; line-height: 1.35; }
+    .skill .cost { position: absolute; top: 8px; right: 8px; color: var(--gold); font: 10px Arial, sans-serif; }
+    .skill.no-target { opacity: .54; cursor: not-allowed; border-style: dashed; }
+    .skill.no-target::after { content: "⊘ NO TARGET"; position: absolute; right: 8px; bottom: 7px; color: #e28c84; font: 700 9px Arial, sans-serif; }
+    .utilities { width: 150px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .utility-action { min-height: 74px; display: grid; place-items: center; align-content: center; gap: 4px; }
+    .utility-action:hover, .utility-action:focus-visible, .utility-action.selected { border-color: var(--gold); }
+    .utility-action .icon { font: 24px Arial, sans-serif; }
+    .utility-action span:last-child { font: 10px Arial, sans-serif; text-transform: uppercase; letter-spacing: .08em; }
+    .hint-line { min-height: 24px; margin-top: 10px; color: #c7bda8; font: 11px Arial, sans-serif; }
+
+    .debug-toggle {
+      position: absolute;
+      top: 360px;
+      right: 0;
+      width: 31px;
+      height: 80px;
+      border: 1px solid #675d4c;
+      border-right: 0;
+      background: #28251f;
+      cursor: pointer;
+      z-index: 20;
+    }
+    .debug-drawer {
+      position: absolute;
+      z-index: 19;
+      top: 124px;
+      right: 0;
+      width: min(430px, calc(100% - 40px));
+      height: 558px;
+      transform: translateX(100%);
+      transition: transform .18s ease;
+      background: rgba(20, 21, 19, .97);
+      border-left: 1px solid #766b57;
+      box-shadow: -18px 0 34px rgba(0,0,0,.52);
+      padding: 20px;
+      overflow: auto;
+    }
+    .debug-drawer.open { transform: translateX(0); }
+    .debug-drawer h2 { margin: 0 0 16px; font-size: 17px; font-weight: 500; }
+    .debug-section { border-top: 1px solid #514a3d; padding: 13px 0; }
+    .debug-section h3 { margin: 0 0 8px; color: var(--gold); font: 11px Arial, sans-serif; text-transform: uppercase; letter-spacing: .12em; }
+    .debug-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 14px; font: 11px Arial, sans-serif; }
+    .debug-grid span:nth-child(odd) { color: var(--muted); }
+    .log { margin: 0; padding: 0; list-style: none; font: 11px/1.45 Consolas, monospace; }
+    .log li { padding: 3px 0; border-bottom: 1px dotted #39362f; }
+    .debug-command { border: 1px solid #6c604c; background: #292720; padding: 7px 10px; margin-right: 6px; cursor: pointer; }
+
+    .oracle-key {
+      position: absolute;
+      left: 14px;
+      top: 145px;
+      z-index: 8;
+      width: 58px;
+      display: grid;
+      gap: 7px;
+    }
+    .key-item { text-align: center; color: var(--muted); font: 8px Arial, sans-serif; }
+    .key-mark { display: block; width: 28px; height: 14px; margin: 0 auto 3px; border: 2px solid; }
+    .key-current { border-color: var(--gold); }
+    .key-preview { border-color: var(--preview); border-style: dotted; }
+    .key-valid { border-color: var(--valid); }
+    .key-selected { border-color: var(--selected); border-radius: 50%; }
+
+    @media (max-width: 980px) {
+      .battle-header { padding-inline: 24px; overflow-x: auto; }
+      .turn-ribbon { justify-content: flex-start; min-width: 760px; }
+      .battlefield { padding-inline: 40px; grid-template-columns: 1fr 44px 1fr; gap: 10px; }
+      .lane { grid-template-columns: 1fr; }
+      .unit { height: 118px; }
+      .action-dock { padding-inline: 28px; }
+      .skills { grid-template-columns: repeat(2, 1fr); }
+      .oracle-key { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="oracle-shell" aria-label="AC7 battle UI visual oracle">
+    <header class="battle-header">
+      <div class="battle-title"><strong>Formation Stage — Ruined Causeway</strong><span>Round 3 · Player phase</span></div>
+      <nav class="turn-ribbon" aria-label="Turn order">
+        <button class="turn-entry now" data-unit="kael" data-side="ally"><span class="turn-portrait">K</span><span><span class="turn-name">Kael</span><span class="turn-speed">SPD 14</span></span></button>
+        <button class="turn-entry" data-unit="raider" data-side="enemy"><span class="turn-portrait">R</span><span><span class="turn-name">Raider</span><span class="turn-speed">SPD 12</span></span></button>
+        <button class="turn-entry" data-unit="mira" data-side="ally"><span class="turn-portrait">M</span><span><span class="turn-name">Mira</span><span class="turn-speed">SPD 10</span></span></button>
+        <button class="turn-entry" data-unit="brute" data-side="enemy"><span class="turn-portrait">B</span><span><span class="turn-name">Brute</span><span class="turn-speed">SPD 8</span></span></button>
+        <button class="turn-entry" data-unit="orin" data-side="ally"><span class="turn-portrait">O</span><span><span class="turn-name">Orin</span><span class="turn-speed">SPD 7</span></span></button>
+        <button class="turn-entry" data-unit="hexer" data-side="enemy"><span class="turn-portrait">H</span><span><span class="turn-name">Hexer</span><span class="turn-speed">SPD 6</span></span></button>
+      </nav>
+    </header>
+
+    <aside class="oracle-key" aria-label="Highlight key">
+      <span class="key-item"><i class="key-mark key-current"></i>Current</span>
+      <span class="key-item"><i class="key-mark key-preview"></i>Preview</span>
+      <span class="key-item"><i class="key-mark key-valid"></i>Valid</span>
+      <span class="key-item"><i class="key-mark key-selected"></i>Selected</span>
+    </aside>
+
+    <section class="battlefield" aria-label="Battle formations">
+      <section aria-label="Player formation">
+        <div class="side-title"><span>Player company</span><span>6 slots</span></div>
+        <div class="formation">
+          <div class="lane" data-lane="Backline">
+            <article class="unit ally" data-unit="mira" data-glyph="♜"><span class="state-glyph"></span><span class="statuses"><span class="status">↑</span></span><span class="unit-name">Mira</span><span class="unit-role">Arcanist · Backline</span><span class="hp-track"><i class="hp-fill" style="width:72%"></i></span><span class="hp-text">18 / 25</span></article>
+            <article class="unit ally unavailable" data-unit="empty-a" data-glyph="·"><span class="state-glyph"></span><span class="unit-name">Empty slot</span><span class="unit-role">Backline II</span></article>
+            <article class="unit ally" data-unit="orin" data-glyph="♝"><span class="state-glyph"></span><span class="unit-name">Orin</span><span class="unit-role">Warden · Backline</span><span class="hp-track"><i class="hp-fill" style="width:91%"></i></span><span class="hp-text">31 / 34</span></article>
+          </div>
+          <div class="lane" data-lane="Frontline">
+            <article class="unit ally actor" data-unit="kael" data-glyph="♞"><span class="state-glyph"></span><span class="statuses"><span class="status">⚔</span><span class="status">+</span></span><span class="unit-name">Kael</span><span class="unit-role">Vanguard · Frontline</span><span class="hp-track"><i class="hp-fill" style="width:84%"></i></span><span class="hp-text">27 / 32</span></article>
+            <article class="unit ally" data-unit="sable" data-glyph="♟"><span class="state-glyph"></span><span class="unit-name">Sable</span><span class="unit-role">Skirmisher · Frontline</span><span class="hp-track"><i class="hp-fill" style="width:58%"></i></span><span class="hp-text">14 / 24</span></article>
+            <article class="unit ally unavailable" data-unit="empty-b" data-glyph="·"><span class="state-glyph"></span><span class="unit-name">Empty slot</span><span class="unit-role">Frontline III</span></article>
+          </div>
+        </div>
+      </section>
+
+      <div class="versus" aria-hidden="true">VS</div>
+
+      <section aria-label="Enemy formation">
+        <div class="side-title"><span>Enemy host</span><span>6 slots</span></div>
+        <div class="formation">
+          <div class="lane" data-lane="Frontline">
+            <article class="unit enemy" data-unit="raider" data-glyph="♞"><span class="state-glyph"></span><span class="unit-name">Raider</span><span class="unit-role">Marauder · Frontline</span><span class="hp-track"><i class="hp-fill" style="width:65%"></i></span><span class="hp-text">17 / 26</span></article>
+            <article class="unit enemy" data-unit="brute" data-glyph="♜"><span class="state-glyph"></span><span class="statuses"><span class="status">↓</span></span><span class="unit-name">Brute</span><span class="unit-role">Crusher · Frontline</span><span class="hp-track"><i class="hp-fill" style="width:94%"></i></span><span class="hp-text">44 / 47</span></article>
+            <article class="unit enemy unavailable" data-unit="fallen" data-glyph="†"><span class="state-glyph"></span><span class="unit-name">Fallen</span><span class="unit-role">Defeated</span><span class="hp-track"><i class="hp-fill" style="width:0%"></i></span><span class="hp-text">0 / 20</span></article>
+          </div>
+          <div class="lane" data-lane="Backline">
+            <article class="unit enemy" data-unit="hexer" data-glyph="♛"><span class="state-glyph"></span><span class="unit-name">Hexer</span><span class="unit-role">Occultist · Backline</span><span class="hp-track"><i class="hp-fill" style="width:76%"></i></span><span class="hp-text">19 / 25</span></article>
+            <article class="unit enemy unavailable" data-unit="empty-c" data-glyph="·"><span class="state-glyph"></span><span class="unit-name">Empty slot</span><span class="unit-role">Backline II</span></article>
+            <article class="unit enemy unavailable" data-unit="empty-d" data-glyph="·"><span class="state-glyph"></span><span class="unit-name">Empty slot</span><span class="unit-role">Backline III</span></article>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="action-dock" aria-label="Action bar">
+      <div class="actor-summary"><span><strong>Kael</strong> · Vanguard · 27/32 HP</span><span id="mode-label">Choose an action</span></div>
+      <div class="actions">
+        <div class="skills">
+          <button class="skill" data-action="cleave"><span class="cost">2 AP</span><strong>Cleave</strong><small>Strike two adjacent frontline enemies.</small></button>
+          <button class="skill" data-action="guard"><span class="cost">1 AP</span><strong>Guarding Oath</strong><small>Protect an ally until Kael's next turn.</small></button>
+          <button class="skill" data-action="rally"><span class="cost">2 AP</span><strong>Rally</strong><small>Grant Advantage to active allies.</small></button>
+          <button class="skill no-target" data-action="charge" aria-disabled="true"><span class="cost">3 AP</span><strong>Linebreaker</strong><small>No open destination behind a valid enemy.</small></button>
+        </div>
+        <div class="utilities" aria-label="Default actions">
+          <button class="utility-action" data-action="attack" aria-label="Default Attack"><span class="icon">⚔</span><span>Attack</span></button>
+          <button class="utility-action" data-action="swap" aria-label="Default Swap"><span class="icon">⇄</span><span>Swap</span></button>
+        </div>
+      </div>
+      <div class="hint-line" id="hint-line" aria-live="polite">Hover or focus a skill to preview legal targets. Click to commit its targeting state.</div>
+    </section>
+
+    <button class="debug-toggle" id="debug-toggle" aria-label="Open debug drawer" aria-expanded="false">‹</button>
+    <aside class="debug-drawer" id="debug-drawer" aria-label="Battle debug drawer">
+      <h2>Battle Debug</h2>
+      <section class="debug-section"><h3>Live state</h3><div class="debug-grid"><span>Round</span><span>3</span><span>Phase</span><span>Player action</span><span>Current</span><span>Kael</span><span>Selected action</span><span id="debug-action">None</span><span>Selected target</span><span id="debug-target">None</span></div></section>
+      <section class="debug-section"><h3>Initiative queue</h3><div class="debug-grid"><span>Order</span><span>Kael → Raider → Mira → Brute → Orin → Hexer</span></div></section>
+      <section class="debug-section"><h3>Battle log</h3><ol class="log"><li>[R3] Kael begins turn.</li><li>[R2] Hexer applied Snared to Sable.</li><li>[R2] Orin guarded Mira.</li><li>[R2] Brute received 7 damage.</li></ol></section>
+      <section class="debug-section"><h3>Commands</h3><button class="debug-command">Deal 7 damage</button><button class="debug-command">Advance turn</button></section>
+    </aside>
+  </main>
+
+  <script>
+    (() => {
+      const root = document.querySelector('.oracle-shell');
+      const units = [...root.querySelectorAll('.unit')];
+      const actions = [...root.querySelectorAll('[data-action]')];
+      const modeLabel = root.querySelector('#mode-label');
+      const hintLine = root.querySelector('#hint-line');
+      const debugAction = root.querySelector('#debug-action');
+      const debugTarget = root.querySelector('#debug-target');
+      let committedAction = null;
+
+      const targets = {
+        cleave: ['raider', 'brute'],
+        guard: ['mira', 'orin', 'sable'],
+        rally: ['kael', 'mira', 'orin', 'sable'],
+        attack: ['raider'],
+        swap: ['sable']
+      };
+
+      const labels = {
+        cleave: 'Cleave · select an adjacent enemy',
+        guard: 'Guarding Oath · select an ally',
+        rally: 'Rally · affects all active allies',
+        charge: 'Linebreaker unavailable · No legal targets',
+        attack: 'Default Attack · select the closest valid enemy',
+        swap: 'Default Swap · select an adjacent ally'
+      };
+
+      function clearTargetClasses() {
+        units.forEach(unit => unit.classList.remove('valid', 'attack-valid', 'swap-valid', 'target-selected'));
+      }
+
+      function renderTargets(action, transient) {
+        clearTargetClasses();
+        if (!action || !targets[action]) return;
+        const stateClass = action === 'attack' ? 'attack-valid' : action === 'swap' ? 'swap-valid' : 'valid';
+        targets[action].forEach(id => {
+          const unit = root.querySelector(`.unit[data-unit="${id}"]`);
+          if (unit) unit.classList.add(stateClass);
+        });
+        modeLabel.textContent = transient ? `Preview: ${labels[action]}` : labels[action];
+        hintLine.textContent = transient ? 'Preview only — selection has not changed.' : 'Action selected. Choose a highlighted target or select another action.';
+      }
+
+      actions.forEach(action => {
+        const id = action.dataset.action;
+        const preview = () => {
+          if (committedAction || id === 'charge') {
+            if (id === 'charge') hintLine.textContent = labels.charge;
+            return;
+          }
+          renderTargets(id, true);
+        };
+        const endPreview = () => {
+          if (committedAction) renderTargets(committedAction, false);
+          else {
+            clearTargetClasses();
+            modeLabel.textContent = 'Choose an action';
+            hintLine.textContent = 'Hover or focus a skill to preview legal targets. Click to commit its targeting state.';
+          }
+        };
+        action.addEventListener('mouseenter', preview);
+        action.addEventListener('focus', preview);
+        action.addEventListener('mouseleave', endPreview);
+        action.addEventListener('blur', endPreview);
+        action.addEventListener('click', () => {
+          if (id === 'charge') {
+            hintLine.textContent = labels.charge;
+            return;
+          }
+          committedAction = id;
+          actions.forEach(item => item.classList.toggle('selected', item === action));
+          debugAction.textContent = labels[id].split(' · ')[0];
+          debugTarget.textContent = 'Pending';
+          renderTargets(id, false);
+        });
+      });
+
+      units.forEach(unit => unit.addEventListener('click', () => {
+        if (!committedAction || !targets[committedAction]?.includes(unit.dataset.unit)) return;
+        renderTargets(committedAction, false);
+        unit.classList.add('target-selected');
+        debugTarget.textContent = unit.querySelector('.unit-name').textContent;
+        hintLine.textContent = `${debugTarget.textContent} selected. Confirm through the action flow.`;
+      }));
+
+      root.querySelectorAll('.turn-entry').forEach(entry => {
+        const setPreview = active => {
+          const unit = root.querySelector(`.unit[data-unit="${entry.dataset.unit}"]`);
+          if (unit) unit.classList.toggle('preview', active);
+        };
+        entry.addEventListener('mouseenter', () => setPreview(true));
+        entry.addEventListener('focus', () => setPreview(true));
+        entry.addEventListener('mouseleave', () => setPreview(false));
+        entry.addEventListener('blur', () => setPreview(false));
+      });
+
+      const debugToggle = root.querySelector('#debug-toggle');
+      const debugDrawer = root.querySelector('#debug-drawer');
+      debugToggle.addEventListener('click', () => {
+        const open = debugDrawer.classList.toggle('open');
+        debugToggle.textContent = open ? '›' : '‹';
+        debugToggle.setAttribute('aria-expanded', String(open));
+        debugToggle.setAttribute('aria-label', open ? 'Close debug drawer' : 'Open debug drawer');
+      });
+    })();
+  </script>
+</body>
+</html>

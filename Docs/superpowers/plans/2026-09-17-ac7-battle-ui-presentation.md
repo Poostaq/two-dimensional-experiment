@@ -8,6 +8,8 @@
 
 **Tech Stack:** Godot 4, typed GDScript, Control-based UI scenes, headless `SceneTree` test runners, GodotIQ scene/script operations and visual QA.
 
+**Visual oracle:** Consult `Docs/Mockups/AC7/battle-ui-oracle.html` for the approved composition, interactions, debug-drawer states, and battle visual-state language. The acceptance criteria in `Docs/Specs/GAME_DESIGN_SPEC_MVP.md` remain authoritative if behavior and illustration differ.
+
 ---
 
 ## Scope and constraints
