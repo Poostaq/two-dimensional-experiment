@@ -1,0 +1,180 @@
+[gd_scene format=3 uid="uid://c5rxioljvhah7"]
+
+[ext_resource type="Script" uid="uid://6iqef0l8jcu8" path="res://Scripts/UI/battle_unit_view.gd" id="1_kqptl"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s6suv"]
+content_margin_left = 8.0
+content_margin_top = 3.0
+content_margin_right = 8.0
+content_margin_bottom = 3.0
+bg_color = Color(0.09019608, 0.11764706, 0.15294118, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29411766, 0.35686275, 0.38039216, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jptvk"]
+bg_color = Color(0.19607843, 0.23137255, 0.2627451, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bmm3n"]
+bg_color = Color(0.39607844, 0.7254902, 0.627451, 1)
+
+[node name="BattleUnitView" type="PanelContainer" unique_id=228795898]
+custom_minimum_size = Vector2(236, 96)
+theme_override_styles/panel = SubResource("StyleBoxFlat_s6suv")
+script = ExtResource("1_kqptl")
+
+[node name="UnitInfo" type="VBoxContainer" parent="." unique_id=2120515678]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 1
+
+[node name="SlotLabel" type="Label" parent="UnitInfo" unique_id=1242001015]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+
+[node name="CharacterRow" type="HBoxContainer" parent="UnitInfo" unique_id=355030170]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Figure" type="Control" parent="UnitInfo/CharacterRow" unique_id=1249785527]
+custom_minimum_size = Vector2(44, 30)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Head" type="ColorRect" parent="UnitInfo/CharacterRow/Figure" unique_id=185552244]
+layout_mode = 0
+offset_left = 18.0
+offset_right = 28.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(0.85, 0.76, 0.53, 1)
+
+[node name="Body" type="ColorRect" parent="UnitInfo/CharacterRow/Figure" unique_id=983371222]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 11.0
+offset_right = 32.0
+offset_bottom = 30.0
+mouse_filter = 2
+color = Color(0.4, 0.55, 0.53, 1)
+
+[node name="Shield" type="ColorRect" parent="UnitInfo/CharacterRow/Figure" unique_id=1197133100]
+layout_mode = 0
+offset_left = 3.0
+offset_top = 13.0
+offset_right = 15.0
+offset_bottom = 27.0
+mouse_filter = 2
+color = Color(0.7, 0.73, 0.7, 1)
+
+[node name="Blade" type="ColorRect" parent="UnitInfo/CharacterRow/Figure" unique_id=1472346134]
+layout_mode = 0
+offset_left = 34.0
+offset_top = 2.0
+offset_right = 37.0
+offset_bottom = 29.0
+mouse_filter = 2
+color = Color(0.9, 0.83, 0.64, 1)
+
+[node name="Staff" type="ColorRect" parent="UnitInfo/CharacterRow/Figure" unique_id=1917890699]
+layout_mode = 0
+offset_left = 35.0
+offset_right = 38.0
+offset_bottom = 30.0
+mouse_filter = 2
+color = Color(0.8, 0.68, 0.4, 1)
+
+[node name="Banner" type="ColorRect" parent="UnitInfo/CharacterRow/Figure" unique_id=150898145]
+layout_mode = 0
+offset_left = 38.0
+offset_right = 44.0
+offset_bottom = 12.0
+mouse_filter = 2
+color = Color(0.86, 0.52, 0.22, 1)
+
+[node name="Identity" type="VBoxContainer" parent="UnitInfo/CharacterRow" unique_id=345252932]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="RoleLabel" type="Label" parent="UnitInfo/CharacterRow/Identity" unique_id=1442771986]
+layout_mode = 2
+theme_override_font_sizes/font_size = 13
+
+[node name="UnitNameLabel" type="Label" parent="UnitInfo" unique_id=180667994]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+autowrap_mode = 2
+
+[node name="SpeedLabel" type="Label" parent="UnitInfo" unique_id=1454698862]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+
+[node name="HealthBar" type="ProgressBar" parent="UnitInfo" unique_id=1202095549]
+custom_minimum_size = Vector2(0, 4)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_jptvk")
+theme_override_styles/fill = SubResource("StyleBoxFlat_bmm3n")
+show_percentage = false
+
+[node name="HealthLabel" type="Label" parent="UnitInfo" unique_id=591876640]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+
+[node name="DamageFeedbackLabel" type="Label" parent="UnitInfo" unique_id=669432932]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+
+[node name="StateLabel" type="Label" parent="UnitInfo" unique_id=356822642]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+
+[node name="StatusRow" type="HFlowContainer" parent="UnitInfo" unique_id=2119466572]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 7
+theme_override_constants/v_separation = 0
+
+[node name="armor" type="Label" parent="UnitInfo/StatusRow" unique_id=1673241997]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+metadata/status_id = "armor"
+
+[node name="advantage" type="Label" parent="UnitInfo/StatusRow" unique_id=1520301272]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+metadata/status_id = "advantage"
+
+[node name="snared" type="Label" parent="UnitInfo/StatusRow" unique_id=1500293871]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+metadata/status_id = "snared"
+
+[node name="bleed" type="Label" parent="UnitInfo/StatusRow" unique_id=215104489]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+metadata/status_id = "bleed"
+
+[node name="speed" type="Label" parent="UnitInfo/StatusRow" unique_id=1411214736]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+metadata/status_id = "speed"
+
+[node name="TargetIndicatorOverlay" type="Panel" parent="." unique_id=484567703]
+visible = false
+z_index = 10
+layout_mode = 2
+mouse_filter = 2

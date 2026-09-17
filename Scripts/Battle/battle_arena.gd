@@ -40,8 +40,8 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 )
 
 @onready var _encounter_type_label: Label = %EncounterTypeLabel
-@onready var _player_formation: GridContainer = %PlayerFormation
-@onready var _enemy_formation: GridContainer = %EnemyFormation
+@onready var _player_formation: Container = %PlayerFormation
+@onready var _enemy_formation: Container = %EnemyFormation
 @onready var _round_label: Label = %RoundLabel
 @onready var _current_unit_label: Label = %CurrentUnitLabel
 @onready var _advance_debug_button: Button = %AdvanceTurnDebugButton
@@ -879,6 +879,8 @@ func get_skill_presentation_snapshot() -> Dictionary:
 
 
 func notify_authoritative_battle_change(increment_revision: bool = true) -> void:
+	if is_node_ready():
+		_render_units()
 	if increment_revision:
 		_battle_revision += 1
 	if (
@@ -1830,17 +1832,25 @@ func _expire_round_modifiers(completed_round: int) -> void:
 			unit.clear_round_keywords(completed_round)
 
 
-func _get_control_children(formation: GridContainer) -> Array[Control]:
+func _get_control_children(formation: Container) -> Array[Control]:
 	var slots: Array[Control] = []
-	for child: Node in formation.get_children():
-		if child is Control:
-			slots.append(child as Control)
+	var pending: Array[Node] = [formation]
+	while not pending.is_empty():
+		var candidate: Node = pending.pop_back()
+		if candidate is Control and candidate.has_meta("slot_index"):
+			slots.append(candidate as Control)
+		else:
+			for child: Node in candidate.get_children():
+				pending.append(child)
+	slots.sort_custom(func(a: Control, b: Control) -> bool:
+		return int(a.get_meta("slot_index")) < int(b.get_meta("slot_index")))
 	return slots
 
 
-func _assign_slot_metadata(formation: GridContainer, side: String) -> void:
+func _assign_slot_metadata(formation: Container, side: String) -> void:
 	for slot: Control in _get_control_children(formation):
-		var slot_index := int(String(slot.name).trim_prefix("Slot"))
+		var slot_index := int(slot.get_meta("slot_index", -1))
+		assert(slot_index >= 0 and slot_index < SIDE_SLOT_COUNT)
 		slot.set_meta("side", side)
 		slot.set_meta("slot_index", slot_index)
 		slot.set_meta("is_current_unit", false)
@@ -2055,30 +2065,13 @@ func _refresh_result_ui() -> void:
 
 func _render_units() -> void:
 	for slot: Control in get_player_slots() + get_enemy_slots():
-		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
-		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
-		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
-		name_label.text = ""
-		speed_label.text = ""
-		health_label.text = ""
-		slot.set_meta("unit_id", &"")
+		slot.render_empty(String(slot.get_meta("side")), int(slot.get_meta("slot_index")))
 	for unit: BattleUnitState in _units:
 		if not is_instance_valid(unit):
 			continue
 		var slot := _get_slot_for_unit(unit)
-		if not is_instance_valid(slot):
-			continue
-		slot.set_meta("unit_id", unit.unit_id)
-		var name_label := slot.get_node("UnitInfo/UnitNameLabel") as Label
-		var speed_label := slot.get_node("UnitInfo/SpeedLabel") as Label
-		var health_label := slot.get_node("UnitInfo/HealthLabel") as Label
-		name_label.text = unit.display_name
-		speed_label.text = "Speed %d" % unit.get_effective_speed()
-		health_label.text = (
-			"HP %d/%d" % [unit.current_hp, unit.max_hp]
-			if unit.is_active()
-			else "Defeated — HP 0/%d" % unit.max_hp
-		)
+		if is_instance_valid(slot):
+			slot.render_unit(unit, round_number)
 
 
 func _refresh_skill_inspector() -> void:
@@ -2305,6 +2298,7 @@ func _reset_slot_highlights() -> void:
 			effect_overlay.visible = false
 		var damage_label := slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
 		damage_label.text = ""
+		damage_label.visible = false
 
 
 func _apply_current_slot_highlight(slot: Control) -> void:
@@ -2325,7 +2319,13 @@ func _get_or_create_current_slot_border_overlay(slot: Control) -> Panel:
 	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	overlay.z_index = 11
 	overlay.visible = false
-	overlay.add_theme_stylebox_override("panel", _current_slot_border_style())
+	var frame: StyleBoxFlat = _current_slot_border_style()
+	var slot_style: StyleBox = slot.get_theme_stylebox("panel")
+	frame.expand_margin_left = slot_style.get_content_margin(SIDE_LEFT)
+	frame.expand_margin_right = slot_style.get_content_margin(SIDE_RIGHT)
+	frame.expand_margin_top = slot_style.get_content_margin(SIDE_TOP)
+	frame.expand_margin_bottom = slot_style.get_content_margin(SIDE_BOTTOM)
+	overlay.add_theme_stylebox_override("panel", frame)
 	slot.add_child(overlay)
 	return overlay
 
@@ -2434,6 +2434,7 @@ func _apply_entry_feedback(entry: BattleLogEntry) -> void:
 			effect_overlay.visible = true
 		var damage_label := receiver_slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
 		damage_label.text = "-%d" % entry.applied_damage
+		damage_label.visible = true
 
 
 func _show_resolution_feedback(entry: BattleLogEntry) -> void:
@@ -2492,6 +2493,7 @@ func _clear_all_damage_feedback() -> void:
 	for slot: Control in get_player_slots() + get_enemy_slots():
 		var damage_label := slot.get_node("UnitInfo/DamageFeedbackLabel") as Label
 		damage_label.text = ""
+		damage_label.visible = false
 
 
 func _get_slot_for_unit(unit: BattleUnitState) -> Control:

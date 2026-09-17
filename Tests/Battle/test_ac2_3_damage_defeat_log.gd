@@ -187,7 +187,7 @@ func _test_defeated_slot_remains_visible() -> void:
 	var receiver := _unit(&"receiver", 1, 0, 8)
 	_set_hp(receiver, 0)
 	_configure(arena, [attacker, receiver])
-	var label := arena.get_node_or_null("%EnemyFormation/Slot0/UnitInfo/HealthLabel") as Label if arena != null else null
+	var label := arena.get_node_or_null("%EnemyFormation/EnemyFrontline/Slot0/UnitInfo/HealthLabel") as Label if arena != null else null
 	_assert(label != null and label.text == "Defeated — HP 0/20", "defeated slot remains visible", "expected exact defeated HP presentation")
 	_free_arena(arena)
 

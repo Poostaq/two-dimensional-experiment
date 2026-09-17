@@ -67,8 +67,8 @@ func _test_player_tie_order() -> void:
 		units.append(_unit(StringName("p%d" % slot_index), BattleUnitState.Side.PLAYER, slot_index, 5))
 	var arena: Control = await _instantiate_arena()
 	var visual_order: Array[StringName] = _node_names(arena.call("get_player_slots") as Array[Control]) if arena != null else []
-	var correct: bool = _ids(_build(units)) == [&"p0", &"p1", &"p2", &"p3", &"p4", &"p5"] and visual_order == [&"Slot3", &"Slot0", &"Slot4", &"Slot1", &"Slot5", &"Slot2"]
-	_assert(correct, "player tie order", "queue must order 0..5 while visual rows are [3,0], [4,1], [5,2]")
+	var correct: bool = _ids(_build(units)) == [&"p0", &"p1", &"p2", &"p3", &"p4", &"p5"] and visual_order == [&"Slot0", &"Slot1", &"Slot2", &"Slot3", &"Slot4", &"Slot5"]
+	_assert(correct, "player tie order", "queue and stable slot API order 0..5 independently of lane columns")
 	if arena != null:
 		arena.queue_free()
 
@@ -79,8 +79,8 @@ func _test_enemy_tie_order() -> void:
 		units.append(_unit(StringName("e%d" % slot_index), BattleUnitState.Side.ENEMY, slot_index, 5))
 	var arena: Control = await _instantiate_arena()
 	var visual_order: Array[StringName] = _node_names(arena.call("get_enemy_slots") as Array[Control]) if arena != null else []
-	var correct: bool = _ids(_build(units)) == [&"e0", &"e1", &"e2", &"e3", &"e4", &"e5"] and visual_order == [&"Slot0", &"Slot3", &"Slot1", &"Slot4", &"Slot2", &"Slot5"]
-	_assert(correct, "enemy tie order", "queue must order 0..5 while visual rows are [0,3], [1,4], [2,5]")
+	var correct: bool = _ids(_build(units)) == [&"e0", &"e1", &"e2", &"e3", &"e4", &"e5"] and visual_order == [&"Slot0", &"Slot1", &"Slot2", &"Slot3", &"Slot4", &"Slot5"]
+	_assert(correct, "enemy tie order", "queue and stable slot API order 0..5 independently of lane columns")
 	if arena != null:
 		arena.queue_free()
 

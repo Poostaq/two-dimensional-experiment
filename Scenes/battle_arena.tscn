@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c2xj0n81danj7"]
 
 [ext_resource type="Script" uid="uid://dc8oesxwyoqtj" path="res://Scripts/Battle/battle_arena.gd" id="1_j6q3v"]
+[ext_resource type="PackedScene" uid="uid://c5rxioljvhah7" path="res://Scenes/UI/battle_unit_view.tscn" id="2_gbjy2"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6q3v"]
 content_margin_left = 24.0
@@ -41,6 +42,7 @@ anchor_bottom = 1.0
 
 [node name="VBox" type="VBoxContainer" parent="Margin" unique_id=1698614957]
 layout_mode = 2
+theme_override_constants/separation = 4
 
 [node name="EncounterTypeLabel" type="Label" parent="Margin/VBox" unique_id=2058815592]
 unique_name_in_owner = true
@@ -55,429 +57,169 @@ alignment = 1
 
 [node name="PlayerSide" type="VBoxContainer" parent="Margin/VBox/Formations" unique_id=270987208]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="PlayerLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide" unique_id=506535176]
+visible = false
 layout_mode = 2
 text = "PLAYER FORMATION"
 horizontal_alignment = 1
 
-[node name="PlayerFormation" type="GridContainer" parent="Margin/VBox/Formations/PlayerSide" unique_id=1402906765]
+[node name="PlayerFormation" type="HBoxContainer" parent="Margin/VBox/Formations/PlayerSide" unique_id=1194337818]
 unique_name_in_owner = true
 layout_mode = 2
-columns = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-[node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1803951279]
-custom_minimum_size = Vector2(140, 80)
+[node name="PlayerBackline" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=645981276]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3" unique_id=701319009]
+[node name="LaneTitle" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerBackline" unique_id=1519025255]
 layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1766508917]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1357581283]
-layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "ALLIED BACKLINE"
 horizontal_alignment = 1
 
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1890354288]
+[node name="Slot3" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerBackline" unique_id=228795898 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "player"
+metadata/slot_index = 3
+
+[node name="Slot4" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerBackline" unique_id=779155279 instance=ExtResource("2_gbjy2")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "player"
+metadata/slot_index = 4
+
+[node name="Slot5" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerBackline" unique_id=1509556738 instance=ExtResource("2_gbjy2")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "player"
+metadata/slot_index = 5
+
+[node name="PlayerFrontline" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=425839672]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="LaneTitle" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerFrontline" unique_id=1763613537]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "ALLIED FRONTLINE"
 horizontal_alignment = 1
 
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3/UnitInfo" unique_id=1728167827]
-modulate = Color(1, 0.35, 0.35, 1)
+[node name="Slot0" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerFrontline" unique_id=96586017 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
-horizontal_alignment = 1
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "player"
+metadata/slot_index = 0
 
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot3" unique_id=1522365209]
-visible = false
-z_index = 10
+[node name="Slot1" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerFrontline" unique_id=570439109 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
-mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "player"
+metadata/slot_index = 1
 
-[node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1036836558]
-custom_minimum_size = Vector2(140, 80)
+[node name="Slot2" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/PlayerFrontline" unique_id=1370186716 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0" unique_id=1336176730]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=962174858]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=754939996]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=1593389282]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0/UnitInfo" unique_id=534229818]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot0" unique_id=1761663776]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1322027728]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4" unique_id=2142926801]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=1856227809]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=307800924]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=504795311]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4/UnitInfo" unique_id=1448653195]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot4" unique_id=1660369941]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1949479684]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1" unique_id=644477328]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=1953318080]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=1140856070]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=171660716]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1/UnitInfo" unique_id=2092747014]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot1" unique_id=827143908]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1715924655]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5" unique_id=1466590877]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=1986994091]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=1827802909]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=253754040]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5/UnitInfo" unique_id=33617487]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot5" unique_id=636756879]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation" unique_id=1507983800]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2" unique_id=1083569633]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=505473094]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=162289544]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=449514963]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2/UnitInfo" unique_id=465003279]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/PlayerSide/PlayerFormation/Slot2" unique_id=147045985]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "player"
+metadata/slot_index = 2
 
 [node name="CenterDivider" type="VSeparator" parent="Margin/VBox/Formations" unique_id=869679255]
-custom_minimum_size = Vector2(72, 0)
+custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
 
 [node name="EnemySide" type="VBoxContainer" parent="Margin/VBox/Formations" unique_id=930069705]
 layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="EnemyLabel" type="Label" parent="Margin/VBox/Formations/EnemySide" unique_id=818193621]
+visible = false
 layout_mode = 2
 text = "ENEMY FORMATION"
 horizontal_alignment = 1
 
-[node name="EnemyFormation" type="GridContainer" parent="Margin/VBox/Formations/EnemySide" unique_id=94147206]
+[node name="EnemyFormation" type="HBoxContainer" parent="Margin/VBox/Formations/EnemySide" unique_id=191537838]
 unique_name_in_owner = true
 layout_mode = 2
-columns = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
-[node name="Slot0" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=289527322]
-custom_minimum_size = Vector2(140, 80)
+[node name="EnemyFrontline" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=312291964]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
 
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0" unique_id=334592560]
+[node name="LaneTitle" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyFrontline" unique_id=1409917638]
 layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=892941584]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=1773965998]
-layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "ENEMY FRONTLINE"
 horizontal_alignment = 1
 
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=290702569]
+[node name="Slot0" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyFrontline" unique_id=1281254262 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "enemy"
+metadata/slot_index = 0
+
+[node name="Slot1" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyFrontline" unique_id=735464730 instance=ExtResource("2_gbjy2")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "enemy"
+metadata/slot_index = 1
+
+[node name="Slot2" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyFrontline" unique_id=537982273 instance=ExtResource("2_gbjy2")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "enemy"
+metadata/slot_index = 2
+
+[node name="EnemyBackline" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1007381505]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="LaneTitle" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyBackline" unique_id=1919040371]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "ENEMY BACKLINE"
 horizontal_alignment = 1
 
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0/UnitInfo" unique_id=760743158]
-modulate = Color(1, 0.35, 0.35, 1)
+[node name="Slot3" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyBackline" unique_id=276892221 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
-horizontal_alignment = 1
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "enemy"
+metadata/slot_index = 3
 
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot0" unique_id=939177655]
-visible = false
-z_index = 10
+[node name="Slot4" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyBackline" unique_id=1284246428 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
-mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "enemy"
+metadata/slot_index = 4
 
-[node name="Slot3" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1444131745]
-custom_minimum_size = Vector2(140, 80)
+[node name="Slot5" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/EnemyBackline" unique_id=1666044046 instance=ExtResource("2_gbjy2")]
 layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3" unique_id=380301555]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=431740243]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=953065540]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=509962586]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3/UnitInfo" unique_id=659585809]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot3" unique_id=1786855970]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot1" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1388062701]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1" unique_id=1776391952]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=71340744]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=1109683471]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=2111810432]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1/UnitInfo" unique_id=221493159]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot1" unique_id=604350600]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot4" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1898023519]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4" unique_id=294158884]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=1907956622]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=383984490]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=329295215]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4/UnitInfo" unique_id=1116559830]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot4" unique_id=203310674]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot2" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1830338772]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2" unique_id=835427600]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=1170714062]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=608055118]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=1051852427]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2/UnitInfo" unique_id=280580102]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot2" unique_id=473541350]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
-
-[node name="Slot5" type="PanelContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation" unique_id=1678816950]
-custom_minimum_size = Vector2(140, 80)
-layout_mode = 2
-
-[node name="UnitInfo" type="VBoxContainer" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5" unique_id=351020783]
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
-[node name="UnitNameLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=673312004]
-layout_mode = 2
-horizontal_alignment = 1
-autowrap_mode = 2
-
-[node name="SpeedLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=2136572351]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="HealthLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=1684465999]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DamageFeedbackLabel" type="Label" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5/UnitInfo" unique_id=1384857299]
-modulate = Color(1, 0.35, 0.35, 1)
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="TargetIndicatorOverlay" type="Panel" parent="Margin/VBox/Formations/EnemySide/EnemyFormation/Slot5" unique_id=1977716227]
-visible = false
-z_index = 10
-layout_mode = 2
-mouse_filter = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/side = "enemy"
+metadata/slot_index = 5
 
 [node name="TurnStatus" type="HBoxContainer" parent="Margin/VBox" unique_id=891639891]
 layout_mode = 2
@@ -578,6 +320,22 @@ custom_minimum_size = Vector2(50, 48)
 layout_mode = 2
 text = "Swap"
 
+[node name="DefaultActionConfirmation" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons" unique_id=501190663]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+
+[node name="DefaultActionConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons/DefaultActionConfirmation" unique_id=1699542509]
+unique_name_in_owner = true
+layout_mode = 2
+disabled = true
+text = "Confirm"
+
+[node name="DefaultActionCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons/DefaultActionConfirmation" unique_id=1511555330]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cancel"
+
 [node name="DefaultActionMessageLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion" unique_id=1995979143]
 unique_name_in_owner = true
 layout_mode = 2
@@ -586,22 +344,6 @@ layout_mode = 2
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
-
-[node name="DefaultActionConfirmation" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion" unique_id=501190663]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="DefaultActionConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionConfirmation" unique_id=1699542509]
-unique_name_in_owner = true
-layout_mode = 2
-disabled = true
-text = "Confirm"
-
-[node name="DefaultActionCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionConfirmation" unique_id=1511555330]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Cancel"
 
 [node name="SkillActionRegion" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=2020473495]
 unique_name_in_owner = true
@@ -652,22 +394,20 @@ alignment = 1
 
 [node name="AdvanceTurnDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=402375055]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Damage Closest Enemy (Debug)"
 
 [node name="ExitBattleDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=2055668868]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 text = "Exit Battle (Debug)"
 
 [node name="BattleLogPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1042687046]
-custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
 [node name="BattleLogVBox" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel" unique_id=358462316]
-custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 
 [node name="BattleLogTitle" type="Label" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=1741101699]
@@ -676,7 +416,7 @@ text = "Battle Log"
 
 [node name="BattleLogScroll" type="ScrollContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=903810453]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 40)
+custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 horizontal_scroll_mode = 0
 
