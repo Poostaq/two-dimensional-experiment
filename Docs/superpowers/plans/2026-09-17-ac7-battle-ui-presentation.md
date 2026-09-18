@@ -374,8 +374,9 @@ git commit -m "feat(battle-ui): unify battle visual states"
 - Modify as required: `Scenes/UI/battle_action_bar.tscn`
 - Modify as required: `Scenes/UI/battle_debug_drawer.tscn`
 - Modify as required: corresponding `Scripts/UI/*.gd`
-- Modify: `docs/Specs/GAME_DESIGN_SPEC_MVP.md`
-- Create: `docs/verification/ac7-battle-ui-presentation.md`
+- Modify: `Docs/Specs/GAME_DESIGN_SPEC_MVP.md`
+- Create or update each criterion's `verification.md` under `Docs/Specs/AC7/Evidence/AC7.1/` through `Docs/Specs/AC7/Evidence/AC7.5/`.
+- Create `.gdignore` in each evidence directory containing screenshots/logs. AC7.5 uses `Docs/Specs/AC7/Evidence/AC7.5/verification.md` and `Docs/Specs/AC7/Evidence/AC7.5/.gdignore`.
 
 - [ ] **Step 1: Run project-wide static checks**
 
@@ -408,18 +409,18 @@ At the reference viewport and one smaller supported viewport, verify no overlap/
 
 - [ ] **Step 5: Record traceability evidence**
 
-In `docs/verification/ac7-battle-ui-presentation.md`, map each AC7 criterion to its automated test, manual/runtime check, result, and evidence location. Update the MVP spec verification status only from collected evidence; do not mark an AC complete from implementation alone.
+Record each AC7 criterion in its own `Docs/Specs/AC7/Evidence/AC7.x/verification.md`, mapping its acceptance requirements to automated tests, manual/runtime checks, actual results, and relative screenshot/log paths. For AC7.5, use `Docs/Specs/AC7/Evidence/AC7.5/verification.md` and store artifacts beside it with `.gdignore` to prevent Godot importing them. Preserve existing criterion records and link the corresponding verification document from the MVP spec. Update verification status only from collected evidence; do not mark an AC complete from implementation alone.
 
 - [ ] **Step 6: Review the final diff and commit evidence/docs**
 
 ```powershell
 git diff --check
 git status --short
-git add docs/Specs/GAME_DESIGN_SPEC_MVP.md docs/verification/ac7-battle-ui-presentation.md
+git add Docs/Specs/GAME_DESIGN_SPEC_MVP.md Docs/Specs/AC7/Evidence/AC7.5/verification.md Docs/Specs/AC7/Evidence/AC7.5/.gdignore
 git commit -m "docs(mvp): record AC7 battle UI verification"
 ```
 
-Expected: only AC7 implementation, tests, and evidence are present on the task branch.
+The staging command shows the AC7.5 evidence handoff. Before committing, explicitly stage the screenshot/log files referenced by its verification document and any other criterion records changed in this execution; do not stage unrelated evidence. Expected: only relevant AC7 implementation, tests, and evidence are committed on the task branch.
 
 ## Acceptance traceability matrix
 
