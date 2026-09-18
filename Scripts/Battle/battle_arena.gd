@@ -42,10 +42,7 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 @onready var _current_unit_label: Label = %CurrentUnitLabel
 @onready var _turn_order_ribbon: Control = %TurnOrderRibbon
 @onready var _action_bar: Control = %BattleActionBar
-@onready var _advance_debug_button: Button = %AdvanceTurnDebugButton
-@onready var _exit_debug_button: Button = %ExitBattleDebugButton
-@onready var _battle_log_scroll: ScrollContainer = %BattleLogScroll
-@onready var _battle_log_entries_container: VBoxContainer = %BattleLogEntries
+@onready var _debug_drawer: Control = %BattleDebugDrawer
 @onready var _battle_result_panel: PanelContainer = %BattleResultPanel
 @onready var _battle_result_label: Label = %BattleResultLabel
 @onready var _reward_overlay: CenterContainer = %RewardOverlay
@@ -110,12 +107,12 @@ func _exit_tree() -> void:
 
 func _ready() -> void:
 	_turn_order_ribbon.unit_preview_changed.connect(_on_turn_order_preview_changed)
-	var exit_callable := Callable(self, "_on_exit_debug_pressed")
-	if not _exit_debug_button.pressed.is_connected(exit_callable):
-		_exit_debug_button.pressed.connect(exit_callable)
-	var advance_callable := Callable(self, "_on_advance_debug_pressed")
-	if not _advance_debug_button.pressed.is_connected(advance_callable):
-		_advance_debug_button.pressed.connect(advance_callable)
+	_debug_drawer.damage_requested.connect(_on_advance_debug_pressed)
+	_debug_drawer.exit_requested.connect(_on_exit_debug_pressed)
+	_debug_drawer.log_preview_changed.connect(_on_debug_log_preview_changed)
+	_debug_drawer.opened_changed.connect(_on_debug_drawer_opened)
+	_reward_overlay.visibility_changed.connect(_refresh_debug_drawer)
+	_preparation_blocker.visibility_changed.connect(_refresh_debug_drawer)
 	_action_bar.skill_selected.connect(_on_action_bar_skill_selected)
 	_action_bar.skill_preview_changed.connect(_on_action_bar_preview_changed)
 	_action_bar.default_attack_requested.connect(_on_default_attack_pressed)
@@ -153,6 +150,8 @@ func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	if is_node_ready():
+		_debug_drawer.reset_view()
 	_clear_turn_order_preview()
 	_clear_reward_ui()
 	_clear_default_action_state()
@@ -237,7 +236,7 @@ func configure_preparation(record: RefCounted) -> bool:
 		_preparation_target_option.visible = false
 		_preparation_confirm_button.disabled = true
 		_preparation_message_label.text = "Choose a preparation before combat begins."
-		_advance_debug_button.disabled = true
+		_refresh_debug_drawer()
 	return true
 
 
@@ -2071,13 +2070,13 @@ func _refresh_turn_ui() -> void:
 	_refresh_turn_order_ribbon()
 	if is_battle_complete():
 		_current_unit_label.text = BattleOutcome.get_display_text(_battle_outcome)
-		_advance_debug_button.disabled = true
+		_refresh_debug_drawer()
 		_refresh_highlights()
 		return
 	var current_unit := get_current_unit()
 	if not is_instance_valid(current_unit):
 		_current_unit_label.text = "No active units"
-		_advance_debug_button.disabled = true
+		_refresh_debug_drawer()
 		_refresh_highlights()
 		return
 	_current_unit_label.text = "%s | Speed %d | HP %d/%d" % [
@@ -2086,8 +2085,7 @@ func _refresh_turn_ui() -> void:
 		current_unit.current_hp,
 		current_unit.max_hp,
 	]
-	var target := BattleTargetSelector.find_closest_enemy(current_unit, _units)
-	_advance_debug_button.disabled = not is_instance_valid(target) or _action_in_progress
+	_refresh_debug_drawer()
 	_refresh_highlights()
 
 
@@ -2341,39 +2339,22 @@ func _expire_feedback(generation: int) -> void:
 
 
 func _append_log_control(entry: BattleLogEntry, entry_index: int) -> void:
-	var row := Label.new()
-	row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	if entry.kind == BattleLogEntry.Kind.MESSAGE:
-		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.text = entry.message_text
-		_battle_log_entries_container.add_child(row)
-		await get_tree().process_frame
-		_battle_log_scroll.scroll_vertical = int(_battle_log_scroll.get_v_scroll_bar().max_value)
-		return
-	var attacker := get_unit_by_id(entry.attacker_id)
-	var receiver := get_unit_by_id(entry.receiver_id)
-	if not is_instance_valid(attacker) or not is_instance_valid(receiver):
-		return
-	row.mouse_filter = Control.MOUSE_FILTER_STOP
-	row.text = "R%d · %s dealt %d damage to %s · %d/%d HP%s" % [
-		entry.round_number,
-		attacker.display_name,
-		entry.applied_damage,
-		receiver.display_name,
-		entry.receiver_hp_after,
-		receiver.max_hp,
-		" · Defeated" if entry.caused_defeat else "",
-	]
-	row.mouse_entered.connect(preview_log_entry.bind(entry_index))
-	row.mouse_exited.connect(clear_log_entry_preview)
-	_battle_log_entries_container.add_child(row)
-	await get_tree().process_frame
-	_battle_log_scroll.scroll_vertical = int(_battle_log_scroll.get_v_scroll_bar().max_value)
+	var text: String = entry.message_text
+	if entry.kind != BattleLogEntry.Kind.MESSAGE:
+		var attacker := get_unit_by_id(entry.attacker_id)
+		var receiver := get_unit_by_id(entry.receiver_id)
+		if not is_instance_valid(attacker) or not is_instance_valid(receiver):
+			return
+		text = "R%d · %s dealt %d damage to %s · %d/%d HP%s" % [
+			entry.round_number, attacker.display_name, entry.applied_damage,
+			receiver.display_name, entry.receiver_hp_after, receiver.max_hp,
+			" · Defeated" if entry.caused_defeat else ""]
+	_debug_drawer.append_log_row({"index": entry_index, "sequence": entry_index,
+		"text": text, "previewable": entry.kind != BattleLogEntry.Kind.MESSAGE})
 
 
 func _clear_log_controls() -> void:
-	for child: Node in _battle_log_entries_container.get_children():
-		child.queue_free()
+	_debug_drawer.clear_log_rows()
 
 
 func _clear_all_damage_feedback() -> void:
@@ -2503,3 +2484,65 @@ func _refresh_action_bar() -> void:
 			if is_instance_valid(target):
 				view["summary"] = ("Attack " if _default_action_mode == DefaultActionMode.ATTACK else "Swap with ") + target.display_name
 	_action_bar.render(view)
+	_refresh_debug_drawer()
+
+func _on_debug_log_preview_changed(entry_index: int) -> void:
+	if entry_index < 0:
+		clear_log_entry_preview()
+	else:
+		preview_log_entry(entry_index)
+
+
+func _on_debug_drawer_opened(opened: bool) -> void:
+	if opened:
+		_hide_skill_tooltip()
+		_clear_turn_order_preview()
+	_refresh_debug_drawer()
+
+
+func _refresh_debug_drawer() -> void:
+	if is_node_ready():
+		_debug_drawer.render(_build_debug_view())
+
+
+func _build_debug_view() -> Dictionary:
+	var current: BattleUnitState = get_current_unit()
+	var phase: String = "No active units"
+	if _preparation_required:
+		phase = "Preparation"
+	elif is_battle_complete():
+		phase = "Complete"
+	elif _action_in_progress:
+		phase = "Resolving"
+	elif is_instance_valid(current):
+		phase = "Player turn" if current.side == BattleUnitState.Side.PLAYER else "Enemy turn"
+	var action: String = "None"
+	if _default_action_mode == DefaultActionMode.ATTACK:
+		action = "Default Attack"
+	elif _default_action_mode == DefaultActionMode.SWAP:
+		action = "Default Swap"
+	elif not _selected_skill_id.is_empty():
+		var skill: CharacterSkill = _find_skill(get_unit_by_id(_inspected_unit_id), _selected_skill_id)
+		action = skill.display_name if is_instance_valid(skill) else String(_selected_skill_id)
+	var snapshot: Dictionary = _skill_transaction.presentation_snapshot()
+	var summary: String = snapshot.get("summary", "")
+	if not _default_action_preview.is_empty():
+		summary = String(_default_action_preview.get(&"target_id", _default_action_preview.get(&"occupant_id", &"")))
+	var rows: Array[Dictionary] = []
+	for index: int in _turn_queue.size():
+		var unit: BattleUnitState = _turn_queue[index]
+		rows.append({"index": index, "unit_id": unit.unit_id, "display_name": unit.display_name,
+			"effective_speed": unit.get_effective_speed(), "active": unit.is_active(),
+			"current": unit == current})
+	return {
+		"phase": phase, "round": round_number, "actor_id": current.unit_id if is_instance_valid(current) else &"",
+		"actor_name": current.display_name if is_instance_valid(current) else "None",
+		"outcome": BattleOutcome.get_display_text(_battle_outcome), "revision": _battle_revision,
+		"selected_action": action, "target_summary": summary,
+		"transaction_state": BattleSkillTransaction.State.keys()[_skill_transaction.state],
+		"queue_rows": rows, "damage_enabled": not _preparation_required and not is_battle_complete()
+			and not _action_in_progress and is_instance_valid(BattleTargetSelector.find_closest_enemy(current, _units)),
+		"exit_enabled": not _preparation_required,
+		"interaction_allowed": not _preparation_required and not _reward_overlay.visible
+			and not is_instance_valid(_pending_recruitment_option)
+	}

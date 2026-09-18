@@ -86,7 +86,9 @@ func _test_reconfiguration_and_exit_cleanup(arena: BattleArena) -> void:
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.IDLE, "Reconfiguration should reset the transaction.")
 	_expect(not arena.get_node("%BattleActionBar").get_node("%ActionConfirmation").visible, "Reconfiguration should hide contextual controls.")
 	arena.begin_skill_action(&"player_actor", &"shield_bash")
-	arena.get_node("%ExitBattleDebugButton").pressed.emit()
+	arena.get_node("%BattleDebugDrawer").set_open(true)
+	await process_frame
+	arena.get_node("%BattleDebugDrawer").get_node("%ExitBattleDebugButton").pressed.emit()
 	await process_frame
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.IDLE, "Exit should reset the transaction.")
 	_expect(not arena.get_node("%BattleActionBar").get_node("%ActionConfirmation").visible, "Exit should hide contextual controls.")

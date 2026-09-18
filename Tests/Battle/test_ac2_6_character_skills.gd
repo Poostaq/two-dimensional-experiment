@@ -289,8 +289,8 @@ func _test_skill_selection_lifecycle_and_viewport() -> void:
 	defeated_retains = defeated_retains and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
 	arena.call("configure_units", _typed_units([BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]))
 	var cleared: bool = arena.call("get_inspected_unit_id") == &"fresh" and arena.call("get_selected_skill_id") == &""
-	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control
-	_assert(changed_character_clears and defeated_retains and cleared and battle_log.position.y + battle_log.size.y <= 648.0,
+	var action_bar := arena.get_node_or_null("%BattleActionBar") as Control
+	_assert(changed_character_clears and defeated_retains and cleared and action_bar.get_global_rect().end.y <= 648.0,
 		"Skill selection lifecycle and viewport", "turn changes and reconfigure clear selection while current defeat retains it")
 	_free_arena(arena)
 
@@ -302,9 +302,9 @@ func _test_four_skill_layout_fits_viewport() -> void:
 	_assert(_advance_to_unit(arena, &"player_4"), "Layout fixture arrival", "turn queue must contain player_4")
 	await process_frame
 	var main_vbox := arena.get_node_or_null("Margin/VBox") as Control
-	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control
-	_assert(main_vbox.size.y <= 648.0 and battle_log.position.y + battle_log.size.y <= 648.0,
-		"Four-skill layout fits viewport", "VBox %.1f, log bottom %.1f must be <= 648" % [main_vbox.size.y, battle_log.position.y + battle_log.size.y])
+	var action_bar := arena.get_node_or_null("%BattleActionBar") as Control
+	_assert(main_vbox.size.y <= 648.0 and action_bar.get_global_rect().end.y <= 648.0,
+		"Four-skill layout fits viewport", "VBox %.1f, action bar bottom %.1f must be <= 648" % [main_vbox.size.y, action_bar.get_global_rect().end.y])
 	_free_arena(arena)
 
 

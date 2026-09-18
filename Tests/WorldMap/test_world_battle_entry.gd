@@ -48,7 +48,7 @@ func _run() -> void:
 	_expect(has_player_skill, "world battle gives the player party skills")
 	_expect(
 		is_instance_valid(arena)
-			and not (arena.get_node("%AdvanceTurnDebugButton") as Button).disabled,
+			and not (arena.get_node("%BattleDebugDrawer").get_node("%AdvanceTurnDebugButton") as Button).disabled,
 		"debug damage action starts enabled"
 	)
 	runtime.free()

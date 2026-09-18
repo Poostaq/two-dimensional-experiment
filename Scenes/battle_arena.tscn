@@ -4,7 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://c5rxioljvhah7" path="res://Scenes/UI/battle_unit_view.tscn" id="2_gbjy2"]
 [ext_resource type="PackedScene" uid="uid://dw6x4djsktn3x" path="res://Scenes/UI/battle_turn_order_ribbon.tscn" id="2_gr7gb"]
 [ext_resource type="PackedScene" uid="uid://dddhofbhtlye3" path="res://Scenes/UI/battle_action_bar.tscn" id="4_htxfv"]
-[ext_resource type="Script" uid="uid://cgyn3xj3wirh0" path="res://Scripts/UI/battle_action_bar.gd" id="5_yee6e"]
+[ext_resource type="PackedScene" uid="uid://bp0jcwlefs888" path="res://Scenes/UI/battle_debug_drawer.tscn" id="5_yee6e"]
+[ext_resource type="Script" uid="uid://b084hbk46kwdl" path="res://Scripts/UI/battle_debug_drawer.gd" id="6_f8pxj"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6q3v"]
 content_margin_left = 24.0
@@ -244,11 +245,8 @@ size_flags_vertical = 3
 metadata/side = "enemy"
 metadata/slot_index = 5
 
-[node name="BattleActionBar" type="PanelContainer" parent="Margin/VBox" unique_id=2002685831 instance=ExtResource("4_htxfv")]
-unique_name_in_owner = true
+[node name="BattleActionBar" parent="Margin/VBox" unique_id=2002685831 instance=ExtResource("4_htxfv")]
 layout_mode = 2
-focus_mode = 2
-script = ExtResource("5_yee6e")
 
 [node name="BattleResultPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1316659299]
 unique_name_in_owner = true
@@ -266,47 +264,22 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 
-[node name="BattleLogPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1042687046]
-layout_mode = 2
-
-[node name="BattleLogVBox" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel" unique_id=358462316]
-layout_mode = 2
-
-[node name="DebugControls" type="HBoxContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=1793621972]
-layout_mode = 2
-alignment = 1
-
-[node name="BattleLogTitle" type="Label" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/DebugControls" unique_id=1741101699]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Battle Log"
-
-[node name="AdvanceTurnDebugButton" type="Button" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/DebugControls" unique_id=402375055]
+[node name="BattleDebugDrawer" type="Control" parent="." unique_id=92839775 instance=ExtResource("5_yee6e")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Damage Closest Enemy (Debug)"
-
-[node name="ExitBattleDebugButton" type="Button" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/DebugControls" unique_id=2055668868]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Exit Battle (Debug)"
-
-[node name="BattleLogScroll" type="ScrollContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=903810453]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-horizontal_scroll_mode = 0
-
-[node name="BattleLogEntries" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/BattleLogScroll" unique_id=1766568312]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
+z_index = 20
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_f8pxj")
 
 [node name="RewardOverlay" type="CenterContainer" parent="." unique_id=227454104]
 unique_name_in_owner = true
 visible = false
+z_index = 30
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -352,6 +325,7 @@ text = "Confirm Reward"
 [node name="PreparationBlocker" type="PanelContainer" parent="." unique_id=453928630]
 unique_name_in_owner = true
 visible = false
+z_index = 30
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

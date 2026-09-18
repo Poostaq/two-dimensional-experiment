@@ -254,7 +254,7 @@ func _test_no_opponent_no_op() -> void:
 	var round_before := int(arena.get("round_number")) if arena != null else -1
 	if arena != null and arena.has_method("perform_debug_damage"):
 		arena.call("perform_debug_damage")
-	var button := arena.get_node_or_null("%AdvanceTurnDebugButton") as Button if arena != null else null
+	var button := arena.get_node("%BattleDebugDrawer").get_node_or_null("%AdvanceTurnDebugButton") as Button if arena != null else null
 	var entries: Array = arena.call("get_battle_log_entries") if arena != null and arena.has_method("get_battle_log_entries") else []
 	_assert(button != null and button.disabled and entries.is_empty() and int(attacker.get("current_hp")) == 20 and int(arena.get("round_number")) == round_before, "no opponent no-op", "must disable and mutate nothing")
 	_free_arena(arena)

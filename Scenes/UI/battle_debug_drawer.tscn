@@ -1,0 +1,107 @@
+[gd_scene format=3 uid="uid://bp0jcwlefs888"]
+
+[ext_resource type="Script" uid="uid://b084hbk46kwdl" path="res://Scripts/UI/battle_debug_drawer.gd" id="1_px42w"]
+
+[node name="BattleDebugDrawer" type="Control" unique_id=92839775]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("1_px42w")
+
+[node name="DebugHandle" type="Button" parent="." unique_id=2046850028]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -64.0
+offset_top = -23.0
+offset_right = -4.0
+offset_bottom = 23.0
+accessibility_name = "Open battle diagnostics"
+text = "DEBUG"
+
+[node name="DrawerPanel" type="PanelContainer" parent="." unique_id=720949761]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -422.0
+offset_top = 12.0
+offset_right = -68.0
+offset_bottom = -12.0
+
+[node name="DrawerContents" type="VBoxContainer" parent="DrawerPanel" unique_id=1489124409]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="DrawerPanel/DrawerContents" unique_id=1748025613]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="DrawerPanel/DrawerContents/Header" unique_id=420139168]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "BATTLE DIAGNOSTICS"
+
+[node name="CloseButton" type="Button" parent="DrawerPanel/DrawerContents/Header" unique_id=704522599]
+unique_name_in_owner = true
+layout_mode = 2
+accessibility_name = "Close battle diagnostics"
+text = "Close"
+
+[node name="DiagnosticsScroll" type="ScrollContainer" parent="DrawerPanel/DrawerContents" unique_id=1213497424]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Diagnostics" type="VBoxContainer" parent="DrawerPanel/DrawerContents/DiagnosticsScroll" unique_id=1101467036]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LiveState" type="Label" parent="DrawerPanel/DrawerContents/DiagnosticsScroll/Diagnostics" unique_id=1912154677]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="InitiativeQueue" type="Label" parent="DrawerPanel/DrawerContents/DiagnosticsScroll/Diagnostics" unique_id=300274375]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="LogTitle" type="Label" parent="DrawerPanel/DrawerContents/DiagnosticsScroll/Diagnostics" unique_id=104638658]
+layout_mode = 2
+text = "BATTLE LOG"
+
+[node name="BattleLogScroll" type="ScrollContainer" parent="DrawerPanel/DrawerContents/DiagnosticsScroll/Diagnostics" unique_id=1540967718]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 170)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="BattleLogEntries" type="VBoxContainer" parent="DrawerPanel/DrawerContents/DiagnosticsScroll/Diagnostics/BattleLogScroll" unique_id=232504467]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Commands" type="VBoxContainer" parent="DrawerPanel/DrawerContents" unique_id=1253118196]
+layout_mode = 2
+
+[node name="CommandsTitle" type="Label" parent="DrawerPanel/DrawerContents/Commands" unique_id=1418557776]
+layout_mode = 2
+text = "COMMANDS"
+
+[node name="AdvanceTurnDebugButton" type="Button" parent="DrawerPanel/DrawerContents/Commands" unique_id=1815117562]
+unique_name_in_owner = true
+layout_mode = 2
+accessibility_name = "Damage closest enemy"
+text = "Damage closest enemy (7)"
+
+[node name="ExitBattleDebugButton" type="Button" parent="DrawerPanel/DrawerContents/Commands" unique_id=1945664813]
+unique_name_in_owner = true
+layout_mode = 2
+accessibility_name = "Exit battle"
+text = "Exit battle"

@@ -143,7 +143,7 @@ func _has_empty_state(arena: Control) -> bool:
 	if arena == null or not arena.has_method("get_turn_queue") or not arena.has_method("get_current_unit"):
 		return false
 	var label: Label = arena.get_node_or_null("%CurrentUnitLabel") as Label
-	var button: Button = arena.get_node_or_null("%AdvanceTurnDebugButton") as Button
+	var button: Button = arena.get_node("%BattleDebugDrawer").get_node_or_null("%AdvanceTurnDebugButton") as Button
 	var round_before: int = int(arena.get("round_number"))
 	arena.call("advance_turn")
 	var highlighted: int = 0
@@ -165,8 +165,9 @@ func _test_initial_current_unit_display() -> void:
 
 func _test_advance_button_moves_once() -> void:
 	var arena: Control = await _instantiate_arena()
-	var button: Button = arena.get_node_or_null("%AdvanceTurnDebugButton") as Button if arena != null else null
+	var button: Button = arena.get_node("%BattleDebugDrawer").get_node_or_null("%AdvanceTurnDebugButton") as Button if arena != null else null
 	if button != null:
+		arena.get_node("%BattleDebugDrawer").set_open(true)
 		button.pressed.emit()
 		await process_frame
 	var current: RefCounted = arena.call("get_current_unit") as RefCounted if arena != null and arena.has_method("get_current_unit") else null
