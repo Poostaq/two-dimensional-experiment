@@ -1,0 +1,99 @@
+[gd_scene format=3 uid="uid://c7saspf3um0qe"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1p8w2"]
+bg_color = Color(0.1254902, 0.14901961, 0.1882353, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_a4ber"]
+bg_color = Color(0.20392157, 0.23921569, 0.28235295, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8q2v2"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6509804, 0.85882354, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ghf7i"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.9098039, 0.78431374, 0.46666667, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="TurnOrderEntry" type="Button" unique_id=100451725]
+custom_minimum_size = Vector2(144, 46)
+theme_override_styles/normal = SubResource("StyleBoxFlat_1p8w2")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_a4ber")
+theme_override_styles/hover = SubResource("StyleBoxFlat_a4ber")
+theme_override_styles/focus = SubResource("StyleBoxFlat_8q2v2")
+
+[node name="Identity" type="HBoxContainer" parent="." unique_id=1194366320]
+layout_mode = 0
+anchor_right = 1.0
+offset_left = 8.0
+offset_top = 4.0
+offset_right = -8.0
+mouse_filter = 2
+
+[node name="Icon" type="Label" parent="Identity" unique_id=1179034897]
+custom_minimum_size = Vector2(16, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.9098039, 0.78431374, 0.46666667, 1)
+theme_override_font_sizes/font_size = 13
+
+[node name="Name" type="Label" parent="Identity" unique_id=12737957]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 13
+text_overrun_behavior = 3
+
+[node name="OrderLabel" type="Label" parent="." unique_id=1463072317]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -23.0
+offset_right = -8.0
+offset_bottom = -3.0
+theme_override_font_sizes/font_size = 11
+
+[node name="NowLabel" type="Label" parent="." unique_id=2124628902]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -40.0
+offset_top = -22.0
+offset_right = -7.0
+offset_bottom = -4.0
+theme_override_colors/font_color = Color(1, 0.8784314, 0.6039216, 1)
+theme_override_font_sizes/font_size = 11
+text = "NOW"
+horizontal_alignment = 2
+
+[node name="CurrentFrame" type="Panel" parent="." unique_id=431550249]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ghf7i")

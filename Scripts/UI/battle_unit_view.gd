@@ -18,9 +18,11 @@ var _presentation: Script = load("res://Scripts/UI/battle_unit_presentation.gd")
 @onready var _slot_label: Label = $UnitInfo/SlotLabel
 @onready var _state_label: Label = $UnitInfo/StateLabel
 @onready var _statuses: HFlowContainer = $UnitInfo/StatusRow
+@onready var _turn_order_preview: Control = $TurnOrderPreviewOverlay
 
 
 func render_empty(side: String, slot_index: int) -> void:
+	set_turn_order_preview(false)
 	set_meta("unit_id", &"")
 	set_meta("side", side)
 	set_meta("slot_index", slot_index)
@@ -43,6 +45,8 @@ func render_empty(side: String, slot_index: int) -> void:
 
 
 func render_unit(unit: BattleUnitState, round_number: int) -> void:
+	if not unit.is_active():
+		set_turn_order_preview(false)
 	set_meta("unit_id", unit.unit_id)
 	_name_label.text = unit.display_name
 	_speed_label.text = "Speed %d" % unit.get_effective_speed()
@@ -79,6 +83,11 @@ func render_unit(unit: BattleUnitState, round_number: int) -> void:
 	]
 	if not status_descriptions.is_empty():
 		tooltip_text += "\n" + "\n".join(status_descriptions)
+
+
+func set_turn_order_preview(active: bool) -> void:
+	_turn_order_preview.visible = active
+	set_meta("turn_order_preview", active)
 
 
 func _clear_statuses() -> void:

@@ -44,6 +44,7 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 @onready var _enemy_formation: Container = %EnemyFormation
 @onready var _round_label: Label = %RoundLabel
 @onready var _current_unit_label: Label = %CurrentUnitLabel
+@onready var _turn_order_ribbon: Control = %TurnOrderRibbon
 @onready var _advance_debug_button: Button = %AdvanceTurnDebugButton
 @onready var _exit_debug_button: Button = %ExitBattleDebugButton
 @onready var _battle_log_scroll: ScrollContainer = %BattleLogScroll
@@ -99,6 +100,8 @@ var _units: Array[BattleUnitState] = []
 var _configured_player_units: Array[BattleUnitState] = []
 var _turn_queue: Array[BattleUnitState] = []
 var _current_turn_index: int = 0
+var _turn_order_preview_id: StringName = &""
+var _turn_order_context: String = ""
 var _battle_log_entries: Array[BattleLogEntry] = []
 var _battle_action_log_entries: Array[BattleActionLogEntry] = []
 var _action_records: Array[BattleActionRecord] = []
@@ -137,6 +140,7 @@ func _exit_tree() -> void:
 
 
 func _ready() -> void:
+	_turn_order_ribbon.unit_preview_changed.connect(_on_turn_order_preview_changed)
 	var exit_callable := Callable(self, "_on_exit_debug_pressed")
 	if not _exit_debug_button.pressed.is_connected(exit_callable):
 		_exit_debug_button.pressed.connect(exit_callable)
@@ -184,6 +188,7 @@ func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	_clear_turn_order_preview()
 	_clear_reward_ui()
 	_clear_default_action_state()
 	_clear_effect_highlights()
@@ -259,6 +264,7 @@ func configure_preparation(record: RefCounted) -> bool:
 	if not is_instance_valid(_preparation_transaction):
 		return false
 	_preparation_required = true
+	_refresh_turn_order_ribbon()
 	if is_node_ready():
 		_preparation_blocker.visible = true
 		_preparation_target_option.visible = false
@@ -881,6 +887,7 @@ func get_skill_presentation_snapshot() -> Dictionary:
 func notify_authoritative_battle_change(increment_revision: bool = true) -> void:
 	if is_node_ready():
 		_render_units()
+		_refresh_turn_order_ribbon()
 	if increment_revision:
 		_battle_revision += 1
 	if (
@@ -1556,6 +1563,7 @@ func clear_log_entry_preview() -> void:
 func advance_turn() -> void:
 	if _preparation_required or is_battle_complete() or _turn_queue.is_empty():
 		return
+	_clear_turn_order_preview()
 	_clear_default_action_state()
 	_current_turn_index += 1
 	if _current_turn_index >= _turn_queue.size():
@@ -1724,6 +1732,7 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	if is_battle_complete() or outcome == BattleOutcome.Type.IN_PROGRESS:
 		return
 	_battle_outcome = outcome
+	_refresh_turn_order_ribbon()
 	_terminal_player_health_snapshot.clear()
 	for unit: BattleUnitState in _configured_player_units:
 		if is_instance_valid(unit):
@@ -1798,6 +1807,7 @@ func _clear_reward_ui(reset_latch: bool = true) -> void:
 
 
 func _advance_after_action(attacker_id: StringName) -> void:
+	_clear_turn_order_preview()
 	_clear_default_action_state()
 	_turn_queue = BattleTurnQueue.build(_units)
 	if _turn_queue.is_empty():
@@ -2029,12 +2039,87 @@ func _refresh_context() -> void:
 	_encounter_type_label.text = "%s Battle" % encounter_type.capitalize()
 
 
+func _get_turn_order_entries() -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	var current: BattleUnitState = get_current_unit()
+	if is_battle_complete() or is_preparation_required():
+		return rows
+	if not is_instance_valid(current) or not current.is_active():
+		return rows
+	var reached_current: bool = false
+	for unit: BattleUnitState in get_turn_queue():
+		if not is_instance_valid(unit):
+			continue
+		if unit.unit_id == current.unit_id:
+			reached_current = true
+		if not reached_current or not unit.is_active():
+			continue
+		if not is_instance_valid(get_unit_by_id(unit.unit_id)):
+			continue
+		rows.append({"unit_id": unit.unit_id, "display_name": unit.display_name,
+			"side": unit.side, "ordinal": rows.size() + 1})
+	return rows
+
+
+func _refresh_turn_order_ribbon() -> void:
+	if not is_node_ready():
+		return
+	var rows: Array[Dictionary] = _get_turn_order_entries()
+	var current_id: StringName = rows[0]["unit_id"] if not rows.is_empty() else &""
+	var context: String = "%s:%d:%s:%s" % [
+		current_id, round_number, is_preparation_required(), is_battle_complete()]
+	if context != _turn_order_context:
+		_clear_turn_order_preview()
+		_turn_order_context = context
+	_turn_order_ribbon.render_entries(rows, current_id)
+	_turn_order_preview_id = _turn_order_ribbon.get_preview_unit_id()
+	_apply_turn_order_preview()
+
+
+func _on_turn_order_preview_changed(unit_id: StringName) -> void:
+	_turn_order_preview_id = &""
+	for row: Dictionary in _get_turn_order_entries():
+		if row["unit_id"] == unit_id:
+			_turn_order_preview_id = unit_id
+			break
+	_apply_turn_order_preview()
+
+
+func _apply_turn_order_preview() -> void:
+	if not is_node_ready():
+		return
+	for slot: Control in get_player_slots() + get_enemy_slots():
+		slot.set_turn_order_preview(false)
+	if _turn_order_preview_id.is_empty():
+		return
+	var allowed: bool = false
+	for row: Dictionary in _get_turn_order_entries():
+		if row["unit_id"] == _turn_order_preview_id:
+			allowed = true
+			break
+	if not allowed:
+		_turn_order_preview_id = &""
+		return
+	var unit: BattleUnitState = get_unit_by_id(_turn_order_preview_id)
+	var slot: Control = _get_slot_for_unit(unit)
+	if is_instance_valid(slot):
+		slot.set_turn_order_preview(true)
+
+
+func _clear_turn_order_preview() -> void:
+	_turn_order_preview_id = &""
+	if is_node_ready():
+		_turn_order_ribbon.clear_preview()
+		_apply_turn_order_preview()
+
+
 func _refresh_turn_ui() -> void:
 	_round_label.text = "Round %d" % round_number
 	_render_default_action()
 	_render_units()
 	_sync_skill_inspector_to_current_turn()
 	_refresh_result_ui()
+	_refresh_turn_order_ribbon()
 	if is_battle_complete():
 		_current_unit_label.text = BattleOutcome.get_display_text(_battle_outcome)
 		_advance_debug_button.disabled = true
@@ -2072,6 +2157,7 @@ func _render_units() -> void:
 		var slot := _get_slot_for_unit(unit)
 		if is_instance_valid(slot):
 			slot.render_unit(unit, round_number)
+	_apply_turn_order_preview()
 
 
 func _refresh_skill_inspector() -> void:

@@ -24,6 +24,18 @@ bg_color = Color(0.19607843, 0.23137255, 0.2627451, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bmm3n"]
 bg_color = Color(0.39607844, 0.7254902, 0.627451, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_kqptl"]
+draw_center = false
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.40392157, 0.84705883, 0.92941177, 1)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
+
 [node name="BattleUnitView" type="PanelContainer" unique_id=228795898]
 custom_minimum_size = Vector2(236, 96)
 theme_override_styles/panel = SubResource("StyleBoxFlat_s6suv")
@@ -178,3 +190,34 @@ visible = false
 z_index = 10
 layout_mode = 2
 mouse_filter = 2
+
+[node name="TurnOrderPreviewOverlay" type="Control" parent="." unique_id=1778469122]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Outline" type="Panel" parent="TurnOrderPreviewOverlay" unique_id=113200450]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -6.0
+offset_top = -1.0
+offset_right = 6.0
+offset_bottom = 1.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_kqptl")
+
+[node name="OrderMarker" type="Label" parent="TurnOrderPreviewOverlay" unique_id=1450078231]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -45.0
+offset_top = -15.0
+offset_right = -4.0
+offset_bottom = -1.0
+theme_override_colors/font_color = Color(0.5647059, 0.9019608, 0.9607843, 1)
+theme_override_font_sizes/font_size = 9
+text = "ORDER"
+horizontal_alignment = 2

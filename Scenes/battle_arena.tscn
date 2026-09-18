@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dc8oesxwyoqtj" path="res://Scripts/Battle/battle_arena.gd" id="1_j6q3v"]
 [ext_resource type="PackedScene" uid="uid://c5rxioljvhah7" path="res://Scenes/UI/battle_unit_view.tscn" id="2_gbjy2"]
+[ext_resource type="PackedScene" uid="uid://dw6x4djsktn3x" path="res://Scenes/UI/battle_turn_order_ribbon.tscn" id="2_gr7gb"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6q3v"]
 content_margin_left = 24.0
@@ -44,11 +45,31 @@ anchor_bottom = 1.0
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="EncounterTypeLabel" type="Label" parent="Margin/VBox" unique_id=2058815592]
+[node name="TurnStatus" type="HBoxContainer" parent="Margin/VBox" unique_id=891639891]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="EncounterTypeLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=2058815592]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Battle"
+
+[node name="RoundLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=1699269099]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Round 1"
+
+[node name="CurrentUnitLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=829834890]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "No active units"
 horizontal_alignment = 1
+
+[node name="TurnOrderRibbon" parent="Margin/VBox" unique_id=449859954 instance=ExtResource("2_gr7gb")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="Formations" type="HBoxContainer" parent="Margin/VBox" unique_id=1091763961]
 layout_mode = 2
@@ -221,22 +242,6 @@ size_flags_vertical = 3
 metadata/side = "enemy"
 metadata/slot_index = 5
 
-[node name="TurnStatus" type="HBoxContainer" parent="Margin/VBox" unique_id=891639891]
-layout_mode = 2
-alignment = 1
-
-[node name="RoundLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=1699269099]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Round 1"
-
-[node name="CurrentUnitLabel" type="Label" parent="Margin/VBox/TurnStatus" unique_id=829834890]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "No active units"
-horizontal_alignment = 1
-
 [node name="SkillInspectorPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1884290476]
 unique_name_in_owner = true
 layout_mode = 2
@@ -350,24 +355,32 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="SkillActionMessageLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=75753652]
+[node name="ConfirmationRow" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=555918206]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SkillActionMessageLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow" unique_id=75753652]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
 
-[node name="SkillActionSummaryLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=715885485]
+[node name="SkillActionSummaryLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow" unique_id=715885485]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
 
-[node name="SkillActionButtons" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=346632962]
+[node name="SkillActionButtons" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow" unique_id=346632962]
 layout_mode = 2
 
-[node name="SkillConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/SkillActionButtons" unique_id=2113784067]
+[node name="SkillConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow/SkillActionButtons" unique_id=2113784067]
 unique_name_in_owner = true
 layout_mode = 2
 disabled = true
 text = "Confirm"
 
-[node name="SkillCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/SkillActionButtons" unique_id=1089106861]
+[node name="SkillCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow/SkillActionButtons" unique_id=1089106861]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Cancel"
@@ -388,31 +401,32 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 
-[node name="DebugControls" type="HBoxContainer" parent="Margin/VBox" unique_id=1793621972]
-layout_mode = 2
-alignment = 1
-
-[node name="AdvanceTurnDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=402375055]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Damage Closest Enemy (Debug)"
-
-[node name="ExitBattleDebugButton" type="Button" parent="Margin/VBox/DebugControls" unique_id=2055668868]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 32)
-layout_mode = 2
-text = "Exit Battle (Debug)"
-
 [node name="BattleLogPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1042687046]
 layout_mode = 2
 
 [node name="BattleLogVBox" type="VBoxContainer" parent="Margin/VBox/BattleLogPanel" unique_id=358462316]
 layout_mode = 2
 
-[node name="BattleLogTitle" type="Label" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=1741101699]
+[node name="DebugControls" type="HBoxContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=1793621972]
 layout_mode = 2
+alignment = 1
+
+[node name="BattleLogTitle" type="Label" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/DebugControls" unique_id=1741101699]
+layout_mode = 2
+size_flags_horizontal = 3
 text = "Battle Log"
+
+[node name="AdvanceTurnDebugButton" type="Button" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/DebugControls" unique_id=402375055]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Damage Closest Enemy (Debug)"
+
+[node name="ExitBattleDebugButton" type="Button" parent="Margin/VBox/BattleLogPanel/BattleLogVBox/DebugControls" unique_id=2055668868]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "Exit Battle (Debug)"
 
 [node name="BattleLogScroll" type="ScrollContainer" parent="Margin/VBox/BattleLogPanel/BattleLogVBox" unique_id=903810453]
 unique_name_in_owner = true
