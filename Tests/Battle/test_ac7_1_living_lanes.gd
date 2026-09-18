@@ -59,12 +59,12 @@ func _test_refresh_and_swap(arena: BattleArena) -> void:
 	var original_slot: Control = arena.get_player_slots()[0]
 	_expect(_label(original_slot, "HealthLabel") == "HP 13/20", "numeric HP refresh")
 	_expect(_label(arena.get_player_slots()[1], "StateLabel") == "Empty", "empty visible")
-	(arena.get_node("%DefaultSwapButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%DefaultSwapButton") as Button).pressed.emit()
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
 	arena.get_player_slots()[3].gui_input.emit(click)
-	(arena.get_node("%DefaultActionConfirmButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Button).pressed.emit()
 	_expect(actor.slot_index == 3 and ally.slot_index == 0, "swap routes through original input")
 	_expect(arena.get_player_slots()[0] == original_slot, "slot view identity survives swap")
 	_expect(_label(original_slot, "UnitNameLabel") == "Ally", "identity follows swapped unit")

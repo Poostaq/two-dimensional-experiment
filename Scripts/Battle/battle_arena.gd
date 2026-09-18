@@ -19,10 +19,6 @@ const RECEIVER_SLOT_COLOR := Color(1.0, 0.35, 0.4, 1.0)
 const EFFECT_HIGHLIGHT_TURN_ADVANCES := 2
 const FEEDBACK_DURATION_SECONDS := 0.8
 const SELECTED_REWARD_COLOR := Color(1.0, 0.82, 0.32, 1.0)
-const SKILL_BUTTON_SIZE := Vector2(88.0, 88.0)
-const SELECTED_SKILL_COLOR := Color(1.0, 0.82, 0.32, 1.0)
-const SKILL_TOOLTIP_VIEWPORT_MARGIN: float = 12.0
-const SKILL_TOOLTIP_ANCHOR_GAP: float = 8.0
 
 enum DefaultActionMode { NONE, ATTACK, SWAP }
 
@@ -45,6 +41,7 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 @onready var _round_label: Label = %RoundLabel
 @onready var _current_unit_label: Label = %CurrentUnitLabel
 @onready var _turn_order_ribbon: Control = %TurnOrderRibbon
+@onready var _action_bar: Control = %BattleActionBar
 @onready var _advance_debug_button: Button = %AdvanceTurnDebugButton
 @onready var _exit_debug_button: Button = %ExitBattleDebugButton
 @onready var _battle_log_scroll: ScrollContainer = %BattleLogScroll
@@ -58,33 +55,6 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 @onready var _reward_empty_state_label: Label = %RewardEmptyStateLabel
 @onready var _reward_description_label: Label = %RewardDescriptionLabel
 @onready var _confirm_reward_button: Button = %ConfirmRewardButton
-@onready var _skill_inspector_prompt_label: Label = %SkillInspectorPromptLabel
-@onready var _skill_inspector_body: HBoxContainer = %SkillInspectorBody
-@onready var _skill_inspector_unit_name_label: Label = %SkillInspectorUnitNameLabel
-@onready var _skill_inspector_status_label: Label = %SkillInspectorStatusLabel
-@onready var _skill_inspector_count_label: Label = %SkillInspectorCountLabel
-@onready var _skill_inspector_skills: HBoxContainer = %SkillInspectorSkills
-@onready var _skill_inspector_empty_label: Label = %SkillInspectorEmptyLabel
-@onready var _skill_tooltip_panel: PanelContainer = %SkillTooltipPanel
-@onready var _skill_tooltip_name_label: Label = %SkillTooltipNameLabel
-@onready var _skill_tooltip_kind_label: Label = %SkillTooltipKindLabel
-@onready var _skill_tooltip_effect_label: Label = %SkillTooltipEffectLabel
-@onready var _skill_tooltip_targeting_label: Label = %SkillTooltipTargetingLabel
-@onready var _skill_tooltip_requirements_label: Label = %SkillTooltipRequirementsLabel
-@onready var _skill_tooltip_cooldown_label: Label = %SkillTooltipCooldownLabel
-@onready var _skill_tooltip_combo_label: Label = %SkillTooltipComboLabel
-@onready var _skill_action_region: VBoxContainer = %SkillActionRegion
-@onready var _skill_action_message_label: Label = %SkillActionMessageLabel
-@onready var _skill_action_summary_label: Label = %SkillActionSummaryLabel
-@onready var _skill_confirm_button: Button = %SkillConfirmButton
-@onready var _skill_cancel_button: Button = %SkillCancelButton
-@onready var _default_attack_button: Button = %DefaultAttackButton
-@onready var _default_swap_button: Button = %DefaultSwapButton
-@onready var _default_action_message_label: Label = %DefaultActionMessageLabel
-@onready var _default_action_summary_label: Label = %DefaultActionSummaryLabel
-@onready var _default_action_confirmation: HBoxContainer = %DefaultActionConfirmation
-@onready var _default_action_confirm_button: Button = %DefaultActionConfirmButton
-@onready var _default_action_cancel_button: Button = %DefaultActionCancelButton
 @onready var _preparation_blocker: PanelContainer = %PreparationBlocker
 @onready var _frontline_briefing_button: Button = %FrontlineBriefingButton
 @onready var _spare_plating_button: Button = %SparePlatingButton
@@ -119,12 +89,11 @@ var _configured_reward_options: Array[BattleRewardOption] = []
 var _has_configured_reward_options: bool = false
 var _inspected_unit_id: StringName = &""
 var _selected_skill_id: StringName = &""
-var _hovered_skill_button: Button
-var _skill_tooltip_generation: int = 0
 var _skill_transaction: BattleSkillTransaction = BattleSkillTransaction.new()
 var _battle_revision: int = 0
 var _default_action_mode: DefaultActionMode = DefaultActionMode.NONE
 var _default_action_preview: Dictionary = {}
+var _default_action_message: String = ""
 var _effect_highlight_target_colors: Dictionary[StringName, Color] = {}
 var _effect_highlight_turns_remaining: int = 0
 var _preparation_required: bool = false
@@ -147,16 +116,12 @@ func _ready() -> void:
 	var advance_callable := Callable(self, "_on_advance_debug_pressed")
 	if not _advance_debug_button.pressed.is_connected(advance_callable):
 		_advance_debug_button.pressed.connect(advance_callable)
-	var skill_confirm_callable := Callable(self, "confirm_skill_action")
-	if not _skill_confirm_button.pressed.is_connected(skill_confirm_callable):
-		_skill_confirm_button.pressed.connect(skill_confirm_callable)
-	var skill_cancel_callable := Callable(self, "cancel_skill_action")
-	if not _skill_cancel_button.pressed.is_connected(skill_cancel_callable):
-		_skill_cancel_button.pressed.connect(skill_cancel_callable)
-	_default_attack_button.pressed.connect(_on_default_attack_pressed)
-	_default_swap_button.pressed.connect(_on_default_swap_pressed)
-	_default_action_confirm_button.pressed.connect(_confirm_default_action)
-	_default_action_cancel_button.pressed.connect(_cancel_default_action)
+	_action_bar.skill_selected.connect(_on_action_bar_skill_selected)
+	_action_bar.skill_preview_changed.connect(_on_action_bar_preview_changed)
+	_action_bar.default_attack_requested.connect(_on_default_attack_pressed)
+	_action_bar.default_swap_requested.connect(_on_default_swap_pressed)
+	_action_bar.confirm_requested.connect(_on_action_bar_confirm)
+	_action_bar.cancel_requested.connect(_on_action_bar_cancel)
 	var confirm_callable := Callable(self, "confirm_reward_selection")
 	if not _confirm_reward_button.pressed.is_connected(confirm_callable):
 		_confirm_reward_button.pressed.connect(confirm_callable)
@@ -265,6 +230,8 @@ func configure_preparation(record: RefCounted) -> bool:
 		return false
 	_preparation_required = true
 	_refresh_turn_order_ribbon()
+	_hide_skill_tooltip()
+	_refresh_action_bar()
 	if is_node_ready():
 		_preparation_blocker.visible = true
 		_preparation_target_option.visible = false
@@ -1417,14 +1384,7 @@ func _render_skill_transaction() -> void:
 	if not is_node_ready():
 		return
 	var snapshot: Dictionary = _skill_transaction.presentation_snapshot()
-	_skill_action_region.visible = snapshot["action_region_visible"]
-	_skill_action_message_label.text = snapshot["message"]
-	_skill_action_summary_label.text = snapshot["summary"]
-	_skill_action_summary_label.visible = not _skill_action_summary_label.text.is_empty()
-	_skill_confirm_button.visible = snapshot["confirm_visible"]
-	_skill_confirm_button.disabled = not snapshot["confirm_enabled"]
-	_skill_cancel_button.visible = snapshot["cancel_visible"]
-	_skill_cancel_button.disabled = not snapshot["cancel_enabled"]
+	_refresh_action_bar()
 	var roles: Dictionary = snapshot["indicator_roles"]
 	for slot: Control in get_player_slots() + get_enemy_slots():
 		var overlay := slot.get_node_or_null("TargetIndicatorOverlay") as Panel
@@ -1914,11 +1874,15 @@ func _on_default_swap_pressed() -> void:
 func _begin_default_action(mode: DefaultActionMode) -> void:
 	if not _can_current_player_act():
 		return
+	if mode == DefaultActionMode.SWAP and not _has_adjacent_active_ally(get_current_unit()):
+		return
+	_selected_skill_id = &""
+	_hide_skill_tooltip()
 	_skill_transaction.reset()
 	_render_skill_transaction()
 	_default_action_mode = mode
 	_default_action_preview.clear()
-	_default_action_message_label.text = (
+	_default_action_message = (
 		"Select an active enemy."
 		if mode == DefaultActionMode.ATTACK
 		else "Select an adjacent active ally."
@@ -1936,9 +1900,9 @@ func _select_default_action_target(unit_id: StringName, slot_index: int) -> void
 	else:
 		_default_action_preview = preview_formation_move(current.unit_id, slot_index, true)
 	if _default_action_preview.is_empty():
-		_default_action_message_label.text = "That target is not valid for this action."
+		_default_action_message = "That target is not valid for this action."
 	else:
-		_default_action_message_label.text = "Review the selected target."
+		_default_action_message = "Review the selected target."
 	_render_default_action()
 
 
@@ -1965,7 +1929,7 @@ func _confirm_default_action() -> void:
 		_cancel_default_action()
 	else:
 		_default_action_preview.clear()
-		_default_action_message_label.text = "Battle state changed; choose the action again."
+		_default_action_message = "Battle state changed; choose the action again."
 		_render_default_action()
 
 
@@ -2007,29 +1971,14 @@ func _has_adjacent_active_ally(actor: BattleUnitState) -> bool:
 func _render_default_action() -> void:
 	if not is_node_ready():
 		return
-	var current: BattleUnitState = get_current_unit()
-	var available: bool = _can_current_player_act()
-	_default_attack_button.disabled = not available
-	_default_swap_button.disabled = not available or not _has_adjacent_active_ally(current)
-	var selecting: bool = _default_action_mode != DefaultActionMode.NONE
-	_default_action_confirmation.visible = selecting
-	_default_action_confirm_button.disabled = _default_action_preview.is_empty()
-	_default_action_cancel_button.disabled = not selecting
-	_default_action_summary_label.visible = not _default_action_preview.is_empty()
-	if _default_action_preview.is_empty():
-		_default_action_summary_label.text = ""
-	elif _default_action_mode == DefaultActionMode.ATTACK:
-		var target: BattleUnitState = get_unit_by_id(_default_action_preview.get(&"target_id", &""))
-		_default_action_summary_label.text = "Attack %s" % target.display_name
-	else:
-		var ally: BattleUnitState = get_unit_by_id(_default_action_preview.get(&"occupant_id", &""))
-		_default_action_summary_label.text = "Swap with %s" % ally.display_name
-	if not selecting:
-		_default_action_message_label.text = (
+	if _default_action_mode == DefaultActionMode.NONE:
+		_default_action_message = (
 			"Choose an action for the current character."
-			if available
+			if _can_current_player_act()
 			else "Default actions are unavailable for the current turn."
 		)
+	_refresh_action_bar()
+
 
 
 func _refresh_context() -> void:
@@ -2165,159 +2114,24 @@ func _refresh_skill_inspector() -> void:
 	if not is_instance_valid(unit):
 		_clear_skill_inspector()
 		return
-	_clear_skill_rows()
-	_skill_inspector_prompt_label.visible = false
-	_skill_inspector_body.visible = true
-	_skill_inspector_unit_name_label.text = unit.display_name
-	_skill_inspector_status_label.text = "Active" if unit.is_active() else "Defeated"
-	var unit_skills := unit.skills
-	_skill_inspector_count_label.text = "Skills: %d/%d" % [unit_skills.size(), BattleUnitState.MAX_CHARACTER_SKILLS]
-	_skill_inspector_empty_label.visible = unit_skills.is_empty()
-	var selection_still_owned := false
-	for index: int in unit_skills.size():
-		var skill := unit_skills[index]
-		selection_still_owned = selection_still_owned or skill.skill_id == _selected_skill_id
-		_skill_inspector_skills.add_child(_create_skill_button(skill, index + 1))
-	if not selection_still_owned:
+	var selection_owned: bool = false
+	for skill: CharacterSkill in unit.skills:
+		selection_owned = selection_owned or skill.skill_id == _selected_skill_id
+	if not selection_owned:
 		_selected_skill_id = &""
-	_refresh_skill_selection()
+	_refresh_action_bar()
 
-
-func _create_skill_button(skill: CharacterSkill, skill_index: int) -> Button:
-	var button := Button.new()
-	button.custom_minimum_size = SKILL_BUTTON_SIZE
-	button.set_meta("skill_id", skill.skill_id)
-	button.set_meta("skill_index", skill_index)
-	button.set_meta("selected", false)
-	button.pressed.connect(select_skill.bind(skill.skill_id))
-	button.mouse_entered.connect(_on_skill_button_mouse_entered.bind(skill, button))
-	button.mouse_exited.connect(_on_skill_button_mouse_exited.bind(button))
-
-	var number_label := Label.new()
-	number_label.name = "NumberLabel"
-	number_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	number_label.text = str(skill_index)
-	number_label.offset_left = 6.0
-	number_label.offset_top = 3.0
-	button.add_child(number_label)
-
-	var name_label := Label.new()
-	name_label.name = "NameLabel"
-	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	name_label.offset_left = 8.0
-	name_label.offset_top = 18.0
-	name_label.offset_right = -8.0
-	name_label.offset_bottom = -18.0
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_label.text = skill.display_name
-	button.add_child(name_label)
-
-	var kind_label := Label.new()
-	kind_label.name = "KindLabel"
-	kind_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(kind_label)
-	kind_label.set_anchors_preset(Control.PRESET_BOTTOM_WIDE)
-	kind_label.offset_top = -20.0
-	kind_label.offset_bottom = -3.0
-	kind_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	kind_label.text = "Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"
-	return button
 
 
 func _refresh_skill_selection() -> void:
-	for child: Node in _skill_inspector_skills.get_children():
-		var button := child as Button
-		if not is_instance_valid(button):
-			continue
-		var is_selected: bool = button.get_meta("skill_id", &"") == _selected_skill_id
-		button.set_meta("selected", is_selected)
-		button.self_modulate = SELECTED_SKILL_COLOR if is_selected else Color.WHITE
+	_refresh_action_bar()
 
-
-func _on_skill_button_mouse_entered(skill: CharacterSkill, button: Button) -> void:
-	if not is_instance_valid(skill) or not skill.is_valid() or not is_instance_valid(button):
-		_hide_skill_tooltip()
-		return
-	_hovered_skill_button = button
-	_skill_tooltip_generation += 1
-	var generation := _skill_tooltip_generation
-	_skill_tooltip_name_label.text = skill.display_name
-	_skill_tooltip_kind_label.text = (
-		"Active" if skill.kind == CharacterSkill.Kind.ACTIVE else "Passive"
-	)
-	_skill_tooltip_effect_label.text = "Effect: %s" % skill.effect_text
-	_skill_tooltip_targeting_label.text = "Targeting: %s" % skill.targeting_text
-	_skill_tooltip_requirements_label.text = "Requirements: %s" % skill.requirements_text
-	_skill_tooltip_cooldown_label.text = "Cooldown: %s" % skill.cooldown_text
-	_skill_tooltip_combo_label.visible = is_instance_valid(skill.combo_definition)
-	_skill_tooltip_combo_label.text = (
-		"Combo: %s" % skill.combo_definition.description_text
-		if is_instance_valid(skill.combo_definition) else ""
-	)
-	_skill_tooltip_panel.visible = true
-	_skill_tooltip_panel.reset_size()
-	preview_skill_action(_inspected_unit_id, skill.skill_id)
-	call_deferred("_position_skill_tooltip", button, generation)
-
-
-func _on_skill_button_mouse_exited(button: Button) -> void:
-	if button != _hovered_skill_button:
-		return
-	_hide_skill_tooltip()
-	clear_skill_preview()
-
-
-func _position_skill_tooltip(button_value: Variant, generation: int) -> void:
-	if not is_instance_valid(button_value) or not button_value is Button:
-		return
-	var button := button_value as Button
-	if (
-		not _skill_tooltip_panel.visible
-		or button != _hovered_skill_button
-		or generation != _skill_tooltip_generation
-	):
-		return
-	_skill_tooltip_panel.size = _skill_tooltip_panel.get_combined_minimum_size()
-	var button_rect := button.get_global_rect()
-	var tooltip_size := _skill_tooltip_panel.size
-	var viewport_size := get_viewport_rect().size
-	var centered_x := button_rect.position.x + (button_rect.size.x - tooltip_size.x) * 0.5
-	var max_x := maxf(
-		SKILL_TOOLTIP_VIEWPORT_MARGIN,
-		viewport_size.x - SKILL_TOOLTIP_VIEWPORT_MARGIN - tooltip_size.x
-	)
-	var x := clampf(centered_x, SKILL_TOOLTIP_VIEWPORT_MARGIN, max_x)
-	var above_y := button_rect.position.y - SKILL_TOOLTIP_ANCHOR_GAP - tooltip_size.y
-	var below_y := button_rect.end.y + SKILL_TOOLTIP_ANCHOR_GAP
-	var max_y := maxf(
-		SKILL_TOOLTIP_VIEWPORT_MARGIN,
-		viewport_size.y - SKILL_TOOLTIP_VIEWPORT_MARGIN - tooltip_size.y
-	)
-	var y := above_y if above_y >= SKILL_TOOLTIP_VIEWPORT_MARGIN else clampf(
-		below_y,
-		SKILL_TOOLTIP_VIEWPORT_MARGIN,
-		max_y
-	)
-	_skill_tooltip_panel.global_position = Vector2(x, y)
 
 
 func _hide_skill_tooltip() -> void:
-	_skill_tooltip_generation += 1
-	_hovered_skill_button = null
-	if not is_node_ready():
-		return
-	_skill_tooltip_panel.visible = false
-	_skill_tooltip_name_label.text = ""
-	_skill_tooltip_kind_label.text = ""
-	_skill_tooltip_effect_label.text = ""
-	_skill_tooltip_targeting_label.text = ""
-	_skill_tooltip_requirements_label.text = ""
-	_skill_tooltip_cooldown_label.text = ""
-	_skill_tooltip_combo_label.text = ""
-	_skill_tooltip_combo_label.visible = false
+	if is_node_ready():
+		_action_bar.clear_details()
+
 
 
 func _clear_skill_inspector() -> void:
@@ -2326,22 +2140,9 @@ func _clear_skill_inspector() -> void:
 	_selected_skill_id = &""
 	if not is_node_ready():
 		return
-	_clear_skill_rows()
 	_skill_transaction.reset()
 	_render_skill_transaction()
-	_skill_inspector_prompt_label.visible = true
-	_skill_inspector_body.visible = false
-	_skill_inspector_unit_name_label.text = ""
-	_skill_inspector_status_label.text = ""
-	_skill_inspector_count_label.text = ""
-	_skill_inspector_empty_label.visible = false
 
-
-func _clear_skill_rows() -> void:
-	_hide_skill_tooltip()
-	for child: Node in _skill_inspector_skills.get_children():
-		_skill_inspector_skills.remove_child(child)
-		child.queue_free()
 
 
 func _refresh_highlights() -> void:
@@ -2609,3 +2410,96 @@ func _on_exit_debug_pressed() -> void:
 
 func _emit_exit_requested() -> void:
 	exit_requested.emit()
+
+func _on_action_bar_skill_selected(skill_id: StringName) -> void:
+	if _preparation_required or is_battle_complete() or _action_in_progress:
+		_refresh_action_bar()
+		return
+	_clear_default_action_state()
+	_skill_transaction.reset()
+	select_skill(skill_id)
+	_refresh_action_bar()
+
+
+func _on_action_bar_preview_changed(skill_id: StringName) -> void:
+	if skill_id.is_empty():
+		clear_skill_preview()
+	elif _default_action_mode == DefaultActionMode.NONE:
+		preview_skill_action(_inspected_unit_id, skill_id)
+
+
+func _on_action_bar_confirm() -> void:
+	if _default_action_mode != DefaultActionMode.NONE:
+		_confirm_default_action()
+	else:
+		confirm_skill_action()
+	_refresh_action_bar()
+
+
+func _on_action_bar_cancel() -> void:
+	if _default_action_mode != DefaultActionMode.NONE:
+		_cancel_default_action()
+	else:
+		cancel_skill_action()
+	_selected_skill_id = &""
+	_hide_skill_tooltip()
+	_refresh_action_bar()
+
+
+func _refresh_action_bar() -> void:
+	if not is_node_ready():
+		return
+	var unit: BattleUnitState = get_unit_by_id(_inspected_unit_id)
+	var current: BattleUnitState = get_current_unit()
+	var rows: Array[Dictionary] = []
+	if is_instance_valid(unit):
+		for skill: CharacterSkill in unit.skills:
+			var evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
+				unit, skill, _units,
+				current.unit_id if is_instance_valid(current) else &"",
+				is_battle_complete(), round_number, _battle_revision,
+				get_committed_action_history_snapshot()
+			)
+			var reason: String = evaluation.blocking_reason.message if is_instance_valid(evaluation.blocking_reason) else ""
+			if _preparation_required:
+				reason = "Finish preparation first."
+			var tooltip: String = "Effect: %s\nTargeting: %s\nRequirements: %s\nCooldown: %s" % [
+				skill.effect_text, skill.targeting_text, skill.requirements_text, skill.cooldown_text
+			]
+			if is_instance_valid(skill.combo_definition):
+				tooltip += "\nCombo: " + skill.combo_definition.description_text
+			rows.append({
+				"skill_id": skill.skill_id, "name": skill.display_name, "kind": skill.kind,
+				"selected": skill.skill_id == _selected_skill_id and _default_action_mode == DefaultActionMode.NONE,
+				"availability_text": reason, "tooltip": tooltip, "skill": skill.duplicate_skill()
+			})
+	var snapshot: Dictionary = _skill_transaction.presentation_snapshot()
+	var available: bool = _can_current_player_act() and not _action_in_progress and not is_battle_complete()
+	var swap_available: bool = available and _has_adjacent_active_ally(current)
+	var view: Dictionary = {
+		"actor_id": unit.unit_id if is_instance_valid(unit) else &"",
+		"actor_name": unit.display_name if is_instance_valid(unit) else "",
+		"actor_status": ("Active" if unit.is_active() else "Defeated") if is_instance_valid(unit) else "",
+		"skills": rows, "default_mode": _default_action_mode,
+		"details_allowed": is_instance_valid(unit) and unit.is_active() and not _preparation_required and not is_battle_complete(),
+		"attack_enabled": available, "swap_enabled": swap_available,
+		"attack_reason": "Select an active enemy." if available else "Unavailable for the current turn.",
+		"swap_reason": "Select an adjacent active ally." if swap_available else ("No adjacent active ally." if available else "Unavailable for the current turn."),
+		"message": snapshot["message"], "summary": snapshot["summary"],
+		"action_region_visible": snapshot["action_region_visible"],
+		"confirm_visible": snapshot["confirm_visible"], "confirm_enabled": snapshot["confirm_enabled"],
+		"cancel_visible": snapshot["cancel_visible"], "cancel_enabled": snapshot["cancel_enabled"]
+	}
+	if _default_action_mode != DefaultActionMode.NONE:
+		view["message"] = _default_action_message
+		view["summary"] = ""
+		view["confirm_visible"] = true
+		view["confirm_enabled"] = not _default_action_preview.is_empty()
+		view["cancel_visible"] = true
+		view["cancel_enabled"] = true
+		if not _default_action_preview.is_empty():
+			var target_id: StringName = _default_action_preview.get(&"target_id" if _default_action_mode == DefaultActionMode.ATTACK else &"occupant_id", &"")
+			var target: BattleUnitState = get_unit_by_id(target_id)
+			if is_instance_valid(target):
+				view["summary"] = ("Attack " if _default_action_mode == DefaultActionMode.ATTACK else "Swap with ") + target.display_name
+	_action_bar.render(view)

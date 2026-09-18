@@ -3,6 +3,8 @@
 [ext_resource type="Script" uid="uid://dc8oesxwyoqtj" path="res://Scripts/Battle/battle_arena.gd" id="1_j6q3v"]
 [ext_resource type="PackedScene" uid="uid://c5rxioljvhah7" path="res://Scenes/UI/battle_unit_view.tscn" id="2_gbjy2"]
 [ext_resource type="PackedScene" uid="uid://dw6x4djsktn3x" path="res://Scenes/UI/battle_turn_order_ribbon.tscn" id="2_gr7gb"]
+[ext_resource type="PackedScene" uid="uid://dddhofbhtlye3" path="res://Scenes/UI/battle_action_bar.tscn" id="4_htxfv"]
+[ext_resource type="Script" uid="uid://cgyn3xj3wirh0" path="res://Scripts/UI/battle_action_bar.gd" id="5_yee6e"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6q3v"]
 content_margin_left = 24.0
@@ -242,148 +244,11 @@ size_flags_vertical = 3
 metadata/side = "enemy"
 metadata/slot_index = 5
 
-[node name="SkillInspectorPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1884290476]
+[node name="BattleActionBar" type="PanelContainer" parent="Margin/VBox" unique_id=2002685831 instance=ExtResource("4_htxfv")]
 unique_name_in_owner = true
 layout_mode = 2
-
-[node name="SkillInspectorContent" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel" unique_id=358593966]
-layout_mode = 2
-theme_override_constants/separation = 0
-
-[node name="SkillInspectorTitleLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=266280407]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Character Skills (Debug)"
-
-[node name="SkillInspectorPromptLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=1424856640]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Select a populated slot to inspect skills."
-
-[node name="SkillInspectorBody" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=19874224]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SkillSelectionRegion" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=707293362]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="SkillInspectorCharacterBlock" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1751821891]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 0)
-layout_mode = 2
-
-[node name="SkillInspectorUnitNameLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=713145833]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SkillInspectorStatusLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=1401560804]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SkillInspectorCountLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion/SkillInspectorCharacterBlock" unique_id=1655803130]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SkillInspectorEmptyLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=943690158]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "No character-specific skills"
-
-[node name="SkillInspectorSkills" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1077560603]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="DefaultActionsRegion" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody" unique_id=850268222]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="DefaultActionsLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion" unique_id=1397063124]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Default actions"
-
-[node name="DefaultActionsButtons" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion" unique_id=1760629437]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="DefaultAttackButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons" unique_id=773925172]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(58, 48)
-layout_mode = 2
-text = "Attack"
-
-[node name="DefaultSwapButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons" unique_id=1855663107]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(50, 48)
-layout_mode = 2
-text = "Swap"
-
-[node name="DefaultActionConfirmation" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons" unique_id=501190663]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="DefaultActionConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons/DefaultActionConfirmation" unique_id=1699542509]
-unique_name_in_owner = true
-layout_mode = 2
-disabled = true
-text = "Confirm"
-
-[node name="DefaultActionCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion/DefaultActionsButtons/DefaultActionConfirmation" unique_id=1511555330]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Cancel"
-
-[node name="DefaultActionMessageLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion" unique_id=1995979143]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="DefaultActionSummaryLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillInspectorBody/DefaultActionsRegion" unique_id=524949065]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="SkillActionRegion" type="VBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent" unique_id=2020473495]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-
-[node name="ConfirmationRow" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion" unique_id=555918206]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="SkillActionMessageLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow" unique_id=75753652]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-autowrap_mode = 3
-
-[node name="SkillActionSummaryLabel" type="Label" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow" unique_id=715885485]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-autowrap_mode = 3
-
-[node name="SkillActionButtons" type="HBoxContainer" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow" unique_id=346632962]
-layout_mode = 2
-
-[node name="SkillConfirmButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow/SkillActionButtons" unique_id=2113784067]
-unique_name_in_owner = true
-layout_mode = 2
-disabled = true
-text = "Confirm"
-
-[node name="SkillCancelButton" type="Button" parent="Margin/VBox/SkillInspectorPanel/SkillInspectorContent/SkillActionRegion/ConfirmationRow/SkillActionButtons" unique_id=1089106861]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Cancel"
+focus_mode = 2
+script = ExtResource("5_yee6e")
 
 [node name="BattleResultPanel" type="PanelContainer" parent="Margin/VBox" unique_id=1316659299]
 unique_name_in_owner = true
@@ -483,61 +348,6 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 disabled = true
 text = "Confirm Reward"
-
-[node name="SkillTooltipPanel" type="PanelContainer" parent="." unique_id=1971942413]
-unique_name_in_owner = true
-visible = false
-z_index = 20
-custom_minimum_size = Vector2(288, 0)
-layout_mode = 0
-mouse_filter = 2
-
-[node name="SkillTooltipMargin" type="MarginContainer" parent="SkillTooltipPanel" unique_id=1840637800]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="SkillTooltipContent" type="VBoxContainer" parent="SkillTooltipPanel/SkillTooltipMargin" unique_id=773299983]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="SkillTooltipNameLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1019767714]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SkillTooltipKindLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1767515953]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SkillTooltipEffectLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1390629672]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(268, 0)
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="SkillTooltipTargetingLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=552847106]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(268, 0)
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="SkillTooltipRequirementsLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1542155304]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(268, 0)
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="SkillTooltipCooldownLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=1971711230]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(268, 0)
-layout_mode = 2
-autowrap_mode = 2
-
-[node name="SkillTooltipComboLabel" type="Label" parent="SkillTooltipPanel/SkillTooltipMargin/SkillTooltipContent" unique_id=2066151383]
-unique_name_in_owner = true
-visible = false
-custom_minimum_size = Vector2(268, 0)
-layout_mode = 2
-autowrap_mode = 2
 
 [node name="PreparationBlocker" type="PanelContainer" parent="." unique_id=453928630]
 unique_name_in_owner = true

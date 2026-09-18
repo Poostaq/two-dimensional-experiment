@@ -35,7 +35,7 @@ func _test_initial_turn_locks_skill_panel_to_current_unit() -> void:
 	)
 	current.current_hp = 0
 	arena.call("_refresh_turn_ui")
-	var status_label := arena.get_node_or_null("%SkillInspectorStatusLabel") as Label
+	var status_label := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorStatusLabel") as Label
 	_assert(
 		initial_owner_synced
 			and is_instance_valid(status_label)
@@ -53,7 +53,7 @@ func _test_non_current_slot_click_cannot_override_active_unit() -> void:
 		_unit(&"enemy_slow", "Enemy Slow", BattleUnitState.Side.ENEMY, 0, 8),
 	]))
 	var enemy_slot := _find_slot(arena.call("get_enemy_slots") as Array, &"enemy_slow")
-	var skill_rows := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	var skill_rows := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	var original_skill_button := (
 		skill_rows.get_child(0) as Button
 		if is_instance_valid(skill_rows) and skill_rows.get_child_count() > 0
@@ -130,7 +130,7 @@ func _test_no_current_unit_or_battle_end_clears_skill_panel() -> void:
 	var no_current_cleared: bool = (
 		arena.call("get_current_unit") == null
 		and arena.call("get_inspected_unit_id") == &""
-		and (arena.get_node_or_null("%SkillInspectorPromptLabel") as Label).visible
+		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorPromptLabel") as Label).visible
 	)
 	var enemy := _unit(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 8)
 	enemy.current_hp = 1
@@ -142,7 +142,7 @@ func _test_no_current_unit_or_battle_end_clears_skill_panel() -> void:
 	var battle_end_cleared: bool = (
 		arena.call("is_battle_complete")
 		and arena.call("get_inspected_unit_id") == &""
-		and (arena.get_node_or_null("%SkillInspectorPromptLabel") as Label).visible
+		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorPromptLabel") as Label).visible
 	)
 	_assert(
 		no_current_cleared and battle_end_cleared,

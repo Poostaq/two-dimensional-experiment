@@ -34,10 +34,10 @@ func _test_controls_are_separate_from_character_skills() -> void:
 		_unit(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 8),
 		_unit(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5),
 	]))
-	var skill_row := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	var skill_row := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	_assert(
-		is_instance_valid(arena.get_node_or_null("%DefaultAttackButton"))
-			and is_instance_valid(arena.get_node_or_null("%DefaultSwapButton"))
+		is_instance_valid(arena.get_node("%BattleActionBar").get_node_or_null("%DefaultAttackButton"))
+			and is_instance_valid(arena.get_node("%BattleActionBar").get_node_or_null("%DefaultSwapButton"))
 			and is_instance_valid(skill_row)
 			and skill_row.get_child_count() == 4,
 		"default controls coexist with four character skills"
@@ -52,10 +52,10 @@ func _test_default_attack_pointer_flow() -> void:
 	var target := _unit(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5)
 	target.defense = 2
 	arena.configure_units(_typed_units([actor, target]))
-	(arena.get_node("%DefaultAttackButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%DefaultAttackButton") as Button).pressed.emit()
 	_click_slot(_find_slot(arena.get_enemy_slots(), target.unit_id))
 	var before_hp: int = target.current_hp
-	(arena.get_node("%DefaultActionConfirmButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Button).pressed.emit()
 	_assert(
 		before_hp == target.max_hp
 			and target.current_hp == target.max_hp - 4
@@ -71,9 +71,9 @@ func _test_adjacent_swap_pointer_flow() -> void:
 	var ally := _unit(&"ally", "Ally", BattleUnitState.Side.PLAYER, 3, 8)
 	var enemy := _unit(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5)
 	arena.configure_units(_typed_units([actor, ally, enemy]))
-	(arena.get_node("%DefaultSwapButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%DefaultSwapButton") as Button).pressed.emit()
 	_click_slot(_find_slot(arena.get_player_slots(), ally.unit_id))
-	(arena.get_node("%DefaultActionConfirmButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Button).pressed.emit()
 	_assert(
 		actor.slot_index == 3
 			and ally.slot_index == 0
@@ -89,9 +89,9 @@ func _test_invalid_swap_does_not_mutate() -> void:
 	var ally := _unit(&"ally", "Ally", BattleUnitState.Side.PLAYER, 2, 8)
 	var enemy := _unit(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5)
 	arena.configure_units(_typed_units([actor, ally, enemy]))
-	(arena.get_node("%DefaultSwapButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%DefaultSwapButton") as Button).pressed.emit()
 	_click_slot(_find_slot(arena.get_player_slots(), ally.unit_id))
-	var confirm := arena.get_node("%DefaultActionConfirmButton") as Button
+	var confirm := arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Button
 	_assert(
 		actor.slot_index == 0
 			and ally.slot_index == 2
@@ -108,10 +108,10 @@ func _test_turn_change_clears_default_action() -> void:
 		_unit(&"actor", "Actor", BattleUnitState.Side.PLAYER, 0, 10),
 		_unit(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5),
 	]))
-	(arena.get_node("%DefaultAttackButton") as Button).pressed.emit()
+	(arena.get_node("%BattleActionBar").get_node("%DefaultAttackButton") as Button).pressed.emit()
 	arena.advance_turn()
 	_assert(
-		not (arena.get_node("%DefaultActionConfirmation") as HBoxContainer).visible,
+		not (arena.get_node("%BattleActionBar").get_node("%ActionConfirmation") as VBoxContainer).visible,
 		"turn changes clear default action selection"
 	)
 	_free_arena(arena)

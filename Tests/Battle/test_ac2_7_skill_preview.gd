@@ -151,7 +151,7 @@ func _test_tooltip_scene_and_hover_content() -> void:
 	_expect(is_instance_valid(arena), "battle arena should instantiate for tooltip UI")
 	if not is_instance_valid(arena):
 		return
-	_expect(arena.get_node_or_null("%SkillPreviewPanel") == null, "fixed skill preview panel should be removed")
+	_expect(arena.get_node("%BattleActionBar").get_node_or_null("%SkillPreviewPanel") == null, "fixed skill preview panel should be removed")
 	for node_name: String in [
 		"SkillTooltipPanel",
 		"SkillTooltipNameLabel",
@@ -161,9 +161,9 @@ func _test_tooltip_scene_and_hover_content() -> void:
 		"SkillTooltipRequirementsLabel",
 		"SkillTooltipCooldownLabel",
 	]:
-		var node := arena.get_node_or_null("%%%s" % node_name)
+		var node := arena.get_node("%BattleActionBar").get_node_or_null("%%%s" % node_name)
 		_expect(is_instance_valid(node), "scene-owned tooltip node %s should exist" % node_name)
-	var tooltip := arena.get_node_or_null("%SkillTooltipPanel") as PanelContainer
+	var tooltip := arena.get_node("%BattleActionBar").get_node_or_null("%SkillTooltipPanel") as PanelContainer
 	if not is_instance_valid(tooltip):
 		arena.queue_free()
 		await process_frame
@@ -210,13 +210,13 @@ func _test_tooltip_lifecycle_and_non_actionability() -> void:
 	_expect(is_instance_valid(arena), "battle arena should instantiate for tooltip lifecycle")
 	if not is_instance_valid(arena):
 		return
-	var tooltip := arena.get_node_or_null("%SkillTooltipPanel") as PanelContainer
+	var tooltip := arena.get_node("%BattleActionBar").get_node_or_null("%SkillTooltipPanel") as PanelContainer
 	var has_handlers := (
-		arena.has_method("_on_skill_button_mouse_entered")
-		and arena.has_method("_on_skill_button_mouse_exited")
+		arena.get_node("%BattleActionBar").has_method("show_skill_details")
+		and arena.get_node("%BattleActionBar").has_method("_pointer_exit")
 	)
 	_expect(is_instance_valid(tooltip), "tooltip panel should exist for lifecycle checks")
-	_expect(has_handlers, "battle arena should expose guarded hover handlers")
+	_expect(has_handlers, "action bar should expose guarded hover handlers")
 	if not is_instance_valid(tooltip) or not has_handlers:
 		arena.queue_free()
 		await process_frame
@@ -274,13 +274,13 @@ func _test_tooltip_placement_and_event_guards() -> void:
 	_expect(is_instance_valid(arena), "battle arena should instantiate for tooltip placement")
 	if not is_instance_valid(arena):
 		return
-	var tooltip := arena.get_node_or_null("%SkillTooltipPanel") as PanelContainer
+	var tooltip := arena.get_node("%BattleActionBar").get_node_or_null("%SkillTooltipPanel") as PanelContainer
 	var has_handlers := (
-		arena.has_method("_on_skill_button_mouse_entered")
-		and arena.has_method("_position_skill_tooltip")
+		arena.get_node("%BattleActionBar").has_method("show_skill_details")
+		and arena.get_node("%BattleActionBar").has_method("_position_skill_tooltip")
 	)
 	_expect(is_instance_valid(tooltip), "tooltip panel should exist for placement checks")
-	_expect(has_handlers, "battle arena should expose tooltip placement handlers")
+	_expect(has_handlers, "action bar should expose tooltip placement handlers")
 	if not is_instance_valid(tooltip) or not has_handlers:
 		arena.queue_free()
 		await process_frame
@@ -297,7 +297,7 @@ func _test_tooltip_placement_and_event_guards() -> void:
 	anchor.size = Vector2(88.0, 88.0)
 	arena.add_child(anchor)
 	anchor.position = Vector2(500.0, 400.0)
-	arena.call("_on_skill_button_mouse_entered", skill, anchor)
+	arena.get_node("%BattleActionBar").call("show_skill_details", skill, anchor)
 	await process_frame
 	var viewport_rect := Rect2(Vector2.ZERO, Vector2(1152.0, 648.0))
 	var button_rect := anchor.get_global_rect()
@@ -306,27 +306,27 @@ func _test_tooltip_placement_and_event_guards() -> void:
 	_expect(tooltip_rect.end.y <= button_rect.position.y - 8.0 + 0.5, "tooltip should prefer above")
 	_expect(absf(tooltip_rect.get_center().x - button_rect.get_center().x) <= 0.5, "unclamped tooltip should center")
 	anchor.position = Vector2(500.0, 4.0)
-	arena.call("_on_skill_button_mouse_entered", skill, anchor)
+	arena.get_node("%BattleActionBar").call("show_skill_details", skill, anchor)
 	await process_frame
 	button_rect = anchor.get_global_rect()
 	tooltip_rect = tooltip.get_global_rect()
 	_expect(tooltip_rect.position.y >= button_rect.end.y + 8.0 - 0.5, "tooltip should flip below")
 	anchor.position = Vector2(0.0, 400.0)
-	arena.call("_on_skill_button_mouse_entered", skill, anchor)
+	arena.get_node("%BattleActionBar").call("show_skill_details", skill, anchor)
 	await process_frame
 	tooltip_rect = tooltip.get_global_rect()
 	_expect(tooltip_rect.position.x >= 12.0, "left-edge tooltip should clamp to margin")
 	anchor.position = Vector2(1064.0, 400.0)
-	arena.call("_on_skill_button_mouse_entered", skill, anchor)
+	arena.get_node("%BattleActionBar").call("show_skill_details", skill, anchor)
 	await process_frame
 	tooltip_rect = tooltip.get_global_rect()
 	_expect(tooltip_rect.end.x <= 1140.0, "right-edge tooltip should clamp to margin")
-	arena.call("_on_skill_button_mouse_entered", null, anchor)
+	arena.get_node("%BattleActionBar").call("show_skill_details", null, anchor)
 	_expect(not tooltip.visible, "invalid skill should hide tooltip")
 	anchor.queue_free()
 	await process_frame
-	var stale_generation := int(arena.get("_skill_tooltip_generation"))
-	arena.call("_position_skill_tooltip", anchor, stale_generation)
+	var stale_generation := int(arena.get_node("%BattleActionBar").get("_skill_tooltip_generation"))
+	arena.get_node("%BattleActionBar").call("_position_skill_tooltip", anchor, stale_generation)
 	_expect(not tooltip.visible, "freed anchor should not restore tooltip")
 	arena.queue_free()
 	await process_frame
@@ -366,7 +366,7 @@ func _emit_skill_hover(button: Button, entered: bool) -> void:
 
 
 func _skill_button(arena: BattleArena, skill_id: StringName) -> Button:
-	var skills := arena.get_node("%SkillInspectorSkills") as HBoxContainer
+	var skills := arena.get_node("%BattleActionBar").get_node("%SkillInspectorSkills") as HBoxContainer
 	for child: Node in skills.get_children():
 		var button := child as Button
 		if is_instance_valid(button) and button.get_meta("skill_id", &"") == skill_id:
@@ -384,7 +384,7 @@ func _tooltip_text(arena: BattleArena) -> Array[String]:
 		"SkillTooltipRequirementsLabel",
 		"SkillTooltipCooldownLabel",
 	]:
-		var label := arena.get_node_or_null("%%%s" % node_name) as Label
+		var label := arena.get_node("%BattleActionBar").get_node_or_null("%%%s" % node_name) as Label
 		result.append(label.text if is_instance_valid(label) else "")
 	return result
 

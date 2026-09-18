@@ -113,16 +113,16 @@ func _test_real_ui_signal_wiring(arena: BattleArena) -> void:
 	)[0]
 	var overlay := enemy_slot.get_node("TargetIndicatorOverlay") as Panel
 	_expect(overlay.visible, "Skill hover should preview valid target overlay.")
-	_expect(not arena.get_node("%SkillActionRegion").visible, "Hover should not reveal action controls.")
+	_expect(not arena.get_node("%BattleActionBar").get_node("%ActionConfirmation").visible, "Hover should not reveal action controls.")
 	skill_button.pressed.emit()
 	_expect(arena.get_skill_transaction_state() == BattleSkillTransaction.State.TARGETING, "Skill button press should enter TARGETING.")
-	_expect(arena.get_node("%SkillActionRegion").visible, "Targeting should reveal action controls.")
+	_expect(arena.get_node("%BattleActionBar").get_node("%ActionConfirmation").visible, "Targeting should reveal action controls.")
 	enemy_slot.mouse_entered.emit()
 	var click := InputEventMouseButton.new()
 	click.button_index = MOUSE_BUTTON_LEFT
 	click.pressed = true
 	enemy_slot.gui_input.emit(click)
-	var confirm := arena.get_node("%SkillConfirmButton") as Button
+	var confirm := arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Button
 	_expect(confirm.visible and not confirm.disabled, "Target lock should reveal enabled Confirm.")
 	confirm.pressed.emit()
 	_expect(enemy.current_hp == 15, "Confirm button should execute the selected skill once.")

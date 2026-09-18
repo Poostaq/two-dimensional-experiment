@@ -144,35 +144,35 @@ func _test_exact_debug_fixtures() -> void:
 
 func _test_persistent_inspector_scene_contract() -> void:
 	var arena := await _instantiate_arena()
-	var panel := arena.get_node_or_null("%SkillInspectorPanel")
+	var panel := arena.get_node_or_null("%BattleActionBar")
 	_assert(panel is PanelContainer and panel.owner != null
-		and arena.get_node_or_null("%SkillInspectorPromptLabel") is Label
-		and arena.get_node_or_null("%SkillInspectorUnitNameLabel") is Label
-		and arena.get_node_or_null("%SkillInspectorStatusLabel") is Label
-		and arena.get_node_or_null("%SkillInspectorCountLabel") is Label
-		and arena.get_node_or_null("%SkillInspectorBody") is HBoxContainer
-		and arena.get_node_or_null("%SkillInspectorCharacterBlock") is VBoxContainer
-		and arena.get_node_or_null("%SkillInspectorSkills") is HBoxContainer
-		and arena.get_node_or_null("%SkillInspectorEmptyLabel") is Label,
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorPromptLabel") is Label
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorUnitNameLabel") is Label
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorStatusLabel") is Label
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorCountLabel") is Label
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorBody") is HBoxContainer
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorCharacterBlock") is VBoxContainer
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") is HBoxContainer
+		and arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorEmptyLabel") is Label,
 		"Persistent inspector scene contract", "the exact scene-owned subtree must exist")
 	_free_arena(arena)
 
 
 func _test_neutral_and_populated_inspection() -> void:
 	var arena := await _instantiate_arena()
-	var prompt := arena.get_node_or_null("%SkillInspectorPromptLabel") as Label
+	var prompt := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorPromptLabel") as Label
 	var current := arena.call("get_current_unit") as BattleUnitState
 	var locked: bool = is_instance_valid(current)
 	locked = locked and arena.call("get_inspected_unit_id") == current.unit_id and not prompt.visible
 	_assert(_advance_to_unit(arena, &"player_4"), "Player 4 fixture arrival", "turn queue must contain player_4")
-	var rows := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
-	var populated := (arena.get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Player Back 2"
-	populated = populated and (arena.get_node_or_null("%SkillInspectorCountLabel") as Label).text == "Skills: 4/4"
+	var rows := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	var populated := (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Player Back 2"
+	populated = populated and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorCountLabel") as Label).text == "Skills: 4/4"
 	populated = populated and rows.get_child_count() == 4
 	_free_arena(arena)
 	arena = await _instantiate_arena()
 	_assert(_advance_to_unit(arena, &"enemy_0"), "Enemy 0 fixture arrival", "turn queue must contain enemy_0")
-	var enemy_populated := (arena.get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Enemy Front 1"
+	var enemy_populated := (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Enemy Front 1"
 	_assert(locked and populated and enemy_populated, "Locked and populated inspection", "fresh current-unit fixtures on both sides must render without a neutral state")
 	_free_arena(arena)
 
@@ -188,7 +188,7 @@ func _test_zero_skill_and_empty_slot_behavior() -> void:
 	empty_slot.set_meta("unit_id", &"")
 	arena.call("_on_slot_gui_input", empty_event, empty_slot)
 	_assert(before == &"player_1" and arena.call("get_inspected_unit_id") == before
-		and (arena.get_node_or_null("%SkillInspectorEmptyLabel") as Label).visible,
+		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorEmptyLabel") as Label).visible,
 		"Zero-skill and empty-slot behavior", "empty state is explicit and empty slots are no-ops")
 	_free_arena(arena)
 
@@ -198,7 +198,7 @@ func _test_reconfiguration_clears_inspection() -> void:
 	_assert(_advance_to_unit(arena, &"player_4"), "Reconfiguration fixture arrival", "turn queue must contain player_4")
 	arena.call("configure_units", _typed_units([BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]))
 	_assert(arena.call("get_inspected_unit_id") == &"fresh"
-		and not (arena.get_node_or_null("%SkillInspectorPromptLabel") as Label).visible,
+		and not (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorPromptLabel") as Label).visible,
 		"Reconfiguration locks current inspection", "reused arenas must inspect the newly configured current unit")
 	_free_arena(arena)
 
@@ -215,8 +215,8 @@ func _test_retained_defeat_updates_status() -> void:
 	_assert(not arena.call("is_battle_complete")
 		and arena.call("get_inspected_unit_id") == &"enemy"
 		and arena.call("get_selected_skill_id") == &"brace"
-		and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
-		and (arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 1,
+		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
+		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 1,
 		"Current defeat retains locked inspection", "a defeated current unit must retain its locked inspection and selection")
 	_free_arena(arena)
 
@@ -224,7 +224,7 @@ func _test_retained_defeat_updates_status() -> void:
 func _test_four_skill_tile_contract() -> void:
 	var arena := await _instantiate_arena()
 	_assert(_advance_to_unit(arena, &"player_4"), "Four-skill fixture arrival", "turn queue must contain player_4")
-	var skills := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	var skills := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	var expected := [
 		[&"quick_strike", "1", "Quick Strike", "Active"],
 		[&"rally", "2", "Rally", "Active"],
@@ -255,7 +255,7 @@ func _test_non_actionable_skill_selection() -> void:
 		before_hp.append((arena.call("get_unit_by_id", unit_id) as BattleUnitState).current_hp)
 	var before_log: Array = arena.call("get_battle_log_entries")
 	var before_outcome: int = arena.call("get_battle_outcome")
-	var skills := arena.get_node_or_null("%SkillInspectorSkills") as HBoxContainer
+	var skills := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	(skills.get_child(1) as Button).pressed.emit()
 	var selected_count := 0
 	for child: Node in skills.get_children():
@@ -286,7 +286,7 @@ func _test_skill_selection_lifecycle_and_viewport() -> void:
 	var defeated_retains: bool = not arena.call("is_battle_complete")
 	defeated_retains = defeated_retains and arena.call("get_selected_skill_id") == &"savage_blow"
 	defeated_retains = defeated_retains and arena.call("get_inspected_unit_id") == &"enemy_0"
-	defeated_retains = defeated_retains and (arena.get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
+	defeated_retains = defeated_retains and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
 	arena.call("configure_units", _typed_units([BattleUnitState.new(&"fresh", "Fresh", BattleUnitState.Side.PLAYER, 0, 9)]))
 	var cleared: bool = arena.call("get_inspected_unit_id") == &"fresh" and arena.call("get_selected_skill_id") == &""
 	var battle_log := arena.get_node_or_null("Margin/VBox/BattleLogPanel") as Control

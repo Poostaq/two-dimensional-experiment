@@ -33,10 +33,10 @@ func _run() -> void:
 		unit.add_speed_modifier(&"fixture", -1, BattleUnitState.ModifierExpiry.CURRENT_ROUND, 1)
 	arena.notify_authoritative_battle_change()
 	await _capture(arena, "living-lanes-dense-1152.png")
-	await _click(arena.get_node("%DefaultAttackButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%DefaultAttackButton") as Control)
 	await _click(arena.get_enemy_slots()[0])
 	await _capture(arena, "living-lanes-dense-target-1152.png")
-	await _click(arena.get_node("%DefaultActionCancelButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%CancelButton") as Control)
 	root.content_scale_size = Vector2i(1280, 720)
 	root.size = Vector2i(1280, 720)
 	await _capture(arena, "living-lanes-dense-1280.png")
@@ -50,14 +50,14 @@ func _run() -> void:
 	defeated.current_hp = 0
 	arena.configure_units([actor, ally, enemy, defeated])
 	await _capture(arena, "living-lanes-sparse-1152.png")
-	await _click(arena.get_node("%DefaultAttackButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%DefaultAttackButton") as Control)
 	await _click(arena.get_enemy_slots()[0])
-	_expect((arena.get_node("%DefaultActionConfirmButton") as Button).disabled == false,
+	_expect((arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Button).disabled == false,
 		"real pointer input selects attack and target")
 	await _capture(arena, "living-lanes-target-1152.png")
-	await _click(arena.get_node("%DefaultActionCancelButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%CancelButton") as Control)
 	_expect(enemy.current_hp == 20, "cancel leaves target HP unchanged")
-	var attack := arena.get_node("%DefaultAttackButton") as Button
+	var attack := arena.get_node("%BattleActionBar").get_node("%DefaultAttackButton") as Button
 	attack.grab_focus()
 	var key := InputEventKey.new()
 	key.keycode = KEY_ENTER
@@ -70,15 +70,15 @@ func _run() -> void:
 	root.push_input(key)
 	await process_frame
 	await _click(arena.get_enemy_slots()[0])
-	await _click(arena.get_node("%DefaultActionConfirmButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Control)
 	_expect(enemy.current_hp == 14, "keyboard attack plus pointer target/confirm commits damage")
 	_expect((arena.get_enemy_slots()[0].get_node("UnitInfo/HealthLabel") as Label).text == "HP 14/20",
 		"committed action refreshes HP")
 	arena.configure_units([actor, ally, enemy, defeated])
 	await process_frame
-	await _click(arena.get_node("%DefaultSwapButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%DefaultSwapButton") as Control)
 	await _click(arena.get_player_slots()[3])
-	await _click(arena.get_node("%DefaultActionConfirmButton") as Control)
+	await _click(arena.get_node("%BattleActionBar").get_node("%ConfirmButton") as Control)
 	_expect(actor.slot_index == 3 and ally.slot_index == 0, "real pointer swap exchanges occupants")
 	await _capture(arena, "living-lanes-swapped-1152.png")
 	arena.queue_free()

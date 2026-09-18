@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://dpjn5e6m8kjh4"]
+
+[node name="BattleSkillButton" type="Button" unique_id=136042639]
+custom_minimum_size = Vector2(88, 88)
+toggle_mode = true
+
+[node name="NumberLabel" type="Label" parent="." unique_id=928282652]
+layout_mode = 0
+offset_left = 6.0
+offset_top = 3.0
+
+[node name="NameLabel" type="Label" parent="." unique_id=722158331]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 18.0
+offset_right = -8.0
+offset_bottom = -26.0
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="KindLabel" type="Label" parent="." unique_id=1123052088]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -24.0
+offset_bottom = -8.0
+horizontal_alignment = 1
+
+[node name="AvailabilityLabel" type="Label" parent="." unique_id=1565787738]
+layout_mode = 0
+anchor_right = 1.0
+offset_left = 22.0
+offset_top = 3.0
+offset_right = -4.0
+horizontal_alignment = 2

@@ -23,11 +23,11 @@ func _init() -> void:
 
 
 func _test_action_region(arena: Control) -> void:
-	var region: Control = arena.get_node_or_null("%SkillActionRegion")
-	var message: Label = arena.get_node_or_null("%SkillActionMessageLabel")
-	var summary: Label = arena.get_node_or_null("%SkillActionSummaryLabel")
-	var confirm: Button = arena.get_node_or_null("%SkillConfirmButton")
-	var cancel: Button = arena.get_node_or_null("%SkillCancelButton")
+	var region: Control = arena.get_node("%BattleActionBar").get_node_or_null("%ActionConfirmation")
+	var message: Label = arena.get_node("%BattleActionBar").get_node_or_null("%ActionMessageLabel")
+	var summary: Label = arena.get_node("%BattleActionBar").get_node_or_null("%ActionSummaryLabel")
+	var confirm: Button = arena.get_node("%BattleActionBar").get_node_or_null("%ConfirmButton")
+	var cancel: Button = arena.get_node("%BattleActionBar").get_node_or_null("%CancelButton")
 	_expect(is_instance_valid(region), "SkillActionRegion must exist in the skill panel.")
 	_expect(is_instance_valid(message), "SkillActionMessageLabel must exist.")
 	_expect(is_instance_valid(summary), "SkillActionSummaryLabel must exist.")
@@ -49,7 +49,7 @@ func _test_target_overlays(arena: Control) -> void:
 
 
 func _test_combo_tooltip_row(arena: Control) -> void:
-	var combo_label: Label = arena.get_node_or_null("%SkillTooltipComboLabel")
+	var combo_label: Label = arena.get_node("%BattleActionBar").get_node_or_null("%SkillTooltipComboLabel")
 	_expect(is_instance_valid(combo_label), "SkillTooltipComboLabel must be scene-owned.")
 	if is_instance_valid(combo_label):
 		_expect(not combo_label.visible, "Combo tooltip row must be hidden initially.")
