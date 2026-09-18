@@ -15,12 +15,13 @@ static func apply_damage(
 static func apply_direct_damage(
 	attacker: BattleUnitState,
 	receiver: BattleUnitState,
-	amount: int
+	amount: int,
+	ignore_armor: bool = false
 ) -> BattleDamageResult:
 	if not _can_apply_damage(attacker, receiver, amount):
 		return null
 	var hp_before: int = receiver.current_hp
-	var armor_prevented: int = receiver.spend_armor(amount)
+	var armor_prevented: int = 0 if ignore_armor else receiver.spend_armor(amount)
 	var hp_damage: int = max(0, amount - armor_prevented)
 	var applied_damage: int = min(hp_damage, hp_before)
 	receiver.current_hp = max(0, hp_before - hp_damage)

@@ -13,6 +13,7 @@ func _assert(condition: bool, message: String) -> void:
 func _run() -> void:
 	var arena := (load("res://Scenes/battle_arena.tscn") as PackedScene).instantiate() as Control
 	root.add_child(arena)
+	arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	var drawer := arena.get_node_or_null("%BattleDebugDrawer") as Control
 	_assert(is_instance_valid(drawer), "authored drawer exists")
@@ -180,7 +181,7 @@ func _assert_live_matches(arena: Control, drawer: Control) -> void:
 	_assert(view["round"] == arena.round_number and view["revision"] == arena.get_battle_revision(), "live round and revision match")
 
 func _test_live_actions(arena: Control, drawer: Control) -> void:
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	var bar := arena.get_node("%BattleActionBar") as Control
 	var live := drawer.get_node("%LiveState") as Label
 	var actor: BattleUnitState = arena.get_current_unit()

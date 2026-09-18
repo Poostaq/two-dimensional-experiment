@@ -131,3 +131,32 @@ static func distinct_allied_attackers_this_round(
 
 static func _is_relevant_record(record: BattleActionRecord, marker_sequence: int) -> bool:
 	return is_instance_valid(record) and record.is_valid() and record.sequence_number > marker_sequence
+
+
+static func armor_lost_this_round(
+	records: Array[BattleActionRecord],
+	target_id: StringName,
+	round_number: int
+) -> int:
+	var lost: int = 0
+	for record: BattleActionRecord in records:
+		if not is_instance_valid(record) or not record.is_valid() or record.round_number != round_number:
+			continue
+		for delta: Dictionary in record.keyword_deltas:
+			if delta.get(&"target_id", &"") == target_id and int(delta.get(&"kind", -1)) == BattleKeywordOperation.Kind.ADD_ARMOR:
+				lost += max(0, -int(delta.get(&"value", 0)))
+	return lost
+
+
+static func moved_this_round(
+	records: Array[BattleActionRecord],
+	target_id: StringName,
+	round_number: int
+) -> bool:
+	for record: BattleActionRecord in records:
+		if not is_instance_valid(record) or not record.is_valid() or record.round_number != round_number:
+			continue
+		if record.slot_before_by_unit.has(target_id) and record.slot_after_by_unit.has(target_id):
+			if record.slot_before_by_unit[target_id] != record.slot_after_by_unit[target_id]:
+				return true
+	return false

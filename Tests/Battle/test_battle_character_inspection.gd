@@ -100,7 +100,7 @@ func _key(code: Key) -> void:
 func _real_action_and_input(arena: Control) -> void:
 	root.content_scale_size = Vector2i(1152, 648)
 	root.size = Vector2i(1152, 648)
-	var skill: CharacterSkill = arena.call("_create_skill", &"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One enemy.", "Front row.", "1 action.")
+	var skill: CharacterSkill = load("res://Tests/Battle/legacy_debug_fixture.gd").call("_create_skill", &"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One enemy.", "Front row.", "1 action.")
 	var actor := BattleUnitState.new(&"actor", "Actor", 0, 0, 10, 30, [skill])
 	var ally := BattleUnitState.new(&"ally", "Ally", 0, 3, 8, 30)
 	var enemy := BattleUnitState.new(&"enemy", "Enemy", 1, 0, 5, 50)

@@ -10,10 +10,11 @@ static func evaluate_targets(
 	battle_complete: bool,
 	round_number: int,
 	battle_revision: int,
-	history_snapshot: Array[BattleActionLogEntry]
+	history_snapshot: Array[BattleActionLogEntry],
+	allow_enemy_action: bool = false
 ) -> SkillTargetEvaluation:
 	var reason: SkillActionReason = _evaluate_actor_and_skill(
-		actor, skill, current_actor_id, battle_complete, round_number
+		actor, skill, current_actor_id, battle_complete, round_number, allow_enemy_action
 	)
 	var valid_ids: Array[StringName] = []
 	var invalid_targets: Dictionary[StringName, SkillActionReason] = {}
@@ -133,7 +134,8 @@ static func validate_confirmation(
 	current_revision: int,
 	history_snapshot: Array[BattleActionLogEntry],
 	proposed_move_path: Array[int] = [],
-	action_records: Array[BattleActionRecord] = []
+	action_records: Array[BattleActionRecord] = [],
+	allow_enemy_action: bool = false
 ) -> SkillConfirmationValidation:
 	if expected_revision != current_revision:
 		return _rejected(
@@ -156,7 +158,8 @@ static func validate_confirmation(
 		battle_complete,
 		round_number,
 		current_revision,
-		history_snapshot
+		history_snapshot,
+		allow_enemy_action
 	)
 	if not evaluation.can_start:
 		return _rejected(
@@ -339,7 +342,8 @@ static func _evaluate_actor_and_skill(
 	skill: CharacterSkill,
 	current_actor_id: StringName,
 	battle_complete: bool,
-	round_number: int
+	round_number: int,
+	allow_enemy_action: bool = false
 ) -> SkillActionReason:
 	if not is_instance_valid(actor) or not actor.is_active():
 		return _reason(
@@ -355,7 +359,7 @@ static func _evaluate_actor_and_skill(
 			actor,
 			skill
 		)
-	if actor.side != BattleUnitState.Side.PLAYER:
+	if actor.side != BattleUnitState.Side.PLAYER and not allow_enemy_action:
 		return _reason(
 			SkillActionReason.Code.ENEMY_NOT_PLAYER_CONTROLLABLE,
 			"Enemy skills can only be inspected.",

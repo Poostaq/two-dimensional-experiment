@@ -10,6 +10,15 @@ enum Kind {
 	CONDITIONAL_ARMOR,
 }
 
+enum BonusCondition {
+	NONE,
+	MOVED_THIS_ROUND,
+	SNARED_AND_ADVANTAGE,
+	LOST_THREE_ARMOR_THIS_ROUND,
+	NO_ARMOR,
+	LOST_ARMOR_THIS_ROUND,
+}
+
 enum TargetRole {
 	ACTOR,
 	PRIMARY,
@@ -51,6 +60,28 @@ var maximum_power_percent: int:
 var conditional_magnitude: int:
 	get:
 		return _conditional_magnitude
+
+var bonus_condition: BonusCondition:
+	get:
+		return _bonus_condition
+var upgraded_power_percent: int:
+	get:
+		return _upgraded_power_percent
+var consume_bonus_advantage: bool:
+	get:
+		return _consume_bonus_advantage
+var ignore_armor: bool:
+	get:
+		return _ignore_armor
+var armor_strip: int:
+	get:
+		return _armor_strip
+
+var _bonus_condition: BonusCondition = BonusCondition.NONE
+var _upgraded_power_percent: int = 0
+var _consume_bonus_advantage: bool = false
+var _ignore_armor: bool = false
+var _armor_strip: int = 0
 
 var _kind: Kind = Kind.DAMAGE
 var _target_role: TargetRole = TargetRole.ACTOR
@@ -167,6 +198,37 @@ static func conditional_armor(role: int, base_amount: int, upgraded_amount: int)
 	return _create(Kind.CONDITIONAL_ARMOR, role, 0, 0, BattleKeywordOperation.Kind.ADD_ARMOR, base_amount, 0, false, 0, 0, upgraded_amount)
 
 
+static func conditional_damage(
+	role: int,
+	base_percent: int,
+	upgraded_percent: int,
+	bonus_condition_value: int,
+	consume_advantage: bool = false,
+	bypass_armor: bool = false
+) -> RefCounted:
+	if bonus_condition_value < BonusCondition.MOVED_THIS_ROUND or bonus_condition_value > BonusCondition.LOST_ARMOR_THIS_ROUND or upgraded_percent <= base_percent:
+		return null
+	if consume_advantage and bonus_condition_value != BonusCondition.SNARED_AND_ADVANTAGE:
+		return null
+	var definition: RefCounted = damage(role, base_percent)
+	if not is_instance_valid(definition):
+		return null
+	definition._bonus_condition = bonus_condition_value
+	definition._upgraded_power_percent = upgraded_percent
+	definition._consume_bonus_advantage = consume_advantage
+	definition._ignore_armor = bypass_armor
+	return definition
+
+
+static func armor_stripping_damage(role: int, percent: int, strip_amount: int) -> RefCounted:
+	if strip_amount <= 0:
+		return null
+	var definition: RefCounted = damage(role, percent)
+	if is_instance_valid(definition):
+		definition._armor_strip = strip_amount
+	return definition
+
+
 func is_valid() -> bool:
 	return _is_valid
 
@@ -174,7 +236,7 @@ func is_valid() -> bool:
 func duplicate_definition() -> RefCounted:
 	if not is_valid():
 		return null
-	return _create(
+	var copied: RefCounted = _create(
 		_kind,
 		_target_role,
 		_power_percent,
@@ -187,6 +249,12 @@ func duplicate_definition() -> RefCounted:
 		_maximum_power_percent,
 		_conditional_magnitude
 	)
+	copied._bonus_condition = _bonus_condition
+	copied._upgraded_power_percent = _upgraded_power_percent
+	copied._consume_bonus_advantage = _consume_bonus_advantage
+	copied._ignore_armor = _ignore_armor
+	copied._armor_strip = _armor_strip
+	return copied
 
 
 static func _create(
@@ -240,7 +308,7 @@ static func _is_valid_input(
 	match effect_kind:
 		Kind.DAMAGE:
 			return (
-				role in [TargetRole.PRIMARY, TargetRole.ALL_SELECTED]
+				role in [TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY]
 				and percent > 0
 				and (advantage_percent == 0 or advantage_percent > percent)
 				and effect_magnitude == 0

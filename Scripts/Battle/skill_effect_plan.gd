@@ -189,7 +189,12 @@ static func _valid_damage_operations(
 	plan_damage_operations: Array[Dictionary]
 ) -> bool:
 	for operation: Dictionary in plan_damage_operations:
-		if operation.size() != DAMAGE_KEYS.size():
+		for key: Variant in operation:
+			if not DAMAGE_KEYS.has(key) and key not in [&"armor_strip", &"ignore_armor"]:
+				return false
+		if operation.has(&"armor_strip") and (not operation[&"armor_strip"] is int or int(operation[&"armor_strip"]) < 0):
+			return false
+		if operation.has(&"ignore_armor") and not operation[&"ignore_armor"] is bool:
 			return false
 		for key: StringName in DAMAGE_KEYS:
 			if not operation.has(key):

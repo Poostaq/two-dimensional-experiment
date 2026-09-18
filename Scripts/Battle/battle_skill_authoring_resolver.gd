@@ -58,7 +58,7 @@ static func build_plan(
 			effect_script
 		)
 		if targets.is_empty():
-			if int(authored_effect.get("target_role")) == effect_script.TargetRole.HISTORY_ALLY:
+			if int(authored_effect.get("target_role")) in [effect_script.TargetRole.HISTORY_ALLY, effect_script.TargetRole.SECONDARY]:
 				continue
 			return null
 		match int(authored_effect.get("kind")):
@@ -70,6 +70,11 @@ static func build_plan(
 						percent = advantage_percent
 						locked_advantage_source = target.get_advantage_source(round_number)
 						consume_advantage = is_instance_valid(locked_advantage_source)
+					if _damage_bonus_met(int(authored_effect.get("bonus_condition")), target, round_number, action_records):
+						percent = int(authored_effect.get("upgraded_power_percent"))
+						if bool(authored_effect.get("consume_bonus_advantage")):
+							locked_advantage_source = target.get_advantage_source(round_number)
+							consume_advantage = is_instance_valid(locked_advantage_source)
 					var requested: int = BattleDamageRules.physical_damage(
 						actor.power,
 						float(percent) / 100.0,
@@ -80,6 +85,8 @@ static func build_plan(
 						&"base_damage": requested,
 						&"combo_bonus_damage": 0,
 						&"total_requested_damage": requested,
+						&"armor_strip": int(authored_effect.get("armor_strip")),
+						&"ignore_armor": bool(authored_effect.get("ignore_armor")),
 					})
 			effect_script.Kind.HISTORY_SCALED_DAMAGE:
 				for target: BattleUnitState in targets:
@@ -179,6 +186,15 @@ static func _conditions_met(
 	var condition_script: Script = load("res://Scripts/Battle/battle_skill_condition.gd") as Script
 	for condition: RefCounted in skill.conditions:
 		match int(condition.get("kind")):
+			condition_script.Kind.PRIMARY_ADVANTAGE:
+				if locked_targets.is_empty() or not locked_targets[0].has_advantage(round_number):
+					return false
+			condition_script.Kind.PRIMARY_SNARED_OR_ADVANTAGE:
+				if locked_targets.is_empty() or not (locked_targets[0].is_snared(round_number) or locked_targets[0].has_advantage(round_number)):
+					return false
+			condition_script.Kind.PRIMARY_LOST_ARMOR_THIS_ROUND:
+				if locked_targets.is_empty() or BattleHistoryQuery.armor_lost_this_round(action_records, locked_targets[0].unit_id, round_number) <= 0:
+					return false
 			condition_script.Kind.PRIMARY_SNARED:
 				if locked_targets.is_empty() or not locked_targets[0].is_snared(round_number):
 					return false
@@ -298,3 +314,23 @@ static func _latest_ally_attacked_by_primary(
 				):
 					return unit.unit_id
 	return &""
+
+
+static func _damage_bonus_met(
+	condition: int,
+	target: BattleUnitState,
+	round_number: int,
+	records: Array[BattleActionRecord]
+) -> bool:
+	match condition:
+		BattleSkillEffectDefinition.BonusCondition.MOVED_THIS_ROUND:
+			return BattleHistoryQuery.moved_this_round(records, target.unit_id, round_number)
+		BattleSkillEffectDefinition.BonusCondition.SNARED_AND_ADVANTAGE:
+			return target.is_snared(round_number) and target.has_advantage(round_number)
+		BattleSkillEffectDefinition.BonusCondition.LOST_THREE_ARMOR_THIS_ROUND:
+			return BattleHistoryQuery.armor_lost_this_round(records, target.unit_id, round_number) >= 3
+		BattleSkillEffectDefinition.BonusCondition.NO_ARMOR:
+			return target.get_armor() == 0
+		BattleSkillEffectDefinition.BonusCondition.LOST_ARMOR_THIS_ROUND:
+			return BattleHistoryQuery.armor_lost_this_round(records, target.unit_id, round_number) > 0
+	return false

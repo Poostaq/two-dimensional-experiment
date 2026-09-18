@@ -9,6 +9,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var arena := (load("res://Scenes/battle_arena.tscn") as PackedScene).instantiate() as Control
 	root.add_child(arena)
+	arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	var bar := arena.get_node_or_null("%BattleActionBar") as Control
 	_assert(is_instance_valid(bar), "one authored unified action bar")
@@ -74,7 +75,7 @@ func _assert(condition: bool, label: String) -> void:
 		_failures.append(label)
 
 func _test_lifecycle(arena: Control, bar: Control) -> void:
-	var skill: CharacterSkill = arena.call("_create_skill", &"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One enemy.", "Front row.", "1 action.")
+	var skill: CharacterSkill = load("res://Tests/Battle/legacy_debug_fixture.gd").call("_create_skill", &"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One enemy.", "Front row.", "1 action.")
 	var actor := BattleUnitState.new(&"actor", "Actor", 0, 0, 10, 20, [skill])
 	var ally := BattleUnitState.new(&"ally", "Ally", 0, 3, 8)
 	var enemy := BattleUnitState.new(&"enemy", "Enemy", 1, 0, 5, 50)

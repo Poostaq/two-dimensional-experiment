@@ -150,6 +150,7 @@ func _test_mechanical_definition_validation_and_copy() -> void:
 func _test_active_fixture_mechanics() -> void:
 	var arena := (load(ARENA_PATH) as PackedScene).instantiate() as BattleArena
 	get_root().add_child(arena)
+	arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	var expected := {
 		&"shield_bash": [CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.FRONT_ROW, CharacterSkill.Effect.DAMAGE, 7, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 1, 0],
@@ -203,6 +204,7 @@ func _test_unit_runtime_state_contract_exists() -> void:
 func _test_cooldown_and_speed_state() -> void:
 	var arena := (load(ARENA_PATH) as PackedScene).instantiate() as BattleArena
 	get_root().add_child(arena)
+	arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	var shield := arena.get_unit_by_id(&"player_0").skills[0]
 	var quick_step := arena.get_unit_by_id(&"player_2").skills[0]
@@ -266,6 +268,7 @@ func _test_target_evaluation_and_confirmation() -> void:
 	var empty_history: Array[BattleActionLogEntry] = []
 	var arena := (load(ARENA_PATH) as PackedScene).instantiate() as BattleArena
 	get_root().add_child(arena)
+	arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	var shield := _find_fixture_skill(arena, &"shield_bash")
 	var shield_roster: Array[CharacterSkill] = [shield]

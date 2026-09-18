@@ -8,6 +8,12 @@ signal reward_confirmed(option: BattleRewardOption)
 signal recruitment_placement_requested(option: BattleRewardOption)
 signal preparation_commit_requested(choice: int, target_unit_id: StringName, expected_setup_key: String)
 
+@export var debug_encounter_index: int = 0
+
+var _auto_enemy_turns: bool = false
+var _executing_enemy_action: bool = false
+var _enemy_action_elapsed: float = 0.0
+
 const SIDE_SLOT_COUNT := 6
 const NEUTRAL_SLOT_COLOR := Color.WHITE
 const CURRENT_SLOT_BORDER_COLOR := Color.WHITE
@@ -151,6 +157,7 @@ func _ready() -> void:
 	_assign_slot_metadata(_enemy_formation, "enemy")
 	_refresh_context()
 	configure_units(_create_debug_units())
+	_auto_enemy_turns = true
 
 
 func configure(coordinate: Vector2i, type: String) -> void:
@@ -158,6 +165,7 @@ func configure(coordinate: Vector2i, type: String) -> void:
 	_has_configured_reward_options = false
 	if type != WorldEncounterType.COMBAT and type != WorldEncounterType.BOSS:
 		return
+	debug_encounter_index = posmod(coordinate.x + 2 * coordinate.y, 3)
 	encounter_coordinate = coordinate
 	encounter_type = type
 	if is_node_ready():
@@ -170,6 +178,8 @@ func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	_auto_enemy_turns = false
+	_enemy_action_elapsed = 0.0
 	close_character_info(false)
 	_info_epoch += 1
 	_info_revision = 0
@@ -216,20 +226,57 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 
 
 func configure_party_units(player_units: Array[BattleUnitState]) -> void:
-	var fixture_units := _create_debug_units()
-	var fixture_players: Dictionary[StringName, BattleUnitState] = {}
-	var battle_units: Array[BattleUnitState] = []
-	for fixture: BattleUnitState in fixture_units:
-		if fixture.side == BattleUnitState.Side.PLAYER:
-			fixture_players[fixture.unit_id] = fixture
-		else:
-			battle_units.append(fixture)
-	for player: BattleUnitState in player_units:
-		var fixture := fixture_players.get(player.unit_id) as BattleUnitState
-		if player.skills.is_empty() and is_instance_valid(fixture):
-			player.set_skills(fixture.skills)
-		battle_units.append(player)
+	var catalog: Script = load("res://Scripts/Battle/debug_encounter_catalog.gd")
+	var battle_units: Array[BattleUnitState] = catalog.create_enemies(debug_encounter_index)
+	battle_units.append_array(player_units)
 	configure_units(battle_units)
+	_auto_enemy_turns = true
+
+
+func _process(delta: float) -> void:
+	var actor: BattleUnitState = get_current_unit()
+	if (
+		not _auto_enemy_turns or _preparation_required or _action_in_progress
+		or is_battle_complete() or not is_instance_valid(actor)
+		or actor.side != BattleUnitState.Side.ENEMY
+	):
+		_enemy_action_elapsed = 0.0
+		return
+	_enemy_action_elapsed += delta
+	if _enemy_action_elapsed < 0.65:
+		return
+	_enemy_action_elapsed = 0.0
+	_perform_enemy_turn()
+
+
+func _perform_enemy_turn() -> bool:
+	var actor: BattleUnitState = get_current_unit()
+	if (
+		_preparation_required or _action_in_progress or is_battle_complete()
+		or not is_instance_valid(actor) or actor.side != BattleUnitState.Side.ENEMY
+	):
+		return false
+	var catalog: Script = load("res://Scripts/Battle/debug_encounter_catalog.gd")
+	var choice: Dictionary = catalog.choose_action(
+		actor, _units, round_number, _battle_revision,
+		get_committed_action_history_snapshot(), get_action_records()
+	)
+	_executing_enemy_action = true
+	var committed: bool = false
+	if not choice.is_empty() and begin_skill_action(actor.unit_id, choice["skill_id"]):
+		var selected: bool = true
+		for target_id: StringName in choice["target_ids"]:
+			selected = select_skill_target(target_id) and selected
+		if selected:
+			committed = confirm_skill_action()
+	if not committed:
+		_skill_transaction.reset()
+		for target: BattleUnitState in _units:
+			if is_instance_valid(target) and target.is_active() and target.side != actor.side:
+				committed = confirm_default_attack(actor.unit_id, target.unit_id, _battle_revision)
+				break
+	_executing_enemy_action = false
+	return committed
 
 
 func get_setup_identity() -> RefCounted:
@@ -638,6 +685,7 @@ func confirm_default_attack(
 	_action_in_progress = true
 	_refresh_character_info()
 	var action_round: int = round_number
+	var armor_before: int = target.get_armor()
 	var result: BattleDamageResult = BattleDamageResolver.apply_direct_damage(
 		actor,
 		target,
@@ -691,6 +739,7 @@ func confirm_default_attack(
 		target.unit_id: result.was_direct_hit,
 	}
 	var empty_keyword_deltas: Array[Dictionary] = []
+	_record_armor_loss(empty_keyword_deltas, target, armor_before)
 	var action_record_script: Script = load("res://Scripts/Battle/battle_action_record.gd")
 	var action_record: BattleActionRecord = action_record_script.new(
 		BattleActionRecord.Kind.DEFAULT_ATTACK,
@@ -733,7 +782,7 @@ func _is_valid_default_attack(actor: BattleUnitState, target: BattleUnitState) -
 		not is_battle_complete()
 		and is_instance_valid(actor)
 		and actor.is_active()
-		and actor.side == BattleUnitState.Side.PLAYER
+		and (actor.side == BattleUnitState.Side.PLAYER or _executing_enemy_action)
 		and is_instance_valid(current)
 		and current.unit_id == actor.unit_id
 		and is_instance_valid(target)
@@ -948,7 +997,8 @@ func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
 		is_battle_complete(),
 		round_number,
 		_battle_revision,
-		get_committed_action_history_snapshot()
+		get_committed_action_history_snapshot(),
+		_executing_enemy_action
 	)
 	var generation: int = _skill_transaction.preview(evaluation)
 	if not _skill_transaction.begin_targeting(generation):
@@ -1021,7 +1071,8 @@ func confirm_skill_action() -> bool:
 		_battle_revision,
 		get_committed_action_history_snapshot(),
 		_skill_transaction.declared_move_path,
-		get_action_records()
+		get_action_records(),
+		_executing_enemy_action
 	)
 	if not _skill_transaction.complete_confirmation(validation, generation):
 		_render_skill_transaction()
@@ -1121,11 +1172,15 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		action_base_damage_by_target[target_id] = int(operation[&"base_damage"])
 		action_combo_bonus_damage_by_target[target_id] = int(operation[&"combo_bonus_damage"])
 		affected_units[target_id] = target
+		var armor_before: int = target.get_armor()
+		target.spend_armor(int(operation.get(&"armor_strip", 0)))
 		var result: BattleDamageResult = BattleDamageResolver.apply_direct_damage(
 			actor,
 			target,
-			int(operation[&"total_requested_damage"])
+			int(operation[&"total_requested_damage"]),
+			bool(operation.get(&"ignore_armor", false))
 		)
+		_record_armor_loss(keyword_deltas, target, armor_before)
 		if not is_instance_valid(result):
 			_action_in_progress = false
 			_invalidate_character_info()
@@ -1583,141 +1638,10 @@ func get_enemy_slots() -> Array[Control]:
 
 
 func _create_debug_units() -> Array[BattleUnitState]:
-	return [
-		BattleUnitState.new(&"player_0", "Player Front 1", BattleUnitState.Side.PLAYER, 0, 8, 20, _skill_roster([
-			_create_skill(&"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Deal 7 damage.", "One selected active enemy.", "User must occupy a front-row slot.", "1 turn after use."),
-			_create_skill(&"frontline_guard", "Frontline Guard", CharacterSkill.Kind.PASSIVE, "Reduce the next damage taken by an adjacent ally by 3.", "Adjacent active allies.", "User must occupy a front-row slot.", "None"),
-		])),
-		BattleUnitState.new(&"player_1", "Player Front 2", BattleUnitState.Side.PLAYER, 1, 6),
-		BattleUnitState.new(&"player_2", "Player Front 3", BattleUnitState.Side.PLAYER, 2, 6, 20, _skill_roster([
-			_create_skill(&"quick_step", "Quick Step", CharacterSkill.Kind.ACTIVE, "Gain 2 Speed until the end of the next turn.", "Self.", "None", "2 turns after use."),
-		])),
-		BattleUnitState.new(&"player_3", "Player Back 1", BattleUnitState.Side.PLAYER, 3, 4),
-		BattleUnitState.new(&"player_4", "Player Back 2", BattleUnitState.Side.PLAYER, 4, 9, 20, _skill_roster([
-			_create_skill(&"quick_strike", "Quick Strike", CharacterSkill.Kind.ACTIVE, "Deal 5 damage.", "One selected active enemy.", "None", "None"),
-			_create_skill(&"rally", "Rally", CharacterSkill.Kind.ACTIVE, "Grant all active allies 2 Speed until the end of the round.", "All active allies, including the user.", "None", "2 turns after use."),
-			_create_skill(&"evasion", "Evasion", CharacterSkill.Kind.PASSIVE, "Prevent the first damage instance received each round.", "Self.", "None", "None"),
-			_create_skill(&"momentum", "Momentum", CharacterSkill.Kind.PASSIVE, "Gain 1 Speed after taking an action, lasting until battle ends.", "Self.", "User must remain active.", "None"),
-		])),
-		BattleUnitState.new(&"player_5", "Player Back 3", BattleUnitState.Side.PLAYER, 5, 2),
-		BattleUnitState.new(&"enemy_0", "Enemy Front 1", BattleUnitState.Side.ENEMY, 0, 8, 20, _skill_roster([
-			_create_skill(&"savage_blow", "Savage Blow", CharacterSkill.Kind.ACTIVE, "Deal 12 damage.", "One selected active enemy.", "User must be above 50% HP.", "2 turns after use."),
-			_create_skill(&"blood_scent", "Blood Scent", CharacterSkill.Kind.PASSIVE, "Deal 3 additional damage to injured enemies.", "Enemies below 50% HP.", "Target must be below 50% HP.", "None"),
-		])),
-		BattleUnitState.new(&"enemy_4", "Enemy Back 2", BattleUnitState.Side.ENEMY, 4, 9, 20, _skill_roster([
-			_create_skill(&"shadow_lunge", "Shadow Lunge", CharacterSkill.Kind.ACTIVE, "Deal 10 damage.", "Farthest active enemy.", "User must occupy a back-row slot.", "Unavailable for the first turn of battle; none after use."),
-		])),
-	]
-
-
-func _create_skill(
-	id: StringName,
-	display_name: String,
-	kind: CharacterSkill.Kind,
-	effect: String,
-	targeting: String,
-	requirements: String,
-	cooldown: String
-) -> CharacterSkill:
-	var targeting_mode: CharacterSkill.TargetingMode = CharacterSkill.TargetingMode.PREDEFINED
-	var target_side: CharacterSkill.TargetSide = CharacterSkill.TargetSide.SELF
-	var target_rule: CharacterSkill.TargetRule = CharacterSkill.TargetRule.SELF
-	var requirement: CharacterSkill.Requirement = CharacterSkill.Requirement.NONE
-	var mechanical_effect: CharacterSkill.Effect = CharacterSkill.Effect.NONE
-	var effect_magnitude: int = 0
-	var effect_duration: int = 0
-	var effect_duration_mode: CharacterSkill.EffectDuration = CharacterSkill.EffectDuration.NONE
-	var cooldown_mode: CharacterSkill.CooldownMode = CharacterSkill.CooldownMode.NONE
-	var cooldown_actions: int = 0
-	var unavailable_through_round: int = 0
-	var combo_definition: RefCounted = null
-	match id:
-		&"shield_bash":
-			targeting_mode = CharacterSkill.TargetingMode.FREE
-			target_side = CharacterSkill.TargetSide.ENEMY
-			target_rule = CharacterSkill.TargetRule.SELECT_ONE
-			requirement = CharacterSkill.Requirement.FRONT_ROW
-			mechanical_effect = CharacterSkill.Effect.DAMAGE
-			effect_magnitude = 7
-			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
-			cooldown_actions = 1
-		&"quick_step":
-			target_side = CharacterSkill.TargetSide.SELF
-			target_rule = CharacterSkill.TargetRule.SELF
-			mechanical_effect = CharacterSkill.Effect.SPEED_BOOST
-			effect_magnitude = 2
-			effect_duration = 1
-			effect_duration_mode = CharacterSkill.EffectDuration.NEXT_ACTION
-			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
-			cooldown_actions = 2
-		&"quick_strike":
-			targeting_mode = CharacterSkill.TargetingMode.FREE
-			target_side = CharacterSkill.TargetSide.ENEMY
-			target_rule = CharacterSkill.TargetRule.SELECT_ONE
-			mechanical_effect = CharacterSkill.Effect.DAMAGE
-			effect_magnitude = 5
-			var condition_script: Script = load("res://Scripts/Battle/combo_condition.gd")
-			var effect_script: Script = load("res://Scripts/Battle/combo_bonus_effect.gd")
-			var definition_script: Script = load("res://Scripts/Battle/combo_definition.gd")
-			combo_definition = definition_script.create(
-				[condition_script.create(0)],
-				[effect_script.create(0, 3)],
-				"+3 damage if another ally damaged this target with a skill this round."
-			)
-		&"rally":
-			target_side = CharacterSkill.TargetSide.ALLY
-			target_rule = CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES
-			mechanical_effect = CharacterSkill.Effect.SPEED_BOOST
-			effect_magnitude = 2
-			effect_duration = 1
-			effect_duration_mode = CharacterSkill.EffectDuration.CURRENT_ROUND
-			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
-			cooldown_actions = 2
-		&"savage_blow":
-			targeting_mode = CharacterSkill.TargetingMode.FREE
-			target_side = CharacterSkill.TargetSide.ENEMY
-			target_rule = CharacterSkill.TargetRule.SELECT_ONE
-			requirement = CharacterSkill.Requirement.ABOVE_HALF_HP
-			mechanical_effect = CharacterSkill.Effect.DAMAGE
-			effect_magnitude = 12
-			cooldown_mode = CharacterSkill.CooldownMode.POST_USE_ACTIONS
-			cooldown_actions = 2
-		&"shadow_lunge":
-			target_side = CharacterSkill.TargetSide.ENEMY
-			target_rule = CharacterSkill.TargetRule.FARTHEST_ACTIVE_ENEMY
-			requirement = CharacterSkill.Requirement.BACK_ROW
-			mechanical_effect = CharacterSkill.Effect.DAMAGE
-			effect_magnitude = 10
-			cooldown_mode = CharacterSkill.CooldownMode.ROUND_GATE
-			unavailable_through_round = 1
-	return CharacterSkill.new(
-		id,
-		display_name,
-		kind,
-		effect,
-		targeting,
-		requirements,
-		cooldown,
-		targeting_mode,
-		target_side,
-		target_rule,
-		requirement,
-		mechanical_effect,
-		effect_magnitude,
-		effect_duration,
-		effect_duration_mode,
-		cooldown_mode,
-		cooldown_actions,
-		unavailable_through_round,
-		combo_definition
-	)
-
-
-func _skill_roster(values: Array) -> Array[CharacterSkill]:
-	var roster: Array[CharacterSkill] = []
-	for value: Variant in values:
-		roster.append(value as CharacterSkill)
-	return roster
+	var catalog: Script = load("res://Scripts/Battle/debug_encounter_catalog.gd")
+	var units: Array[BattleUnitState] = RunRoster.new().create_battle_units()
+	units.append_array(catalog.create_enemies(debug_encounter_index))
+	return units
 
 
 func _complete_battle(outcome: BattleOutcome.Type) -> void:
@@ -2032,10 +1956,9 @@ func _render_default_action() -> void:
 
 
 func _refresh_context() -> void:
-	if encounter_type.is_empty():
-		_encounter_type_label.text = "Battle"
-		return
-	_encounter_type_label.text = "%s Battle" % encounter_type.capitalize()
+	var catalog: Script = load("res://Scripts/Battle/debug_encounter_catalog.gd")
+	var label: String = "Battle" if encounter_type.is_empty() else "%s Battle" % encounter_type.capitalize()
+	_encounter_type_label.text = "%s — %s" % [label, catalog.get_encounter_name(debug_encounter_index)]
 
 
 func _get_turn_order_entries() -> Array[Dictionary]:
@@ -2311,6 +2234,8 @@ func _collect_effect_highlight_colors(
 		if target_id.is_empty():
 			continue
 		var effect_color := _effect_color_for_keyword_kind(int(delta.get(&"kind", -1)))
+		if int(delta.get(&"kind", -1)) == BattleKeywordOperation.Kind.ADD_ARMOR and int(delta.get(&"value", 0)) < 0:
+			effect_color = EFFECT_NEGATIVE_BORDER_COLOR
 		if effect_color == Color.TRANSPARENT:
 			continue
 		if not effect_colors.has(target_id) or effect_colors[target_id] != EFFECT_NEGATIVE_BORDER_COLOR:
@@ -2944,3 +2869,15 @@ func _update_info_slot_focus() -> void:
 	for slot: Control in get_player_slots() + get_enemy_slots():
 		var occupied: bool = not StringName(slot.get_meta("unit_id", &"")).is_empty()
 		slot.focus_mode = Control.FOCUS_ALL if occupied and not _slot_is_info_obscured(slot) else Control.FOCUS_NONE
+
+
+func _record_armor_loss(deltas: Array[Dictionary], target: BattleUnitState, armor_before: int) -> void:
+	var lost: int = armor_before - target.get_armor()
+	if lost > 0:
+		deltas.append({
+			&"kind": BattleKeywordOperation.Kind.ADD_ARMOR,
+			&"target_id": target.unit_id,
+			&"value": -lost,
+			&"affected_skill_id": &"",
+			&"from_reaction": false,
+		})

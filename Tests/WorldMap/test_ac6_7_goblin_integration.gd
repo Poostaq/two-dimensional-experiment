@@ -139,6 +139,8 @@ func _verify_first_battle(world: WorldRuntimeController, coordinate: Vector2i) -
 		)
 	_expect(not arena.get_action_records().is_empty(), "committed action enters battle history")
 	_expect(not arena.get_committed_action_history_snapshot().is_empty(), "committed action enters authored-history queries")
+	# Enemy initiative may follow Brakka; select the player whose movement is tested.
+	_advance_until_current(arena, &"scrapshield_bruiser")
 	var mover := arena.get_current_unit()
 	var moved := false
 	if is_instance_valid(mover) and mover.side == BattleUnitState.Side.PLAYER:

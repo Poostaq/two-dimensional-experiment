@@ -4,6 +4,7 @@ extends RefCounted
 const SCHEMA := "twde-run-save"
 const SAVE_VERSION := 2
 const GENERATOR_VERSION := 1
+const STARTER_ROSTER_VERSION := 1
 
 static var V1_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_save_codec_v1.gd")
 static var SAVE_ERROR_SCRIPT: GDScript = load("res://Scripts/Save/world_save_error.gd")
@@ -19,6 +20,7 @@ static func encode(plan: RefCounted, resolved_seed: String, run_state: RefCounte
     var root := {
         "schema": SCHEMA,
         "save_version": SAVE_VERSION,
+        "starter_roster_version": STARTER_ROSTER_VERSION,
         "world": {
             "generator_version": plan.get_version(),
             "run_seed_utf8_hex": plan.get_seed_hex(),
@@ -48,6 +50,9 @@ static func _is_legacy_envelope(root: Dictionary) -> bool:
 static func _decode_v2(root: Dictionary) -> Dictionary:
     if root.get("schema") != SCHEMA or int(root.get("save_version", -1)) != SAVE_VERSION:
         return _save_failure("root_schema")
+    var roster_version: Variant = root.get("starter_roster_version", 0)
+    if not (roster_version is int or roster_version is float) or (roster_version != 0 and roster_version != STARTER_ROSTER_VERSION):
+        return _save_failure("starter_roster_version")
     var world_value: Variant = root.get("world")
     if not world_value is Dictionary:
         return _save_failure("world_object")
@@ -87,6 +92,8 @@ static func _decode_v2(root: Dictionary) -> Dictionary:
     var state_result: Dictionary = RUN_STATE_SCRIPT.from_dictionary(world["run_state"], plan)
     if not bool(state_result.get("ok", false)):
         return _save_failure("run_state")
+    if int(roster_version) == 0 and not _migrate_legacy_starter_health(state_result["value"]):
+        return _save_failure("legacy_starter_health")
     return {
         "ok": true,
         "value": {
@@ -96,6 +103,21 @@ static func _decode_v2(root: Dictionary) -> Dictionary:
         },
         "error": null,
     }
+
+
+static func _migrate_legacy_starter_health(state: RefCounted) -> bool:
+    if not state.has_character_hp_snapshot():
+        return true
+    var health: Dictionary[StringName, int] = state.get_character_hp_snapshot()
+    # Legacy placeholders had 20 HP. Only these two starters lost maximum HP.
+    var new_maxima: Dictionary[StringName, int] = {&"player_1": 14, &"player_2": 16}
+    for character_id: StringName in new_maxima:
+        if not health.has(character_id):
+            continue
+        if health[character_id] > 20:
+            return false
+        health[character_id] = mini(health[character_id], new_maxima[character_id])
+    return state.set_character_hp_snapshot(health)
 
 
 static func _save_failure(constraint: String) -> Dictionary:

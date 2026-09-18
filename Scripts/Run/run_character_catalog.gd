@@ -31,11 +31,13 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 
 
 static func create_starters() -> Array[RunCharacter]:
-	return [
-		RunCharacter.new(&"player_0", "Player Front 1", 8, 20, []),
-		RunCharacter.new(&"player_1", "Player Front 2", 6, 20, []),
-		RunCharacter.new(&"player_2", "Player Front 3", 6, 20, []),
-	]
+	var starters: Array[RunCharacter] = []
+	for index: int in 3:
+		var character: RunCharacter = create_by_class_id(GOBLIN_CLASS_IDS[index])
+		# Keep saved formation identities while replacing placeholder content.
+		character.character_id = StringName("player_%d" % index)
+		starters.append(character)
+	return starters
 
 
 static func create_for_reward(reward_id: StringName) -> RunCharacter:

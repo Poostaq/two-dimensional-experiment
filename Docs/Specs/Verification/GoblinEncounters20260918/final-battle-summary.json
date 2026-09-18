@@ -1,0 +1,188 @@
+[
+    {
+        "Test":  "test_ac2_2_speed_order.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.2 speed order tests: PASS (12/12)"
+    },
+    {
+        "Test":  "test_ac2_3_damage_defeat_log.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.3 damage and battle log tests: PASS (24/24)"
+    },
+    {
+        "Test":  "test_ac2_4_battle_results.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.4 battle result tests: PASS (13/13)"
+    },
+    {
+        "Test":  "test_ac2_5_reward_selection.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.5 reward selection tests: PASS (17/17)"
+    },
+    {
+        "Test":  "test_ac2_6_character_skills.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.6 character skill tests: PASS (19/19)"
+    },
+    {
+        "Test":  "test_ac2_7_skill_preview.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.7 tests passed"
+    },
+    {
+        "Test":  "test_ac2_8_skill_arena.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.8 skill arena tests: PASS"
+    },
+    {
+        "Test":  "test_ac2_8_skill_lifecycle.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.8 skill lifecycle tests: PASS"
+    },
+    {
+        "Test":  "test_ac2_8_skill_scene.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.8 skill scene tests: PASS"
+    },
+    {
+        "Test":  "test_ac2_8_skill_targeting.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.8 skill targeting tests: PASS"
+    },
+    {
+        "Test":  "test_ac2_8_skill_transaction.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.8 skill transaction tests: PASS"
+    },
+    {
+        "Test":  "test_ac2_9_combo_system.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC2.9 combo system tests: PASS"
+    },
+    {
+        "Test":  "test_ac3_4_default_actions.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC3.4 default actions: PASS (5/5)"
+    },
+    {
+        "Test":  "test_ac6_1_combat_foundation.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC6.1 combat foundation: PASS (40/40)"
+    },
+    {
+        "Test":  "test_ac6_2_keyword_reactions.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC6.2 keyword reactions: PASS (113/113)"
+    },
+    {
+        "Test":  "test_ac6_3_goblin_wave_a.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC6.3 Goblin wave A: 119/119 assertions passed."
+    },
+    {
+        "Test":  "test_ac6_4_goblin_wave_b.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC6.4 Goblin wave B: 93/93 assertions passed."
+    },
+    {
+        "Test":  "test_ac6_5_brakka.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC6.5 Brakka: PASS (70/70)"
+    },
+    {
+        "Test":  "test_ac6_6_battle_preparation.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "PASS test_ac6_6_battle_preparation (33/33)"
+    },
+    {
+        "Test":  "test_ac7_1_living_lanes.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.1 living lanes: PASS"
+    },
+    {
+        "Test":  "test_ac7_2_turn_order_ribbon.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.2 turn-order ribbon: PASS"
+    },
+    {
+        "Test":  "test_ac7_3_unified_action_bar.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.3 unified action bar: PASS"
+    },
+    {
+        "Test":  "test_ac7_4_debug_drawer.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.4 debug drawer: PASS"
+    },
+    {
+        "Test":  "test_ac7_5_battle_visual_states.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.5 battle visual states: PASS"
+    },
+    {
+        "Test":  "test_active_turn_skill_lock.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "Active-turn skill lock tests: PASS (5/5)"
+    },
+    {
+        "Test":  "test_battle_character_info_panel.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.6 character info panel: PASS"
+    },
+    {
+        "Test":  "test_battle_character_info_presenter.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "Character information presenter: PASS"
+    },
+    {
+        "Test":  "test_battle_character_inspection.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "AC7.6 character inspection: PASS"
+    },
+    {
+        "Test":  "test_debug_encounter_catalog.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "Encounter catalog: 0 failures"
+    },
+    {
+        "Test":  "test_enemy_skill_rules.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "Enemy skill rules: 31 assertions passed."
+    },
+    {
+        "Test":  "test_goblin_encounter_integration.gd",
+        "Exit":  0,
+        "ScriptError":  false,
+        "Result":  "Goblin encounter integration: PASS"
+    }
+]

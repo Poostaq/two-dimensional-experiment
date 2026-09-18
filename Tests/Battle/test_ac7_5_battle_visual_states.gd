@@ -17,6 +17,7 @@ func _run() -> void:
 		_test_resolver(load(path))
 	var arena := (load("res://Scenes/battle_arena.tscn") as PackedScene).instantiate() as BattleArena
 	root.add_child(arena)
+	arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	if arena.has_method("_evaluate_visual_skill"):
 		await _test_observational_preview(arena)
@@ -109,7 +110,7 @@ func _test_observational_preview(arena: BattleArena) -> void:
 	_assert(not ally.get_meta("visual_selected", false) and ally.get_meta("visual_target_border", &"") == &"", "turn clears target layers")
 
 func _test_availability(arena: BattleArena) -> void:
-	var skill: CharacterSkill = arena.call("_create_skill", &"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Damage.", "Enemy.", "Front.", "None.")
+	var skill: CharacterSkill = load("res://Tests/Battle/legacy_debug_fixture.gd").call("_create_skill", &"shield_bash", "Shield Bash", CharacterSkill.Kind.ACTIVE, "Damage.", "Enemy.", "Front.", "None.")
 	var actor := BattleUnitState.new(&"actor", "Actor", 0, 0, 10, 20, [skill])
 	var ally := BattleUnitState.new(&"ally", "Ally", 0, 3, 5)
 	arena.configure_units([actor, ally])
@@ -221,7 +222,7 @@ func _observed_state(arena: BattleArena) -> Dictionary:
 		"transaction": arena.get_skill_presentation_snapshot()}
 
 func _test_lifecycle(arena: BattleArena) -> void:
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	var bar := arena.get_node("%BattleActionBar") as Control
 	var rows := bar.get_node("%SkillInspectorSkills") as HBoxContainer
 	var first := rows.get_child(0) as Button
@@ -253,23 +254,23 @@ func _test_lifecycle(arena: BattleArena) -> void:
 	_assert(arena.confirm_skill_action(), "selected action confirms")
 	await process_frame
 	_assert(arena.get("_visual_hover_skill") == &"" and not target.get_meta("visual_selected"), "confirmation clears hover and selected")
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	first = rows.get_child(0) as Button
 	first.mouse_entered.emit()
 	var actor: BattleUnitState = arena.get_current_unit()
 	actor.set_skill_cooldown(first.get_meta("skill_id"), 2)
 	arena.notify_authoritative_battle_change()
 	_assert(target.get_meta("visual_target_border") == &"", "cooldown removes now-illegal hover")
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	first = rows.get_child(0) as Button
 	first.pressed.emit()
 	arena.select_skill_target(&"enemy_0")
 	arena.remove_battle_unit(&"enemy_0")
 	_assert(not target.get_meta("visual_selected") and target.get_meta("visual_target_border") == &"", "removal clears old target slot")
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	first = rows.get_child(0) as Button
 	first.mouse_entered.emit()
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	await process_frame
 	_assert(arena.get("_visual_hover_skill") == &"" and not (bar.get_node("%SkillTooltipPanel") as Control).visible, "identical ID reset invalidates deferred tooltip")
 	arena.configure(Vector2i.ZERO, WorldEncounterType.COMBAT)
@@ -302,7 +303,7 @@ func _test_lifecycle(arena: BattleArena) -> void:
 		first.pressed.emit()
 		_assert(arena.get_selected_skill_id() == &"" and arena.get_battle_revision() == terminal_revision, "completed detail cannot activate")
 
-	arena.configure_units(arena.call("_create_debug_units"))
+	arena.configure_units(load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 	(bar.get_node("%DefaultAttackButton") as Button).pressed.emit()
 	arena.call("_select_default_action_target", &"enemy_0", 0)
 	arena.call("_on_exit_debug_pressed")

@@ -360,6 +360,7 @@ func _instantiate_arena() -> Control:
 	var arena := packed.instantiate() as Control if packed != null else null
 	if is_instance_valid(arena):
 		root.add_child(arena)
+		arena.call("configure_units", load("res://Tests/Battle/legacy_debug_fixture.gd").create_units())
 		await process_frame
 	return arena
 
