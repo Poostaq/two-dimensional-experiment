@@ -105,6 +105,11 @@ func _exit_tree() -> void:
 	_clear_committed_action_history()
 
 
+var _visual_resolver: Script = load("res://Scripts/UI/battle_visual_state.gd")
+var _visual_hover_skill: StringName = &""
+var _pointer_target_slot: Control
+var _focused_target_slot: Control
+
 func _ready() -> void:
 	_turn_order_ribbon.unit_preview_changed.connect(_on_turn_order_preview_changed)
 	_debug_drawer.damage_requested.connect(_on_advance_debug_pressed)
@@ -502,6 +507,13 @@ func inspect_unit(unit_id: StringName) -> void:
 
 
 func _sync_skill_inspector_to_current_turn() -> void:
+	if is_battle_complete() and is_instance_valid(get_unit_by_id(_inspected_unit_id)):
+		_hide_skill_tooltip()
+		_clear_default_action_state()
+		_selected_skill_id = &""
+		_skill_transaction.reset()
+		_refresh_skill_inspector()
+		return
 	var current_unit := get_current_unit()
 	if (
 		_battle_outcome != BattleOutcome.Type.IN_PROGRESS
@@ -510,6 +522,7 @@ func _sync_skill_inspector_to_current_turn() -> void:
 		_clear_skill_inspector()
 		return
 	if _inspected_unit_id != current_unit.unit_id:
+		_visual_hover_skill = &""
 		_selected_skill_id = &""
 	_inspected_unit_id = current_unit.unit_id
 	_refresh_skill_inspector()
@@ -1382,24 +1395,7 @@ func _action_has_combo_bonus(bonus_by_target: Dictionary[StringName, int]) -> bo
 func _render_skill_transaction() -> void:
 	if not is_node_ready():
 		return
-	var snapshot: Dictionary = _skill_transaction.presentation_snapshot()
 	_refresh_action_bar()
-	var roles: Dictionary = snapshot["indicator_roles"]
-	for slot: Control in get_player_slots() + get_enemy_slots():
-		var overlay := slot.get_node_or_null("TargetIndicatorOverlay") as Panel
-		if not is_instance_valid(overlay):
-			continue
-		var unit_id: StringName = slot.get_meta("unit_id", &"")
-		var role: StringName = roles.get(unit_id, &"")
-		slot.set_meta("target_indicator_role", role)
-		overlay.visible = not role.is_empty()
-		var tint: TextureRect = _get_or_create_indicator_tint(overlay)
-		if role.is_empty():
-			overlay.remove_theme_stylebox_override("panel")
-			tint.visible = false
-			continue
-		overlay.add_theme_stylebox_override("panel", _indicator_style(role))
-		_update_indicator_tint(tint, role)
 
 
 func _indicator_style(role: StringName) -> StyleBoxFlat:
@@ -1825,6 +1821,9 @@ func _assign_slot_metadata(formation: Container, side: String) -> void:
 		slot.set_meta("is_current_unit", false)
 		slot.set_meta("highlight_role", &"neutral")
 		slot.set_meta("unit_id", &"")
+		slot.focus_mode = Control.FOCUS_ALL
+		slot.focus_entered.connect(_on_slot_focus_entered.bind(slot))
+		slot.focus_exited.connect(_on_slot_focus_exited.bind(slot))
 		var input_callable := Callable(self, "_on_slot_gui_input").bind(slot)
 		if not slot.gui_input.is_connected(input_callable):
 			slot.gui_input.connect(input_callable)
@@ -1838,28 +1837,30 @@ func _assign_slot_metadata(formation: Container, side: String) -> void:
 
 func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
 	var click := event as InputEventMouseButton
-	if click == null or click.button_index != MOUSE_BUTTON_LEFT or not click.pressed:
+	var key := event as InputEventKey
+	var activating: bool = (is_instance_valid(click) and click.button_index == MOUSE_BUTTON_LEFT and click.pressed) or (is_instance_valid(key) and key.is_action_pressed("ui_accept") and not key.echo)
+	if not activating or _preparation_required or is_battle_complete() or _action_in_progress:
 		return
-	var unit_id := slot.get_meta("unit_id", &"") as StringName
+	slot.accept_event()
+	var unit_id: StringName = slot.get_meta("unit_id", &"")
 	if _default_action_mode != DefaultActionMode.NONE:
 		_select_default_action_target(unit_id, int(slot.get_meta("slot_index", -1)))
-		return
-	if unit_id.is_empty():
-		return
-	if _skill_transaction.state == BattleSkillTransaction.State.TARGETING:
-		select_skill_target(unit_id)
-		return
-	inspect_unit(unit_id)
+	elif not unit_id.is_empty():
+		if _skill_transaction.state == BattleSkillTransaction.State.TARGETING:
+			select_skill_target(unit_id)
+		else:
+			inspect_unit(unit_id)
 
 
 func _on_slot_mouse_entered(slot: Control) -> void:
-	var unit_id: StringName = slot.get_meta("unit_id", &"")
-	if not unit_id.is_empty():
-		hover_skill_target(unit_id)
+	_pointer_target_slot = slot
+	_refresh_target_hover()
 
 
-func _on_slot_mouse_exited(_slot: Control) -> void:
-	clear_skill_target_hover()
+func _on_slot_mouse_exited(slot: Control) -> void:
+	if _pointer_target_slot == slot:
+		_pointer_target_slot = null
+		_refresh_target_hover()
 
 
 func _on_default_attack_pressed() -> void:
@@ -1873,7 +1874,7 @@ func _on_default_swap_pressed() -> void:
 func _begin_default_action(mode: DefaultActionMode) -> void:
 	if not _can_current_player_act():
 		return
-	if mode == DefaultActionMode.SWAP and not _has_adjacent_active_ally(get_current_unit()):
+	if _visual_default_targets(mode).is_empty():
 		return
 	_selected_skill_id = &""
 	_hide_skill_tooltip()
@@ -2034,27 +2035,13 @@ func _on_turn_order_preview_changed(unit_id: StringName) -> void:
 
 
 func _apply_turn_order_preview() -> void:
-	if not is_node_ready():
-		return
-	for slot: Control in get_player_slots() + get_enemy_slots():
-		slot.set_turn_order_preview(false)
-	if _turn_order_preview_id.is_empty():
-		return
-	var allowed: bool = false
-	for row: Dictionary in _get_turn_order_entries():
-		if row["unit_id"] == _turn_order_preview_id:
-			allowed = true
-			break
-	if not allowed:
-		_turn_order_preview_id = &""
-		return
-	var unit: BattleUnitState = get_unit_by_id(_turn_order_preview_id)
-	var slot: Control = _get_slot_for_unit(unit)
-	if is_instance_valid(slot):
-		slot.set_turn_order_preview(true)
+	_refresh_visual_states()
 
 
 func _clear_turn_order_preview() -> void:
+	_visual_hover_skill = &""
+	_pointer_target_slot = null
+	_focused_target_slot = null
 	_turn_order_preview_id = &""
 	if is_node_ready():
 		_turn_order_ribbon.clear_preview()
@@ -2127,6 +2114,7 @@ func _refresh_skill_selection() -> void:
 
 
 func _hide_skill_tooltip() -> void:
+	_visual_hover_skill = &""
 	if is_node_ready():
 		_action_bar.clear_details()
 
@@ -2147,27 +2135,19 @@ func _refresh_highlights() -> void:
 	_reset_slot_highlights()
 	if _hovered_log_index >= 0 and _hovered_log_index < _battle_log_entries.size():
 		_apply_entry_feedback(_battle_log_entries[_hovered_log_index])
-		return
-	if is_instance_valid(_transient_log_entry):
+	elif is_instance_valid(_transient_log_entry):
 		_apply_entry_feedback(_transient_log_entry)
-		return
-	if is_battle_complete():
-		return
-	var current_unit := get_current_unit()
-	var current_slot := _get_slot_for_unit(current_unit)
-	if is_instance_valid(current_slot):
-		_apply_current_slot_highlight(current_slot)
-	for target_id: StringName in _effect_highlight_target_colors.keys():
-		var target_unit := get_unit_by_id(target_id)
-		var target_slot := _get_slot_for_unit(target_unit)
-		if not is_instance_valid(target_slot):
-			continue
-		var effect_overlay := _get_or_create_effect_slot_border_overlay(target_slot)
-		effect_overlay.add_theme_stylebox_override(
-			"panel",
-			_effect_border_style(_effect_highlight_target_colors[target_id])
-		)
-		effect_overlay.visible = true
+	elif not is_battle_complete():
+		var current_slot := _get_slot_for_unit(get_current_unit())
+		if is_instance_valid(current_slot):
+			_apply_current_slot_highlight(current_slot)
+		for target_id: StringName in _effect_highlight_target_colors.keys():
+			var target_slot := _get_slot_for_unit(get_unit_by_id(target_id))
+			if is_instance_valid(target_slot):
+				var effect_overlay := _get_or_create_effect_slot_border_overlay(target_slot)
+				effect_overlay.add_theme_stylebox_override("panel", _effect_border_style(_effect_highlight_target_colors[target_id]))
+				effect_overlay.visible = true
+	_refresh_visual_states()
 
 
 func _reset_slot_highlights() -> void:
@@ -2381,6 +2361,10 @@ func _on_advance_debug_pressed() -> void:
 
 func _on_exit_debug_pressed() -> void:
 	get_viewport().set_input_as_handled()
+	_hide_skill_tooltip()
+	_clear_turn_order_preview()
+	_clear_default_action_state()
+	_selected_skill_id = &""
 	_skill_transaction.reset()
 	_clear_effect_highlights()
 	_clear_committed_action_history()
@@ -2393,6 +2377,13 @@ func _emit_exit_requested() -> void:
 	exit_requested.emit()
 
 func _on_action_bar_skill_selected(skill_id: StringName) -> void:
+	var actor: BattleUnitState = get_unit_by_id(_inspected_unit_id)
+	var skill: CharacterSkill = _find_skill(actor, skill_id)
+	if not is_instance_valid(skill):
+		return
+	if skill.kind == CharacterSkill.Kind.ACTIVE and not _visual_skill_availability(actor, skill)["can_activate"]:
+		_refresh_action_bar()
+		return
 	if _preparation_required or is_battle_complete() or _action_in_progress:
 		_refresh_action_bar()
 		return
@@ -2403,10 +2394,8 @@ func _on_action_bar_skill_selected(skill_id: StringName) -> void:
 
 
 func _on_action_bar_preview_changed(skill_id: StringName) -> void:
-	if skill_id.is_empty():
-		clear_skill_preview()
-	elif _default_action_mode == DefaultActionMode.NONE:
-		preview_skill_action(_inspected_unit_id, skill_id)
+	_visual_hover_skill = skill_id
+	_refresh_visual_states()
 
 
 func _on_action_bar_confirm() -> void:
@@ -2435,15 +2424,8 @@ func _refresh_action_bar() -> void:
 	var rows: Array[Dictionary] = []
 	if is_instance_valid(unit):
 		for skill: CharacterSkill in unit.skills:
-			var evaluation: SkillTargetEvaluation = BattleSkillRules.evaluate_targets(
-				unit, skill, _units,
-				current.unit_id if is_instance_valid(current) else &"",
-				is_battle_complete(), round_number, _battle_revision,
-				get_committed_action_history_snapshot()
-			)
-			var reason: String = evaluation.blocking_reason.message if is_instance_valid(evaluation.blocking_reason) else ""
-			if _preparation_required:
-				reason = "Finish preparation first."
+			var availability: Dictionary = _visual_skill_availability(unit, skill)
+			var reason: String = availability["reason_text"]
 			var tooltip: String = "Effect: %s\nTargeting: %s\nRequirements: %s\nCooldown: %s" % [
 				skill.effect_text, skill.targeting_text, skill.requirements_text, skill.cooldown_text
 			]
@@ -2452,20 +2434,24 @@ func _refresh_action_bar() -> void:
 			rows.append({
 				"skill_id": skill.skill_id, "name": skill.display_name, "kind": skill.kind,
 				"selected": skill.skill_id == _selected_skill_id and _default_action_mode == DefaultActionMode.NONE,
-				"availability_text": reason, "tooltip": tooltip, "skill": skill.duplicate_skill()
+				"availability_text": reason, "tooltip": tooltip, "skill": skill.duplicate_skill(),
+				"can_activate": availability["can_activate"], "no_legal_completion": availability["no_legal_completion"]
 			})
 	var snapshot: Dictionary = _skill_transaction.presentation_snapshot()
 	var available: bool = _can_current_player_act() and not _action_in_progress and not is_battle_complete()
-	var swap_available: bool = available and _has_adjacent_active_ally(current)
+	var attack_available: bool = available and not _visual_default_targets(DefaultActionMode.ATTACK).is_empty()
+	var swap_available: bool = available and not _visual_default_targets(DefaultActionMode.SWAP).is_empty()
 	var view: Dictionary = {
 		"actor_id": unit.unit_id if is_instance_valid(unit) else &"",
 		"actor_name": unit.display_name if is_instance_valid(unit) else "",
 		"actor_status": ("Active" if unit.is_active() else "Defeated") if is_instance_valid(unit) else "",
 		"skills": rows, "default_mode": _default_action_mode,
-		"details_allowed": is_instance_valid(unit) and unit.is_active() and not _preparation_required and not is_battle_complete(),
-		"attack_enabled": available, "swap_enabled": swap_available,
-		"attack_reason": "Select an active enemy." if available else "Unavailable for the current turn.",
-		"swap_reason": "Select an adjacent active ally." if swap_available else ("No adjacent active ally." if available else "Unavailable for the current turn."),
+		"details_allowed": is_instance_valid(unit),
+		"detail_context": "%s:%s:%s" % [unit.is_active() if is_instance_valid(unit) else false, _preparation_required, is_battle_complete()],
+		"attack_enabled": attack_available, "swap_enabled": swap_available,
+		"attack_no_target": available and not attack_available, "swap_no_target": available and not swap_available,
+		"attack_reason": "Select an active enemy." if attack_available else ("No legal enemy targets." if available else "Unavailable for the current turn."),
+		"swap_reason": "Select an adjacent active ally." if swap_available else ("No legal targets: no adjacent active ally." if available else "Unavailable for the current turn."),
 		"message": snapshot["message"], "summary": snapshot["summary"],
 		"action_region_visible": snapshot["action_region_visible"],
 		"confirm_visible": snapshot["confirm_visible"], "confirm_enabled": snapshot["confirm_enabled"],
@@ -2485,6 +2471,7 @@ func _refresh_action_bar() -> void:
 				view["summary"] = ("Attack " if _default_action_mode == DefaultActionMode.ATTACK else "Swap with ") + target.display_name
 	_action_bar.render(view)
 	_refresh_debug_drawer()
+	_refresh_visual_states()
 
 func _on_debug_log_preview_changed(entry_index: int) -> void:
 	if entry_index < 0:
@@ -2546,3 +2533,201 @@ func _build_debug_view() -> Dictionary:
 		"interaction_allowed": not _preparation_required and not _reward_overlay.visible
 			and not is_instance_valid(_pending_recruitment_option)
 	}
+
+func _evaluate_visual_skill(actor_id: StringName, skill_id: StringName) -> SkillTargetEvaluation:
+	var actor: BattleUnitState = get_unit_by_id(actor_id)
+	var current: BattleUnitState = get_current_unit()
+	return BattleSkillRules.evaluate_targets(actor, _find_skill(actor, skill_id), _units,
+		current.unit_id if is_instance_valid(current) else &"", is_battle_complete(),
+		round_number, _battle_revision, get_committed_action_history_snapshot())
+
+
+func _visual_skill_availability(actor: BattleUnitState, skill: CharacterSkill) -> Dictionary:
+	var evaluation: SkillTargetEvaluation = _evaluate_visual_skill(actor.unit_id, skill.skill_id)
+	var reason: String = evaluation.blocking_reason.message
+	if _preparation_required:
+		reason = "Finish preparation first."
+	elif _action_in_progress:
+		reason = "An action is resolving."
+	var no_target: bool = not _preparation_required and not _action_in_progress and evaluation.blocking_reason.code == SkillActionReason.Code.TARGET_INVALID
+	var allowed: bool = reason.is_empty() and evaluation.can_start
+	if allowed:
+		var proposed: Array[StringName] = []
+		if skill.targeting_mode == CharacterSkill.TargetingMode.PREDEFINED:
+			proposed.assign(evaluation.affected_target_ids)
+			allowed = _visual_confirmation_valid(actor, skill, proposed)
+		else:
+			allowed = _has_visual_completion(actor, skill, evaluation, proposed)
+		no_target = not allowed
+		if no_target:
+			reason = "No legal targets for this action."
+	return {"can_activate": allowed, "no_legal_completion": no_target,
+		"reason_text": reason, "evaluation": evaluation}
+
+
+func _visual_confirmation_valid(actor: BattleUnitState, skill: CharacterSkill, targets: Array[StringName]) -> bool:
+	var current: BattleUnitState = get_current_unit()
+	return BattleSkillRules.validate_confirmation(actor, skill, _units,
+		current.unit_id if is_instance_valid(current) else &"", is_battle_complete(),
+		round_number, targets, _battle_revision, _battle_revision,
+		get_committed_action_history_snapshot(), [], get_action_records()).accepted
+
+
+func _has_visual_completion(actor: BattleUnitState, skill: CharacterSkill,
+		evaluation: SkillTargetEvaluation, proposed: Array[StringName]) -> bool:
+	if proposed.size() >= evaluation.minimum_targets and _visual_confirmation_valid(actor, skill, proposed):
+		return true
+	if proposed.size() >= evaluation.maximum_targets:
+		return false
+	var sides: Array = skill.target_profile.get("target_sides") if is_instance_valid(skill.target_profile) else []
+	for id: StringName in evaluation.valid_target_ids:
+		if proposed.has(id):
+			continue
+		var unit: BattleUnitState = get_unit_by_id(id)
+		if not sides.is_empty() and (proposed.size() >= sides.size() or unit.side != int(sides[proposed.size()])):
+			continue
+		proposed.append(id)
+		if _has_visual_completion(actor, skill, evaluation, proposed):
+			proposed.pop_back()
+			return true
+		proposed.pop_back()
+	return false
+
+
+func _visual_default_targets(mode: DefaultActionMode) -> Array[StringName]:
+	var result: Array[StringName] = []
+	var actor: BattleUnitState = get_current_unit()
+	if not _can_current_player_act() or _action_in_progress or not is_instance_valid(actor):
+		return result
+	for unit: BattleUnitState in _units:
+		if not is_instance_valid(unit):
+			continue
+		var preview: Dictionary = {}
+		if mode == DefaultActionMode.ATTACK:
+			preview = preview_default_attack(actor.unit_id, unit.unit_id)
+		elif unit.side == actor.side:
+			preview = preview_formation_move(actor.unit_id, unit.slot_index, true)
+		if not preview.is_empty():
+			result.append(unit.unit_id)
+	return result
+
+
+func _refresh_visual_states() -> void:
+	if not is_node_ready():
+		return
+	var current: BattleUnitState = get_current_unit()
+	var active_battle: bool = not _preparation_required and not is_battle_complete()
+	var committed: bool = not _selected_skill_id.is_empty() or _default_action_mode != DefaultActionMode.NONE or _skill_transaction.state in [BattleSkillTransaction.State.TARGETING, BattleSkillTransaction.State.VALIDATING, BattleSkillTransaction.State.RESOLVING]
+	var valid: Array[StringName] = []
+	var selected: Array[StringName] = []
+	var hovered: Array[StringName] = []
+	var kind: StringName = &"skill"
+	var targeting: bool = false
+	if active_battle and _default_action_mode != DefaultActionMode.NONE:
+		kind = &"attack" if _default_action_mode == DefaultActionMode.ATTACK else &"swap"
+		valid = _visual_default_targets(_default_action_mode)
+		targeting = true
+		var id: StringName = _default_action_preview.get(&"target_id" if kind == &"attack" else &"occupant_id", &"")
+		if int(_default_action_preview.get(&"revision", -1)) == _battle_revision and valid.has(id):
+			selected.append(id)
+	elif active_battle and _skill_transaction.state in [BattleSkillTransaction.State.TARGETING, BattleSkillTransaction.State.VALIDATING, BattleSkillTransaction.State.RESOLVING]:
+		valid.assign(_skill_transaction.valid_target_ids)
+		for id: StringName in _skill_transaction.affected_target_ids:
+			if not valid.has(id):
+				valid.append(id)
+		selected.assign(_skill_transaction.locked_target_ids)
+		var skill: CharacterSkill = _find_skill(current, _skill_transaction.skill_id)
+		for id: StringName in _visual_zero_target_affected(current, skill):
+			if not valid.has(id):
+				valid.append(id)
+		targeting = true
+	elif active_battle and not committed and not _action_in_progress:
+		if not _visual_hover_skill.is_empty() and not _debug_drawer.is_open():
+			var actor: BattleUnitState = get_unit_by_id(_inspected_unit_id)
+			var skill: CharacterSkill = _find_skill(actor, _visual_hover_skill)
+			if is_instance_valid(actor) and is_instance_valid(skill):
+				var availability: Dictionary = _visual_skill_availability(actor, skill)
+				if availability["can_activate"]:
+					var evaluation: SkillTargetEvaluation = availability["evaluation"]
+					hovered.assign(evaluation.valid_target_ids)
+					for id: StringName in _visual_zero_target_affected(actor, skill):
+						if not hovered.has(id):
+							hovered.append(id)
+					for id: StringName in evaluation.affected_target_ids:
+						if not hovered.has(id):
+							hovered.append(id)
+		elif _skill_transaction.state == BattleSkillTransaction.State.PREVIEWING:
+			hovered.assign(_skill_transaction.valid_target_ids)
+	var roles: Dictionary = _skill_transaction.presentation_snapshot()["indicator_roles"]
+	for slot: Control in get_player_slots() + get_enemy_slots():
+		var id: StringName = slot.get_meta("unit_id", &"")
+		var unit: BattleUnitState = get_unit_by_id(id)
+		var request: RefCounted = _visual_resolver.Request.new()
+		request.occupied = is_instance_valid(unit)
+		request.active = request.occupied and unit.is_active()
+		request.current_actor = active_battle and unit == current
+		request.ribbon_preview = active_battle and id == _turn_order_preview_id and not id.is_empty()
+		request.action_committed = committed
+		request.valid_target = valid.has(id)
+		request.selected_target = selected.has(id)
+		request.hover_target = hovered.has(id)
+		request.action_kind = kind
+		if request.occupied and not request.active:
+			request.unavailable_reason = "Defeated"
+		elif targeting and not valid.has(id):
+			request.unavailable_reason = "Not a legal " + String(kind) + " target."
+		var layers: RefCounted = _visual_resolver.resolve(request)
+		if layers.actor_frame:
+			_get_or_create_current_slot_border_overlay(slot)
+		var overlay := slot.get_node("TargetIndicatorOverlay") as Panel
+		var legacy_role: StringName = roles.get(id, &"")
+		slot.set_meta("target_indicator_role", legacy_role)
+		var role: StringName = legacy_role
+		if role.is_empty() and not layers.target_border.is_empty():
+			role = &"locked" if layers.selection_marker else &"valid_preview"
+		overlay.visible = not layers.target_border.is_empty()
+		var tint: TextureRect = _get_or_create_indicator_tint(overlay)
+		tint.visible = false
+		if overlay.visible:
+			var style: StyleBoxFlat = _indicator_style(role)
+			style.set_border_width_all(4 if layers.selection_marker else (1 if layers.target_border == &"preview" else 2))
+			if kind == &"swap":
+				style.border_color = Color(0.4, 0.8, 1.0)
+			overlay.add_theme_stylebox_override("panel", style)
+			_update_indicator_tint(tint, role)
+		slot.render_visual_state(layers)
+		slot.set_meta("turn_order_preview", request.ribbon_preview and request.active)
+
+
+func _on_slot_focus_entered(slot: Control) -> void:
+	_focused_target_slot = slot
+	_refresh_target_hover()
+
+
+func _on_slot_focus_exited(slot: Control) -> void:
+	if _focused_target_slot == slot:
+		_focused_target_slot = null
+		_refresh_target_hover()
+
+
+func _refresh_target_hover() -> void:
+	var slot: Control = _pointer_target_slot if is_instance_valid(_pointer_target_slot) else _focused_target_slot
+	if is_instance_valid(slot):
+		hover_skill_target(slot.get_meta("unit_id", &""))
+	else:
+		clear_skill_target_hover()
+	_refresh_visual_states()
+
+# Read the accepted detached plan; explicit transaction targets remain untouched.
+func _visual_zero_target_affected(actor: BattleUnitState, skill: CharacterSkill) -> Array[StringName]:
+	var affected: Array[StringName] = []
+	if not is_instance_valid(actor) or not is_instance_valid(skill) or not is_instance_valid(skill.target_profile) or int(skill.target_profile.get("maximum_targets")) != 0:
+		return affected
+	var current: BattleUnitState = get_current_unit()
+	var validation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(actor, skill, _units,
+		current.unit_id if is_instance_valid(current) else &"", is_battle_complete(),
+		round_number, [], _battle_revision, _battle_revision,
+		get_committed_action_history_snapshot(), [], get_action_records())
+	if validation.accepted and is_instance_valid(validation.effect_plan):
+		affected.assign(validation.effect_plan.target_ids)
+	return affected

@@ -77,6 +77,16 @@ tooltip_text = "Default Attack"
 accessibility_name = "Default Attack"
 toggle_mode = true
 
+[node name="NoTargetBadge" type="Label" parent="SkillInspectorContent/SkillInspectorBody/DefaultActions/DefaultAttackButton" unique_id=1589780685]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 8
+text = "NO TARGET"
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="DefaultSwapButton" type="Button" parent="SkillInspectorContent/SkillInspectorBody/DefaultActions" unique_id=1769865758]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(44, 44)
@@ -84,6 +94,16 @@ layout_mode = 2
 tooltip_text = "Default Swap"
 accessibility_name = "Default Swap"
 toggle_mode = true
+
+[node name="NoTargetBadge" type="Label" parent="SkillInspectorContent/SkillInspectorBody/DefaultActions/DefaultSwapButton" unique_id=609933738]
+visible = false
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_font_sizes/font_size = 8
+text = "NO TARGET"
+horizontal_alignment = 1
+vertical_alignment = 2
 
 [node name="ActionConfirmation" type="VBoxContainer" parent="SkillInspectorContent" unique_id=1739696131]
 unique_name_in_owner = true

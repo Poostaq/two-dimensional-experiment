@@ -23,6 +23,7 @@ var _presentation: Script = load("res://Scripts/UI/battle_unit_presentation.gd")
 
 func render_empty(side: String, slot_index: int) -> void:
 	set_turn_order_preview(false)
+	focus_mode = Control.FOCUS_NONE
 	set_meta("unit_id", &"")
 	set_meta("side", side)
 	set_meta("slot_index", slot_index)
@@ -45,6 +46,7 @@ func render_empty(side: String, slot_index: int) -> void:
 
 
 func render_unit(unit: BattleUnitState, round_number: int) -> void:
+	focus_mode = Control.FOCUS_ALL
 	if not unit.is_active():
 		set_turn_order_preview(false)
 	set_meta("unit_id", unit.unit_id)
@@ -95,3 +97,39 @@ func _clear_statuses() -> void:
 		var badge := child as Label
 		badge.text = ""
 		badge.visible = false
+
+func render_visual_state(layers: RefCounted) -> void:
+	set_meta("visual_actor_frame", layers.actor_frame)
+	set_meta("visual_target_border", layers.target_border)
+	set_meta("visual_target_glyph", layers.target_glyph)
+	set_meta("visual_selected", layers.selection_marker)
+	set_meta("visual_reason", layers.reason_text)
+	($VisualStateOverlay/ActorMarker as Label).visible = layers.actor_frame
+	var marker := $VisualStateOverlay/StateBadge as Label
+	var labels: PackedStringArray = []
+	if layers.availability_treatment == &"unavailable":
+		labels.append("⊘ UNAVAILABLE")
+	elif not layers.target_border.is_empty():
+		var action: String = "SKILL"
+		if layers.target_glyph == &"attack":
+			action = "⚔ ATTACK"
+		elif layers.target_glyph == &"swap":
+			action = "↔ SWAP"
+		var treatment: String = "✓ SELECTED" if layers.selection_marker else ("PREVIEW" if layers.target_border == &"preview" else "VALID")
+		labels.append(action + " · " + treatment)
+	elif layers.interaction_spotlight:
+		labels.append("PREVIEW")
+	if has_focus() and not StringName(get_meta("unit_id", &"")).is_empty():
+		labels.append("FOCUS")
+	marker.text = " · ".join(labels)
+	marker.visible = not marker.text.is_empty()
+	var actor_border := get_node_or_null("CurrentUnitBorderOverlay") as Control
+	if is_instance_valid(actor_border):
+		actor_border.visible = layers.actor_frame
+	_turn_order_preview.visible = layers.interaction_spotlight
+	(_turn_order_preview.get_node("OrderMarker") as Label).visible = layers.target_border != &"preview" and not layers.target_border.is_empty()
+	accessibility_name = _name_label.text if not _name_label.text.is_empty() else _slot_label.text
+	accessibility_description = tooltip_text + ("\nCurrent actor. " if layers.actor_frame else "\n") + marker.text
+	if not layers.reason_text.is_empty():
+		accessibility_description += ". " + layers.reason_text
+	marker.tooltip_text = layers.reason_text

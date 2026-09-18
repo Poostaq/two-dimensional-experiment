@@ -67,6 +67,8 @@ func _icon(swap: bool) -> ImageTexture:
 
 func render(view: Dictionary) -> void:
 	_rendering = true
+	if _view.get("detail_context", "") != view.get("detail_context", ""):
+		clear_details()
 	_view = view.duplicate(true)
 	if not view.get("details_allowed", true):
 		clear_details()
@@ -109,6 +111,8 @@ func render(view: Dictionary) -> void:
 		button.set_meta("skill_index", index + 1)
 		button.set_meta("skill", row["skill"])
 		button.set_meta("availability_text", row["availability_text"])
+		button.set_meta("can_activate", row.get("can_activate", false))
+		button.set_meta("no_legal_completion", row.get("no_legal_completion", false))
 		button.set_meta("selected", row["selected"])
 		button.set_pressed_no_signal(row["selected"])
 		button.self_modulate = Color(1.0, 0.82, 0.32) if row["selected"] else Color.WHITE
@@ -117,15 +121,25 @@ func render(view: Dictionary) -> void:
 		(button.get_node("KindLabel") as Label).text = "Active" if row["kind"] == CharacterSkill.Kind.ACTIVE else "Passive"
 		var availability := button.get_node("AvailabilityLabel") as Label
 		availability.add_theme_font_size_override("font_size", 10)
-		availability.text = "Selected" if row["selected"] else ("Locked" if not row["availability_text"].is_empty() and row["kind"] == CharacterSkill.Kind.ACTIVE else "")
+		availability.text = "Selected" if row["selected"] else ("⊘ NO TARGET" if row.get("no_legal_completion", false) else ("⊘ Locked" if not row["availability_text"].is_empty() and row["kind"] == CharacterSkill.Kind.ACTIVE else ""))
 		button.accessibility_name = "%s. %s. %s" % [row["name"], (button.get_node("KindLabel") as Label).text, row["availability_text"]]
 		button.accessibility_description = row["tooltip"]
 	_attack.disabled = not view.get("attack_enabled", false)
 	_swap.disabled = not view.get("swap_enabled", false)
+	_attack.focus_mode = Control.FOCUS_ALL
+	_swap.focus_mode = Control.FOCUS_ALL
+	_attack.set_meta("can_activate", not _attack.disabled)
+	_swap.set_meta("can_activate", not _swap.disabled)
+	_attack.text = "⊘" if _attack.disabled else ""
+	_swap.text = "⊘" if _swap.disabled else ""
+	(_attack.get_node("NoTargetBadge") as Label).visible = view.get("attack_no_target", false)
+	(_swap.get_node("NoTargetBadge") as Label).visible = view.get("swap_no_target", false)
 	_attack.set_pressed_no_signal(view.get("default_mode", 0) == 1)
 	_swap.set_pressed_no_signal(view.get("default_mode", 0) == 2)
 	_attack.tooltip_text = "Default Attack — " + str(view.get("attack_reason", ""))
 	_swap.tooltip_text = "Default Swap — " + str(view.get("swap_reason", ""))
+	_attack.accessibility_description = _attack.tooltip_text
+	_swap.accessibility_description = _swap.tooltip_text
 	accessibility_description = _attack.tooltip_text + "\n" + _swap.tooltip_text
 	%ActionMessageLabel.text = view.get("message", "")
 	%ActionSummaryLabel.text = view.get("summary", "")
@@ -152,6 +166,10 @@ func _request_swap() -> void:
 		default_swap_requested.emit()
 
 func _select_skill(button: Button) -> void:
+	var skill: CharacterSkill = button.get_meta("skill") as CharacterSkill
+	if is_instance_valid(skill) and skill.kind == CharacterSkill.Kind.ACTIVE and not button.get_meta("can_activate", false):
+		show_skill_details(skill, button)
+		return
 	if not _rendering:
 		skill_selected.emit(button.get_meta("skill_id", &""))
 
@@ -187,11 +205,14 @@ func _refresh_details() -> void:
 		skill_preview_changed.emit(next_id)
 
 func clear_details() -> void:
+	var had_preview: bool = not _detail_id.is_empty()
 	_pointer_skill_button = null
 	_focused_skill_button = null
 	_detail_id = &""
 	_hide_skill_tooltip()
 	%DetailReadout.text = ""
+	if had_preview:
+		skill_preview_changed.emit(&"")
 
 func _show_bar_details() -> void:
 	%DetailReadout.text = accessibility_description.replace("\n", "  |  ")

@@ -141,13 +141,14 @@ func _test_no_current_unit_or_battle_end_clears_skill_panel() -> void:
 	arena.call("perform_debug_damage")
 	var battle_end_cleared: bool = (
 		arena.call("is_battle_complete")
-		and arena.call("get_inspected_unit_id") == &""
-		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorPromptLabel") as Label).visible
+		and arena.call("get_inspected_unit_id") == &"player"
+		and arena.call("get_selected_skill_id") == &""
+		and (arena.get_node("%BattleActionBar").get_node("%DefaultAttackButton") as Button).disabled
 	)
 	_assert(
 		no_current_cleared and battle_end_cleared,
-		"No current unit or battle end clears skill panel",
-		"missing current units and completed battles must show the neutral prompt"
+		"No current unit clears panel; battle end retains read-only details",
+		"missing units show neutral prompt; completed battles retain explanations without actions"
 	)
 	_free_arena(arena)
 

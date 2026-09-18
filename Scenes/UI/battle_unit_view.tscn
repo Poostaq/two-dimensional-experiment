@@ -209,15 +209,37 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_kqptl")
 
 [node name="OrderMarker" type="Label" parent="TurnOrderPreviewOverlay" unique_id=1450078231]
 layout_mode = 0
-anchor_left = 1.0
 anchor_top = 1.0
-anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -45.0
+offset_left = 4.0
 offset_top = -15.0
-offset_right = -4.0
+offset_right = 45.0
 offset_bottom = -1.0
 theme_override_colors/font_color = Color(0.5647059, 0.9019608, 0.9607843, 1)
 theme_override_font_sizes/font_size = 9
-text = "ORDER"
+text = "PREVIEW"
+
+[node name="VisualStateOverlay" type="Control" parent="." unique_id=64629666]
+z_index = 13
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ActorMarker" type="Label" parent="VisualStateOverlay" unique_id=179908565]
+visible = false
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -35.0
+offset_bottom = 16.0
+theme_override_font_sizes/font_size = 10
+text = "NOW"
+
+[node name="StateBadge" type="Label" parent="VisualStateOverlay" unique_id=1946753370]
+visible = false
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -16.0
+theme_override_font_sizes/font_size = 10
 horizontal_alignment = 2
