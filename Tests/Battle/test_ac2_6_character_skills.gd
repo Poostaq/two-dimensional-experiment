@@ -167,8 +167,8 @@ func _test_neutral_and_populated_inspection() -> void:
 	_assert(_advance_to_unit(arena, &"player_4"), "Player 4 fixture arrival", "turn queue must contain player_4")
 	var rows := arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer
 	var populated := (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorUnitNameLabel") as Label).text == "Player Back 2"
-	populated = populated and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorCountLabel") as Label).text == "Skills: 4/4"
-	populated = populated and rows.get_child_count() == 4
+	populated = populated and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorCountLabel") as Label).text == "Active skills: 2"
+	populated = populated and rows.get_child_count() == 2
 	_free_arena(arena)
 	arena = await _instantiate_arena()
 	_assert(_advance_to_unit(arena, &"enemy_0"), "Enemy 0 fixture arrival", "turn queue must contain enemy_0")
@@ -216,7 +216,7 @@ func _test_retained_defeat_updates_status() -> void:
 		and arena.call("get_inspected_unit_id") == &"enemy"
 		and arena.call("get_selected_skill_id") == &"brace"
 		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorStatusLabel") as Label).text == "Defeated"
-		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 1,
+		and (arena.get_node("%BattleActionBar").get_node_or_null("%SkillInspectorSkills") as HBoxContainer).get_child_count() == 0,
 		"Current defeat retains locked inspection", "a defeated current unit must retain its locked inspection and selection")
 	_free_arena(arena)
 
@@ -228,20 +228,21 @@ func _test_four_skill_tile_contract() -> void:
 	var expected := [
 		[&"quick_strike", "1", "Quick Strike", "Active"],
 		[&"rally", "2", "Rally", "Active"],
-		[&"evasion", "3", "Evasion", "Passive"],
-		[&"momentum", "4", "Momentum", "Passive"],
 	]
-	var valid := is_instance_valid(skills) and skills.get_child_count() == 4
+	var valid := is_instance_valid(skills) and skills.get_child_count() == 2
 	if valid:
 		for index: int in expected.size():
 			var button := skills.get_child(index) as Button
-			valid = valid and is_instance_valid(button) and button.custom_minimum_size == Vector2(88.0, 88.0)
+			valid = valid and is_instance_valid(button) and button.custom_minimum_size == Vector2(160.0, 88.0)
 			valid = valid and int(button.get_meta("skill_index", 0)) == index + 1
 			valid = valid and button.get_meta("skill_id", &"") == expected[index][0]
 			valid = valid and (button.get_node("NumberLabel") as Label).text == expected[index][1]
 			valid = valid and (button.get_node("NameLabel") as Label).text == expected[index][2]
 			valid = valid and (button.get_node("KindLabel") as Label).text == expected[index][3]
-	_assert(valid, "Four-skill tile contract", "player_4 must render four exact numbered square buttons")
+	valid = valid and arena.call("open_character_info", &"player_4")
+	var passive_text: String = (arena.get_node("%BattleCharacterInfoPanel").get_node("%Passives") as Label).text
+	valid = valid and passive_text.contains("Evasion") and passive_text.contains("Momentum")
+	_assert(valid, "Four-skill tile contract", "player_4 renders its two active skills; passives appear in character information")
 	_free_arena(arena)
 
 

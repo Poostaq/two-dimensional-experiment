@@ -34,6 +34,7 @@ var _skill_tooltip_generation: int = 0
 var _detail_id: StringName = &""
 var _view: Dictionary = {}
 var _rendering: bool = false
+var _obscured_rect: Rect2 = Rect2()
 
 func _ready() -> void:
 	_attack.pressed.connect(_request_attack)
@@ -93,7 +94,7 @@ func render(view: Dictionary) -> void:
 			button.mouse_exited.connect(_pointer_exit.bind(button))
 			button.focus_entered.connect(_focus_enter.bind(button))
 			button.focus_exited.connect(_focus_exit.bind(button))
-			button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			button.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 			_skills.add_child(button)
 		if restore_focus and not rows.is_empty():
 			(_skills.get_child(0) as Button).grab_focus()
@@ -103,7 +104,7 @@ func render(view: Dictionary) -> void:
 	%SkillInspectorBody.visible = not actor_id.is_empty()
 	%SkillInspectorUnitNameLabel.text = view.get("actor_name", "")
 	%SkillInspectorStatusLabel.text = view.get("actor_status", "")
-	%SkillInspectorCountLabel.text = "Skills: %d/4" % rows.size()
+	%SkillInspectorCountLabel.text = "Active skills: %d" % rows.size()
 	%SkillInspectorEmptyLabel.visible = rows.is_empty() and not actor_id.is_empty()
 	for index: int in rows.size():
 		var row: Dictionary = rows[index]
@@ -174,6 +175,8 @@ func _select_skill(button: Button) -> void:
 		skill_selected.emit(button.get_meta("skill_id", &""))
 
 func _pointer_enter(button: Button) -> void:
+	if _is_obscured(button):
+		return
 	_pointer_skill_button = button
 	_refresh_details()
 
@@ -183,6 +186,8 @@ func _pointer_exit(button: Button) -> void:
 		_refresh_details()
 
 func _focus_enter(button: Button) -> void:
+	if _is_obscured(button):
+		return
 	_focused_skill_button = button
 	_refresh_details()
 
@@ -203,6 +208,22 @@ func _refresh_details() -> void:
 	if _detail_id != next_id:
 		_detail_id = next_id
 		skill_preview_changed.emit(next_id)
+
+func set_obscured_rect(rect: Rect2) -> void:
+	if rect == _obscured_rect:
+		return
+	_obscured_rect = rect
+	if _is_obscured(_focused_skill_button):
+		_focused_skill_button = null
+	if _is_obscured(_pointer_skill_button):
+		_pointer_skill_button = null
+	if is_instance_valid(_hovered_skill_button) and _is_obscured(_hovered_skill_button):
+		clear_details()
+	elif is_instance_valid(_hovered_skill_button):
+		_position_skill_tooltip(_hovered_skill_button, _skill_tooltip_generation)
+
+func _is_obscured(button: Button) -> bool:
+	return is_instance_valid(button) and _obscured_rect.has_area() and _obscured_rect.intersects(button.get_global_rect())
 
 func clear_details() -> void:
 	var had_preview: bool = not _detail_id.is_empty()
@@ -225,7 +246,7 @@ func _hide_default_details() -> void:
 	%DetailReadout.text = ""
 
 func show_skill_details(skill: CharacterSkill, button: Button) -> void:
-	if not is_instance_valid(skill) or not skill.is_valid() or not is_instance_valid(button):
+	if not is_instance_valid(skill) or not skill.is_valid() or not is_instance_valid(button) or _is_obscured(button):
 		_hide_skill_tooltip()
 		return
 	_hovered_skill_button = button
@@ -285,6 +306,17 @@ func _position_skill_tooltip(button_value: Variant, generation: int) -> void:
 		SKILL_TOOLTIP_VIEWPORT_MARGIN,
 		max_y
 	)
+	var proposed := Rect2(Vector2(x, y), tooltip_size)
+	if _obscured_rect.has_area() and _obscured_rect.intersects(proposed):
+		var right_x: float = _obscured_rect.end.x + SKILL_TOOLTIP_ANCHOR_GAP
+		var left_x: float = _obscured_rect.position.x - tooltip_size.x - SKILL_TOOLTIP_ANCHOR_GAP
+		if right_x <= max_x:
+			x = right_x
+		elif left_x >= SKILL_TOOLTIP_VIEWPORT_MARGIN:
+			x = left_x
+		else:
+			_hide_skill_tooltip()
+			return
 	_skill_tooltip_panel.global_position = Vector2(x, y)
 
 

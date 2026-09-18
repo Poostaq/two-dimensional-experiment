@@ -43,6 +43,7 @@ static var PREPARATION_TRANSACTION_SCRIPT: GDScript = load(
 @onready var _turn_order_ribbon: Control = %TurnOrderRibbon
 @onready var _action_bar: Control = %BattleActionBar
 @onready var _debug_drawer: Control = %BattleDebugDrawer
+@onready var _character_info: Control = %BattleCharacterInfoPanel
 @onready var _battle_result_panel: PanelContainer = %BattleResultPanel
 @onready var _battle_result_label: Label = %BattleResultLabel
 @onready var _reward_overlay: CenterContainer = %RewardOverlay
@@ -97,9 +98,20 @@ var _preparation_required: bool = false
 var _preparation_record: RefCounted
 var _preparation_transaction: RefCounted
 var _applied_preparation_ids: Dictionary[StringName, bool] = {}
+var _info_cache: Dictionary = {}
+var _info_epoch: int = 0
+var _info_revision: int = 0
+var _info_generation: int = 0
+var _info_unit_id: StringName = &""
+var _info_valid: bool = true
+var _info_return_focus: WeakRef
+var _info_presenter: Script = load("res://Scripts/UI/battle_character_info_presenter.gd")
 
 
 func _exit_tree() -> void:
+	close_character_info(false)
+	_info_epoch += 1
+	_info_cache.clear()
 	_skill_transaction.reset()
 	_clear_default_action_state()
 	_clear_committed_action_history()
@@ -111,6 +123,9 @@ var _pointer_target_slot: Control
 var _focused_target_slot: Control
 
 func _ready() -> void:
+	_debug_drawer.input_managed_by_arena = true
+	_character_info.close_requested.connect(close_character_info)
+	_character_info.resized.connect(_update_info_occlusion)
 	_turn_order_ribbon.unit_preview_changed.connect(_on_turn_order_preview_changed)
 	_debug_drawer.damage_requested.connect(_on_advance_debug_pressed)
 	_debug_drawer.exit_requested.connect(_on_exit_debug_pressed)
@@ -155,6 +170,11 @@ func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 
 
 func configure_units(units: Array[BattleUnitState]) -> void:
+	close_character_info(false)
+	_info_epoch += 1
+	_info_revision = 0
+	_info_cache.clear()
+	_info_valid = true
 	if is_node_ready():
 		_debug_drawer.reset_view()
 	_clear_turn_order_preview()
@@ -190,6 +210,7 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_current_turn_index = 0
 	round_number = 1
 	_resolve_current_action_start_reactions()
+	_publish_character_info()
 	if is_node_ready():
 		_refresh_turn_ui()
 
@@ -301,6 +322,7 @@ func apply_committed_preparation(record: RefCounted) -> bool:
 	if is_node_ready():
 		_preparation_blocker.visible = false
 		_refresh_turn_ui()
+	_publish_character_info()
 	return true
 
 
@@ -614,6 +636,7 @@ func confirm_default_attack(
 	if requested_damage < 1:
 		return false
 	_action_in_progress = true
+	_refresh_character_info()
 	var action_round: int = round_number
 	var result: BattleDamageResult = BattleDamageResolver.apply_direct_damage(
 		actor,
@@ -622,6 +645,7 @@ func confirm_default_attack(
 	)
 	if not is_instance_valid(result):
 		_action_in_progress = false
+		_invalidate_character_info()
 		return false
 	var log_entry: BattleLogEntry = BattleLogEntry.new(
 		_battle_log_entries.size() + 1,
@@ -689,6 +713,7 @@ func confirm_default_attack(
 	) as BattleActionRecord
 	if not is_instance_valid(action_record) or not action_record.is_valid():
 		_action_in_progress = false
+		_invalidate_character_info()
 		return false
 	_action_records.append(action_record)
 	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
@@ -697,6 +722,7 @@ func confirm_default_attack(
 	else:
 		_complete_battle(resolved_outcome)
 	_action_in_progress = false
+	_publish_character_info()
 	_refresh_turn_ui()
 	return true
 
@@ -768,6 +794,7 @@ func confirm_formation_move(
 	if occupant_id != expected_occupant_id or (default_swap and not is_instance_valid(occupant)):
 		return false
 	_action_in_progress = true
+	_refresh_character_info()
 	var slot_before: Dictionary[StringName, int] = {
 		actor.unit_id: actor.slot_index,
 	}
@@ -804,6 +831,7 @@ func confirm_formation_move(
 			occupant.slot_index = slot_before[occupant.unit_id]
 		_battle_revision -= 1
 		_action_in_progress = false
+		_invalidate_character_info()
 		return false
 	_action_records.append(action_record)
 	var empty_results: Array[BattleDamageResult] = []
@@ -825,6 +853,7 @@ func confirm_formation_move(
 	_battle_action_log_entries.append(committed_entry)
 	_advance_after_action(actor.unit_id)
 	_action_in_progress = false
+	_publish_character_info()
 	_refresh_turn_ui()
 	return true
 
@@ -864,6 +893,7 @@ func get_skill_presentation_snapshot() -> Dictionary:
 
 
 func notify_authoritative_battle_change(increment_revision: bool = true) -> void:
+	_publish_character_info()
 	if is_node_ready():
 		_render_units()
 		_refresh_turn_order_ribbon()
@@ -1069,6 +1099,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 			return false
 		movement_occupant = _allied_occupant_at(actor.side, plan.movement_path[1], actor.unit_id)
 	_action_in_progress = true
+	_refresh_character_info()
 	var action_round: int = round_number
 	var action_damage_results: Array[BattleDamageResult] = []
 	var action_base_damage_by_target: Dictionary[StringName, int] = {}
@@ -1097,6 +1128,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		)
 		if not is_instance_valid(result):
 			_action_in_progress = false
+			_invalidate_character_info()
 			return false
 		direct_hit_by_target[target_id] = result.was_direct_hit
 		action_damage_results.append(result)
@@ -1182,6 +1214,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	) as BattleActionRecord
 	if not is_instance_valid(action_record) or not action_record.is_valid():
 		_action_in_progress = false
+		_invalidate_character_info()
 		return false
 	_dispatch_passive_reactions(action_record, action_round, keyword_deltas)
 	var effect_highlight_colors := _collect_effect_highlight_colors(keyword_deltas)
@@ -1210,6 +1243,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	else:
 		_complete_battle(resolved_outcome)
 	_action_in_progress = false
+	_publish_character_info()
 	_refresh_turn_ui()
 	return true
 
@@ -1476,6 +1510,7 @@ func perform_debug_damage() -> void:
 		_refresh_turn_ui()
 		return
 	_action_in_progress = true
+	_refresh_character_info()
 	var action_round: int = round_number
 	var result: BattleDamageResult = BattleDamageResolver.apply_damage(
 		attacker,
@@ -1484,6 +1519,7 @@ func perform_debug_damage() -> void:
 	)
 	if not is_instance_valid(result):
 		_action_in_progress = false
+		_invalidate_character_info()
 		_refresh_turn_ui()
 		return
 	var entry := BattleLogEntry.new(
@@ -1500,6 +1536,7 @@ func perform_debug_damage() -> void:
 	else:
 		_complete_battle(resolved_outcome)
 	_action_in_progress = false
+	_publish_character_info()
 	_refresh_turn_ui()
 
 
@@ -1686,6 +1723,7 @@ func _skill_roster(values: Array) -> Array[CharacterSkill]:
 func _complete_battle(outcome: BattleOutcome.Type) -> void:
 	if is_battle_complete() or outcome == BattleOutcome.Type.IN_PROGRESS:
 		return
+	close_character_info(false)
 	_battle_outcome = outcome
 	_refresh_turn_order_ribbon()
 	_terminal_player_health_snapshot.clear()
@@ -1836,8 +1874,20 @@ func _assign_slot_metadata(formation: Container, side: String) -> void:
 
 
 func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
+	if event is InputEventKey and _slot_is_info_obscured(slot):
+		return
 	var click := event as InputEventMouseButton
 	var key := event as InputEventKey
+	if _info_modal_blocked():
+		return
+	if is_instance_valid(click) and click.button_index == MOUSE_BUTTON_RIGHT and click.pressed:
+		slot.accept_event()
+		open_character_info(slot.get_meta("unit_id", &""))
+		return
+	if is_instance_valid(key) and key.is_action_pressed("inspect_character") and not key.echo and slot.has_focus():
+		slot.accept_event()
+		open_character_info(slot.get_meta("unit_id", &""), true)
+		return
 	var activating: bool = (is_instance_valid(click) and click.button_index == MOUSE_BUTTON_LEFT and click.pressed) or (is_instance_valid(key) and key.is_action_pressed("ui_accept") and not key.echo)
 	if not activating or _preparation_required or is_battle_complete() or _action_in_progress:
 		return
@@ -2092,6 +2142,7 @@ func _render_units() -> void:
 		if is_instance_valid(slot):
 			slot.render_unit(unit, round_number)
 	_apply_turn_order_preview()
+	_update_info_slot_focus()
 
 
 func _refresh_skill_inspector() -> void:
@@ -2374,6 +2425,8 @@ func _on_exit_debug_pressed() -> void:
 
 
 func _emit_exit_requested() -> void:
+	close_character_info(false)
+	_info_cache.clear()
 	exit_requested.emit()
 
 func _on_action_bar_skill_selected(skill_id: StringName) -> void:
@@ -2424,6 +2477,8 @@ func _refresh_action_bar() -> void:
 	var rows: Array[Dictionary] = []
 	if is_instance_valid(unit):
 		for skill: CharacterSkill in unit.skills:
+			if skill.kind != CharacterSkill.Kind.ACTIVE:
+				continue
 			var availability: Dictionary = _visual_skill_availability(unit, skill)
 			var reason: String = availability["reason_text"]
 			var tooltip: String = "Effect: %s\nTargeting: %s\nRequirements: %s\nCooldown: %s" % [
@@ -2489,6 +2544,8 @@ func _on_debug_drawer_opened(opened: bool) -> void:
 
 func _refresh_debug_drawer() -> void:
 	if is_node_ready():
+		if _info_modal_blocked():
+			close_character_info(false)
 		_debug_drawer.render(_build_debug_view())
 
 
@@ -2700,6 +2757,8 @@ func _refresh_visual_states() -> void:
 
 
 func _on_slot_focus_entered(slot: Control) -> void:
+	if _slot_is_info_obscured(slot):
+		return
 	_focused_target_slot = slot
 	_refresh_target_hover()
 
@@ -2731,3 +2790,157 @@ func _visual_zero_target_affected(actor: BattleUnitState, skill: CharacterSkill)
 	if validation.accepted and is_instance_valid(validation.effect_plan):
 		affected.assign(validation.effect_plan.target_ids)
 	return affected
+
+# AC7.6 publication is explicit at complete mutation boundaries, never in a draw loop.
+func _publish_character_info() -> void:
+	if _action_in_progress or not _info_valid:
+		return
+	var records: Dictionary = {}
+	for unit: BattleUnitState in _units:
+		if not is_instance_valid(unit):
+			continue
+		var record: Dictionary = unit.get_character_info_snapshot(round_number)
+		record["role"] = BattleUnitPresentation.role_for(unit)
+		records[unit.unit_id] = record
+	var current: BattleUnitState = get_current_unit()
+	var phase: StringName = &"complete" if is_battle_complete() else (&"preparation" if _preparation_required else &"battle")
+	_info_revision += 1
+	_info_cache = {
+		"battle_epoch": _info_epoch, "committed_revision": _info_revision,
+		"round_number": round_number, "phase": phase,
+		"current_actor_id": current.unit_id if is_instance_valid(current) else &"",
+		"units_by_id": records,
+	}
+	_refresh_character_info()
+
+func _invalidate_character_info() -> void:
+	_info_valid = false
+	close_character_info(false)
+
+func _info_modal_blocked() -> bool:
+	return is_battle_complete() or _preparation_required or is_instance_valid(_pending_recruitment_option) or (is_node_ready() and _reward_overlay.visible)
+
+func open_character_info(unit_id: StringName, keyboard: bool = false) -> bool:
+	if not is_node_ready() or _info_modal_blocked() or not _info_valid or not _info_cache.get("units_by_id", {}).has(unit_id):
+		return false
+	var focus: Control = get_viewport().gui_get_focus_owner()
+	if _info_unit_id.is_empty() or keyboard:
+		_info_return_focus = weakref(focus) if is_instance_valid(focus) else null
+	_info_unit_id = unit_id
+	_info_generation += 1
+	_action_bar.clear_details()
+	clear_skill_preview()
+	_clear_turn_order_preview()
+	_pointer_target_slot = null
+	_focused_target_slot = null
+	clear_skill_target_hover()
+	_refresh_character_info()
+	_character_info.open_panel()
+	_update_info_occlusion()
+	if keyboard:
+		_character_info.focus_close()
+	return true
+
+func get_character_info_snapshot() -> Dictionary:
+	if _info_unit_id.is_empty() or not _info_cache.get("units_by_id", {}).has(_info_unit_id):
+		return {}
+	var snapshot: Dictionary = _info_cache.duplicate(true)
+	snapshot["unit"] = snapshot["units_by_id"][_info_unit_id]
+	snapshot.erase("units_by_id")
+	snapshot["resolution_in_progress"] = _action_in_progress
+	snapshot["inspection_generation"] = _info_generation
+	snapshot["requested_unit_id"] = _info_unit_id
+	return snapshot
+
+func _refresh_character_info() -> void:
+	if _info_unit_id.is_empty() or not is_node_ready():
+		return
+	if _info_modal_blocked() or not _info_cache.get("units_by_id", {}).has(_info_unit_id):
+		close_character_info(false)
+		return
+	var snapshot: Dictionary = get_character_info_snapshot()
+	var token: Array = [snapshot["battle_epoch"], snapshot["committed_revision"], _info_generation, _info_unit_id]
+	_render_character_info(snapshot, token)
+
+func _render_character_info(snapshot: Dictionary, token: Array) -> void:
+	if not is_node_ready() or _info_modal_blocked() or token != [_info_epoch, _info_revision, _info_generation, _info_unit_id] or _info_unit_id.is_empty():
+		return
+	var view: Dictionary = _info_presenter.present(snapshot["unit"], snapshot)
+	_character_info.render(view, token, _action_in_progress)
+
+func close_character_info(restore_focus: bool = true) -> void:
+	_info_generation += 1
+	_info_unit_id = &""
+	if not is_instance_valid(_character_info):
+		_info_return_focus = null
+		return
+	var focused: Control = get_viewport().gui_get_focus_owner() if is_inside_tree() else null
+	var owned: bool = is_instance_valid(focused) and (_character_info == focused or _character_info.is_ancestor_of(focused))
+	_character_info.close_panel()
+	_update_info_occlusion()
+	if restore_focus and owned and not _info_modal_blocked():
+		var previous: Control = _info_return_focus.get_ref() as Control if _info_return_focus != null else null
+		if _info_can_focus(previous):
+			previous.grab_focus()
+		else:
+			var current: BattleUnitState = get_current_unit()
+			var slot: Control = _get_slot_for_unit(current) if is_instance_valid(current) else null
+			if _info_can_focus(slot):
+				slot.grab_focus()
+			elif _info_can_focus(_action_bar):
+				_action_bar.grab_focus()
+	_info_return_focus = null
+
+func _info_can_focus(control: Control) -> bool:
+	if not is_instance_valid(control) or not control.is_visible_in_tree() or control.focus_mode == Control.FOCUS_NONE:
+		return false
+	if control is BaseButton and (control as BaseButton).disabled:
+		return false
+	if is_instance_valid(_debug_drawer) and _debug_drawer.is_open() and not _debug_drawer.is_ancestor_of(control):
+		var panel: Control = _debug_drawer.get_node("%DrawerPanel")
+		if panel.get_global_rect().intersects(control.get_global_rect()):
+			return false
+	return true
+
+func _update_info_occlusion() -> void:
+	_update_info_slot_focus()
+	if not is_instance_valid(_action_bar) or not _action_bar.has_method("set_obscured_rect"):
+		return
+	var rect: Rect2 = Rect2()
+	if is_instance_valid(_character_info) and _character_info.visible:
+		rect = Rect2(Vector2(0, _character_info.position.y), _character_info.size)
+	_action_bar.set_obscured_rect(rect)
+
+func _input(event: InputEvent) -> void:
+	if not is_node_ready() or not event is InputEventKey or not event.is_pressed() or event.is_echo():
+		return
+	if _info_modal_blocked():
+		close_character_info(false)
+		return
+	var key := event as InputEventKey
+	if key.keycode == KEY_ESCAPE:
+		if not _info_unit_id.is_empty():
+			close_character_info()
+		elif _debug_drawer.is_open():
+			_debug_drawer.set_open(false)
+		elif _default_action_mode != DefaultActionMode.NONE or not _selected_skill_id.is_empty():
+			_on_action_bar_cancel()
+		else:
+			return
+		get_viewport().set_input_as_handled()
+	elif key.keycode == KEY_TAB and _debug_drawer.is_open():
+		var focus: Control = get_viewport().gui_get_focus_owner()
+		if _info_unit_id.is_empty() or (is_instance_valid(focus) and _debug_drawer.is_ancestor_of(focus)):
+			_debug_drawer.handle_keyboard(event)
+
+func _slot_is_info_obscured(slot: Control) -> bool:
+	if not is_instance_valid(_character_info) or not _character_info.visible:
+		return false
+	return Rect2(Vector2(0, _character_info.position.y), _character_info.size).intersects(slot.get_global_rect())
+
+func _update_info_slot_focus() -> void:
+	if not is_node_ready():
+		return
+	for slot: Control in get_player_slots() + get_enemy_slots():
+		var occupied: bool = not StringName(slot.get_meta("unit_id", &"")).is_empty()
+		slot.focus_mode = Control.FOCUS_ALL if occupied and not _slot_is_info_obscured(slot) else Control.FOCUS_NONE

@@ -1,0 +1,129 @@
+[gd_scene format=3 uid="uid://dgpsv4txd1hdj"]
+
+[ext_resource type="Script" uid="uid://d0v50wusk7y31" path="res://Scripts/UI/battle_character_info_panel.gd" id="1_0l64j"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dm1wm"]
+content_margin_left = 14.0
+content_margin_top = 12.0
+content_margin_right = 14.0
+content_margin_bottom = 12.0
+bg_color = Color(0.045, 0.065, 0.08, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.65, 0.57, 0.35, 1)
+
+[node name="BattleCharacterInfoPanel" type="PanelContainer" unique_id=2024955414]
+unique_name_in_owner = true
+visible = false
+z_index = 25
+offset_right = 340.0
+offset_bottom = 632.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_dm1wm")
+script = ExtResource("1_0l64j")
+
+[node name="Body" type="VBoxContainer" parent="." unique_id=260678389]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="Body" unique_id=264383899]
+layout_mode = 2
+
+[node name="CharacterName" type="Label" parent="Body/Header" unique_id=1094684111]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
+[node name="InfoClose" type="Button" parent="Body/Header" unique_id=717246030]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+accessibility_name = "Close character information"
+text = "×"
+
+[node name="InfoScroll" type="ScrollContainer" parent="Body" unique_id=514156974]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+follow_focus = true
+horizontal_scroll_mode = 0
+
+[node name="Content" type="VBoxContainer" parent="Body/InfoScroll" unique_id=1191010536]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="CharacterRole" type="Label" parent="Body/InfoScroll/Content" unique_id=1092115468]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="InfoState" type="Label" parent="Body/InfoScroll/Content" unique_id=1600433810]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="HealthText" type="Label" parent="Body/InfoScroll/Content" unique_id=220529223]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="HealthBar" type="ProgressBar" parent="Body/InfoScroll/Content" unique_id=2071078047]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+
+[node name="Statistics" type="Label" parent="Body/InfoScroll/Content" unique_id=491816502]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="StatsExplanation" type="Label" parent="Body/InfoScroll/Content" unique_id=1121606490]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Damage is base attack power. Skills and target defenses change final damage. Damage reduction is flat physical defense (minimum 1 damage); armor is consumed separately."
+autowrap_mode = 3
+
+[node name="BuffsHeading" type="Label" parent="Body/InfoScroll/Content" unique_id=1103889187]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.45, 1)
+text = "BUFFS"
+autowrap_mode = 3
+
+[node name="Buffs" type="Label" parent="Body/InfoScroll/Content" unique_id=927642541]
+unique_name_in_owner = true
+layout_mode = 2
+text = "None"
+autowrap_mode = 3
+
+[node name="DebuffsHeading" type="Label" parent="Body/InfoScroll/Content" unique_id=2021716163]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.45, 1)
+text = "DEBUFFS"
+autowrap_mode = 3
+
+[node name="Debuffs" type="Label" parent="Body/InfoScroll/Content" unique_id=1547492048]
+unique_name_in_owner = true
+layout_mode = 2
+text = "None"
+autowrap_mode = 3
+
+[node name="PassivesHeading" type="Label" parent="Body/InfoScroll/Content" unique_id=843152164]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.75, 0.45, 1)
+text = "PASSIVES"
+autowrap_mode = 3
+
+[node name="Passives" type="Label" parent="Body/InfoScroll/Content" unique_id=1109643652]
+unique_name_in_owner = true
+layout_mode = 2
+text = "None"
+autowrap_mode = 3

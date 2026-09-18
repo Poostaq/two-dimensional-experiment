@@ -187,20 +187,11 @@ func _test_tooltip_scene_and_hover_content() -> void:
 		_emit_skill_hover(active_button, false)
 		_expect(not tooltip.visible, "active tooltip should hide immediately on exit")
 		_expect(_tooltip_text(arena) == ["", "", "", "", "", ""], "exit should clear tooltip text")
-	var passive_button := _skill_button(arena, &"frontline_guard")
-	_expect(is_instance_valid(passive_button), "passive skill button should exist")
-	if is_instance_valid(passive_button):
-		_emit_skill_hover(passive_button, true)
-		await process_frame
-		_expect(_tooltip_text(arena) == [
-			"Frontline Guard",
-			"Passive",
-			"Effect: Reduce the next damage taken by an adjacent ally by 3.",
-			"Targeting: Adjacent active allies.",
-			"Requirements: User must occupy a front-row slot.",
-			"Cooldown: None",
-		], "passive tooltip should render exact content including None")
-		_emit_skill_hover(passive_button, false)
+	_expect(not is_instance_valid(_skill_button(arena, &"frontline_guard")), "passives are absent from action bar")
+	_expect(arena.call("open_character_info", &"player_0"), "passive information opens")
+	var passive_text: String = (arena.get_node("%BattleCharacterInfoPanel").get_node("%Passives") as Label).text
+	_expect(passive_text.contains("Frontline Guard") and passive_text.contains("Reduce the next damage taken by an adjacent ally by 3."), "passive effect is visible without hover")
+	_expect(passive_text.contains("front-row") and passive_text.contains("None"), "passive requirements and cooldown remain visible")
 	arena.queue_free()
 	await process_frame
 
@@ -221,11 +212,11 @@ func _test_tooltip_lifecycle_and_non_actionability() -> void:
 		arena.queue_free()
 		await process_frame
 		return
-	_expect(_advance_to_unit(arena, &"player_0"), "turn queue should contain player_0 for lifecycle fixture")
-	var active_button := _skill_button(arena, &"shield_bash")
-	var passive_button := _skill_button(arena, &"frontline_guard")
-	_expect(is_instance_valid(active_button) and is_instance_valid(passive_button), "lifecycle skill buttons should exist")
-	if not is_instance_valid(active_button) or not is_instance_valid(passive_button):
+	_expect(_advance_to_unit(arena, &"player_4"), "turn queue should contain player_0 for lifecycle fixture")
+	var active_button := _skill_button(arena, &"quick_strike")
+	var second_button := _skill_button(arena, &"rally")
+	_expect(is_instance_valid(active_button) and is_instance_valid(second_button), "lifecycle skill buttons should exist")
+	if not is_instance_valid(active_button) or not is_instance_valid(second_button):
 		arena.queue_free()
 		await process_frame
 		return
@@ -244,21 +235,21 @@ func _test_tooltip_lifecycle_and_non_actionability() -> void:
 	_expect(arena.get_inspected_unit_id() == inspected_before, "hover should not change inspected unit")
 	_expect(arena.get_selected_skill_id() == selected_before, "hover should not select a skill")
 	active_button.pressed.emit()
-	_expect(arena.get_selected_skill_id() == &"shield_bash", "click selection should remain available")
+	_expect(arena.get_selected_skill_id() == &"quick_strike", "click selection should remain available")
 	_emit_skill_hover(active_button, false)
 	_expect(not tooltip.visible, "click should not pin tooltip after exit")
 	_emit_skill_hover(active_button, true)
-	_emit_skill_hover(passive_button, true)
+	_emit_skill_hover(second_button, true)
 	_emit_skill_hover(active_button, false)
 	await process_frame
 	_expect(tooltip.visible, "stale exit should not hide newer hovered tooltip")
-	_expect(_tooltip_text(arena)[0] == "Frontline Guard", "newer hover should own tooltip content")
-	_emit_skill_hover(passive_button, true)
+	_expect(_tooltip_text(arena)[0] == "Rally", "newer hover should own tooltip content")
+	_emit_skill_hover(second_button, true)
 	await process_frame
-	_expect(tooltip.visible and _tooltip_text(arena)[0] == "Frontline Guard", "duplicate enter should be safe")
-	_expect(_advance_to_unit(arena, &"player_4"), "turn queue should contain player_4 for lifecycle fixture")
+	_expect(tooltip.visible and _tooltip_text(arena)[0] == "Rally", "duplicate enter should be safe")
+	_expect(_advance_to_unit(arena, &"player_0"), "turn queue should contain player_0 for lifecycle transition")
 	_expect(not tooltip.visible, "character change should hide tooltip")
-	var player_four_button := _skill_button(arena, &"quick_strike")
+	var player_four_button := _skill_button(arena, &"shield_bash")
 	_emit_skill_hover(player_four_button, true)
 	await process_frame
 	arena.configure_units(_single_unit_roster())

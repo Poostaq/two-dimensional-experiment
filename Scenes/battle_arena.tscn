@@ -4,8 +4,8 @@
 [ext_resource type="PackedScene" uid="uid://c5rxioljvhah7" path="res://Scenes/UI/battle_unit_view.tscn" id="2_gbjy2"]
 [ext_resource type="PackedScene" uid="uid://dw6x4djsktn3x" path="res://Scenes/UI/battle_turn_order_ribbon.tscn" id="2_gr7gb"]
 [ext_resource type="PackedScene" uid="uid://dddhofbhtlye3" path="res://Scenes/UI/battle_action_bar.tscn" id="4_htxfv"]
-[ext_resource type="PackedScene" uid="uid://bp0jcwlefs888" path="res://Scenes/UI/battle_debug_drawer.tscn" id="5_yee6e"]
-[ext_resource type="Script" uid="uid://b084hbk46kwdl" path="res://Scripts/UI/battle_debug_drawer.gd" id="6_f8pxj"]
+[ext_resource type="PackedScene" uid="uid://bp0jcwlefs888" path="res://Scenes/UI/battle_debug_drawer.tscn" id="8_ommy6"]
+[ext_resource type="PackedScene" uid="uid://dgpsv4txd1hdj" path="res://Scenes/UI/battle_character_info_panel.tscn" id="10_8xchm"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_j6q3v"]
 content_margin_left = 24.0
@@ -264,17 +264,12 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
 
-[node name="BattleDebugDrawer" type="Control" parent="." unique_id=92839775 instance=ExtResource("5_yee6e")]
+[node name="BattleDebugDrawer" parent="." unique_id=92839775 instance=ExtResource("8_ommy6")]
 unique_name_in_owner = true
 z_index = 20
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("6_f8pxj")
 
 [node name="RewardOverlay" type="CenterContainer" parent="." unique_id=227454104]
 unique_name_in_owner = true
@@ -374,3 +369,6 @@ text = "Confirm Preparation"
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
+
+[node name="BattleCharacterInfoPanel" parent="." unique_id=2024955414 instance=ExtResource("10_8xchm")]
+layout_mode = 0

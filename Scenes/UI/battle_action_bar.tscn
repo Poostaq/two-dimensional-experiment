@@ -48,7 +48,7 @@ unique_name_in_owner = true
 visible = false
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "No character-specific skills"
+text = "No active skills"
 
 [node name="SkillScroll" type="ScrollContainer" parent="SkillInspectorContent/SkillInspectorBody/SkillSelectionRegion" unique_id=1612349289]
 layout_mode = 2
@@ -145,13 +145,12 @@ custom_minimum_size = Vector2(0, 23)
 layout_mode = 2
 clip_text = true
 
-[node name="TooltipLayer" type="CanvasLayer" parent="." unique_id=1628000287]
-layer = 20
+[node name="TooltipLayer" type="Node" parent="." unique_id=597794211]
 
 [node name="SkillTooltipPanel" type="PanelContainer" parent="TooltipLayer" unique_id=1161091859]
 unique_name_in_owner = true
 visible = false
-z_index = 20
+z_index = 22
 custom_minimum_size = Vector2(288, 0)
 mouse_filter = 2
 

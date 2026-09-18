@@ -20,6 +20,7 @@ var _return_focus: WeakRef
 var _generation: int = 0
 var _preview_index: int = -1
 var _view: Dictionary = {}
+var input_managed_by_arena: bool = false
 
 func _ready() -> void:
 	_handle.pressed.connect(_toggle)
@@ -154,7 +155,12 @@ func _request_exit() -> void:
 		exit_requested.emit()
 
 func _input(event: InputEvent) -> void:
-	if not is_open() or not event is InputEventKey or not event.is_pressed():
+	if input_managed_by_arena:
+		return
+	handle_keyboard(event)
+
+func handle_keyboard(event: InputEvent) -> void:
+	if not is_open() or not event is InputEventKey or not event.is_pressed() or event.is_echo():
 		return
 	var key := event as InputEventKey
 	if key.keycode == KEY_ESCAPE:

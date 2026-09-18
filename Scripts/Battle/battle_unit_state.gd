@@ -422,3 +422,86 @@ func _has_skill(skill_id: StringName) -> bool:
 
 func is_active() -> bool:
 	return current_hp > 0
+
+
+# Detached observational data: deliberately avoid lazy-expiring keyword getters.
+func get_character_info_snapshot(round_number: int) -> Dictionary:
+	var buffs: Array[Dictionary] = []
+	var debuffs: Array[Dictionary] = []
+	for source_id: StringName in _speed_modifiers:
+		var modifier: Dictionary = _speed_modifiers[source_id]
+		var amount: int = int(modifier.get("amount", 0))
+		var uses_actions: bool = modifier.get("expiry") == ModifierExpiry.NEXT_ACTION
+		var actions: int = int(modifier.get("remaining_actions", 0))
+		var expiry_round: int = int(modifier.get("expiry_round", 0))
+		var entry: Dictionary = {
+			"id": source_id, "label": "Speed (%s)" % String(source_id).capitalize(),
+			"description": "%+d Speed." % amount, "magnitude": amount, "stacks": 0,
+			"source_id": source_id,
+			"expiry_mode": &"actions" if uses_actions else &"round_end",
+			"expiry_value": actions if uses_actions else expiry_round,
+			"remaining_actions": actions, "expiry_round": expiry_round,
+			# Round modifiers expire in their application round; action modifiers do not retain it.
+			"applied_round": 0 if uses_actions else expiry_round,
+		}
+		if amount > 0:
+			buffs.append(entry)
+		else:
+			debuffs.append(entry)
+	if _armor > 0:
+		buffs.append({
+			"id": &"armor", "label": "Armor", "magnitude": _armor, "stacks": 0,
+			"description": "%d Armor absorbs physical damage." % _armor,
+			"expiry_mode": &"consumption", "expiry_value": 0,
+		})
+	if round_number > 0 and is_instance_valid(_advantage_source) and _advantage_expiry_round >= round_number:
+		debuffs.append({
+			"id": &"advantage", "label": "Advantage", "magnitude": 0, "stacks": 1,
+			"description": "The first eligible allied Active skill targeting or directly hitting this unit consumes the mark for that skill's Advantage rider. Default Attack and Default Swap do not consume it.",
+			"source_unit_id": _advantage_source.get("source_unit_id"),
+			"source_skill_id": _advantage_source.get("source_skill_id"),
+			"expiry_mode": &"consumption_or_round_end", "expiry_value": _advantage_expiry_round,
+			"expiry_round": _advantage_expiry_round,
+		})
+	if round_number > 0 and is_instance_valid(_snared_source) and _snared_expiry_round >= round_number:
+		debuffs.append({
+			"id": &"snared", "label": "Snared", "magnitude": 0, "stacks": 1,
+			"description": "Setup mark for skills that name Snared; no inherent movement or stat penalty.",
+			"source_unit_id": _snared_source.get("source_unit_id"),
+			"source_skill_id": _snared_source.get("source_skill_id"),
+			"follow_up_armed": _snared_follow_up_armed,
+			"expiry_mode": &"round_end", "expiry_value": _snared_expiry_round,
+			"expiry_round": _snared_expiry_round,
+		})
+	for key: StringName in _bleed_states:
+		var bleed: RefCounted = _bleed_states[key]
+		if not is_instance_valid(bleed):
+			continue
+		var source: RefCounted = bleed.get("source")
+		debuffs.append({
+			"id": &"bleed", "source_unit_id": source.get("source_unit_id"),
+			"source_skill_id": source.get("source_skill_id"),
+			"label": "Bleed (%s / %s)" % [source.get("source_unit_id"), source.get("source_skill_id")],
+			"magnitude": int(bleed.call("tick_damage")), "stacks": int(bleed.get("stacks")),
+			"description": "%d stacks; %d damage after each committed action by this unit." % [int(bleed.get("stacks")), int(bleed.call("tick_damage"))],
+			"expiry_mode": &"actions", "expiry_value": int(bleed.get("remaining_actions")),
+			"remaining_actions": int(bleed.get("remaining_actions")),
+		})
+	var passives: Array[Dictionary] = []
+	for skill: CharacterSkill in _skills:
+		if skill.kind != CharacterSkill.Kind.PASSIVE:
+			continue
+		var description: String = "%s\nTargeting: %s\nRequirements: %s\nUsage: %s" % [
+			skill.effect_text, skill.targeting_text, skill.requirements_text, skill.cooldown_text,
+		]
+		var combo: RefCounted = skill.combo_definition
+		if is_instance_valid(combo):
+			description += "\nCombo: " + str(combo.get("description_text"))
+		passives.append({"id": skill.skill_id, "name": skill.display_name, "description": description})
+	return {
+		"unit_id": unit_id, "display_name": display_name,
+		"current_hp": current_hp, "max_hp": max_hp, "base_speed": _base_speed,
+		"effective_speed": get_effective_speed(), "power": power, "defense": defense,
+		"armor": _armor, "active": is_active(),
+		"buffs": buffs, "debuffs": debuffs, "passives": passives,
+	}

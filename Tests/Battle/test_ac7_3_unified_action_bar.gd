@@ -16,6 +16,7 @@ func _run() -> void:
 		await _test_actions(arena, bar)
 		await _test_lifecycle(arena, bar)
 		await _test_rosters_and_focus(arena, bar)
+		await _test_layout_sizes(arena, bar)
 	arena.queue_free()
 	await process_frame
 	for failure: String in _failures:
@@ -37,9 +38,8 @@ func _test_actions(arena: Control, bar: Control) -> void:
 		if arena.call("get_inspected_unit_id") == &"player_4":
 			break
 		arena.call("advance_turn")
-	_assert(rows.get_child_count() == 4, "full four-skill roster")
+	_assert(rows.get_child_count() == 2, "mixed roster renders only two active skills")
 	var skill := rows.get_child(0) as Button
-	var passive := rows.get_child(2) as Button
 	var revision: int = arena.call("get_battle_revision")
 	var actor: BattleUnitState = arena.call("get_current_unit")
 	var first_id: StringName = skill.get_meta("skill_id")
@@ -57,9 +57,6 @@ func _test_actions(arena: Control, bar: Control) -> void:
 	skill.pressed.emit()
 	_assert(not swap.button_pressed and not attack.button_pressed, "skill replaces defaults")
 	_assert(int(arena.get("_default_action_mode")) == 0, "only skill targeting remains")
-	passive.pressed.emit()
-	_assert(not confirm.visible or confirm.disabled, "passive cannot confirm")
-	_assert(arena.call("get_skill_transaction_state") == BattleSkillTransaction.State.IDLE, "passive clears pending targeting")
 	attack.pressed.emit()
 	cancel.pressed.emit()
 	_assert(not attack.button_pressed and not swap.button_pressed and arena.call("get_selected_skill_id") == &"", "cancel clears selection")
@@ -141,13 +138,18 @@ func _test_rosters_and_focus(arena: Control, bar: Control) -> void:
 	for count: int in 5:
 		var skills: Array[CharacterSkill] = []
 		for index: int in count:
-			skills.append(CharacterSkill.new(StringName("skill_%d" % index), "Skill %d" % index, CharacterSkill.Kind.PASSIVE, "Passive effect.", "Self.", "None", "None"))
+			skills.append(CharacterSkill.new(StringName("skill_%d" % index), "Skill %d" % index, CharacterSkill.Kind.ACTIVE, "Active effect.", "Self.", "None", "None"))
 		var units: Array[BattleUnitState] = [
 			BattleUnitState.new(&"actor", "Actor", 0, 0, 10, 20, skills),
 			BattleUnitState.new(&"enemy", "Enemy", 1, 0, 5)
 		]
 		arena.call("configure_units", units)
 		var rows := bar.get_node("%SkillInspectorSkills") as HBoxContainer
+		await process_frame
+		await process_frame
+		for child: Button in rows.get_children():
+			_assert(child.size == Vector2(160, 88), "equal actual tile dimensions at roster size " + str(count))
+		_assert((bar.get_node("%SkillInspectorCountLabel") as Label).text == "Active skills: %d" % count, "active count omits roster capacity")
 		_assert(rows.get_child_count() == count, "render roster size " + str(count))
 		_assert(not (bar.get_node("%DefaultAttackButton") as Button).disabled, "defaults survive roster size " + str(count))
 	var rows := bar.get_node("%SkillInspectorSkills") as HBoxContainer
@@ -162,7 +164,65 @@ func _test_rosters_and_focus(arena: Control, bar: Control) -> void:
 	_assert(tooltip_name.text == "Skill 1", "late exit preserves newer detail source")
 	second.mouse_exited.emit()
 	_assert(tooltip_name.text == "Skill 0", "keyboard details resume on pointer exit")
+	await _test_occlusion(bar, first)
 	var revision: int = arena.call("get_battle_revision")
 	for iteration: int in 3:
 		arena.call("_refresh_action_bar")
 	_assert(arena.call("get_battle_revision") == revision and (arena.call("get_action_records") as Array).is_empty(), "repeated rendering is read-only")
+
+func _test_occlusion(bar: Control, button: Button) -> void:
+	var tooltip := bar.get_node("%SkillTooltipPanel") as Control
+	_assert(bar.has_method("set_obscured_rect"), "information panel occlusion API")
+	if not bar.has_method("set_obscured_rect"):
+		return
+	button.mouse_entered.emit()
+	bar.call("set_obscured_rect", button.get_global_rect())
+	_assert(not tooltip.visible, "obscured anchor hides tooltip")
+	button.mouse_entered.emit()
+	await process_frame
+	_assert(not tooltip.visible, "obscured anchor cannot resurrect tooltip")
+	bar.call("set_obscured_rect", Rect2())
+	_assert(not tooltip.visible, "removing occlusion waits for fresh entry")
+	button.mouse_entered.emit()
+	await process_frame
+	_assert(tooltip.visible, "fresh unobscured entry restores tooltip")
+	bar.call("clear_details")
+	var rows := button.get_parent() as HBoxContainer
+	var second := rows.get_child(1) as Button
+	button.focus_entered.emit()
+	second.mouse_entered.emit()
+	bar.call("set_obscured_rect", button.get_global_rect())
+	second.mouse_exited.emit()
+	_assert(StringName(bar.get("_detail_id")).is_empty(), "pointer exit cannot restore an obscured focused preview")
+	bar.call("set_obscured_rect", Rect2())
+	bar.call("clear_details")
+
+func _test_layout_sizes(arena: Control, bar: Control) -> void:
+	var default_sizes: Dictionary = {}
+	for width: int in [1024, 1152, 1920]:
+		root.size = Vector2i(width, 648 if width < 1920 else 1080)
+		for count: int in [0, 1, 4]:
+			var skills: Array[CharacterSkill] = []
+			for index: int in count:
+				skills.append(CharacterSkill.new(StringName("long_%d" % index), "An exceptionally long skill name that must remain two bounded lines", CharacterSkill.Kind.ACTIVE, "Full descriptive effect remains accessible.", "Self.", "None", "None"))
+			var units: Array[BattleUnitState] = [BattleUnitState.new(&"actor", "Actor", 0, 0, 10, 20, skills), BattleUnitState.new(&"enemy", "Enemy", 1, 0, 5)]
+			arena.call("configure_units", units)
+			await process_frame
+			await process_frame
+			var rows := bar.get_node("%SkillInspectorSkills") as HBoxContainer
+			for button: Button in rows.get_children():
+				_assert(button.size == Vector2(160, 88), "long title dimensions at %d / %d" % [width, count])
+				var title := button.get_node("NameLabel") as Label
+				_assert(title.max_lines_visible == 2 and title.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS, "title bounded to two ellipsized lines")
+			for node_name: String in ["DefaultAttackButton", "DefaultSwapButton"]:
+				var button := bar.get_node("%" + node_name) as Button
+				if not default_sizes.has(node_name):
+					default_sizes[node_name] = button.size
+				_assert(button.size == default_sizes[node_name], "default controls retain actual dimensions")
+			if count == 4:
+				var last := rows.get_child(3) as Button
+				last.grab_focus()
+				await process_frame
+				await process_frame
+				var scroll := rows.get_parent() as ScrollContainer
+				_assert(scroll.follow_focus and scroll.get_global_rect().encloses(last.get_global_rect()), "last focused tile remains reachable")
