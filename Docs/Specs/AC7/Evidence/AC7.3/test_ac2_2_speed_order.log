@@ -1,0 +1,9 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+BattleTurnQueue rejected: unit invalid has speed 11 outside 1..10
+BattleTurnQueue rejected: unit invalid has speed 11 outside 1..10
+BattleTurnQueue rejected: duplicate side/slot (0, 0)
+BattleTurnQueue rejected: duplicate side/slot (0, 0)
+AC2.2 speed order tests: PASS (12/12)

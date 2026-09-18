@@ -1,0 +1,15 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 591.44 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3080
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+bar-four-skills.png bar [P: (0.0, 473.0), S: (1152.0, 111.0)]
+bar-keyboard-details.png bar [P: (0.0, 473.0), S: (1152.0, 111.0)]
+bar-skill-target.png bar [P: (0.0, 441.0), S: (1152.0, 143.0)]
+bar-attack-target.png bar [P: (0.0, 441.0), S: (1152.0, 143.0)]
+bar-swap-target.png bar [P: (0.0, 441.0), S: (1152.0, 143.0)]
+bar-constrained-1024.png bar [P: (0.0, 473.0), S: (1024.0, 111.0)]
+bar-cooldown.png bar [P: (0.0, 473.0), S: (1024.0, 111.0)]
+bar-zero-skills.png bar [P: (0.0, 484.0), S: (1152.0, 100.0)]
+bar-enemy-turn.png bar [P: (0.0, 484.0), S: (1152.0, 100.0)]
+AC7.3 rendered input/layout QA: PASS
