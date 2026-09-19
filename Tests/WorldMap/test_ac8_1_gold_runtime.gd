@@ -20,7 +20,7 @@ class MemoryRepository:
 		return {"ok": true, "error": null}
 
 	func load_validated() -> Dictionary:
-		var codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
+		var codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
 		return codec.decode_any(bytes)
 
 

@@ -14,9 +14,13 @@ static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.
 static func encode(plan: RefCounted, resolved_seed: String, run_state: RefCounted, save_version: int) -> PackedByteArray:
     if not is_instance_valid(plan) or not is_instance_valid(run_state):
         return PackedByteArray()
-    if save_version not in [2, 3, 4] or not run_state.is_valid(plan):
+    if save_version not in [2, 3, 4, 5] or not run_state.is_valid(plan):
         return PackedByteArray()
     var state_data: Dictionary = run_state.to_dictionary()
+    if save_version < 5:
+        if not run_state.pending_reward_battle_id.is_empty():
+            return PackedByteArray()
+        state_data.erase("pending_reward_battle_id")
     if save_version < 4:
         if not run_state.is_playable() or not state_data["battle_settlements"].is_empty():
             return PackedByteArray()
@@ -46,10 +50,10 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     var version: Variant = root.get("save_version")
     if not (version is int or version is float) or version != expected_version:
         return _save_failure("root_schema")
-    if expected_version not in [2, 3, 4] or root.get("schema") != SCHEMA:
+    if expected_version not in [2, 3, 4, 5] or root.get("schema") != SCHEMA:
         return _save_failure("root_schema")
-    if expected_version == 4 and not _valid_v4_shape(root):
-        return _save_failure("v4_shape")
+    if expected_version >= 4 and not _valid_current_shape(root, expected_version):
+        return _save_failure("v%d_shape" % expected_version)
     var roster_version: Variant = root.get("starter_roster_version", 0)
     if not (roster_version is int or roster_version is float) or (roster_version != 0 and roster_version != STARTER_ROSTER_VERSION):
         return _save_failure("starter_roster_version")
@@ -90,6 +94,10 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     if not world.get("resolved_seed") is String or not world.get("run_state") is Dictionary:
         return _save_failure("runtime_fields")
     var state_data: Dictionary = world["run_state"].duplicate(true)
+    if expected_version < 5:
+        if state_data.has("pending_reward_battle_id"):
+            return _save_failure("legacy_reward_field")
+        state_data["pending_reward_battle_id"] = ""
     if expected_version < 4:
         if state_data.has("run_status") or state_data.has("battle_settlements"):
             return _save_failure("legacy_lifecycle_fields")
@@ -176,7 +184,7 @@ static func _coord(value: Variant) -> bool:
     return value is Array and value.size() == 2 and _integer(value[0], -2147483648, 2147483647) and _integer(value[1], -2147483648, 2147483647)
 
 
-static func _valid_v4_shape(root: Dictionary) -> bool:
+static func _valid_current_shape(root: Dictionary, version: int) -> bool:
     if not _keys_match(root, ["schema", "save_version", "starter_roster_version", "world"]):
         return false
     if not _integer(root.starter_roster_version, 1, 1):
@@ -187,7 +195,12 @@ static func _valid_v4_shape(root: Dictionary) -> bool:
     if not _integer(world.generator_version, 1, 1) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
         return false
     var state: Variant = world.run_state
-    if not _keys_match(state, ["player_coord", "boss_coord", "move_count", "gold", "boss_active", "boss_engaged", "consumed_encounters", "formation", "character_hp", "cache_move_progress", "cache_ready", "battle_preparation", "run_status", "battle_settlements"]):
+    var keys: Array[String] = ["player_coord", "boss_coord", "move_count", "gold", "boss_active", "boss_engaged", "consumed_encounters", "formation", "character_hp", "cache_move_progress", "cache_ready", "battle_preparation", "run_status", "battle_settlements"]
+    if version == 5:
+        keys.append("pending_reward_battle_id")
+    if not _keys_match(state, keys):
+        return false
+    if version == 5 and not state.pending_reward_battle_id is String:
         return false
     if not _coord(state.player_coord) or not _coord(state.boss_coord):
         return false

@@ -1,7 +1,7 @@
 class_name WorldRuntimeSaveCoordinator
 extends RefCounted
 
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 var _plan: WorldPlan
@@ -22,6 +22,8 @@ func configure(
     durable_state: RefCounted,
     repository: RefCounted
 ) -> bool:
+    if _writing or _input_blocked:
+        return false
     if (
         not is_instance_valid(plan)
         or resolved_seed.is_empty()

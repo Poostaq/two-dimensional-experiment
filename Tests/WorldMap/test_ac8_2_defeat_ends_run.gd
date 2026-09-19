@@ -96,7 +96,7 @@ func _case(kind: String, fail: bool) -> void:
 	world.call("_on_battle_completed", BattleOutcome.Type.DEFEAT)
 	world.call("_on_battle_closed")
 	_expect(returns == 1, "duplicate callbacks no return")
-	var codec: Script = load("res://Scripts/Save/world_run_save_codec_v4.gd")
+	var codec: Script = load("res://Scripts/Save/world_run_save_codec_v5.gd")
 	var loaded: Dictionary = codec.decode_any(repository.writes.back())
 	_expect(loaded.get("ok", false) and not loaded.value.run_state.is_playable(), "disk lost is not playable")
 	world.free()

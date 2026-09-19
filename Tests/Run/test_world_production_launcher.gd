@@ -195,7 +195,7 @@ func _run() -> void:
 
     var saved_before_cancel := _read_bytes(explicit_path)
     var wallet_root: Dictionary = JSON.parse_string(saved_before_cancel.get_string_from_utf8())
-    _expect(wallet_root.get("save_version") == 4, "new run persists V4")
+    _expect(wallet_root.get("save_version") == 5, "new run persists V5")
     _expect(wallet_root["world"]["run_state"].get("gold") == 100, "new run persists 100g")
     if has_commander_api:
         var calls_before_invalid: int = service.call_count

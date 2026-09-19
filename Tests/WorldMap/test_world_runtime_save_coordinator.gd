@@ -105,6 +105,7 @@ func _run() -> void:
         "failed write does not publish candidate"
     )
     _expect(_published_state.get("gold") == 100, "failed save retains 100g")
+    _expect(not coordinator.configure(plan, "replacement", initial, FakeRepository.new()), "outstanding failure forbids coordinator rebind")
     var failed_bytes: PackedByteArray = repository.writes.back()
     var retried: Dictionary = coordinator.call("retry_pending")
     _expect(bool(retried.get("ok", false)), "retry succeeds")
@@ -117,9 +118,9 @@ func _run() -> void:
     )
 
     _expect(_published_state.get("gold") == 375, "retry publishes 375g")
-    var wallet_codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
+    var wallet_codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
     var saved_wallet: Dictionary = wallet_codec.decode_any(repository.writes.back())
-    _expect(saved_wallet.get("ok", false) and saved_wallet["value"]["run_state"].get("gold") == 375, "retry persists wallet in V4")
+    _expect(saved_wallet.get("ok", false) and saved_wallet["value"]["run_state"].get("gold") == 375, "retry persists wallet in V5")
     var durable_before_discard := _published_state.call("canonical_key") as String
     var discard_candidate := _candidate_with_move_delta(state_script, plan, _published_state, 1)
     discard_candidate.set("gold", 0)
@@ -165,7 +166,44 @@ func _run() -> void:
     _expect(coordinator.call("retry_pending").get("ok", false), "terminal retry commits")
     _expect(repository.writes[writes_before] == repository.writes.back(), "terminal retry byte identical")
     _expect(not coordinator.call("retry_pending").get("ok", true), "duplicate retry cannot publish")
+    _test_reward_pending(plan)
     _finish()
+
+
+func _test_reward_pending(plan: WorldPlan) -> void:
+    var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(func(_p: RefCounted) -> void: pass).start("golden-alpha")
+    var state: RefCounted = session.run_state
+    var coord: Vector2i = plan.get_boss_coord()
+    state.player_coord = coord
+    state.boss_engaged = true
+    var health: Dictionary[StringName, int] = {&"hero": 20}
+    state.set_character_hp_snapshot(health)
+    var receipt: Dictionary = {"battle_id":"boss","encounter_type":"boss","encounter_coord":[coord.x,coord.y],"outcome":"victory","enemy_ids":["a"],"defeated_enemy_ids":["a"],"terminal_player_health":[{"character_id":"hero","final_hp":0,"max_hp":20}],"earned_gold":50}
+    var pending: RefCounted = load("res://Scripts/Run/battle_settlement_rules.gd").build_candidate(state, plan, receipt).value
+    var acknowledged: RefCounted = load("res://Scripts/Run/battle_reward_acknowledgement_rules.gd").build_candidate(pending, plan, "boss").value
+    var repository := FakeRepository.new()
+    var coordinator: RefCounted = load(COORDINATOR_PATH).new()
+    _expect(coordinator.configure(plan, "golden-alpha", pending, repository), "pending reward configures")
+    _published_state = pending
+    repository.fail_next = true
+    _expect(not coordinator.commit_candidate(acknowledged, Callable(self, "_publish_state"), "ack").get("ok", true), "ack failure retained")
+    _expect(_published_state.pending_reward_battle_id == "boss", "failed ack never publishes")
+    var frozen: PackedByteArray = repository.writes.back()
+    repository.fail_next = true
+    _expect(not coordinator.retry_pending().get("ok", true), "repeated ack failure retained")
+    _expect(repository.writes.back() == frozen, "failed retry identical bytes")
+    var restored: RefCounted = coordinator.discard_pending()
+    _expect(restored.pending_reward_battle_id == "boss" and restored.canonical_key() == pending.canonical_key(), "discard restores entire durable pending reward")
+    _expect(_published_state.pending_reward_battle_id == "boss", "discard never publishes acknowledgement")
+    repository.fail_next = true
+    coordinator.commit_candidate(acknowledged, func(published: RefCounted) -> void:
+        _expect(coordinator.get_durable_state().pending_reward_battle_id == "", "durable ack precedes callback")
+        _expect(not coordinator.is_input_blocked(), "pending write cleared before callback")
+        _publish_state(published)
+    , "ack")
+    frozen = repository.writes.back()
+    _expect(coordinator.retry_pending().get("ok", false), "ack retry succeeds")
+    _expect(repository.writes.back() == frozen and _published_state.pending_reward_battle_id == "", "successful frozen retry publishes ack")
 
 
 func _next_candidate(state_script: GDScript, plan: WorldPlan, event_name: String) -> RefCounted:
