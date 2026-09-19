@@ -42,6 +42,12 @@ func _run() -> void:
     _expect(_retry_count == 1, "Retry emits exactly once")
     _expect(_return_count == 1, "Return emits exactly once")
     _expect(_copy_count == 1, "Copy emits exactly once")
+    overlay.call("present", error, "terminal", false)
+    _expect(not overlay.get_node("%ReturnButton").visible, "terminal hides Return")
+    overlay.call("_on_return_pressed")
+    _expect(_return_count == 1, "direct terminal Return blocked")
+    overlay.call("present", error, "ordinary")
+    _expect(overlay.get_node("%ReturnButton").visible, "ordinary mode resets Return")
     overlay.queue_free()
     await process_frame
     _finish()

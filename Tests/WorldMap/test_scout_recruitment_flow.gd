@@ -168,29 +168,14 @@ func _run() -> void:
 
 
 func _test_full_roster_replacement() -> void:
-	var packed: PackedScene = load(RUNTIME_SCENE) as PackedScene
-	var runtime: WorldRuntimeController = packed.instantiate() as WorldRuntimeController
-	runtime.auto_initialize_runtime = false
-	root.add_child(runtime)
-	await process_frame
-	var full_slots: Array[RunCharacter] = []
-	for index: int in RunRoster.MAX_ROSTER_SIZE:
-		full_slots.append(
-			RunCharacter.new(
-				StringName("full_%d" % index),
-				"Full %d" % index,
-				5 + index,
-				20,
-				[]
-			)
-		)
-	runtime.set("_roster", RunRoster.new(full_slots))
+	var generated: Dictionary = HexWorldGeneratorV1.new().generate("scout-recruitment-flow")
+	var runtime := await _create_runtime(generated["plan"], FailingOnceRepository.new(), RunCharacterCatalog.get_goblin_class_ids())
+	var target: RunCharacter = (runtime.get("_roster") as RunRoster).get_character_at(0)
 	var battle := _open_victory_battle(runtime)
 	battle.select_reward(SCOUT_REWARD_ID)
 	battle.confirm_reward_selection()
 	await process_frame
 	var party := runtime.get_node("PartyHost").get_child(0) as PartyManagement
-	var target := full_slots[0]
 	var pending := runtime.get("_pending_recruit") as RunCharacter
 	party.replacement_requested.emit(0, &"stale_occupant", pending.character_id)
 	_expect(
@@ -217,7 +202,8 @@ func _test_full_roster_replacement() -> void:
 
 func _create_runtime(
 	plan: WorldPlan,
-	repository: RefCounted
+	repository: RefCounted,
+	source_formation: Array[StringName] = [&"player_0", &"player_1", &"player_2", &"", &"", &""]
 ) -> WorldRuntimeController:
 	var packed: PackedScene = load(RUNTIME_SCENE) as PackedScene
 	var runtime: WorldRuntimeController = packed.instantiate() as WorldRuntimeController
@@ -225,7 +211,7 @@ func _create_runtime(
 	root.add_child(runtime)
 	await process_frame
 	var empty_consumed: Array[Vector2i] = []
-	var formation: Array[StringName] = [&"player_0", &"player_1", &"player_2", &"", &"", &""]
+	var formation: Array[StringName] = source_formation.duplicate()
 	var run_state: WorldRunState = WorldRunState.create(
 		plan.get_start_coord(),
 		plan.get_boss_coord(),
@@ -245,7 +231,15 @@ func _create_runtime(
 
 
 func _open_victory_battle(runtime: WorldRuntimeController) -> BattleArena:
-	runtime.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	var plan: WorldPlan = runtime.get("_runtime_plan")
+	var state: RefCounted = runtime.get_durable_run_state()
+	var coord: Vector2i = plan.get_start_coord()
+	for candidate: Vector2i in plan.get_cells():
+		if plan.get_cells()[candidate].get("encounter") == WorldEncounterType.COMBAT and not state.get("consumed_encounters").has(candidate):
+			coord = candidate
+			break
+	state.set("player_coord", coord)
+	runtime.call("_on_battle_requested", coord, WorldEncounterType.COMBAT)
 	var battle := runtime.get_node("BattleHost").get_child(0) as BattleArena
 	battle.call("_complete_battle", BattleOutcome.Type.VICTORY)
 	return battle

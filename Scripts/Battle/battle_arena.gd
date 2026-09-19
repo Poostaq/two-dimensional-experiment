@@ -85,6 +85,9 @@ var _transient_log_entry: BattleLogEntry
 var _action_in_progress: bool = false
 var _battle_outcome: BattleOutcome.Type = BattleOutcome.Type.IN_PROGRESS
 var _terminal_player_health_snapshot: Array[Dictionary] = []
+var _result_capture: RefCounted
+var _production_settlement: bool = false
+var _settlement_committed: bool = false
 var _reward_options: Array[BattleRewardOption] = []
 var _selected_reward: BattleRewardOption
 var _pending_recruitment_option: BattleRewardOption
@@ -172,6 +175,33 @@ func configure(coordinate: Vector2i, type: String) -> void:
 		_refresh_context()
 
 
+func configure_production_settlement(enabled: bool) -> void:
+	_production_settlement = enabled
+	_settlement_committed = false
+
+
+func set_settlement_committed() -> void:
+	if not is_battle_complete() or _settlement_committed:
+		return
+	_settlement_committed = true
+	if _battle_outcome == BattleOutcome.Type.VICTORY and is_node_ready():
+		_show_victory_rewards()
+	_refresh_debug_drawer()
+
+
+func get_terminal_result() -> Dictionary:
+	return _result_capture.get_receipt() if is_instance_valid(_result_capture) else {}
+
+
+func _settlement_pending() -> bool:
+	return _production_settlement and is_battle_complete() and not _settlement_committed
+
+
+func _capture_damage_defeat(target: BattleUnitState, result: BattleDamageResult) -> void:
+	if is_instance_valid(_result_capture) and is_instance_valid(result):
+		_result_capture.observe_defeat(target, result.receiver_hp_after + result.applied_damage)
+
+
 func configure_reward_options(options: Array[BattleRewardOption]) -> void:
 	_configured_reward_options = options.duplicate()
 	_has_configured_reward_options = true
@@ -213,6 +243,9 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 	_terminal_player_health_snapshot.clear()
 	_configured_player_units.clear()
 	_units = units.duplicate()
+	_settlement_committed = false
+	var result_script: Script = load("res://Scripts/Battle/battle_result_record.gd")
+	_result_capture = result_script.capture(encounter_type, encounter_coordinate, _units)
 	for unit: BattleUnitState in _units:
 		if is_instance_valid(unit) and unit.side == BattleUnitState.Side.PLAYER:
 			_configured_player_units.append(unit)
@@ -236,7 +269,7 @@ func configure_party_units(player_units: Array[BattleUnitState]) -> void:
 func _process(delta: float) -> void:
 	var actor: BattleUnitState = get_current_unit()
 	if (
-		not _auto_enemy_turns or _preparation_required or _action_in_progress
+		not _auto_enemy_turns or is_battle_input_locked() or _action_in_progress
 		or is_battle_complete() or not is_instance_valid(actor)
 		or actor.side != BattleUnitState.Side.ENEMY
 	):
@@ -252,7 +285,7 @@ func _process(delta: float) -> void:
 func _perform_enemy_turn() -> bool:
 	var actor: BattleUnitState = get_current_unit()
 	if (
-		_preparation_required or _action_in_progress or is_battle_complete()
+		is_battle_input_locked() or _action_in_progress or is_battle_complete()
 		or not is_instance_valid(actor) or actor.side != BattleUnitState.Side.ENEMY
 	):
 		return false
@@ -432,7 +465,7 @@ func is_preparation_required() -> bool:
 
 
 func is_battle_input_locked() -> bool:
-	return _preparation_required
+	return _preparation_required or (_production_settlement and not is_instance_valid(_result_capture))
 
 
 func get_turn_queue() -> Array[BattleUnitState]:
@@ -491,6 +524,8 @@ func get_selected_reward() -> BattleRewardOption:
 
 
 func select_reward(reward_id: StringName) -> void:
+	if _settlement_pending():
+		return
 	if _reward_confirmation_latched or _battle_outcome != BattleOutcome.Type.VICTORY:
 		return
 	for option: BattleRewardOption in _reward_options:
@@ -502,6 +537,8 @@ func select_reward(reward_id: StringName) -> void:
 
 
 func confirm_reward_selection() -> void:
+	if _settlement_pending():
+		return
 	if (
 		_reward_confirmation_latched
 		or is_instance_valid(_pending_recruitment_option)
@@ -518,6 +555,8 @@ func confirm_reward_selection() -> void:
 
 
 func restore_pending_recruitment(option: BattleRewardOption) -> void:
+	if _settlement_pending():
+		return
 	if (
 		not is_instance_valid(option)
 		or not is_instance_valid(_pending_recruitment_option)
@@ -533,6 +572,8 @@ func restore_pending_recruitment(option: BattleRewardOption) -> void:
 
 
 func complete_pending_recruitment(option: BattleRewardOption) -> void:
+	if _settlement_pending():
+		return
 	if (
 		not is_instance_valid(option)
 		or not is_instance_valid(_pending_recruitment_option)
@@ -545,6 +586,8 @@ func complete_pending_recruitment(option: BattleRewardOption) -> void:
 
 
 func _complete_reward(option: BattleRewardOption) -> void:
+	if _settlement_pending():
+		return
 	_reward_confirmation_latched = true
 	_clear_reward_ui(false)
 	reward_confirmed.emit(option)
@@ -651,7 +694,7 @@ func get_battle_revision() -> int:
 
 
 func preview_default_attack(actor_id: StringName, target_id: StringName) -> Dictionary:
-	if _preparation_required:
+	if is_battle_input_locked():
 		return {}
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	var target: BattleUnitState = get_unit_by_id(target_id)
@@ -669,7 +712,7 @@ func confirm_default_attack(
 	target_id: StringName,
 	expected_revision: int
 ) -> bool:
-	if _preparation_required or _action_in_progress or expected_revision != _battle_revision:
+	if is_battle_input_locked() or _action_in_progress or expected_revision != _battle_revision:
 		return false
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	var target: BattleUnitState = get_unit_by_id(target_id)
@@ -695,6 +738,7 @@ func confirm_default_attack(
 		_action_in_progress = false
 		_invalidate_character_info()
 		return false
+	_capture_damage_defeat(target, result)
 	var log_entry: BattleLogEntry = BattleLogEntry.new(
 		_battle_log_entries.size() + 1,
 		action_round,
@@ -796,7 +840,7 @@ func preview_formation_move(
 	destination_slot: int,
 	default_swap: bool
 ) -> Dictionary:
-	if _preparation_required:
+	if is_battle_input_locked():
 		return {}
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	if not _is_valid_move_actor(actor, destination_slot):
@@ -826,7 +870,7 @@ func confirm_formation_move(
 	expected_revision: int,
 	default_swap: bool
 ) -> bool:
-	if _preparation_required or _action_in_progress or expected_revision != _battle_revision:
+	if is_battle_input_locked() or _action_in_progress or expected_revision != _battle_revision:
 		return false
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	if (
@@ -984,7 +1028,7 @@ func get_skill_transaction_state() -> BattleSkillTransaction.State:
 
 
 func begin_skill_action(actor_id: StringName, skill_id: StringName) -> bool:
-	if _preparation_required:
+	if is_battle_input_locked():
 		return false
 	var actor: BattleUnitState = get_unit_by_id(actor_id)
 	var skill: CharacterSkill = _find_skill(actor, skill_id)
@@ -1050,7 +1094,7 @@ func cancel_skill_action() -> bool:
 
 
 func confirm_skill_action() -> bool:
-	if _preparation_required:
+	if is_battle_input_locked():
 		return false
 	var generation: int = _skill_transaction.generation
 	if not _skill_transaction.begin_confirmation(generation):
@@ -1185,6 +1229,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 			_action_in_progress = false
 			_invalidate_character_info()
 			return false
+		_capture_damage_defeat(target, result)
 		direct_hit_by_target[target_id] = result.was_direct_hit
 		action_damage_results.append(result)
 		var entry := BattleLogEntry.new(
@@ -1304,6 +1349,8 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 
 
 func _resolve_current_action_start_reactions() -> void:
+	if is_battle_input_locked():
+		return
 	if is_battle_complete():
 		return
 	var actor: BattleUnitState = get_current_unit()
@@ -1449,6 +1496,7 @@ func _resolve_bleed_ticks_for_units(
 			var status_result: BattleDamageResult = BattleDamageResolver.apply_status_damage(source_unit, target, int(tick.call("tick_damage")))
 			if not is_instance_valid(status_result):
 				continue
+			_capture_damage_defeat(target, status_result)
 			damage_by_target[target.unit_id] = int(damage_by_target.get(target.unit_id, 0)) + status_result.applied_damage
 			ticks.append(tick)
 	return ticks
@@ -1557,7 +1605,7 @@ func _update_indicator_tint(tint: TextureRect, role: StringName) -> void:
 
 
 func perform_debug_damage() -> void:
-	if _preparation_required or is_battle_complete() or _action_in_progress:
+	if is_battle_input_locked() or is_battle_complete() or _action_in_progress:
 		return
 	var attacker: BattleUnitState = get_current_unit()
 	var receiver: BattleUnitState = BattleTargetSelector.find_closest_enemy(attacker, _units)
@@ -1577,6 +1625,7 @@ func perform_debug_damage() -> void:
 		_invalidate_character_info()
 		_refresh_turn_ui()
 		return
+	_capture_damage_defeat(receiver, result)
 	var entry := BattleLogEntry.new(
 		_battle_log_entries.size() + 1,
 		action_round,
@@ -1608,7 +1657,7 @@ func clear_log_entry_preview() -> void:
 
 
 func advance_turn() -> void:
-	if _preparation_required or is_battle_complete() or _turn_queue.is_empty():
+	if is_battle_input_locked() or is_battle_complete() or _turn_queue.is_empty():
 		return
 	_clear_turn_order_preview()
 	_clear_default_action_state()
@@ -1649,6 +1698,8 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 		return
 	close_character_info(false)
 	_battle_outcome = outcome
+	if is_instance_valid(_result_capture):
+		_result_capture.freeze(outcome)
 	_refresh_turn_order_ribbon()
 	_terminal_player_health_snapshot.clear()
 	for unit: BattleUnitState in _configured_player_units:
@@ -1665,13 +1716,15 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 		if is_instance_valid(unit):
 			unit.clear_battle_local_state()
 	battle_completed.emit(_battle_outcome)
-	if _battle_outcome == BattleOutcome.Type.VICTORY:
+	if _battle_outcome == BattleOutcome.Type.VICTORY and not _settlement_pending():
 		_show_victory_rewards()
 	else:
 		_clear_reward_ui()
 
 
 func _show_victory_rewards() -> void:
+	if _settlement_pending():
+		return
 	_clear_reward_ui()
 	_reward_options = (
 		_configured_reward_options.duplicate()
@@ -1813,7 +1866,7 @@ func _on_slot_gui_input(event: InputEvent, slot: Control) -> void:
 		open_character_info(slot.get_meta("unit_id", &""), true)
 		return
 	var activating: bool = (is_instance_valid(click) and click.button_index == MOUSE_BUTTON_LEFT and click.pressed) or (is_instance_valid(key) and key.is_action_pressed("ui_accept") and not key.echo)
-	if not activating or _preparation_required or is_battle_complete() or _action_in_progress:
+	if not activating or is_battle_input_locked() or is_battle_complete() or _action_in_progress:
 		return
 	slot.accept_event()
 	var unit_id: StringName = slot.get_meta("unit_id", &"")
@@ -1964,7 +2017,7 @@ func _refresh_context() -> void:
 func _get_turn_order_entries() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
 	var current: BattleUnitState = get_current_unit()
-	if is_battle_complete() or is_preparation_required():
+	if is_battle_complete() or is_battle_input_locked():
 		return rows
 	if not is_instance_valid(current) or not current.is_active():
 		return rows
@@ -1989,7 +2042,7 @@ func _refresh_turn_order_ribbon() -> void:
 	var rows: Array[Dictionary] = _get_turn_order_entries()
 	var current_id: StringName = rows[0]["unit_id"] if not rows.is_empty() else &""
 	var context: String = "%s:%d:%s:%s" % [
-		current_id, round_number, is_preparation_required(), is_battle_complete()]
+		current_id, round_number, is_battle_input_locked(), is_battle_complete()]
 	if context != _turn_order_context:
 		_clear_turn_order_preview()
 		_turn_order_context = context
@@ -2336,6 +2389,8 @@ func _on_advance_debug_pressed() -> void:
 
 
 func _on_exit_debug_pressed() -> void:
+	if _settlement_pending():
+		return
 	get_viewport().set_input_as_handled()
 	_hide_skill_tooltip()
 	_clear_turn_order_preview()
@@ -2350,6 +2405,8 @@ func _on_exit_debug_pressed() -> void:
 
 
 func _emit_exit_requested() -> void:
+	if _settlement_pending():
+		return
 	close_character_info(false)
 	_info_cache.clear()
 	exit_requested.emit()
@@ -2362,7 +2419,7 @@ func _on_action_bar_skill_selected(skill_id: StringName) -> void:
 	if skill.kind == CharacterSkill.Kind.ACTIVE and not _visual_skill_availability(actor, skill)["can_activate"]:
 		_refresh_action_bar()
 		return
-	if _preparation_required or is_battle_complete() or _action_in_progress:
+	if is_battle_input_locked() or is_battle_complete() or _action_in_progress:
 		_refresh_action_bar()
 		return
 	_clear_default_action_state()
@@ -2427,7 +2484,7 @@ func _refresh_action_bar() -> void:
 		"actor_status": ("Active" if unit.is_active() else "Defeated") if is_instance_valid(unit) else "",
 		"skills": rows, "default_mode": _default_action_mode,
 		"details_allowed": is_instance_valid(unit),
-		"detail_context": "%s:%s:%s" % [unit.is_active() if is_instance_valid(unit) else false, _preparation_required, is_battle_complete()],
+		"detail_context": "%s:%s:%s" % [unit.is_active() if is_instance_valid(unit) else false, is_battle_input_locked(), is_battle_complete()],
 		"attack_enabled": attack_available, "swap_enabled": swap_available,
 		"attack_no_target": available and not attack_available, "swap_no_target": available and not swap_available,
 		"attack_reason": "Select an active enemy." if attack_available else ("No legal enemy targets." if available else "Unavailable for the current turn."),
@@ -2477,7 +2534,7 @@ func _refresh_debug_drawer() -> void:
 func _build_debug_view() -> Dictionary:
 	var current: BattleUnitState = get_current_unit()
 	var phase: String = "No active units"
-	if _preparation_required:
+	if is_battle_input_locked():
 		phase = "Preparation"
 	elif is_battle_complete():
 		phase = "Complete"
@@ -2509,10 +2566,10 @@ func _build_debug_view() -> Dictionary:
 		"outcome": BattleOutcome.get_display_text(_battle_outcome), "revision": _battle_revision,
 		"selected_action": action, "target_summary": summary,
 		"transaction_state": BattleSkillTransaction.State.keys()[_skill_transaction.state],
-		"queue_rows": rows, "damage_enabled": not _preparation_required and not is_battle_complete()
+		"queue_rows": rows, "damage_enabled": not is_battle_input_locked() and not is_battle_complete()
 			and not _action_in_progress and is_instance_valid(BattleTargetSelector.find_closest_enemy(current, _units)),
-		"exit_enabled": not _preparation_required,
-		"interaction_allowed": not _preparation_required and not _reward_overlay.visible
+		"exit_enabled": not is_battle_input_locked() and not _settlement_pending(),
+		"interaction_allowed": not is_battle_input_locked() and not _reward_overlay.visible
 			and not is_instance_valid(_pending_recruitment_option)
 	}
 
@@ -2527,11 +2584,11 @@ func _evaluate_visual_skill(actor_id: StringName, skill_id: StringName) -> Skill
 func _visual_skill_availability(actor: BattleUnitState, skill: CharacterSkill) -> Dictionary:
 	var evaluation: SkillTargetEvaluation = _evaluate_visual_skill(actor.unit_id, skill.skill_id)
 	var reason: String = evaluation.blocking_reason.message
-	if _preparation_required:
+	if is_battle_input_locked():
 		reason = "Finish preparation first."
 	elif _action_in_progress:
 		reason = "An action is resolving."
-	var no_target: bool = not _preparation_required and not _action_in_progress and evaluation.blocking_reason.code == SkillActionReason.Code.TARGET_INVALID
+	var no_target: bool = not is_battle_input_locked() and not _action_in_progress and evaluation.blocking_reason.code == SkillActionReason.Code.TARGET_INVALID
 	var allowed: bool = reason.is_empty() and evaluation.can_start
 	if allowed:
 		var proposed: Array[StringName] = []
@@ -2598,7 +2655,7 @@ func _refresh_visual_states() -> void:
 	if not is_node_ready():
 		return
 	var current: BattleUnitState = get_current_unit()
-	var active_battle: bool = not _preparation_required and not is_battle_complete()
+	var active_battle: bool = not is_battle_input_locked() and not is_battle_complete()
 	var committed: bool = not _selected_skill_id.is_empty() or _default_action_mode != DefaultActionMode.NONE or _skill_transaction.state in [BattleSkillTransaction.State.TARGETING, BattleSkillTransaction.State.VALIDATING, BattleSkillTransaction.State.RESOLVING]
 	var valid: Array[StringName] = []
 	var selected: Array[StringName] = []
@@ -2728,7 +2785,7 @@ func _publish_character_info() -> void:
 		record["role"] = BattleUnitPresentation.role_for(unit)
 		records[unit.unit_id] = record
 	var current: BattleUnitState = get_current_unit()
-	var phase: StringName = &"complete" if is_battle_complete() else (&"preparation" if _preparation_required else &"battle")
+	var phase: StringName = &"complete" if is_battle_complete() else (&"preparation" if is_battle_input_locked() else &"battle")
 	_info_revision += 1
 	_info_cache = {
 		"battle_epoch": _info_epoch, "committed_revision": _info_revision,
@@ -2743,7 +2800,7 @@ func _invalidate_character_info() -> void:
 	close_character_info(false)
 
 func _info_modal_blocked() -> bool:
-	return is_battle_complete() or _preparation_required or is_instance_valid(_pending_recruitment_option) or (is_node_ready() and _reward_overlay.visible)
+	return is_battle_complete() or is_battle_input_locked() or is_instance_valid(_pending_recruitment_option) or (is_node_ready() and _reward_overlay.visible)
 
 func open_character_info(unit_id: StringName, keyboard: bool = false) -> bool:
 	if not is_node_ready() or _info_modal_blocked() or not _info_valid or not _info_cache.get("units_by_id", {}).has(unit_id):

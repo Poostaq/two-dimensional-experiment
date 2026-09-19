@@ -1,7 +1,7 @@
 class_name WorldRuntimeSaveCoordinator
 extends RefCounted
 
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 var _plan: WorldPlan
@@ -12,6 +12,8 @@ var _pending_state: RefCounted
 var _pending_bytes: PackedByteArray
 var _pending_publish: Callable
 var _input_blocked: bool = false
+var _allow_discard: bool = true
+var _writing: bool = false
 
 
 func configure(
@@ -39,7 +41,8 @@ func configure(
 func commit_candidate(
     candidate_state: RefCounted,
     publish: Callable,
-    _event_name: String
+    _event_name: String,
+    allow_discard: bool = true
 ) -> Dictionary:
     if _input_blocked or not is_instance_valid(_plan):
         return {"ok": false, "value": null, "error": null}
@@ -57,27 +60,25 @@ func commit_candidate(
     )
     if bytes.is_empty():
         return {"ok": false, "value": null, "error": null}
-    var saved: Dictionary = _repository.call("replace_atomic", bytes)
-    if not bool(saved.get("ok", false)):
-        _pending_state = candidate_copy
-        _pending_bytes = bytes.duplicate()
-        _pending_publish = publish
-        _input_blocked = true
-        return saved
-    _durable_state = candidate_copy
-    publish.call(_clone_state(_durable_state))
-    return {"ok": true, "value": _clone_state(_durable_state), "error": null}
+    _pending_state = candidate_copy
+    _pending_bytes = bytes.duplicate()
+    _pending_publish = publish
+    _allow_discard = allow_discard
+    _input_blocked = true
+    return retry_pending()
 
 
 func retry_pending() -> Dictionary:
     if (
-        not _input_blocked
+        _writing or not _input_blocked
         or not is_instance_valid(_pending_state)
         or _pending_bytes.is_empty()
         or not _pending_publish.is_valid()
     ):
         return {"ok": false, "value": null, "error": null}
-    var saved: Dictionary = _repository.call("replace_atomic", _pending_bytes)
+    _writing = true
+    var saved: Dictionary = _repository.call("replace_atomic", _pending_bytes.duplicate())
+    _writing = false
     if not bool(saved.get("ok", false)):
         return saved
     _durable_state = _pending_state
@@ -89,10 +90,16 @@ func retry_pending() -> Dictionary:
 
 
 func discard_pending() -> RefCounted:
+    if not can_discard_pending():
+        return null
     if not _input_blocked:
         return _clone_state(_durable_state)
     _clear_pending()
     return _clone_state(_durable_state)
+
+
+func can_discard_pending() -> bool:
+    return not _writing and (not _input_blocked or _allow_discard)
 
 
 func is_input_blocked() -> bool:
@@ -120,3 +127,4 @@ func _clear_pending() -> void:
     _pending_bytes = PackedByteArray()
     _pending_publish = Callable()
     _input_blocked = false
+    _allow_discard = true

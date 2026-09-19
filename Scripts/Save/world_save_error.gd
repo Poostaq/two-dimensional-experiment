@@ -1,6 +1,8 @@
 class_name WorldSaveError
 extends RefCounted
 
+const RUN_LOST: String = "RUN_LOST"
+
 const SAVE_ENVELOPE_INVALID := "SAVE_ENVELOPE_INVALID"
 
 var code: String

@@ -111,6 +111,12 @@ func start(
                 "initial_run_state_invalid"
             ),
         }
+    var initial_health: Dictionary[StringName, int] = {}
+    for character: RunCharacter in starters:
+        initial_health[character.character_id] = character.max_hp
+    run_state.set_character_hp_snapshot(initial_health)
+    run_state.run_status = "active"
+    run_state.battle_settlements = []
     run_state.set("gold", ECONOMY_RULES_SCRIPT.STARTING_GOLD)
     _commit_callback.call(plan)
     return {

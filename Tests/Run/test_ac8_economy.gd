@@ -9,6 +9,13 @@ func _init() -> void:
 
 
 func _run() -> void:
+	var economy: Script = load("res://Scripts/Run/run_economy_rules.gd")
+	_expect(economy.has_method("victory_gold"), "victory award rule exists")
+	if economy.has_method("victory_gold"):
+		var ids: Array[StringName] = [&"one", &"two", &"three", &"one"]
+		_expect(economy.victory_gold(BattleOutcome.Type.VICTORY, ids) == 150, "three distinct defeats award 150")
+		_expect(economy.victory_gold(BattleOutcome.Type.DEFEAT, ids) == 0, "defeat award zero")
+		_expect(economy.victory_gold(BattleOutcome.Type.IN_PROGRESS, ids) == 0, "ongoing award zero")
 	var service_script: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 	var state_script: GDScript = load("res://Scripts/Run/world_run_state.gd")
 	var service: RefCounted = service_script.new(func(_plan: RefCounted) -> void: pass)

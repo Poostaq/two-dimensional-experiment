@@ -13,6 +13,8 @@ var player_coord: Vector2i
 var boss_coord: Vector2i
 var move_count: int
 var gold: int = 0
+var run_status: String = "active"
+var battle_settlements: Array = []
 var boss_active: bool
 var boss_engaged: bool
 var consumed_encounters: Array[Vector2i] = []
@@ -35,7 +37,9 @@ static func create(
     new_cache_move_progress: int = 0,
     new_cache_ready: bool = false,
     new_battle_preparation: RefCounted = null,
-    new_gold: int = 0
+    new_gold: int = 0,
+    new_run_status: String = "active",
+    new_battle_settlements: Array = []
 ) -> RefCounted:
     if not is_valid_gold(new_gold):
         return null
@@ -74,6 +78,8 @@ static func create(
     state.boss_coord = new_boss_coord
     state.move_count = new_move_count
     state.gold = new_gold
+    state.run_status = new_run_status
+    state.battle_settlements = new_battle_settlements.duplicate(true)
     state.boss_active = new_boss_active
     state.boss_engaged = new_boss_engaged
     state.consumed_encounters = new_consumed_encounters.duplicate()
@@ -90,7 +96,7 @@ static func create(
 
 
 static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
-    if not is_valid_gold(value.get("gold")):
+    if not is_valid_gold(value.get("gold")) or not value.get("run_status") is String or not value.get("battle_settlements") is Array:
         return {"ok": false}
     var player_result := _decode_coord(value.get("player_coord"))
     var boss_result := _decode_coord(value.get("boss_coord"))
@@ -121,7 +127,9 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         int(value.get("cache_move_progress", 0)),
         bool(value.get("cache_ready", false)),
         preparation_result["value"],
-        int(value["gold"])
+        int(value["gold"]),
+        value["run_status"],
+        value["battle_settlements"]
     )
     if not is_instance_valid(state) or not state.is_valid(plan):
         return {"ok": false}
@@ -140,7 +148,40 @@ func is_valid(plan: WorldPlan) -> bool:
     for coord: Vector2i in consumed_encounters:
         if not cells.has(coord):
             return false
-    return true
+    return _valid_settlements(plan)
+
+
+func is_playable() -> bool:
+    return run_status == "active"
+
+
+func _valid_settlements(plan: WorldPlan) -> bool:
+    if run_status not in ["active", "lost"]:
+        return false
+    var seen: Dictionary = {}
+    var losses: int = 0
+    var record_script: Script = load("res://Scripts/Battle/battle_result_record.gd") if not battle_settlements.is_empty() else null
+    for index: int in battle_settlements.size():
+        var receipt: Variant = battle_settlements[index]
+        if not record_script.validate_receipt(receipt) or seen.has(receipt.battle_id):
+            return false
+        seen[receipt.battle_id] = true
+        var coord := Vector2i(int(receipt.encounter_coord[0]), int(receipt.encounter_coord[1]))
+        var cells: Dictionary = plan.get_cells()
+        if not cells.has(coord):
+            return false
+        if receipt.encounter_type == "combat":
+            if String(cells[coord].get("encounter", "")) != "combat":
+                return false
+            if (receipt.outcome == "victory") != consumed_encounters.has(coord):
+                return false
+        if receipt.outcome == "defeat":
+            losses += 1
+            if index != battle_settlements.size() - 1:
+                return false
+    if run_status == "active":
+        return losses == 0
+    return losses == 1 and battle_preparation.state == 0
 
 
 func has_character_hp_snapshot() -> bool:
@@ -185,6 +226,8 @@ func to_dictionary() -> Dictionary:
         "boss_coord": [boss_coord.x, boss_coord.y],
         "move_count": move_count,
         "gold": gold,
+        "run_status": run_status,
+        "battle_settlements": battle_settlements.duplicate(true),
         "boss_active": boss_active,
         "boss_engaged": boss_engaged,
         "consumed_encounters": consumed,

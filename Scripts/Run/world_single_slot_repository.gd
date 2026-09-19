@@ -3,7 +3,7 @@ extends RefCounted
 
 const DEFAULT_SAVE_PATH := "user://active-world-run.json"
 
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
 static var SAVE_STORE_SCRIPT: GDScript = load("res://Scripts/Save/world_save_store.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/Save/world_save_error.gd")
 
@@ -21,6 +21,16 @@ func has_save() -> bool:
 
 
 func load_validated() -> Dictionary:
+    var inspected: Dictionary = inspect_slot()
+    if not inspected.get("ok", false):
+        return inspected
+    var state: RefCounted = inspected.get("value", {}).get("run_state") as RefCounted
+    if is_instance_valid(state) and not state.is_playable():
+        return {"ok": false, "value": null, "error": ERROR_SCRIPT.new(ERROR_SCRIPT.RUN_LOST, "run_status_lost")}
+    return inspected
+
+
+func inspect_slot() -> Dictionary:
     var file := FileAccess.open(save_path, FileAccess.READ)
     if file == null:
         return _failure("open_source")

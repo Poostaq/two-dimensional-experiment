@@ -12,6 +12,7 @@ signal diagnostics_copied(diagnostics: String)
 @onready var _copy_button: Button = %CopyButton
 
 var _diagnostics_text: String = ""
+var _allow_return: bool = true
 
 
 func _ready() -> void:
@@ -29,8 +30,11 @@ func _fit_to_viewport() -> void:
     size = get_viewport_rect().size
 
 
-func present(error: RefCounted, build_version: String) -> void:
-    _message.text = "Autosave failed. Authoritative input is paused."
+func present(error: RefCounted, build_version: String, allow_return: bool = true) -> void:
+    _allow_return = allow_return
+    _return_button.visible = allow_return
+    _return_button.disabled = not allow_return
+    _message.text = "Autosave failed. Authoritative input is paused." if allow_return else "Run lost. Saving the result failed. Retry to return to the main menu."
     _diagnostics_text = WorldFailureFormatter.format_json_line(error, build_version).strip_edges()
     _diagnostics.text = _diagnostics_text
     show()
@@ -50,7 +54,8 @@ func _on_retry_pressed() -> void:
 
 
 func _on_return_pressed() -> void:
-    return_requested.emit()
+    if _allow_return:
+        return_requested.emit()
 
 
 func _on_copy_pressed() -> void:

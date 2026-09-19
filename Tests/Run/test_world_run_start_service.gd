@@ -44,6 +44,8 @@ func _run() -> void:
         _assert_equal(_committed_plan.get_cells().size(), 217, "committed cell count")
     if success.get("ok", false):
         _assert_equal(success["run_state"].get("gold"), 100, "new run wallet initialized")
+        _assert_true(success["run_state"].has_character_hp_snapshot(), "fresh run persists explicit health")
+        _assert_equal(success["run_state"].get_character_hp_snapshot().size(), 3, "fresh health includes three starters")
         var formation: Array[StringName] = success["run_state"].formation
         _assert_equal(formation[0], &"player_0", "left frontline starter retained")
         _assert_equal(formation[1], &"brakka_rustbanner", "Brakka occupies middle frontline")

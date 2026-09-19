@@ -117,9 +117,9 @@ func _run() -> void:
     )
 
     _expect(_published_state.get("gold") == 375, "retry publishes 375g")
-    var wallet_codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
+    var wallet_codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
     var saved_wallet: Dictionary = wallet_codec.decode_any(repository.writes.back())
-    _expect(saved_wallet.get("ok", false) and saved_wallet["value"]["run_state"].get("gold") == 375, "retry persists wallet in V3")
+    _expect(saved_wallet.get("ok", false) and saved_wallet["value"]["run_state"].get("gold") == 375, "retry persists wallet in V4")
     var durable_before_discard := _published_state.call("canonical_key") as String
     var discard_candidate := _candidate_with_move_delta(state_script, plan, _published_state, 1)
     discard_candidate.set("gold", 0)
@@ -155,6 +155,16 @@ func _run() -> void:
         and String(candidate_model.call("get_snapshot").call("canonical_key")) != before_key,
         "candidate model owns the proposed state"
     )
+    repository.fail_next = true
+    var writes_before: int = repository.writes.size()
+    var terminal_failure: Dictionary = coordinator.call("commit_candidate", discard_candidate, Callable(self, "_publish_state"), "terminal", false)
+    _expect(not terminal_failure.get("ok", true), "terminal failure retained")
+    _expect(coordinator.call("discard_pending") == null, "terminal pending cannot discard")
+    _expect(coordinator.call("is_input_blocked"), "terminal remains blocked")
+    _expect(not coordinator.call("can_discard_pending"), "terminal mode exposes no discard")
+    _expect(coordinator.call("retry_pending").get("ok", false), "terminal retry commits")
+    _expect(repository.writes[writes_before] == repository.writes.back(), "terminal retry byte identical")
+    _expect(not coordinator.call("retry_pending").get("ok", true), "duplicate retry cannot publish")
     _finish()
 
 

@@ -87,7 +87,7 @@ func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
 	_expect(initial_hp == expected_initial, "empty legacy health initializes every roster identity at catalog max")
 	_expect(repository.writes.is_empty(), "legacy initialization avoids a gratuitous save")
 
-	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	var arena := _get_arena(world)
 	_expect(is_instance_valid(arena), "battle opens from initialized durable health")
@@ -121,10 +121,11 @@ func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
 
 	var persisted := world.get_durable_run_state()
 	world.free()
+	persisted.set("player_coord", _combat_coord(plan, persisted.get("consumed_encounters")))
 	var reloaded := await _create_world(plan, FakeRepository.new(), persisted)
 	_expect(is_instance_valid(reloaded), "committed recovery reloads")
 	if is_instance_valid(reloaded):
-		reloaded.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+		reloaded.call("_on_battle_requested", reloaded.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 		await process_frame
 		var next_arena := _get_arena(reloaded)
 		var next_matches := is_instance_valid(next_arena)
@@ -142,7 +143,7 @@ func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:
 	var baseline: Dictionary[StringName, int] = world.get_durable_run_state().call(
 		"get_character_hp_snapshot"
 	)
-	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	world.call("_on_battle_completed", BattleOutcome.Type.DEFEAT)
 	_expect(
@@ -160,7 +161,7 @@ func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:
 	repository = FakeRepository.new()
 	world = await _create_world(plan, repository, _create_legacy_state(plan))
 	baseline = world.get_durable_run_state().call("get_character_hp_snapshot")
-	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	var arena := _get_arena(world)
 	var defeated := _player_units(arena)[0]
@@ -188,7 +189,7 @@ func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:
 	repository = FakeRepository.new()
 	world = await _create_world(plan, repository, _create_legacy_state(plan))
 	baseline = world.get_durable_run_state().call("get_character_hp_snapshot")
-	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	arena = _get_arena(world)
 	defeated = _player_units(arena)[0]
@@ -207,7 +208,7 @@ func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:
 func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	var repository := FakeRepository.new()
 	var world := await _create_world(plan, repository, _create_legacy_state(plan))
-	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	var arena := _get_arena(world)
 	arena.call("_complete_battle", BattleOutcome.Type.VICTORY)
@@ -241,7 +242,7 @@ func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	var full_state := _create_state(plan, full_formation)
 	repository = FakeRepository.new()
 	world = await _create_world(plan, repository, full_state)
-	world.call("_on_battle_requested", Vector2i.ZERO, WorldEncounterType.COMBAT)
+	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	arena = _get_arena(world)
 	arena.call("_complete_battle", BattleOutcome.Type.VICTORY)
@@ -265,6 +266,14 @@ func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	world.free()
 
 
+func _combat_coord(plan: WorldPlan, excluded: Array = []) -> Vector2i:
+	for coord: Vector2i in plan.get_cells():
+		if plan.get_cells()[coord].get("encounter") == WorldEncounterType.COMBAT and not excluded.has(coord):
+			return coord
+	_expect(false, "fixture has an unconsumed combat cell")
+	return plan.get_start_coord()
+
+
 func _create_legacy_state(plan: WorldPlan) -> RefCounted:
 	var formation: Array[StringName] = []
 	for character: RunCharacter in RunCharacterCatalog.create_starters():
@@ -278,7 +287,7 @@ func _create_state(plan: WorldPlan, source_formation: Array[StringName]) -> RefC
 		formation.append(&"")
 	var consumed: Array[Vector2i] = []
 	return RUN_STATE_SCRIPT.create(
-		plan.get_start_coord(),
+		_combat_coord(plan),
 		plan.get_boss_coord(),
 		0,
 		false,

@@ -19,7 +19,7 @@ const TOOLTIP_VIEWPORT_MARGIN: float = 8.0
 static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
 static var EXIT_ADAPTER_SCRIPT: GDScript = load("res://Scripts/Run/world_exit_adapter.gd")
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v4.gd")
 static var DISPLAY_SETTINGS_SCRIPT: GDScript = load(
     "res://Scripts/Settings/display_settings_service.gd"
 )
@@ -205,6 +205,8 @@ func get_selected_commander_id() -> StringName:
 
 
 func request_start(seed_text: String, commander_id: StringName = &"") -> Dictionary:
+    if not _can_replace_session():
+        return {"ok": false, "value": null, "error": null}
     var resolved_commander_id: StringName = (
         commander_id if not commander_id.is_empty() else _selected_commander_id()
     )
@@ -221,7 +223,14 @@ func request_start(seed_text: String, commander_id: StringName = &"") -> Diction
             ),
         }
     var resolved_seed := _resolve_seed(seed_text)
-    if has_saved_run():
+    var needs_confirmation: bool = has_saved_run()
+    if needs_confirmation and _repository.has_method("inspect_slot"):
+        var inspected: Dictionary = _repository.call("inspect_slot")
+        if inspected.get("ok", false):
+            var inspected_state: RefCounted = inspected.get("value", {}).get("run_state") as RefCounted
+            if is_instance_valid(inspected_state) and not inspected_state.is_playable():
+                needs_confirmation = false
+    if needs_confirmation:
         _pending_seed = resolved_seed
         _pending_commander_id = resolved_commander_id
         _set_screen(Screen.OVERWRITE_CONFIRM)
@@ -234,6 +243,8 @@ func request_start(seed_text: String, commander_id: StringName = &"") -> Diction
 
 
 func confirm_overwrite() -> Dictionary:
+    if not _can_replace_session():
+        return {"ok": false, "value": null, "error": null}
     if _screen != Screen.OVERWRITE_CONFIRM or _pending_seed.is_empty():
         return {"ok": false, "confirmation_required": false, "error": null}
     var resolved_seed := _pending_seed
@@ -250,6 +261,8 @@ func cancel_overwrite() -> void:
 
 
 func continue_saved_run() -> Dictionary:
+    if not _can_replace_session():
+        return {"ok": false, "value": null, "error": null}
     var loaded: Dictionary = _repository.call("load_validated")
     if not bool(loaded.get("ok", false)):
         _emit_failure(loaded.get("error") as RefCounted)
@@ -357,6 +370,10 @@ func _create_and_persist(resolved_seed: String, commander_id: StringName) -> Dic
         String(started.get("resolved_seed", resolved_seed)),
         started.get("run_state") as RefCounted
     )
+    if bytes.is_empty():
+        var encode_error: RefCounted = load("res://Scripts/Save/world_save_error.gd").new("SAVE_ENVELOPE_INVALID", "new_run_encoding")
+        _emit_failure(encode_error)
+        return {"ok": false, "value": null, "error": encode_error}
     var saved: Dictionary = _repository.call("replace_atomic", bytes)
     if not bool(saved.get("ok", false)):
         _emit_failure(saved.get("error") as RefCounted)
@@ -581,6 +598,8 @@ func _refresh_continue_button() -> void:
 
 
 func _on_session_ready(session: Dictionary) -> void:
+    if not _can_replace_session():
+        return
     if _world_factory == null:
         _emit_world_open_failure(session, "world_factory_missing")
         return
@@ -591,7 +610,7 @@ func _on_session_ready(session: Dictionary) -> void:
     if world is WorldRuntimeController:
         var runtime_world := world as WorldRuntimeController
         runtime_world.launcher_return_requested.connect(_on_world_launcher_return_requested)
-    if not world.has_method("apply_session") or not bool(world.call("apply_session", session)):
+    if not world.has_method("apply_session") or not bool(world.call("apply_session", session, _repository) if world is WorldRuntimeController else world.call("apply_session", session)):
         world.queue_free()
         _emit_world_open_failure(session, "session_apply_failed")
         return
@@ -599,10 +618,15 @@ func _on_session_ready(session: Dictionary) -> void:
 
 
 func _on_world_launcher_return_requested() -> void:
+    for world: Node in _world_host.get_children():
+        if world is WorldRuntimeController:
+            if world.is_autosave_blocked() or world.has_integration_failed():
+                return
     for child: Node in _world_host.get_children():
         child.queue_free()
     _set_launcher_surface_visible(true)
     back_to_main()
+    _refresh_continue_button()
 
 
 func _set_launcher_surface_visible(value: bool) -> void:
@@ -666,3 +690,13 @@ func _emit_failure(error: RefCounted) -> void:
 
 func _accept_generated_plan(_plan: RefCounted) -> void:
     pass
+
+
+func _can_replace_session() -> bool:
+    if not is_instance_valid(_world_host):
+        return true
+    for world: Node in _world_host.get_children():
+        if world is WorldRuntimeController:
+            if world.is_run_termination_pending() or world.is_autosave_blocked():
+                return false
+    return true

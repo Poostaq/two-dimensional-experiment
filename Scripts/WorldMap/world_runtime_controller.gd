@@ -5,6 +5,17 @@ signal autosave_failed(error: RefCounted)
 signal autosave_recovered
 signal launcher_return_requested
 
+enum TerminalPhase { PLAYING, LOSS_COMMITTING, LOSS_SAVE_FAILED, LOSS_DURABLE, RETURNED }
+
+var _terminal_phase: TerminalPhase = TerminalPhase.PLAYING
+var _session_generation: int = 0
+var _battle_generation: int = 0
+var _pending_battle_receipt: Dictionary = {}
+var _battle_settled: bool = false
+
+static var SETTLEMENT_RULES: Script = load("res://Scripts/Run/battle_settlement_rules.gd")
+static var RESULT_RECORD: Script = load("res://Scripts/Battle/battle_result_record.gd")
+
 enum RecruitmentState {
 	IDLE,
 	REWARD_SELECTED,
@@ -71,6 +82,12 @@ func _ready() -> void:
 
 
 func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return false
+	var requested_state: RefCounted = session.get("run_state") as RefCounted
+	if not is_instance_valid(requested_state) or not requested_state.is_playable():
+		return false
+	_session_generation += 1
 	_session_applied = false
 	if (
 		not session.get("plan") is WorldPlan
@@ -111,6 +128,8 @@ func get_durable_run_state() -> RefCounted:
 
 
 func configure_runtime(plan: WorldPlan) -> bool:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return false
 	if _integration_failed or not is_instance_valid(plan) or not _model.configure(plan):
 		_fail_integration()
 		return false
@@ -134,6 +153,8 @@ func configure_persistence(
 	run_state: RefCounted,
 	repository: RefCounted
 ) -> bool:
+	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or not is_instance_valid(run_state) or not run_state.is_playable():
+		return false
 	if (
 		not is_instance_valid(_runtime_plan)
 		or not is_instance_valid(run_state)
@@ -152,19 +173,32 @@ func configure_persistence(
 
 
 func retry_autosave() -> Dictionary:
+	if _integration_failed or _terminal_phase in [TerminalPhase.LOSS_COMMITTING, TerminalPhase.LOSS_DURABLE, TerminalPhase.RETURNED]:
+		return {"ok": false, "value": null, "error": null}
+	var terminal_retry: bool = _terminal_phase == TerminalPhase.LOSS_SAVE_FAILED
+	if terminal_retry:
+		_terminal_phase = TerminalPhase.LOSS_COMMITTING
 	if not is_instance_valid(_save_coordinator):
 		return {"ok": false, "value": null, "error": null}
 	var move_was_pending := is_instance_valid(_pending_candidate_model)
 	var result: Dictionary = _save_coordinator.call("retry_pending")
+	if terminal_retry:
+		if not result.get("ok", false):
+			_terminal_phase = TerminalPhase.LOSS_SAVE_FAILED
+		return result
 	if bool(result.get("ok", false)):
 		if not move_was_pending and is_instance_valid(_durable_run_state):
 			_model.restore_run_state(_durable_run_state)
+			if has_active_battle():
+				_model.set_surface_blocked(true)
 			_apply_snapshot(_model.get_snapshot())
 		autosave_recovered.emit()
 	return result
 
 
 func discard_pending_autosave() -> bool:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING:
+		return false
 	if not is_instance_valid(_save_coordinator):
 		return false
 	var restored := _save_coordinator.call("discard_pending") as RefCounted
@@ -183,6 +217,10 @@ func discard_pending_autosave() -> bool:
 	return true
 
 
+func is_run_termination_pending() -> bool:
+	return _integration_failed or _terminal_phase != TerminalPhase.PLAYING
+
+
 func is_autosave_blocked() -> bool:
 	return (
 		is_instance_valid(_save_coordinator)
@@ -195,6 +233,9 @@ func get_runtime_snapshot() -> WorldRuntimeSnapshot:
 
 
 func request_move(destination: Vector2i) -> WorldMoveResult:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING:
+		_model.set_surface_blocked(true)
+		return _model.request_move(destination)
 	if not is_instance_valid(_save_coordinator):
 		var legacy_result := _model.request_move(destination)
 		if legacy_result.is_accepted():
@@ -236,6 +277,8 @@ func has_active_battle() -> bool:
 
 
 func open_party_management() -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	if _integration_failed or has_active_encounter() or has_active_battle() or has_active_party_management():
 		return
 	_model.set_surface_blocked(true)
@@ -283,7 +326,8 @@ func _on_autosave_failed(error: RefCounted) -> void:
 	if is_instance_valid(_autosave_overlay) and is_instance_valid(error):
 		_autosave_overlay.present(
 			error,
-			String(ProjectSettings.get_setting("application/config/version", "development"))
+			String(ProjectSettings.get_setting("application/config/version", "development")),
+			_terminal_phase == TerminalPhase.PLAYING
 		)
 
 
@@ -292,8 +336,10 @@ func _on_autosave_retry_requested() -> void:
 
 
 func _on_autosave_return_requested() -> void:
-	discard_pending_autosave()
-	launcher_return_requested.emit()
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING:
+		return
+	if discard_pending_autosave():
+		launcher_return_requested.emit()
 
 
 func _on_autosave_diagnostics_copied(_diagnostics: String) -> void:
@@ -367,8 +413,13 @@ func _on_encounter_close_requested() -> void:
 
 
 func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	if has_active_battle():
 		return
+	_battle_generation += 1
+	_pending_battle_receipt = {}
+	_battle_settled = false
 	_recruitment_state = RecruitmentState.IDLE
 	_active_battle_recovery_handled = false
 	if has_active_encounter():
@@ -388,9 +439,10 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 		_fail_integration()
 		return
 	_active_battle.configure_party_units(battle_units)
+	_active_battle.configure_production_settlement(_session_applied)
 	_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
-	_active_battle.exit_requested.connect(_on_battle_closed)
-	_active_battle.battle_completed.connect(_on_battle_completed)
+	_active_battle.exit_requested.connect(_on_bound_battle_closed.bind(_session_generation, _battle_generation, _active_battle))
+	_active_battle.battle_completed.connect(_on_battle_completed.bind(_session_generation, _battle_generation, _active_battle))
 	_active_battle.reward_selected.connect(_on_reward_selected)
 	_active_battle.reward_confirmed.connect(_on_reward_confirmed)
 	_active_battle.recruitment_placement_requested.connect(_on_recruitment_placement_requested)
@@ -437,7 +489,7 @@ func _on_preparation_commit_requested(
 	target_unit_id: StringName,
 	expected_setup_key: String
 ) -> void:
-	if not has_active_battle() or not is_instance_valid(_durable_run_state):
+	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or not has_active_battle() or not is_instance_valid(_durable_run_state):
 		return
 	var offered: RefCounted = _durable_run_state.get("battle_preparation") as RefCounted
 	var identity: RefCounted = _active_battle.get_setup_identity() as RefCounted
@@ -529,7 +581,76 @@ func _restore_persisted_preparation() -> void:
 		_on_battle_requested(record.encounter_coord, record.encounter_type)
 
 
-func _on_battle_completed(outcome: BattleOutcome.Type) -> void:
+func _on_battle_completed(outcome: BattleOutcome.Type, session_generation: int = -1, battle_generation: int = -1, source: BattleArena = null) -> void:
+	if session_generation != -1 and (session_generation != _session_generation or battle_generation != _battle_generation or source != _active_battle):
+		return
+	if not has_active_battle():
+		return
+	if not _session_applied:
+		_on_legacy_battle_completed(outcome)
+		return
+	var receipt: Dictionary = _active_battle.get_terminal_result()
+	if receipt.is_empty() or outcome == BattleOutcome.Type.IN_PROGRESS:
+		return
+	var expected_outcome: String = "victory" if outcome == BattleOutcome.Type.VICTORY else "defeat"
+	if receipt.get("outcome") != expected_outcome:
+		_fail_integration()
+		return
+	if not _pending_battle_receipt.is_empty():
+		if RESULT_RECORD.canonical_key(receipt) != RESULT_RECORD.canonical_key(_pending_battle_receipt):
+			_fail_integration()
+		return
+	if _terminal_phase != TerminalPhase.PLAYING:
+		return
+	if outcome == BattleOutcome.Type.DEFEAT:
+		_terminal_phase = TerminalPhase.LOSS_COMMITTING
+	_model.set_surface_blocked(true)
+	var built: Dictionary = SETTLEMENT_RULES.build_candidate(_durable_run_state, _runtime_plan, receipt)
+	if not built.get("ok", false):
+		_fail_integration()
+		return
+	if built.get("duplicate", false):
+		return
+	_pending_battle_receipt = receipt.duplicate(true)
+	var candidate: RefCounted = built.value
+	var saved: Dictionary = _save_coordinator.commit_candidate(candidate, Callable(self, "_publish_battle_settlement"), "battle_settlement", outcome != BattleOutcome.Type.DEFEAT)
+	if saved.get("ok", false):
+		return
+	if not _save_coordinator.is_input_blocked():
+		_fail_integration()
+		return
+	if outcome == BattleOutcome.Type.DEFEAT:
+		_terminal_phase = TerminalPhase.LOSS_SAVE_FAILED
+	_apply_snapshot(_model.get_snapshot())
+	autosave_failed.emit(saved.get("error") as RefCounted)
+
+
+func _publish_battle_settlement(state: RefCounted) -> void:
+	if _battle_settled:
+		return
+	_battle_settled = true
+	_durable_run_state = state
+	if not state.is_playable():
+		_terminal_phase = TerminalPhase.LOSS_DURABLE
+		if is_instance_valid(_autosave_overlay):
+			_autosave_overlay.dismiss()
+		_terminal_phase = TerminalPhase.RETURNED
+		launcher_return_requested.emit()
+		return
+	_model.restore_run_state(state)
+	_model.set_surface_blocked(has_active_battle())
+	_apply_snapshot(_model.get_snapshot())
+	if has_active_battle():
+		_active_battle.set_settlement_committed()
+
+
+func _on_bound_battle_closed(session_generation: int, battle_generation: int, source: BattleArena) -> void:
+	if session_generation != _session_generation or battle_generation != _battle_generation or source != _active_battle:
+		return
+	_on_battle_closed()
+
+
+func _on_legacy_battle_completed(outcome: BattleOutcome.Type) -> void:
 	if (
 		outcome != BattleOutcome.Type.VICTORY
 		or _active_battle_recovery_handled
@@ -566,6 +687,8 @@ func _on_battle_completed(outcome: BattleOutcome.Type) -> void:
 
 
 func _on_reward_selected(option: BattleRewardOption) -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	if (
 		_recruitment_state == RecruitmentState.IDLE
 		and is_instance_valid(option)
@@ -575,10 +698,14 @@ func _on_reward_selected(option: BattleRewardOption) -> void:
 
 
 func _on_reward_confirmed(_option: BattleRewardOption) -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	_commit_current_authoritative("reward_completion", false)
 
 
 func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	if (
 		not has_active_battle()
 		or has_active_party_management()
@@ -715,18 +842,22 @@ func _close_recruitment_party(reset_state: bool = true) -> void:
 
 
 func _on_battle_closed() -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	if not has_active_battle():
 		return
 	_active_battle.queue_free()
 	_active_battle = null
 	_close_recruitment_party(_recruitment_state != RecruitmentState.REWARD_COMPLETED)
 	_model.close_ordinary_encounter()
-	if not _commit_current_authoritative("encounter_resolution", true):
+	if not _battle_settled and not _commit_current_authoritative("encounter_resolution", true):
 		return
 	_apply_snapshot(_model.get_snapshot())
 
 
 func _on_party_move_requested(source_slot: int, destination_slot: int, character_id: StringName) -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	var move_result := _roster.try_move(source_slot, destination_slot, character_id)
 	if move_result not in [RunRoster.MoveResult.MOVED, RunRoster.MoveResult.SWAPPED]:
 		return
@@ -739,6 +870,8 @@ func _on_party_move_requested(source_slot: int, destination_slot: int, character
 
 
 func _on_party_close_requested() -> void:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+		return
 	if not has_active_party_management():
 		return
 	_active_party.queue_free()

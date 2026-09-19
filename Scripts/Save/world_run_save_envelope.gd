@@ -14,9 +14,14 @@ static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.
 static func encode(plan: RefCounted, resolved_seed: String, run_state: RefCounted, save_version: int) -> PackedByteArray:
     if not is_instance_valid(plan) or not is_instance_valid(run_state):
         return PackedByteArray()
-    if save_version not in [2, 3] or not run_state.is_valid(plan):
+    if save_version not in [2, 3, 4] or not run_state.is_valid(plan):
         return PackedByteArray()
     var state_data: Dictionary = run_state.to_dictionary()
+    if save_version < 4:
+        if not run_state.is_playable() or not state_data["battle_settlements"].is_empty():
+            return PackedByteArray()
+        state_data.erase("run_status")
+        state_data.erase("battle_settlements")
     if save_version == 2:
         state_data.erase("gold")
     var plan_bytes: PackedByteArray = PLAN_CODEC_SCRIPT.serialize(plan)
@@ -41,8 +46,10 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     var version: Variant = root.get("save_version")
     if not (version is int or version is float) or version != expected_version:
         return _save_failure("root_schema")
-    if expected_version not in [2, 3] or root.get("schema") != SCHEMA:
+    if expected_version not in [2, 3, 4] or root.get("schema") != SCHEMA:
         return _save_failure("root_schema")
+    if expected_version == 4 and not _valid_v4_shape(root):
+        return _save_failure("v4_shape")
     var roster_version: Variant = root.get("starter_roster_version", 0)
     if not (roster_version is int or roster_version is float) or (roster_version != 0 and roster_version != STARTER_ROSTER_VERSION):
         return _save_failure("starter_roster_version")
@@ -83,6 +90,11 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     if not world.get("resolved_seed") is String or not world.get("run_state") is Dictionary:
         return _save_failure("runtime_fields")
     var state_data: Dictionary = world["run_state"].duplicate(true)
+    if expected_version < 4:
+        if state_data.has("run_status") or state_data.has("battle_settlements"):
+            return _save_failure("legacy_lifecycle_fields")
+        state_data["run_status"] = "active"
+        state_data["battle_settlements"] = []
     if expected_version == 2:
         state_data["gold"] = 0
     var state_result: Dictionary = RUN_STATE_SCRIPT.from_dictionary(state_data, plan)
@@ -143,3 +155,55 @@ static func _sha256(bytes: PackedByteArray) -> String:
     context.start(HashingContext.HASH_SHA256)
     context.update(bytes)
     return context.finish().hex_encode()
+
+
+static func _keys_match(value: Variant, expected: Array[String]) -> bool:
+    if not value is Dictionary or value.size() != expected.size():
+        return false
+    for key: String in expected:
+        if not value.has(key):
+            return false
+    return true
+
+
+static func _integer(value: Variant, minimum: int, maximum: int) -> bool:
+    if not value is int and not value is float:
+        return false
+    return is_finite(float(value)) and value >= minimum and value <= maximum and float(value) == floorf(float(value))
+
+
+static func _coord(value: Variant) -> bool:
+    return value is Array and value.size() == 2 and _integer(value[0], -2147483648, 2147483647) and _integer(value[1], -2147483648, 2147483647)
+
+
+static func _valid_v4_shape(root: Dictionary) -> bool:
+    if not _keys_match(root, ["schema", "save_version", "starter_roster_version", "world"]):
+        return false
+    if not _integer(root.starter_roster_version, 1, 1):
+        return false
+    var world: Variant = root.world
+    if not _keys_match(world, ["generator_version", "run_seed_utf8_hex", "resolved_seed", "canonical_plan_utf8", "canonical_plan_sha256", "run_state"]):
+        return false
+    if not _integer(world.generator_version, 1, 1) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
+        return false
+    var state: Variant = world.run_state
+    if not _keys_match(state, ["player_coord", "boss_coord", "move_count", "gold", "boss_active", "boss_engaged", "consumed_encounters", "formation", "character_hp", "cache_move_progress", "cache_ready", "battle_preparation", "run_status", "battle_settlements"]):
+        return false
+    if not _coord(state.player_coord) or not _coord(state.boss_coord):
+        return false
+    if not _integer(state.move_count, 0, 9007199254740991) or not _integer(state.cache_move_progress, 0, 3):
+        return false
+    for key: String in ["boss_active", "boss_engaged", "cache_ready"]:
+        if not state[key] is bool:
+            return false
+    if not state.consumed_encounters is Array:
+        return false
+    var seen: Array[Vector2i] = []
+    for value: Variant in state.consumed_encounters:
+        if not _coord(value):
+            return false
+        var coord := Vector2i(int(value[0]), int(value[1]))
+        if seen.has(coord):
+            return false
+        seen.append(coord)
+    return true

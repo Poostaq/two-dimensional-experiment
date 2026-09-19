@@ -195,7 +195,7 @@ func _run() -> void:
 
     var saved_before_cancel := _read_bytes(explicit_path)
     var wallet_root: Dictionary = JSON.parse_string(saved_before_cancel.get_string_from_utf8())
-    _expect(wallet_root.get("save_version") == 3, "new run persists V3")
+    _expect(wallet_root.get("save_version") == 4, "new run persists V4")
     _expect(wallet_root["world"]["run_state"].get("gold") == 100, "new run persists 100g")
     if has_commander_api:
         var calls_before_invalid: int = service.call_count
@@ -247,6 +247,21 @@ func _run() -> void:
     if has_commander_api:
         _expect(launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Back restores default Brakka selection")
 
+    var lost_session: Dictionary = _sessions.back()
+    var lost_state: RefCounted = lost_session.run_state
+    var boss: Vector2i = lost_session.plan.get_boss_coord()
+    lost_state.run_status = "lost"
+    lost_state.battle_settlements = [{"battle_id":"boss","encounter_type":"boss","encounter_coord":[boss.x,boss.y],"outcome":"defeat","enemy_ids":["enemy_1"],"defeated_enemy_ids":[],"terminal_player_health":[{"character_id":"player_1","final_hp":0,"max_hp":14}],"earned_gold":0}]
+    var terminal_codec: Script = load("res://Scripts/Save/world_run_save_codec_v4.gd")
+    repository.replace_atomic(terminal_codec.encode(lost_session.plan, lost_session.resolved_seed, lost_state))
+    _sessions.clear()
+    _expect(not launcher.call("continue_saved_run").get("ok", true), "lost Continue rejected")
+    _expect(_sessions.is_empty(), "lost Continue emits no session")
+    launcher.call("open_new_run")
+    var fresh: Dictionary = launcher.call("request_start", "confirmed-replacement")
+    _expect(fresh.get("ok", false), "verified lost slot requires no overwrite confirmation")
+    if fresh.get("ok", false):
+        _expect(fresh.value.run_state.gold == 100 and fresh.value.run_state.run_status == "active" and fresh.value.run_state.battle_settlements.is_empty(), "same seed new run is fresh")
     launcher.call("request_exit", self)
     _expect(int(exit_adapter.get("requested_status")) == 0, "Exit requests status 0 exactly once")
     _expect(int(exit_adapter.get("request_count")) == 1, "Exit adapter is called exactly once")
