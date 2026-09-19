@@ -1,0 +1,8 @@
+COMMAND ['D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--quit-after', '1800', '--script', 'res://Tests/WorldMap/test_scout_recruitment_flow.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+Scout recruitment flow tests: PASS (43/43)
+
+EXIT 0

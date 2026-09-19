@@ -1,0 +1,8 @@
+COMMAND ['D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--quit-after', '1800', '--script', 'res://Tests/Battle/test_ac2_5_reward_selection.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC2.5 reward selection tests: PASS (17/17)
+
+EXIT 0

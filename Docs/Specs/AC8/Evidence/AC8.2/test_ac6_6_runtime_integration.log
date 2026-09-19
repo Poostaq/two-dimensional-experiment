@@ -1,0 +1,8 @@
+COMMAND ['D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--quit-after', '1800', '--script', 'res://Tests/WorldMap/test_ac6_6_runtime_integration.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac6_6_runtime_integration (36/36)
+
+EXIT 0
