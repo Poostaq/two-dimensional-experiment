@@ -6,6 +6,7 @@ const RETURN_RESULT := "RETURN_RESULT"
 static var GENERATOR_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_generator_v1.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
 static var PRIORITY_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_priority.gd")
+static var ECONOMY_RULES_SCRIPT: GDScript = load("res://Scripts/Run/run_economy_rules.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 var _commit_callback: Callable
@@ -110,6 +111,7 @@ func start(
                 "initial_run_state_invalid"
             ),
         }
+    run_state.set("gold", ECONOMY_RULES_SCRIPT.STARTING_GOLD)
     _commit_callback.call(plan)
     return {
         "ok": true,

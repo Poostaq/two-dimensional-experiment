@@ -2,6 +2,8 @@ class_name WorldRunState
 extends RefCounted
 
 const FORMATION_SLOT_COUNT := 6
+# Largest integer that round-trips exactly through JSON's floating-point parser.
+const MAX_GOLD: int = 9007199254740991
 
 static var PREPARATION_RECORD_SCRIPT: GDScript = load(
 	"res://Scripts/Battle/battle_preparation_record.gd"
@@ -10,6 +12,7 @@ static var PREPARATION_RECORD_SCRIPT: GDScript = load(
 var player_coord: Vector2i
 var boss_coord: Vector2i
 var move_count: int
+var gold: int = 0
 var boss_active: bool
 var boss_engaged: bool
 var consumed_encounters: Array[Vector2i] = []
@@ -31,8 +34,11 @@ static func create(
     new_formation: Array[StringName],
     new_cache_move_progress: int = 0,
     new_cache_ready: bool = false,
-    new_battle_preparation: RefCounted = null
+    new_battle_preparation: RefCounted = null,
+    new_gold: int = 0
 ) -> RefCounted:
+    if not is_valid_gold(new_gold):
+        return null
     if new_move_count < 0 or (new_boss_active and new_move_count < 30):
         return null
     if new_cache_move_progress < 0 or new_cache_move_progress > 3:
@@ -67,6 +73,7 @@ static func create(
     state.player_coord = new_player_coord
     state.boss_coord = new_boss_coord
     state.move_count = new_move_count
+    state.gold = new_gold
     state.boss_active = new_boss_active
     state.boss_engaged = new_boss_engaged
     state.consumed_encounters = new_consumed_encounters.duplicate()
@@ -83,6 +90,8 @@ static func create(
 
 
 static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
+    if not is_valid_gold(value.get("gold")):
+        return {"ok": false}
     var player_result := _decode_coord(value.get("player_coord"))
     var boss_result := _decode_coord(value.get("boss_coord"))
     if not player_result.get("ok", false) or not boss_result.get("ok", false):
@@ -111,7 +120,8 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         formation_result["slots"],
         int(value.get("cache_move_progress", 0)),
         bool(value.get("cache_ready", false)),
-        preparation_result["value"]
+        preparation_result["value"],
+        int(value["gold"])
     )
     if not is_instance_valid(state) or not state.is_valid(plan):
         return {"ok": false}
@@ -122,7 +132,7 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
 
 
 func is_valid(plan: WorldPlan) -> bool:
-    if not is_instance_valid(plan):
+    if not is_valid_gold(gold) or not is_instance_valid(plan):
         return false
     var cells := plan.get_cells()
     if not cells.has(player_coord) or not cells.has(boss_coord):
@@ -174,6 +184,7 @@ func to_dictionary() -> Dictionary:
         "player_coord": [player_coord.x, player_coord.y],
         "boss_coord": [boss_coord.x, boss_coord.y],
         "move_count": move_count,
+        "gold": gold,
         "boss_active": boss_active,
         "boss_engaged": boss_engaged,
         "consumed_encounters": consumed,
@@ -187,6 +198,14 @@ func to_dictionary() -> Dictionary:
 
 func canonical_key() -> String:
     return JSON.stringify(to_dictionary())
+
+
+static func is_valid_gold(value: Variant) -> bool:
+    if value is int:
+        return value >= 0 and value <= MAX_GOLD
+    if value is float:
+        return is_finite(value) and value >= 0.0 and value <= float(MAX_GOLD) and value == floorf(value)
+    return false
 
 
 static func _decode_coord(value: Variant) -> Dictionary:

@@ -53,6 +53,7 @@ func _run() -> void:
         empty_consumed,
         formation
     )
+    initial.set("gold", 100)
     _published_state = initial
     var repository := FakeRepository.new()
     var coordinator: RefCounted = coordinator_script.new()
@@ -89,6 +90,7 @@ func _run() -> void:
 
     var durable_before_failure := _published_state.call("canonical_key") as String
     var failed_candidate := _candidate_with_move_delta(state_script, plan, _published_state, 1)
+    failed_candidate.set("gold", 375)
     repository.fail_next = true
     var failed: Dictionary = coordinator.call(
         "commit_candidate",
@@ -102,6 +104,7 @@ func _run() -> void:
         String(_published_state.call("canonical_key")) == durable_before_failure,
         "failed write does not publish candidate"
     )
+    _expect(_published_state.get("gold") == 100, "failed save retains 100g")
     var failed_bytes: PackedByteArray = repository.writes.back()
     var retried: Dictionary = coordinator.call("retry_pending")
     _expect(bool(retried.get("ok", false)), "retry succeeds")
@@ -113,8 +116,13 @@ func _run() -> void:
         "retry publishes the retained candidate"
     )
 
+    _expect(_published_state.get("gold") == 375, "retry publishes 375g")
+    var wallet_codec: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
+    var saved_wallet: Dictionary = wallet_codec.decode_any(repository.writes.back())
+    _expect(saved_wallet.get("ok", false) and saved_wallet["value"]["run_state"].get("gold") == 375, "retry persists wallet in V3")
     var durable_before_discard := _published_state.call("canonical_key") as String
     var discard_candidate := _candidate_with_move_delta(state_script, plan, _published_state, 1)
+    discard_candidate.set("gold", 0)
     repository.fail_next = true
     coordinator.call(
         "commit_candidate",
@@ -124,6 +132,7 @@ func _run() -> void:
     )
     var restored: RefCounted = coordinator.call("discard_pending")
     _expect(is_instance_valid(restored), "discard returns prior durable state")
+    _expect(restored.get("gold") == 375, "discard preserves prior wallet")
     _expect(
         String(restored.call("canonical_key")) == durable_before_discard,
         "discard restores the prior durable canonical key"

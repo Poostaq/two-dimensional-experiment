@@ -761,6 +761,7 @@ func _publish_pending_move(state: RefCounted) -> void:
 
 func _publish_current_state(state: RefCounted) -> void:
 	_durable_run_state = state
+	_apply_snapshot(_model.get_snapshot())
 
 
 func _commit_current_authoritative(event_name: String, consume_current: bool) -> bool:
@@ -925,6 +926,7 @@ func _apply_snapshot(snapshot: WorldRuntimeSnapshot) -> void:
 		_fail_integration()
 		return
 	hud.set_formation(_roster.get_slot_snapshot())
+	hud.set_gold_balance(int(_durable_run_state.get("gold")) if is_instance_valid(_durable_run_state) else 0)
 	var cache_progress: int = 0
 	var cache_ready: bool = false
 	if is_instance_valid(_durable_run_state):

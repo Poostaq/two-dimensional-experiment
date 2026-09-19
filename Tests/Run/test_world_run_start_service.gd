@@ -43,6 +43,7 @@ func _run() -> void:
     if _committed_plan != null:
         _assert_equal(_committed_plan.get_cells().size(), 217, "committed cell count")
     if success.get("ok", false):
+        _assert_equal(success["run_state"].get("gold"), 100, "new run wallet initialized")
         var formation: Array[StringName] = success["run_state"].formation
         _assert_equal(formation[0], &"player_0", "left frontline starter retained")
         _assert_equal(formation[1], &"brakka_rustbanner", "Brakka occupies middle frontline")

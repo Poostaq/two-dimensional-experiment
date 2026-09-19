@@ -194,6 +194,9 @@ func _run() -> void:
     )
 
     var saved_before_cancel := _read_bytes(explicit_path)
+    var wallet_root: Dictionary = JSON.parse_string(saved_before_cancel.get_string_from_utf8())
+    _expect(wallet_root.get("save_version") == 3, "new run persists V3")
+    _expect(wallet_root["world"]["run_state"].get("gold") == 100, "new run persists 100g")
     if has_commander_api:
         var calls_before_invalid: int = service.call_count
         var invalid: Dictionary = launcher.call("request_start", "invalid-seed", &"unknown")
@@ -219,6 +222,8 @@ func _run() -> void:
     var continued: Dictionary = launcher.call("continue_saved_run")
     _expect(bool(continued.get("ok", false)), "Continue validates the saved run")
     _expect(not _sessions.is_empty(), "Continue emits a validated session")
+    if not _sessions.is_empty():
+        _expect(_sessions.back()["run_state"].get("gold") == 100, "Continue preserves initial wallet")
     if not _sessions.is_empty():
         _expect(
             String(_sessions.back().get("resolved_seed", "")) == "chosen-seed",

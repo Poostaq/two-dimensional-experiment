@@ -19,7 +19,7 @@ const TOOLTIP_VIEWPORT_MARGIN: float = 8.0
 static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
 static var EXIT_ADAPTER_SCRIPT: GDScript = load("res://Scripts/Run/world_exit_adapter.gd")
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v2.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
 static var DISPLAY_SETTINGS_SCRIPT: GDScript = load(
     "res://Scripts/Settings/display_settings_service.gd"
 )

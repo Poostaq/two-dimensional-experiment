@@ -1,0 +1,208 @@
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Run/test_ac8_economy.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_economy
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Run/test_world_run_start_service.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_start_service
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Save/test_world_run_save_codec_v3.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_save_codec_v3
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Save/test_world_run_save_codec_v2.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_save_codec_v2
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Save/test_goblin_starter_save_migration.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_goblin_starter_save_migration
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Save/test_world_save_codec_v1.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_save_codec_v1
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Save/test_world_save_store.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_save_store
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Run/test_world_single_slot_repository.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_single_slot_repository
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Run/test_world_production_launcher.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_production_launcher
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_world_runtime_save_coordinator.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_runtime_save_coordinator
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/UI/test_world_map_hud.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World map HUD tests: PASS (53/53)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/UI/test_world_run_start_scene.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_start_scene
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_ac8_1_gold_runtime.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_1_gold_runtime
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_world_runtime_model.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World runtime model contract tests: PASS (68/68)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_world_runtime_scene.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World runtime scene contract tests: PASS (43/43)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_ac3_5_recovery_integration.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac3_5_recovery_integration (30/30)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_ac6_6_runtime_integration.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac6_6_runtime_integration (36/36)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_ac6_7_goblin_integration.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac6_7_goblin_integration (104/104)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/WorldMap/test_scout_recruitment_flow.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+Scout recruitment flow tests: PASS (42/42)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Run/test_ac3_3_party_formation.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC3.3 party formation tests: PASS (45/45)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/Run/test_ac3_5_post_battle_recovery.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC3.5 post-battle recovery tests: PASS (21/21)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/UI/test_ac6_6_cache_hud.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac6_6_cache_hud (5/5)
+
+EXIT 0
+
+COMMAND ['D:\\Program Files (x86)\\Steam\\steamapps\\common\\Godot Engine\\godot.windows.opt.tools.64.exe', '--headless', '--path', '.', '--script', 'res://Tests/UI/test_world_autosave_failure_overlay.gd']
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_autosave_failure_overlay
+
+EXIT 0
+
+TOTAL 23 FAILED 0

@@ -3,7 +3,7 @@ extends RefCounted
 
 const DEFAULT_SAVE_PATH := "user://active-world-run.json"
 
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v2.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v3.gd")
 static var SAVE_STORE_SCRIPT: GDScript = load("res://Scripts/Save/world_save_store.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/Save/world_save_error.gd")
 

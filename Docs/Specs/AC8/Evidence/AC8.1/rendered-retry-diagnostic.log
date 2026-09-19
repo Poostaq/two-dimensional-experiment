@@ -1,0 +1,16 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 591.44 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3080
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+STATE new run: 100g
+CAPTURE new-run-1152.png
+STATE after map click: 100g
+STATE Continue after move: 100g
+STATE Continue fixture: 375g
+CAPTURE continued-375g-1152.png
+STATE Continue fixture: 0g
+CAPTURE continued-0g-1152.png
+CAPTURE continued-0g-1920.png
+STATE replacement run: 100g
+PASS capture_ac8_1_gold

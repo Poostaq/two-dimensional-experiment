@@ -2,7 +2,7 @@ class_name WorldMapHudTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_hud.tscn"
-const EXPECTED_TEST_COUNT := 43
+const EXPECTED_TEST_COUNT := 53
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -102,6 +102,22 @@ func _run() -> void:
 	_expect(not (hud.get_node("%ManagePartyButton") as Button).disabled, "Party access can be enabled")
 	(hud.get_node("%ManagePartyButton") as Button).pressed.emit()
 	_expect(_party_requests == 1, "enabled Party button emits one request")
+
+	var gold := hud.get_node_or_null("%GoldLabel") as Label
+	_expect(is_instance_valid(gold), "wallet label exists")
+	_expect(hud.has_method("set_gold_balance"), "wallet presentation setter exists")
+	if is_instance_valid(gold) and hud.has_method("set_gold_balance"):
+		for amount: int in [100, 0, 375, 999999]:
+			hud.call("set_gold_balance", amount)
+			hud.call("set_gold_balance", amount)
+			_expect(gold.text == "%dg" % amount, "wallet displays exact balance")
+		hud.call("set_cache_state", false, 0, false)
+		_expect(gold.is_visible_in_tree(), "wallet remains visible without Brakka")
+		hud.call("set_cache_state", true, 0, false)
+		await process_frame
+		_expect(_rect(top_bar).encloses(_rect(gold)), "wallet fits top bar")
+		_expect(_rect(hud.get_node("%MoveCountLabel")).end.x <= _rect(gold).position.x, "wallet follows moves without overlap")
+		_expect(_rect(gold).end.x <= _rect(remaining).position.x, "wallet does not overlap countdown")
 
 	hud.queue_free()
 	await process_frame

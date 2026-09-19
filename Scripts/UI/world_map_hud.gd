@@ -5,6 +5,7 @@ signal party_requested
 
 const BOSS_THRESHOLD := 30
 
+@onready var _gold_label: Label = %GoldLabel
 @onready var _move_count_label: Label = %MoveCountLabel
 @onready var _remaining_label: Label = %RemainingLabel
 @onready var _boss_state_label: Label = %BossStateLabel
@@ -18,6 +19,10 @@ const BOSS_THRESHOLD := 30
 
 func _ready() -> void:
 	_manage_party_button.pressed.connect(_on_manage_party_pressed)
+
+
+func set_gold_balance(balance: int) -> void:
+	_gold_label.text = "%dg" % balance
 
 
 func set_turn_state(move_count: int, boss_active: bool) -> void:

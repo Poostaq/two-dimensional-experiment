@@ -1,0 +1,14 @@
+TIMEOUT on pre-AC8 controller
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+
+ERROR: Index p_index = 0 is out of bounds ((int)data.children_cache.size() - data.internal_children_front_count_cache - data.internal_children_back_count_cache = 0).
+   at: get_child (scene/main/node.cpp:1861)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_world_runtime_migrated_flows.gd:72)
+SCRIPT ERROR: Cannot call method 'get' on a null value.
+   at: WorldRuntimeMigratedFlowContractTests._run (res://Tests/WorldMap/test_world_runtime_migrated_flows.gd:73)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_world_runtime_migrated_flows.gd:73)
