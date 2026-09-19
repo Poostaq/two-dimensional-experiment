@@ -1,0 +1,11 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: acknowledgement rules exist
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_3_reward_acknowledgement.gd:106)
+       [1] _run (res://Tests/Run/test_ac8_3_reward_acknowledgement.gd:68)
+
+EXIT 1

@@ -1,0 +1,242 @@
+[
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_acknowledgement.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Save/test_world_run_save_codec_v5.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/UI/test_ac8_gold_reward.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_ac8_3_reward_presentation.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "mode": [
+      "--",
+      "writer",
+      "combat"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "mode": [
+      "--",
+      "reader",
+      "combat"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "mode": [
+      "--",
+      "acknowledged-reader",
+      "combat"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "mode": [
+      "--",
+      "writer",
+      "boss"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "mode": [
+      "--",
+      "reader",
+      "boss"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "mode": [
+      "--",
+      "acknowledged-reader",
+      "boss"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_economy.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_2_battle_settlement_rules.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_2_run_settlement_state.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_ac8_2_victory_settlement.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_ac8_2_defeat_ends_run.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_ac8_1_gold_runtime.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Save/test_world_run_save_codec_v2.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Save/test_world_run_save_codec_v3.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Save/test_world_run_save_codec_v4.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_world_single_slot_repository.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_world_production_launcher.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_world_run_start_service.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_world_runtime_save_coordinator.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_2_terminal_launcher.gd",
+    "mode": [
+      "--",
+      "writer"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac8_2_terminal_launcher.gd",
+    "mode": [
+      "--",
+      "reader"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Battle/test_ac2_5_reward_selection.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_scout_recruitment_flow.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_ac3_5_recovery_integration.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac3_1_run_roster.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Run/test_ac3_3_party_formation.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/UI/test_world_autosave_failure_overlay.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/UI/test_ac6_6_preparation_ui.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Battle/test_ac7_4_debug_drawer.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/Battle/test_battle_character_inspection.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "runner": "Tests/WorldMap/test_world_production_scene.gd",
+    "mode": [],
+    "exit": 0,
+    "pass": true
+  }
+]

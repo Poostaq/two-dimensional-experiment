@@ -324,7 +324,7 @@ func _create_world(
 		return null
 	return world
 
-	
+
 func _create_legacy_preview_world(
 	plan: WorldPlan,
 	repository: FakeRepository,

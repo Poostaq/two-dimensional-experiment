@@ -1,0 +1,16 @@
+EXIT 0
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_3_reward_presentation
+SCRIPT ERROR: Invalid call to function '_publish_battle_settlement (via call)' in base 'Node2D (WorldRuntimeController)'. Expected 1 argument(s).
+   at: Ac83RewardPresentationTests._case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:155)
+   GDScript backtrace (most recent call first):
+       [0] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:155)
+       [1] _world (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:168)
+SCRIPT ERROR: Invalid call to function '_publish_battle_settlement (via call)' in base 'Node2D (WorldRuntimeController)'. Expected 1 argument(s).
+   at: Ac83RewardPresentationTests._case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:155)
+   GDScript backtrace (most recent call first):
+       [0] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:155)
+       [1] _world (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:168)

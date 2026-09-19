@@ -1,0 +1,40 @@
+EXIT 1
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: 9 RID allocations of type 'PN13RendererDummy14TextureStorage12DummyTextureE' were leaked at exit.
+ERROR: 6 RID allocations of type 'PN18TextServerAdvanced22ShapedTextDataAdvancedE' were leaked at exit.
+ERROR: 1 RID allocations of type 'PN18TextServerAdvanced12FontAdvancedE' were leaked at exit.
+ERROR: failed settlement no presentation
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:170)
+       [1] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:63)
+ERROR: Can't take value from empty array.
+   at: back (core/variant/array.cpp:360)
+   GDScript backtrace (most recent call first):
+       [0] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:66)
+SCRIPT ERROR: Trying to assign value of type 'Nil' to a variable of type 'PackedByteArray'.
+   at: _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:66)
+   GDScript backtrace (most recent call first):
+       [0] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:66)
+ERROR: failed settlement no presentation
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:170)
+       [1] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:63)
+ERROR: Can't take value from empty array.
+   at: back (core/variant/array.cpp:360)
+   GDScript backtrace (most recent call first):
+       [0] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:66)
+SCRIPT ERROR: Trying to assign value of type 'Nil' to a variable of type 'PackedByteArray'.
+   at: _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:66)
+   GDScript backtrace (most recent call first):
+       [0] _case (res://Tests/WorldMap/test_ac8_3_reward_presentation.gd:66)
+WARNING: 24 RIDs of type "CanvasItem" were leaked.
+   at: _free_rids (servers/rendering/renderer_canvas_cull.cpp:2735)
+WARNING: 101 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2536)
+ERROR: 2 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

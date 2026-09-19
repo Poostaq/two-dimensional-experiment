@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 591.44 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 3080
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+CAPTURE res://Docs/Specs/AC8/Evidence/AC8.3/combat-restored-1280x720.png
+CAPTURE res://Docs/Specs/AC8/Evidence/AC8.3/combat-restored-1920x1080.png
+PASS test_ac8_3_reward_restart reader combat

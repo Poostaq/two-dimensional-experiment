@@ -1,0 +1,74 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: outstanding failure forbids coordinator rebind
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:108)
+ERROR: retry succeeds
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:111)
+ERROR: retry publishes the retained candidate
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:114)
+ERROR: retry publishes 375g
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:120)
+ERROR: discard preserves prior wallet
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:136)
+ERROR: discard restores the prior durable canonical key
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:137)
+ERROR: terminal failure retained
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:162)
+ERROR: terminal pending cannot discard
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:163)
+ERROR: terminal remains blocked
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:164)
+ERROR: terminal mode exposes no discard
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:165)
+ERROR: terminal retry commits
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:209)
+       [1] _expect (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:204)
+       [2] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:166)
+SCRIPT ERROR: Out of bounds get index '6' (on base: 'Array[PackedByteArray]')
+   at: WorldRuntimeSaveCoordinatorTests._run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:167)
+   GDScript backtrace (most recent call first):
+       [0] _run (res://Tests/WorldMap/test_world_runtime_save_coordinator.gd:167)
