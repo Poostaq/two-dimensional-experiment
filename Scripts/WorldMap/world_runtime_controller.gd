@@ -12,6 +12,10 @@ var _session_generation: int = 0
 var _battle_generation: int = 0
 var _pending_battle_receipt: Dictionary = {}
 var _battle_settled: bool = false
+var _gold_panel: Control
+var _gold_ack_callback: Callable
+var _pending_ack_id: String = ""
+static var ACKNOWLEDGEMENT_RULES: Script = load("res://Scripts/Run/battle_reward_acknowledgement_rules.gd")
 
 static var SETTLEMENT_RULES: Script = load("res://Scripts/Run/battle_settlement_rules.gd")
 static var RESULT_RECORD: Script = load("res://Scripts/Battle/battle_result_record.gd")
@@ -82,7 +86,7 @@ func _ready() -> void:
 
 
 func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return false
 	var requested_state: RefCounted = session.get("run_state") as RefCounted
 	if not is_instance_valid(requested_state) or not requested_state.is_playable():
@@ -115,7 +119,11 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 	):
 		return false
 	_session_applied = true
-	_restore_persisted_preparation()
+	_wire_gold_panel()
+	if has_pending_gold_reward():
+		_present_pending_gold_reward()
+	else:
+		_restore_persisted_preparation()
 	return true
 
 
@@ -128,7 +136,7 @@ func get_durable_run_state() -> RefCounted:
 
 
 func configure_runtime(plan: WorldPlan) -> bool:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return false
 	if _integration_failed or not is_instance_valid(plan) or not _model.configure(plan):
 		_fail_integration()
@@ -153,7 +161,7 @@ func configure_persistence(
 	run_state: RefCounted,
 	repository: RefCounted
 ) -> bool:
-	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or not is_instance_valid(run_state) or not run_state.is_playable():
+	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward() or not is_instance_valid(run_state) or not run_state.is_playable():
 		return false
 	if (
 		not is_instance_valid(_runtime_plan)
@@ -189,7 +197,7 @@ func retry_autosave() -> Dictionary:
 	if bool(result.get("ok", false)):
 		if not move_was_pending and is_instance_valid(_durable_run_state):
 			_model.restore_run_state(_durable_run_state)
-			if has_active_battle():
+			if has_active_battle() or has_pending_gold_reward():
 				_model.set_surface_blocked(true)
 			_apply_snapshot(_model.get_snapshot())
 		autosave_recovered.emit()
@@ -205,6 +213,10 @@ func discard_pending_autosave() -> bool:
 	if not is_instance_valid(restored) or not _model.restore_run_state(restored):
 		return false
 	_durable_run_state = restored
+	_pending_ack_id = ""
+	_model.set_surface_blocked(has_active_battle() or has_pending_gold_reward())
+	if has_pending_gold_reward():
+		_present_pending_gold_reward()
 	_pending_candidate_model = null
 	_pending_move_result = null
 	if _recruitment_state == RecruitmentState.SAVE_FAILED:
@@ -233,7 +245,7 @@ func get_runtime_snapshot() -> WorldRuntimeSnapshot:
 
 
 func request_move(destination: Vector2i) -> WorldMoveResult:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or has_pending_gold_reward():
 		_model.set_surface_blocked(true)
 		return _model.request_move(destination)
 	if not is_instance_valid(_save_coordinator):
@@ -277,7 +289,7 @@ func has_active_battle() -> bool:
 
 
 func open_party_management() -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if _integration_failed or has_active_encounter() or has_active_battle() or has_active_party_management():
 		return
@@ -339,6 +351,7 @@ func _on_autosave_return_requested() -> void:
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING:
 		return
 	if discard_pending_autosave():
+		_invalidate_gold_callbacks()
 		launcher_return_requested.emit()
 
 
@@ -390,7 +403,7 @@ func _restore_roster(run_state: RefCounted) -> bool:
 
 
 func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
-	if has_active_encounter():
+	if has_pending_gold_reward() or has_active_encounter():
 		return
 	_active_encounter = ENCOUNTER_SCENE.instantiate() as EncounterOverlay
 	get_node("EncounterHost").add_child(_active_encounter)
@@ -400,7 +413,7 @@ func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
 
 
 func _on_encounter_close_requested() -> void:
-	if not has_active_encounter():
+	if has_pending_gold_reward() or not has_active_encounter():
 		return
 	var was_boss := _active_encounter.encounter_type.to_lower() == "boss"
 	_active_encounter.queue_free()
@@ -413,7 +426,7 @@ func _on_encounter_close_requested() -> void:
 
 
 func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if has_active_battle():
 		return
@@ -440,12 +453,14 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 		return
 	_active_battle.configure_party_units(battle_units)
 	_active_battle.configure_production_settlement(_session_applied)
-	_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
+	if not _session_applied:
+		_active_battle.configure_reward_options(BattleRewardCatalog.get_options_for(normalized_encounter))
 	_active_battle.exit_requested.connect(_on_bound_battle_closed.bind(_session_generation, _battle_generation, _active_battle))
 	_active_battle.battle_completed.connect(_on_battle_completed.bind(_session_generation, _battle_generation, _active_battle))
-	_active_battle.reward_selected.connect(_on_reward_selected)
-	_active_battle.reward_confirmed.connect(_on_reward_confirmed)
-	_active_battle.recruitment_placement_requested.connect(_on_recruitment_placement_requested)
+	if not _session_applied:
+		_active_battle.reward_selected.connect(_on_reward_selected)
+		_active_battle.reward_confirmed.connect(_on_reward_confirmed)
+		_active_battle.recruitment_placement_requested.connect(_on_recruitment_placement_requested)
 	_active_battle.preparation_commit_requested.connect(_on_preparation_commit_requested)
 	_configure_battle_preparation(coord, normalized_encounter)
 
@@ -613,7 +628,7 @@ func _on_battle_completed(outcome: BattleOutcome.Type, session_generation: int =
 		return
 	_pending_battle_receipt = receipt.duplicate(true)
 	var candidate: RefCounted = built.value
-	var saved: Dictionary = _save_coordinator.commit_candidate(candidate, Callable(self, "_publish_battle_settlement"), "battle_settlement", outcome != BattleOutcome.Type.DEFEAT)
+	var saved: Dictionary = _save_coordinator.commit_candidate(candidate, Callable(self, "_publish_battle_settlement").bind(_session_generation, _battle_generation, _active_battle), "battle_settlement", outcome != BattleOutcome.Type.DEFEAT)
 	if saved.get("ok", false):
 		return
 	if not _save_coordinator.is_input_blocked():
@@ -625,7 +640,9 @@ func _on_battle_completed(outcome: BattleOutcome.Type, session_generation: int =
 	autosave_failed.emit(saved.get("error") as RefCounted)
 
 
-func _publish_battle_settlement(state: RefCounted) -> void:
+func _publish_battle_settlement(state: RefCounted, generation: int, battle_generation: int, source: BattleArena) -> void:
+	if generation != _session_generation or battle_generation != _battle_generation or not is_instance_valid(source) or source != _active_battle:
+		return
 	if _battle_settled:
 		return
 	_battle_settled = true
@@ -640,8 +657,7 @@ func _publish_battle_settlement(state: RefCounted) -> void:
 	_model.restore_run_state(state)
 	_model.set_surface_blocked(has_active_battle())
 	_apply_snapshot(_model.get_snapshot())
-	if has_active_battle():
-		_active_battle.set_settlement_committed()
+	_present_pending_gold_reward()
 
 
 func _on_bound_battle_closed(session_generation: int, battle_generation: int, source: BattleArena) -> void:
@@ -687,7 +703,9 @@ func _on_legacy_battle_completed(outcome: BattleOutcome.Type) -> void:
 
 
 func _on_reward_selected(option: BattleRewardOption) -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _session_applied:
+		return
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if (
 		_recruitment_state == RecruitmentState.IDLE
@@ -698,13 +716,17 @@ func _on_reward_selected(option: BattleRewardOption) -> void:
 
 
 func _on_reward_confirmed(_option: BattleRewardOption) -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _session_applied:
+		return
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	_commit_current_authoritative("reward_completion", false)
 
 
 func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _session_applied:
+		return
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if (
 		not has_active_battle()
@@ -739,6 +761,8 @@ func _on_recruitment_placement_requested(option: BattleRewardOption) -> void:
 
 
 func _on_recruitment_add_requested(destination_slot: int, expected_id: StringName) -> void:
+	if _session_applied:
+		return
 	if (
 		_recruitment_state != RecruitmentState.PLACEMENT_OPEN
 		or is_autosave_blocked()
@@ -756,6 +780,8 @@ func _on_recruitment_replace_requested(
 	expected_character_id: StringName,
 	expected_recruit_id: StringName
 ) -> void:
+	if _session_applied:
+		return
 	if (
 		_recruitment_state != RecruitmentState.PLACEMENT_OPEN
 		or is_autosave_blocked()
@@ -776,6 +802,8 @@ func _on_recruitment_replace_requested(
 
 
 func _commit_recruitment_candidate(candidate: RunRoster) -> void:
+	if _session_applied:
+		return
 	_recruitment_state = RecruitmentState.PLACEMENT_CONFIRMED
 	_pending_recruitment_roster = candidate
 	if not is_instance_valid(_save_coordinator):
@@ -842,7 +870,7 @@ func _close_recruitment_party(reset_state: bool = true) -> void:
 
 
 func _on_battle_closed() -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if not has_active_battle():
 		return
@@ -856,7 +884,7 @@ func _on_battle_closed() -> void:
 
 
 func _on_party_move_requested(source_slot: int, destination_slot: int, character_id: StringName) -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	var move_result := _roster.try_move(source_slot, destination_slot, character_id)
 	if move_result not in [RunRoster.MoveResult.MOVED, RunRoster.MoveResult.SWAPPED]:
@@ -870,7 +898,7 @@ func _on_party_move_requested(source_slot: int, destination_slot: int, character
 
 
 func _on_party_close_requested() -> void:
-	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked():
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if not has_active_party_management():
 		return
@@ -1134,3 +1162,97 @@ func _fail_integration() -> void:
 	_model.set_surface_blocked(true)
 	var empty_destinations: Array[Vector2i] = []
 	set_valid_destinations(empty_destinations)
+
+
+func has_pending_gold_reward() -> bool:
+	return is_instance_valid(_durable_run_state) and not String(_durable_run_state.get("pending_reward_battle_id")).is_empty()
+
+
+func _wire_gold_panel() -> void:
+	_gold_panel = get_node_or_null("GoldRewardHost/BattleGoldRewardPanel") as Control
+	if not is_instance_valid(_gold_panel):
+		_fail_integration()
+		return
+	if _gold_ack_callback.is_valid() and _gold_panel.acknowledgement_requested.is_connected(_gold_ack_callback):
+		_gold_panel.acknowledgement_requested.disconnect(_gold_ack_callback)
+	_gold_ack_callback = _on_bound_gold_acknowledgement.bind(_session_generation, _gold_panel)
+	_gold_panel.acknowledgement_requested.connect(_gold_ack_callback)
+
+
+func _on_bound_gold_acknowledgement(battle_id: String, generation: int, source: Control) -> void:
+	if generation != _session_generation or not is_instance_valid(source) or source != _gold_panel:
+		return
+	acknowledge_gold_reward(battle_id)
+
+
+func _present_pending_gold_reward() -> void:
+	if not has_pending_gold_reward() or not is_instance_valid(_gold_panel):
+		return
+	var battle_id: String = _durable_run_state.pending_reward_battle_id
+	for receipt: Dictionary in _durable_run_state.battle_settlements:
+		if receipt.battle_id != battle_id:
+			continue
+		if has_active_battle():
+			_active_battle.set_settlement_committed()
+		_model.set_surface_blocked(true)
+		_gold_panel.present(battle_id, int(receipt.earned_gold))
+		_apply_snapshot(_model.get_snapshot())
+		return
+	_fail_integration()
+
+
+func acknowledge_gold_reward(battle_id: String) -> Dictionary:
+	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or not _session_applied:
+		return {"ok": false, "value": null, "error": "reward_blocked"}
+	var built: Dictionary = ACKNOWLEDGEMENT_RULES.build_candidate(_durable_run_state, _runtime_plan, battle_id)
+	if not built.get("ok", false) or built.get("duplicate", false):
+		return built
+	_pending_ack_id = battle_id
+	_gold_panel.set_saving(true)
+	var saved: Dictionary = _save_coordinator.commit_candidate(
+		built.value, Callable(self, "_publish_reward_acknowledgement").bind(_session_generation, battle_id),
+		"battle_reward_acknowledgement", true
+	)
+	if not saved.get("ok", false):
+		if not is_autosave_blocked():
+			_fail_integration()
+		else:
+			autosave_failed.emit(saved.get("error") as RefCounted)
+	return saved
+
+
+func _publish_reward_acknowledgement(state: RefCounted, generation: int, battle_id: String) -> void:
+	if generation != _session_generation or battle_id != _pending_ack_id or not has_pending_gold_reward():
+		return
+	if _durable_run_state.pending_reward_battle_id != battle_id or not is_instance_valid(state):
+		return
+	var expected: Dictionary = _durable_run_state.to_dictionary()
+	expected["pending_reward_battle_id"] = ""
+	if state.to_dictionary() != expected:
+		_fail_integration()
+		return
+	_durable_run_state = state
+	_pending_ack_id = ""
+	_gold_panel.dismiss()
+	if has_active_battle():
+		_active_battle.queue_free()
+		_active_battle = null
+	_close_recruitment_party()
+	_pending_battle_receipt = {}
+	_battle_settled = false
+	_active_battle_recovery_handled = false
+	_model.restore_run_state(state)
+	_model.set_surface_blocked(has_active_encounter() or has_active_party_management())
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _invalidate_gold_callbacks() -> void:
+	_session_generation += 1
+	if is_instance_valid(_gold_panel) and _gold_ack_callback.is_valid() and _gold_panel.acknowledgement_requested.is_connected(_gold_ack_callback):
+		_gold_panel.acknowledgement_requested.disconnect(_gold_ack_callback)
+	_gold_ack_callback = Callable()
+	_pending_ack_id = ""
+
+
+func _exit_tree() -> void:
+	_invalidate_gold_callbacks()

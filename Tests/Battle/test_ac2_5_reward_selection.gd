@@ -3,7 +3,7 @@ extends SceneTree
 
 const CATALOG_PATH := "res://Scripts/Battle/battle_reward_catalog.gd"
 const ARENA_PATH := "res://Scenes/battle_arena.tscn"
-const EXPECTED_TEST_COUNT := 17
+const EXPECTED_TEST_COUNT := 18
 
 var _failures: Array[String] = []
 var _catalog_script: GDScript
@@ -35,6 +35,7 @@ func _run() -> void:
 	await _test_unsupported_victory_shows_empty_state()
 	await _test_reward_layout_fits_viewport()
 	await _test_new_battle_instance_is_clean()
+	await _test_production_has_no_legacy_rewards()
 	_report()
 	quit(1 if not _failures.is_empty() else 0)
 
@@ -385,3 +386,24 @@ func _report() -> void:
 		return
 	for failure: String in _failures:
 		print("FAILED: %s" % failure)
+
+# Catalog/choice tests above intentionally exercise isolated legacy previews.
+func _test_production_has_no_legacy_rewards() -> void:
+	var arena := await _instantiate_arena()
+	arena.configure(Vector2i.ZERO, "combat")
+	arena.configure_production_settlement(true)
+	arena.configure_units(_victory_units())
+	arena.perform_debug_damage()
+	var events: Array[String] = []
+	arena.reward_selected.connect(func(_option: BattleRewardOption) -> void: events.append("selected"))
+	arena.reward_confirmed.connect(func(_option: BattleRewardOption) -> void: events.append("confirmed"))
+	arena.recruitment_placement_requested.connect(func(_option: BattleRewardOption) -> void: events.append("recruited"))
+	arena.exit_requested.connect(func() -> void: events.append("exit"))
+	var before_commit: bool = not _panel(arena).visible
+	arena.set_settlement_committed()
+	arena.select_reward(&"combat_recruit_scout")
+	arena.confirm_reward_selection()
+	arena.call("_emit_exit_requested")
+	_assert(before_commit and not _panel(arena).visible and arena.get_reward_options().is_empty() and events.is_empty(),
+		"Production uses durable gold reward", "legacy choices and direct exit must remain disabled")
+	_free_arena(arena)

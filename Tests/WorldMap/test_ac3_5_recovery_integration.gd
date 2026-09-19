@@ -125,6 +125,10 @@ func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
 	var reloaded := await _create_world(plan, FakeRepository.new(), persisted)
 	_expect(is_instance_valid(reloaded), "committed recovery reloads")
 	if is_instance_valid(reloaded):
+		_expect(reloaded.has_pending_gold_reward(), "reload retains reward before next battle")
+		var acknowledgement: Dictionary = reloaded.acknowledge_gold_reward(reloaded.get_durable_run_state().pending_reward_battle_id)
+		_expect(acknowledgement.get("ok", false), "reward acknowledgement allows next battle")
+		_expect(reloaded.get_durable_run_state().get_character_hp_snapshot() == expected_recovery, "acknowledgement preserves recovered health")
 		reloaded.call("_on_battle_requested", reloaded.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 		await process_frame
 		var next_arena := _get_arena(reloaded)
@@ -207,7 +211,7 @@ func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:
 
 func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	var repository := FakeRepository.new()
-	var world := await _create_world(plan, repository, _create_legacy_state(plan))
+	var world := await _create_legacy_preview_world(plan, repository, _create_legacy_state(plan))
 	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	var arena := _get_arena(world)
@@ -216,7 +220,7 @@ func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	arena.select_reward(&"combat_recruit_scout")
 	arena.confirm_reward_selection()
 	await process_frame
-	_expect(world.has_active_party_management(), "recruit reward opens production placement UI")
+	_expect(world.has_active_party_management(), "legacy recruit preview opens placement UI")
 	var party := world.get_node("PartyHost").get_child(0) as PartyManagement
 	party.request_placement(3, &"scout")
 	await process_frame
@@ -241,7 +245,7 @@ func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	var full_formation := RunCharacterCatalog.get_goblin_class_ids()
 	var full_state := _create_state(plan, full_formation)
 	repository = FakeRepository.new()
-	world = await _create_world(plan, repository, full_state)
+	world = await _create_legacy_preview_world(plan, repository, full_state)
 	world.call("_on_battle_requested", world.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 	await process_frame
 	arena = _get_arena(world)
@@ -250,7 +254,7 @@ func _verify_recruitment_identity_health(plan: WorldPlan) -> void:
 	arena.select_reward(&"combat_recruit_scout")
 	arena.confirm_reward_selection()
 	await process_frame
-	_expect(world.has_active_party_management(), "full roster reward opens production replacement UI")
+	_expect(world.has_active_party_management(), "legacy full roster preview opens replacement UI")
 	party = world.get_node("PartyHost").get_child(0) as PartyManagement
 	var dismissed_id: StringName = world.get_durable_run_state().get("formation")[0]
 	party.request_replacement(0, dismissed_id, &"scout")
@@ -318,6 +322,24 @@ func _create_world(
 	if not world.apply_session(session, repository):
 		world.free()
 		return null
+	return world
+
+	
+func _create_legacy_preview_world(
+	plan: WorldPlan,
+	repository: FakeRepository,
+	state: RefCounted
+) -> WorldRuntimeController:
+	var world: WorldRuntimeController = load(WORLD_SCENE).instantiate()
+	world.auto_initialize_runtime = false
+	root.add_child(world)
+	await process_frame
+	# Isolate legacy recruitment infrastructure from the production gold flow.
+	_expect(world.configure_runtime(plan), "legacy preview runtime configures")
+	_expect(world.call("_restore_roster", state), "legacy preview restores roster identities")
+	_expect(world.call("_initialize_or_validate_durable_health", state), "legacy preview initializes durable health")
+	_expect(world.configure_persistence("ac3-5-recovery-integration", state, repository), "legacy preview configures persistence")
+	_expect(not world.is_session_applied(), "recruitment health fixture is explicitly nonproduction")
 	return world
 
 

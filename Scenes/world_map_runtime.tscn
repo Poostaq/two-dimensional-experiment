@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://iw0tft40dhmb" path="res://Scripts/WorldMap/world_camera_controller.gd" id="2_wr8mu"]
 [ext_resource type="PackedScene" uid="uid://cs1abrmsf7038" path="res://Scenes/world_map_hud.tscn" id="3_ioilc"]
 [ext_resource type="PackedScene" uid="uid://ry5f32nn4nye" path="res://Scenes/world_minimap.tscn" id="5_8roes"]
+[ext_resource type="PackedScene" uid="uid://bpvrd5tjios57" path="res://Scenes/UI/battle_gold_reward_panel.tscn" id="6_m5ov0"]
 [ext_resource type="PackedScene" uid="uid://b36euxg5lv0i4" path="res://Scenes/world_autosave_failure_overlay.tscn" id="7_6n27o"]
 
 [node name="WorldMapRuntime" type="Node2D" unique_id=861273873]
@@ -54,3 +55,9 @@ layer = 40
 
 [node name="AutosaveFailureOverlay" parent="FailureOverlayHost" unique_id=1589388168 instance=ExtResource("7_6n27o")]
 unique_name_in_owner = true
+
+[node name="GoldRewardHost" type="CanvasLayer" parent="." unique_id=900106095]
+layer = 35
+
+[node name="BattleGoldRewardPanel" parent="GoldRewardHost" unique_id=594160737 instance=ExtResource("6_m5ov0")]
+anchors_preset = 15

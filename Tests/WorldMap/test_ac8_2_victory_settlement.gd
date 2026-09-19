@@ -80,7 +80,8 @@ func _case(kind: String, mismatch: bool = false) -> void:
 	_expect(world.retry_autosave().get("ok", false), "victory retry succeeds")
 	_expect(repo.writes.back() == bytes, "victory retry identical")
 	_expect(world.get_durable_run_state().gold == 250, "three enemies pay 150")
-	_expect(arena.get_node("%RewardOverlay").visible, "choices after commit")
+	_expect(world.get_node("GoldRewardHost/BattleGoldRewardPanel").visible, "gold panel after commit")
+	_expect(not arena.get_node("%RewardOverlay").visible, "legacy choices absent")
 	_expect(world.get_valid_destinations().is_empty(), "retry keeps world blocked while arena open")
 	var count: int = repo.writes.size()
 	arena.battle_completed.emit(BattleOutcome.Type.VICTORY)
@@ -94,7 +95,9 @@ func _case(kind: String, mismatch: bool = false) -> void:
 	await process_frame
 	_expect(restored.apply_session({"plan":plan,"resolved_seed":"golden-alpha","run_state":committed},repo),"settled reload applies")
 	_expect(restored.get_durable_run_state().gold == 250, "reload no second award")
-	_expect(not restored.get_valid_destinations().is_empty(), "completed checkpoint reload usable")
+	_expect(restored.get_valid_destinations().is_empty(), "pending reward reload blocks world")
+	_expect(restored.acknowledge_gold_reward(restored.get_durable_run_state().pending_reward_battle_id).get("ok", false), "reward acknowledged")
+	_expect(not restored.get_valid_destinations().is_empty(), "acknowledged checkpoint usable")
 	restored.free()
 	await process_frame
 

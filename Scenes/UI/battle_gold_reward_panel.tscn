@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bpvrd5tjios57"]
+
+[ext_resource type="Script" uid="uid://bmyncgn783eka" path="res://Scripts/UI/battle_gold_reward_panel.gd" id="1_ogjua"]
+[ext_resource type="Texture2D" uid="uid://cfwld8icc8bp4" path="res://Assets/UI/gold_coin.svg" id="2_bfj8t"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6efr7"]
+content_margin_left = 36.0
+content_margin_top = 32.0
+content_margin_right = 36.0
+content_margin_bottom = 32.0
+bg_color = Color(0.09019608, 0.14509805, 0.21176471, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.7372549, 0.58431375, 0.3137255, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[node name="BattleGoldRewardPanel" type="Control" unique_id=594160737]
+visible = false
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_ogjua")
+
+[node name="Shade" type="ColorRect" parent="." unique_id=1139478414]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.025, 0.04, 0.07, 0.88)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=578023301]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Card" type="PanelContainer" parent="Center" unique_id=169643687]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_6efr7")
+
+[node name="Column" type="VBoxContainer" parent="Center/Card" unique_id=843824191]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Heading" type="Label" parent="Center/Card/Column" unique_id=111263850]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Victory"
+horizontal_alignment = 1
+
+[node name="MoneyIcon" type="TextureRect" parent="Center/Card/Column" unique_id=720092179]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+texture = ExtResource("2_bfj8t")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="AmountLabel" type="Label" parent="Center/Card/Column" unique_id=785952209]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Gold received: 0g"
+horizontal_alignment = 1
+
+[node name="ContinueButton" type="Button" parent="Center/Card/Column" unique_id=1537825947]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+focus_neighbor_top = NodePath(".")
+focus_neighbor_bottom = NodePath(".")
+focus_next = NodePath(".")
+focus_previous = NodePath(".")
+text = "Continue"

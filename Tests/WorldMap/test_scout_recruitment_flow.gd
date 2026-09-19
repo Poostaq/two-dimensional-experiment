@@ -36,6 +36,7 @@ func _init() -> void:
 
 
 func _run() -> void:
+	await _test_production_victory_rejects_scout()
 	var generated := HexWorldGeneratorV1.new().generate("scout-recruitment-flow")
 	_expect(bool(generated.get("ok", false)), "fixture world generates")
 	if not bool(generated.get("ok", false)):
@@ -221,12 +222,12 @@ func _create_runtime(
 		empty_consumed,
 		formation
 	)
-	var session: Dictionary = {
-		"plan": plan,
-		"run_state": run_state,
-		"resolved_seed": "scout-recruitment-flow",
-	}
-	_expect(runtime.apply_session(session, repository), "runtime applies persisted fixture session")
+	# Retain placement/replacement coverage through an explicit legacy preview.
+	_expect(runtime.configure_runtime(plan), "preview runtime configured")
+	_expect(runtime.call("_restore_roster", run_state), "preview roster restored")
+	_expect(runtime.call("_initialize_or_validate_durable_health", run_state), "preview health initialized")
+	_expect(runtime.configure_persistence("scout-recruitment-flow", run_state, repository), "preview persistence configured")
+	_expect(not runtime.is_session_applied(), "legacy placement fixture is not production")
 	return runtime
 
 
@@ -259,3 +260,45 @@ func _finish() -> void:
 	for failure: String in _failures:
 		push_error(failure)
 	quit(1)
+
+
+func _test_production_victory_rejects_scout() -> void:
+	var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(func(_p: RefCounted) -> void: pass).start("golden-alpha")
+	var plan: WorldPlan = session.plan
+	var state: RefCounted = session.run_state
+	var coord: Vector2i = plan.get_start_coord()
+	for candidate: Vector2i in plan.get_cells():
+		if plan.get_cells()[candidate].get("encounter") == WorldEncounterType.COMBAT:
+			coord = candidate
+			break
+	state.player_coord = coord
+	var runtime: WorldRuntimeController = load(RUNTIME_SCENE).instantiate()
+	runtime.auto_initialize_runtime = false
+	root.add_child(runtime)
+	await process_frame
+	var repository := FailingOnceRepository.new()
+	_expect(runtime.apply_session(session, repository), "production session configured")
+	runtime.call("_on_battle_requested", coord, WorldEncounterType.COMBAT)
+	var battle: BattleArena = runtime.get_node("BattleHost").get_child(0)
+	var units: Array[BattleUnitState] = []
+	for unit: BattleUnitState in battle.get("_units"):
+		if unit.side == BattleUnitState.Side.PLAYER:
+			unit.speed = 100
+			units.append(unit)
+	units.append(BattleUnitState.new(&"enemy", "Enemy", 1, 0, 1, 1))
+	battle.configure_units(units)
+	battle.perform_debug_damage()
+	var settled: Dictionary = runtime.get_durable_run_state().to_dictionary()
+	var writes: int = repository.writes.size()
+	_expect(settled.gold == 150 and runtime.has_pending_gold_reward(), "victory awards gold instead of Scout")
+	var option: BattleRewardOption = BattleRewardCatalog.get_options_for("combat")[0]
+	battle.select_reward(SCOUT_REWARD_ID)
+	battle.confirm_reward_selection()
+	runtime.call("_on_reward_selected", option)
+	runtime.call("_on_reward_confirmed", option)
+	runtime.call("_on_recruitment_placement_requested", option)
+	_expect(not runtime.has_active_party_management(), "production cannot open Scout placement")
+	_expect(not (runtime.get("_roster") as RunRoster).has_character(SCOUT_ID), "production has no Scout grant")
+	_expect(runtime.get_durable_run_state().to_dictionary() == settled and repository.writes.size() == writes, "stale Scout actions cannot mutate state")
+	runtime.free()
+	await process_frame

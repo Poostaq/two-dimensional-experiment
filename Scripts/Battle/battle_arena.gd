@@ -184,6 +184,13 @@ func set_settlement_committed() -> void:
 	if not is_battle_complete() or _settlement_committed:
 		return
 	_settlement_committed = true
+	if _production_settlement:
+		close_character_info(false)
+		if is_node_ready():
+			_debug_drawer.set_open(false)
+		_clear_reward_ui()
+		set_process_input(false)
+		set_process_unhandled_input(false)
 	if _battle_outcome == BattleOutcome.Type.VICTORY and is_node_ready():
 		_show_victory_rewards()
 	_refresh_debug_drawer()
@@ -524,7 +531,7 @@ func get_selected_reward() -> BattleRewardOption:
 
 
 func select_reward(reward_id: StringName) -> void:
-	if _settlement_pending():
+	if _production_settlement or _settlement_pending():
 		return
 	if _reward_confirmation_latched or _battle_outcome != BattleOutcome.Type.VICTORY:
 		return
@@ -537,7 +544,7 @@ func select_reward(reward_id: StringName) -> void:
 
 
 func confirm_reward_selection() -> void:
-	if _settlement_pending():
+	if _production_settlement or _settlement_pending():
 		return
 	if (
 		_reward_confirmation_latched
@@ -555,7 +562,7 @@ func confirm_reward_selection() -> void:
 
 
 func restore_pending_recruitment(option: BattleRewardOption) -> void:
-	if _settlement_pending():
+	if _production_settlement or _settlement_pending():
 		return
 	if (
 		not is_instance_valid(option)
@@ -572,7 +579,7 @@ func restore_pending_recruitment(option: BattleRewardOption) -> void:
 
 
 func complete_pending_recruitment(option: BattleRewardOption) -> void:
-	if _settlement_pending():
+	if _production_settlement or _settlement_pending():
 		return
 	if (
 		not is_instance_valid(option)
@@ -586,7 +593,7 @@ func complete_pending_recruitment(option: BattleRewardOption) -> void:
 
 
 func _complete_reward(option: BattleRewardOption) -> void:
-	if _settlement_pending():
+	if _production_settlement or _settlement_pending():
 		return
 	_reward_confirmation_latched = true
 	_clear_reward_ui(false)
@@ -1723,7 +1730,7 @@ func _complete_battle(outcome: BattleOutcome.Type) -> void:
 
 
 func _show_victory_rewards() -> void:
-	if _settlement_pending():
+	if _production_settlement or _settlement_pending():
 		return
 	_clear_reward_ui()
 	_reward_options = (
@@ -2405,7 +2412,7 @@ func _on_exit_debug_pressed() -> void:
 
 
 func _emit_exit_requested() -> void:
-	if _settlement_pending():
+	if _settlement_pending() or (_production_settlement and is_battle_complete()):
 		return
 	close_character_info(false)
 	_info_cache.clear()
