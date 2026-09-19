@@ -12,6 +12,8 @@ static func build_candidate(state: RefCounted, plan: WorldPlan, receipt: Diction
 			if RECORD.canonical_key(existing) == RECORD.canonical_key(receipt):
 				return {"ok": true, "duplicate": true, "value": null, "error": null}
 			return _failure("settlement_conflict")
+	if not state.pending_reward_battle_id.is_empty():
+		return _failure("reward_pending")
 	if not state.is_playable():
 		return _failure("run_lost")
 	var coord := Vector2i(int(receipt.encounter_coord[0]), int(receipt.encounter_coord[1]))
@@ -31,6 +33,7 @@ static func build_candidate(state: RefCounted, plan: WorldPlan, receipt: Diction
 	if state.gold > STATE.MAX_GOLD - award:
 		return _failure("gold_overflow")
 	if receipt.outcome == "victory":
+		data["pending_reward_battle_id"] = String(receipt.battle_id)
 		data["gold"] = state.gold + award
 		data["character_hp"] = recovered
 		if receipt.encounter_type == "boss":

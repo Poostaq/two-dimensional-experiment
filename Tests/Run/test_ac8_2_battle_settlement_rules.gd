@@ -35,6 +35,7 @@ func _run() -> void:
 	_expect(result.get("ok", false), "valid victory builds")
 	if result.get("ok", false):
 		var candidate: RefCounted = result.value
+		_expect(candidate.pending_reward_battle_id == receipt.battle_id, "victory stages pending presentation")
 		_expect(candidate.gold == 250 and candidate.consumed_encounters.has(coord), "gold and consumption together")
 		_expect(candidate.get_character_hp_snapshot().values()[0] > 0, "recovery together")
 		_expect(state.canonical_key() == before, "candidate leaves live state unchanged")
@@ -48,6 +49,7 @@ func _run() -> void:
 	var loss: Dictionary = rules.build_candidate(state, plan, receipt)
 	_expect(loss.get("ok", false), "loss builds")
 	if loss.get("ok", false):
+		_expect(loss.value.pending_reward_battle_id.is_empty(), "loss never stages a reward")
 		_expect(loss.value.gold == 100 and not loss.value.is_playable(), "loss no gold terminal")
 		_expect(loss.value.get_character_hp_snapshot() == state.get_character_hp_snapshot(), "loss preserves durable health")
 		_expect(not loss.value.consumed_encounters.has(coord), "loss no consume")

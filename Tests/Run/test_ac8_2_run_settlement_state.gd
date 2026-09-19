@@ -11,6 +11,7 @@ func _run() -> void:
 	var state: RefCounted = session.run_state
 	var state_script: Script = load("res://Scripts/Run/world_run_state.gd")
 	var plan: WorldPlan = session.plan
+	_expect(state.pending_reward_battle_id.is_empty(), "fresh state has no pending reward")
 	var before: String = state.canonical_key()
 	var data: Dictionary = state.to_dictionary()
 	data.erase("run_status")
@@ -27,6 +28,7 @@ func _run() -> void:
 	_expect(decoded.get("ok", false), "structural terminal record is valid")
 	if decoded.get("ok", false):
 		var lost: RefCounted = decoded.value
+		_expect(lost.pending_reward_battle_id.is_empty(), "terminal state has no pending presentation")
 		_expect(not lost.is_playable() and lost.canonical_key() != before, "lifecycle changes canonical identity")
 		data.battle_settlements[0].enemy_ids.append("external_mutation")
 		_expect(lost.battle_settlements[0].enemy_ids.size() == 1, "construction deep copies receipt")

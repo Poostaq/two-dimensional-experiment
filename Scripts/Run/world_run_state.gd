@@ -15,6 +15,7 @@ var move_count: int
 var gold: int = 0
 var run_status: String = "active"
 var battle_settlements: Array = []
+var pending_reward_battle_id: String = ""
 var boss_active: bool
 var boss_engaged: bool
 var consumed_encounters: Array[Vector2i] = []
@@ -39,7 +40,8 @@ static func create(
     new_battle_preparation: RefCounted = null,
     new_gold: int = 0,
     new_run_status: String = "active",
-    new_battle_settlements: Array = []
+    new_battle_settlements: Array = [],
+    new_pending_reward_battle_id: String = ""
 ) -> RefCounted:
     if not is_valid_gold(new_gold):
         return null
@@ -80,6 +82,7 @@ static func create(
     state.gold = new_gold
     state.run_status = new_run_status
     state.battle_settlements = new_battle_settlements.duplicate(true)
+    state.pending_reward_battle_id = new_pending_reward_battle_id
     state.boss_active = new_boss_active
     state.boss_engaged = new_boss_engaged
     state.consumed_encounters = new_consumed_encounters.duplicate()
@@ -96,6 +99,8 @@ static func create(
 
 
 static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
+    if not value.get("pending_reward_battle_id", "") is String:
+        return {"ok": false}
     if not is_valid_gold(value.get("gold")) or not value.get("run_status") is String or not value.get("battle_settlements") is Array:
         return {"ok": false}
     var player_result := _decode_coord(value.get("player_coord"))
@@ -129,7 +134,8 @@ static func from_dictionary(value: Dictionary, plan: WorldPlan) -> Dictionary:
         preparation_result["value"],
         int(value["gold"]),
         value["run_status"],
-        value["battle_settlements"]
+        value["battle_settlements"],
+        value.get("pending_reward_battle_id", "")
     )
     if not is_instance_valid(state) or not state.is_valid(plan):
         return {"ok": false}
@@ -148,7 +154,18 @@ func is_valid(plan: WorldPlan) -> bool:
     for coord: Vector2i in consumed_encounters:
         if not cells.has(coord):
             return false
-    return _valid_settlements(plan)
+    return _valid_settlements(plan) and _valid_pending_reward()
+
+
+func _valid_pending_reward() -> bool:
+    if pending_reward_battle_id.is_empty():
+        return true
+    if not is_playable() or battle_settlements.is_empty():
+        return false
+    if not is_instance_valid(battle_preparation) or battle_preparation.state != 0:
+        return false
+    var receipt: Dictionary = battle_settlements.back()
+    return receipt.battle_id == pending_reward_battle_id and receipt.outcome == "victory"
 
 
 func is_playable() -> bool:
@@ -228,6 +245,7 @@ func to_dictionary() -> Dictionary:
         "gold": gold,
         "run_status": run_status,
         "battle_settlements": battle_settlements.duplicate(true),
+        "pending_reward_battle_id": pending_reward_battle_id,
         "boss_active": boss_active,
         "boss_engaged": boss_engaged,
         "consumed_encounters": consumed,
