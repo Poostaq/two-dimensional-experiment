@@ -1,0 +1,36 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: cleared combat resolves as safe on return
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:98)
+       [1] _run (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:54)
+ERROR: return overlay offers safe encounter
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:98)
+       [1] _run (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:55)
+ERROR: cleared combat rejects stale battle request
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:98)
+       [1] _run (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:60)
+ERROR: Continue remembers cleared combat
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:98)
+       [1] _run (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:67)
+       [2] _world (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:93)
+ERROR: Continue rejects replay
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:98)
+       [1] _run (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:69)
+       [2] _world (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:93)
+ERROR: candidate copy remembers completion
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:98)
+       [1] _run (res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd:75)

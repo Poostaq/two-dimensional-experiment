@@ -18,6 +18,7 @@ var _sudden_death_active: bool = false
 var _input_blocked: bool = false
 var _boss_encounter_open: bool = false
 var _boss_defeated: bool = false
+var _defeated_combat_coords: Array[Vector2i] = []
 
 
 func configure(plan: WorldPlan) -> bool:
@@ -38,9 +39,13 @@ func restore_run_state(state: RefCounted) -> bool:
     ):
         return false
     _boss_defeated = false
+    _defeated_combat_coords.clear()
     for receipt: Dictionary in state.get("battle_settlements"):
         if receipt.get("battle_id") == "boss" and receipt.get("outcome") == "victory":
             _boss_defeated = true
+        elif receipt.get("encounter_type") == "combat" and receipt.get("outcome") == "victory":
+            var coord: Array = receipt.get("encounter_coord")
+            _defeated_combat_coords.append(Vector2i(int(coord[0]), int(coord[1])))
     _player_coord = state.get("player_coord") as Vector2i
     _boss_coord = state.get("boss_coord") as Vector2i
     _move_count = int(state.get("move_count"))
@@ -63,6 +68,7 @@ func duplicate_model() -> WorldRuntimeModel:
     copy._input_blocked = _input_blocked
     copy._boss_encounter_open = _boss_encounter_open
     copy._boss_defeated = _boss_defeated
+    copy._defeated_combat_coords = _defeated_combat_coords.duplicate()
     return copy
 
 
@@ -114,6 +120,8 @@ func get_runtime_encounter_type(coord: Vector2i) -> String:
         return WorldEncounterType.SAFE if _boss_defeated else WorldEncounterType.BOSS
     if coord == _plan.get_boss_coord() and _boss_coord != coord:
         return WorldEncounterType.SAFE
+    if _defeated_combat_coords.has(coord):
+        return WorldEncounterType.SAFE
     return String(_cells[coord].get("encounter", WorldEncounterType.SAFE))
 
 
@@ -153,6 +161,7 @@ func reset() -> void:
     _player_coord = _plan.get_start_coord()
     _boss_coord = _plan.get_boss_coord()
     _move_count = 0
+    _defeated_combat_coords.clear()
     _sudden_death_active = false
     _input_blocked = false
     _boss_encounter_open = false

@@ -1,0 +1,111 @@
+[
+  {
+    "script": "Tests/WorldMap/test_cleared_battle_hex_revisit.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_3_reward_presentation.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_2_victory_settlement.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_2_defeat_ends_run.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_model.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_save_coordinator.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_4_world_debug_integration.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_world_production_launcher.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_2_battle_settlement_rules.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Battle/test_ac6_6_battle_preparation.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/UI/test_ac6_6_preparation_ui.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "args": [
+      "writer",
+      "combat"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "args": [
+      "reader",
+      "combat"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "args": [
+      "acknowledged-reader",
+      "combat"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "args": [
+      "writer",
+      "boss"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "args": [
+      "reader",
+      "boss"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_ac8_3_reward_restart.gd",
+    "args": [
+      "acknowledged-reader",
+      "boss"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

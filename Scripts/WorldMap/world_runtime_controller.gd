@@ -445,6 +445,9 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 		return
 	if has_active_battle():
 		return
+	var normalized_encounter := encounter_type.to_lower()
+	if _session_applied and _model.get_runtime_encounter_type(coord) != normalized_encounter:
+		return
 	_battle_generation += 1
 	_pending_battle_receipt = {}
 	_battle_settled = false
@@ -453,7 +456,6 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	if has_active_encounter():
 		_active_encounter.queue_free()
 		_active_encounter = null
-	var normalized_encounter := encounter_type.to_lower()
 	_active_battle = BATTLE_SCENE.instantiate() as BattleArena
 	get_node("BattleHost").add_child(_active_battle)
 	_active_battle.configure(coord, normalized_encounter)

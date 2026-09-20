@@ -1,0 +1,38 @@
+{
+  "runtime": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"verdict\": \"PASS\",\n  \"phase\": \"complete\",\n  \"scene\": \"res://Scenes/world_run_start.tscn\",\n  \"summary\": \"Scene started and no failing debug console entries were captured.\",\n  \"checks\": {\n    \"script_check\": {\n      \"status\": \"ok\",\n      \"result\": {\n        \"_editor_state\": {\n          \"game_running\": true,\n          \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n          \"recent_errors\": [\n            \"{\\\"backtrace_count\\\":1,\\\"code\\\":\\\"SkillEffectPlan requires valid targets and effect operations.\\\",\\\"error_type\\\":0,\\\"file\\\":\\\"core/variant/variant_utility.cpp\\\",\\\"function\\\":\\\"push_error\\\",\\\"line\\\":1023,\\\"message\\\":\\\"SkillEffectPlan requires valid targets and effect operations.\\\",\\\"severity\\\":\\\"error\\\",\\\"source\\\":\\\"runtime\\\",\\\"timestamp\\\":1789902643.85}\"\n          ]\n        },\n        \"errors\": [],\n        \"scope\": \"project\",\n        \"scripts_checked\": 218,\n        \"total\": 0\n      }\n    },\n    \"pre_clear_debug_console\": {\n      \"status\": \"ok\",\n      \"result\": {\n        \"_editor_state\": {\n          \"game_running\": true,\n          \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n          \"recent_errors\": []\n        },\n        \"capture\": {\n          \"runtime_errors\": true,\n          \"script_errors\": true,\n          \"script_errors_note\": \"\"\n        },\n        \"cleared\": true,\n        \"entries\": [\n          {\n            \"backtrace_count\": 1.0,\n            \"code\": \"SkillEffectPlan requires valid targets and effect operations.\",\n            \"error_type\": 0.0,\n            \"file\": \"core/variant/variant_utility.cpp\",\n            \"function\": \"push_error\",\n            \"index\": 0,\n            \"line\": 1023.0,\n            \"message\": \"SkillEffectPlan requires valid targets and effect operations.\",\n            \"severity\": \"error\",\n            \"source\": \"runtime\",\n            \"timestamp\": 1789902643.85\n          }\n        ],\n        \"runtime_errors_total\": 1,\n        \"script_errors_total\": 0,\n        \"total\": 1,\n        \"truncated\": false\n      }\n    },\n    \"launch\": {\n      \"status\": \"ok\",\n      \"result\": {\n        \"_editor_state\": {\n          \"game_running\": true,\n          \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n          \"recent_errors\": []\n        },\n        \"action\": \"play\",\n        \"runtime_attached\": true,\n        \"scene\": \"res://Scenes/world_run_start.tscn\",\n        \"success\": true,\n        \"waited_seconds\": 1.198\n      }\n    },\n    \"debug_console\": {\n      \"status\": \"ok\",\n      \"result\": {\n        \"_editor_state\": {\n          \"game_running\": true,\n          \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n          \"recent_errors\": []\n        },\n        \"capture\": {\n          \"runtime_errors\": true,\n          \"script_errors\": true,\n          \"script_errors_note\": \"\"\n        },\n        \"cleared\": false,\n        \"entries\": [],\n        \"runtime_errors_total\": 0,\n        \"script_errors_total\": 0,\n        \"total\": 0,\n        \"truncated\": false\n      }\n    }\n  },\n  \"notes\": []\n}"
+      }
+    ],
+    "isError": false
+  },
+  "revisit": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  },\n  \"error\": \"\",\n  \"result\": \"{ \\\"base\\\": \\\"combat\\\", \\\"effective\\\": \\\"safe\\\", \\\"overlay\\\": \\\"safe\\\", \\\"gold\\\": 250, \\\"battle\\\": false, \\\"failed\\\": false }\",\n  \"status\": \"OK\"\n}"
+      }
+    ],
+    "isError": false
+  },
+  "validation": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"target\": \"project\",\n  \"total_files_checked\": 218,\n  \"total_scenes_checked\": 21,\n  \"total_issues\": 38,\n  \"by_severity\": {\n    \"error\": 0,\n    \"warning\": 33,\n    \"info\": 5\n  },\n  \"files_checked\": 218,\n  \"project_files_discovered\": 218,\n  \"files_skipped\": [\n    {\n      \"path\": \"res://addons/godotiq\",\n      \"reason\": \"excluded_addon_dir\"\n    }\n  ]\n}"
+      }
+    ],
+    "isError": false
+  },
+  "parser": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"errors\": [],\n  \"scope\": \"project\",\n  \"scripts_checked\": 218,\n  \"total\": 0,\n  \"_editor_state\": {\n    \"game_running\": false,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  }\n}"
+      }
+    ],
+    "isError": false
+  }
+}
