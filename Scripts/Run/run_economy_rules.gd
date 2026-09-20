@@ -3,6 +3,7 @@ extends RefCounted
 
 const STARTING_GOLD: int = 100
 const GOLD_PER_DEFEATED_ENEMY: int = 50
+const RECRUITMENT_COST: int = 500
 
 static func victory_gold(outcome: BattleOutcome.Type, enemy_ids: Array[StringName]) -> int:
 	if outcome != BattleOutcome.Type.VICTORY:

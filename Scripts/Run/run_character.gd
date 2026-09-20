@@ -2,6 +2,7 @@ class_name RunCharacter
 extends RefCounted
 
 var character_id: StringName
+var class_id: StringName = &""
 var display_name: String
 var base_speed: int
 var max_hp: int

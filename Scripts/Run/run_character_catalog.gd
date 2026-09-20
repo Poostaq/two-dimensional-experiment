@@ -17,14 +17,22 @@ static func get_goblin_class_ids() -> Array[StringName]:
 	return GOBLIN_CLASS_IDS.duplicate()
 
 
+static func get_recruitable_class_ids(clan_id: StringName) -> Array[StringName]:
+	if clan_id == &"goblin":
+		return get_goblin_class_ids()
+	return []
+
+
 static func create_by_class_id(class_id: StringName) -> RunCharacter:
 	var wave_a_script := load("res://Scripts/Run/goblin_wave_a_catalog.gd") as Script
 	var character: RunCharacter = wave_a_script.create_by_class_id(class_id)
 	if is_instance_valid(character):
+		character.class_id = class_id
 		return character
 	var wave_b_script := load("res://Scripts/Run/goblin_wave_b_catalog.gd") as Script
 	character = wave_b_script.create_by_class_id(class_id)
 	if is_instance_valid(character):
+		character.class_id = class_id
 		return character
 	var commander_script := load("res://Scripts/Run/goblin_commander_catalog.gd") as Script
 	return commander_script.create_by_commander_id(class_id)
