@@ -1,0 +1,7 @@
+["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--path", ".", "--windowed", "--resolution", "1920x1080", "--script", "res://Tests/WorldMap/capture_ac8_4_world_debug.gd", "--", "--width=1920"]
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+D3D12 12_0 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3080
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS capture_ac8_4_world_debug width=1920 viewport=(1920, 1080) panel=[P: (1432.0, 82.0), S: (476.0, 986.0)]

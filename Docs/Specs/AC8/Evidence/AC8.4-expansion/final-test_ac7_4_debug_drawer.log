@@ -1,0 +1,6 @@
+["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", ".", "--quit-after", "1800", "--script", "res://Tests/Battle/test_ac7_4_debug_drawer.gd"]
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC7.4 debug drawer: PASS

@@ -1,0 +1,10 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World debug presenter tests: FAIL (1/1)
+ERROR: presenter exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _finish (res://Tests/UI/test_world_debug_presenter.gd:98)
+       [1] _run (res://Tests/UI/test_world_debug_presenter.gd:16)

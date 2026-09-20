@@ -1,0 +1,132 @@
+[
+  {
+    "script": "Tests/WorldMap/test_ac8_4_habitat_rules.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_4_town_ownership.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_4_town_ownership_reload.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_4_world_debug_integration.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/UI/test_world_debug_drawer.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/UI/test_world_map_hud.gd",
+    "exit": 1,
+    "pass": false
+  },
+  {
+    "script": "Tests/WorldMap/test_world_plan_codec_v1.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_hex_world_generator_v1.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_generator_v1_fixture_integrity.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_model.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_scene.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_production_scene.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_camera_controller.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_save_coordinator.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_save_codec_v1.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_run_save_codec_v2.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_run_save_codec_v3.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_run_save_codec_v4.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_run_save_codec_v5.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_world_run_start_service.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_world_single_slot_repository.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Run/test_world_production_launcher.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_3_reward_presentation.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_2_defeat_ends_run.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_1_gold_runtime.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Battle/test_ac7_4_debug_drawer.gd",
+    "exit": 0,
+    "pass": true
+  }
+]

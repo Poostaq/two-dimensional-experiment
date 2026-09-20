@@ -1,0 +1,12 @@
+[
+  {
+    "script": "Tests/UI/test_world_debug_drawer.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/UI/test_world_debug_presenter.gd",
+    "exit": 0,
+    "pass": true
+  }
+]

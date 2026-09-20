@@ -1,0 +1,179 @@
+{
+  "date": "2026-09-20",
+  "implementation_commit": "cf25a14",
+  "validation": {
+    "target": "project",
+    "total_files_checked": 217,
+    "total_scenes_checked": 21,
+    "total_issues": 38,
+    "by_severity": {
+      "error": 0,
+      "warning": 33,
+      "info": 5
+    },
+    "files_checked": 217,
+    "project_files_discovered": 217,
+    "files_skipped": [
+      {
+        "path": "res://addons/godotiq",
+        "reason": "excluded_addon_dir"
+      }
+    ]
+  },
+  "parser": {
+    "errors": [],
+    "scope": "project",
+    "scripts_checked": 217,
+    "total": 0,
+    "_editor_state": {
+      "game_running": false,
+      "open_scene": "res://Scenes/world_map_hud.tscn",
+      "recent_errors": []
+    }
+  },
+  "signals": {
+    "total_signals_defined": 3,
+    "total_emissions": 10,
+    "total_connections": 154,
+    "scope": "file:res://Scripts/WorldMap/world_runtime_controller.gd",
+    "find": "orphans",
+    "orphans": [],
+    "missing": [],
+    "files_checked": 217,
+    "project_files_discovered": 217,
+    "files_skipped": [
+      {
+        "path": "res://addons/godotiq",
+        "reason": "excluded_addon_dir"
+      }
+    ]
+  },
+  "runtime": {
+    "verdict": "PASS",
+    "phase": "complete",
+    "scene": "res://Scenes/world_run_start.tscn",
+    "summary": "Scene started and no failing debug console entries were captured.",
+    "checks": {
+      "script_check": {
+        "status": "ok",
+        "result": {
+          "_editor_state": {
+            "game_running": true,
+            "open_scene": "res://Scenes/world_run_start.tscn",
+            "recent_errors": []
+          },
+          "errors": [],
+          "scope": "project",
+          "scripts_checked": 217,
+          "total": 0
+        }
+      },
+      "pre_clear_debug_console": {
+        "status": "ok",
+        "result": {
+          "_editor_state": {
+            "game_running": true,
+            "open_scene": "res://Scenes/world_run_start.tscn",
+            "recent_errors": []
+          },
+          "capture": {
+            "runtime_errors": true,
+            "script_errors": true,
+            "script_errors_note": ""
+          },
+          "cleared": true,
+          "entries": [],
+          "runtime_errors_total": 0,
+          "script_errors_total": 0,
+          "total": 0,
+          "truncated": false
+        }
+      },
+      "launch": {
+        "status": "ok",
+        "result": {
+          "_editor_state": {
+            "game_running": true,
+            "open_scene": "res://Scenes/world_run_start.tscn",
+            "recent_errors": []
+          },
+          "action": "play",
+          "runtime_attached": true,
+          "scene": "res://Scenes/world_run_start.tscn",
+          "success": true,
+          "waited_seconds": 1.124
+        }
+      },
+      "debug_console": {
+        "status": "ok",
+        "result": {
+          "_editor_state": {
+            "game_running": true,
+            "open_scene": "res://Scenes/world_run_start.tscn",
+            "recent_errors": []
+          },
+          "capture": {
+            "runtime_errors": true,
+            "script_errors": true,
+            "script_errors_note": ""
+          },
+          "cleared": false,
+          "entries": [],
+          "runtime_errors_total": 0,
+          "script_errors_total": 0,
+          "total": 0,
+          "truncated": false
+        }
+      }
+    },
+    "notes": []
+  },
+  "pointer_open": {
+    "_editor_state": {
+      "game_running": true,
+      "open_scene": "res://Scenes/world_run_start.tscn",
+      "recent_errors": []
+    },
+    "error": "",
+    "result": "{ \"coord\": (-8, 0), \"habitat\": { \"ok\": true, \"clan_id\": &\"goblin\", \"display_name\": \"Goblin\", \"source\": \"Legacy world v1 rule\", \"habitat_id\": &\"\", \"error\": &\"\" }, \"drawer_open\": true, \"unchanged\": true, \"destinations\": [(-7, 0), (-7, -1), (-8, 1)] }",
+    "status": "OK"
+  },
+  "committed_move": {
+    "_editor_state": {
+      "game_running": true,
+      "open_scene": "res://Scenes/world_run_start.tscn",
+      "recent_errors": []
+    },
+    "error": "",
+    "result": "{ \"coord\": (-7, 0), \"habitat\": \"Goblin\", \"encounter\": true, \"drawer_open\": false, \"moves\": 1 }",
+    "status": "OK"
+  },
+  "restart_continue": {
+    "_editor_state": {
+      "game_running": true,
+      "open_scene": "res://Scenes/world_run_start.tscn",
+      "recent_errors": []
+    },
+    "error": "",
+    "result": "{ \"coord\": (-7, 0), \"habitat\": \"Goblin\", \"drawer_open\": false, \"moves\": 1, \"session_applied\": true }",
+    "status": "OK"
+  },
+  "console": {
+    "capture": {
+      "runtime_errors": true,
+      "script_errors": true,
+      "script_errors_note": ""
+    },
+    "cleared": false,
+    "entries": [],
+    "runtime_errors_total": 0,
+    "script_errors_total": 0,
+    "total": 0,
+    "truncated": false,
+    "_editor_state": {
+      "game_running": true,
+      "open_scene": "res://Scenes/world_run_start.tscn",
+      "recent_errors": []
+    }
+  }
+}

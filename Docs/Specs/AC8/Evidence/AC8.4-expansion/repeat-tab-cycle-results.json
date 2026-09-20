@@ -1,0 +1,7 @@
+[
+  {
+    "script": "Tests/UI/test_world_debug_drawer.gd",
+    "exit": 1,
+    "pass": false
+  }
+]

@@ -1,0 +1,6 @@
+["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", ".", "--quit-after", "1800", "--script", "res://Tests/WorldMap/test_world_plan_codec_v1.gd"]
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_plan_codec_v1
