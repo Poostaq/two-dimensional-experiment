@@ -59,6 +59,8 @@ func _run() -> void:
 			await _commit_revalidation_case(replace, change)
 		await _repeated_failure_case(replace, false)
 		await _repeated_failure_case(replace, true)
+	for slot: int in 6:
+		await _last_empty_slot_case(slot)
 	print("AC8.7 town integration checks: %d; failures: %d" % [checks, failures])
 	if failures == 0:
 		print("PASS test_ac8_town_recruitment")
@@ -598,6 +600,7 @@ func _placement_matrix_case(replace: bool, slot: int, gold: int) -> void:
 		var expected: Dictionary = _purchase_expected(before, slot)
 		_expect(world.get_durable_run_state().to_dictionary() == expected, "AC8.7 all slots preserve every unrelated field and wounded survivor HP")
 		_expect(repo.writes.size() == 1 and repo.successful_writes == 1, "AC8.7 duplicate confirmation publishes once")
+		_expect_live_formation(world, expected)
 		var current: Array[RunCharacter] = (world.get("_roster") as RunRoster).get_slot_snapshot()
 		for index: int in 6:
 			if index != slot:
@@ -682,6 +685,9 @@ func _repeated_failure_case(replace: bool, discard: bool) -> void:
 	repo.failures_remaining = 2
 	_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
 	_expect(world.is_autosave_blocked(), "AC8.7 first failure blocks")
+	_expect(world.get_durable_run_state().to_dictionary() == before and world.get("_roster") == roster and roster.get_slot_snapshot() == identities and gold_label.text == gold_text and repo.checkpoint == checkpoint, "AC8.7 first failure preserves complete state live identities HUD and checkpoint")
+	_expect(repo.writes.size() == 1 and repo.successful_writes == 0, "AC8.7 first failure attempts once without publication")
+	_expect_checkpoint(repo.writes[0], _purchase_expected(before, 5), "AC8.7 first attempted candidate contains exact purchase state")
 	_expect(not world.retry_autosave().ok and world.is_autosave_blocked(), "AC8.7 second failure stays blocked")
 	_expect(repo.writes.size() == 2 and repo.writes[0] == repo.writes[1], "AC8.7 repeated failure retries exact bytes")
 	_expect(repo.checkpoint == checkpoint and repo.successful_writes == 0, "AC8.7 attempted writes never replace successful checkpoint")
@@ -698,7 +704,8 @@ func _repeated_failure_case(replace: bool, discard: bool) -> void:
 	_expect(repo.writes.size() == 2, "AC8.7 blocked actions do not write")
 	if discard:
 		_expect(world.discard_pending_autosave(), "AC8.7 discard succeeds after repeated failure")
-		_expect(repo.checkpoint == checkpoint and world.get_durable_run_state().to_dictionary() == before, "AC8.7 discard retains original checkpoint and state")
+		_expect(repo.checkpoint == checkpoint and world.get_durable_run_state().to_dictionary() == before and world.get("_roster") == roster and roster.get_slot_snapshot() == identities and gold_label.text == gold_text, "AC8.7 discard retains original checkpoint complete state live identities and HUD")
+		_expect_live_formation(world, before)
 		_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
 		_expect(repo.writes.size() == 2, "AC8.7 discard invalidates abandoned callback")
 		_expect(world.open_town_recruitment() and world.request_town_recruitment(&"scrapbroker").ok, "AC8.7 discard allows fresh purchase")
@@ -709,6 +716,57 @@ func _repeated_failure_case(replace: bool, discard: bool) -> void:
 		_expect(repo.writes[2] == repo.writes[0], "AC8.7 successful retry exact candidate bytes")
 	_expect(repo.writes.size() == 3 and repo.successful_writes == 1, "AC8.7 only one checkpoint publication")
 	_expect(world.get_durable_run_state().to_dictionary() == _purchase_expected(before, 5) and gold_label.text == "250g", "AC8.7 success charges once and updates HUD")
+	_expect_live_formation(world, _purchase_expected(before, 5))
+	_expect_checkpoint(repo.checkpoint, _purchase_expected(before, 5), "AC8.7 successful retry or fresh purchase checkpoint exact")
+	var current: Array[RunCharacter] = (world.get("_roster") as RunRoster).get_slot_snapshot()
+	for index: int in 5:
+		_expect(current[index] == identities[index], "AC8.7 retry or fresh purchase preserves live survivor identities")
 	_expect(not world.retry_autosave().ok and repo.writes.size() == 3, "AC8.7 duplicate retry no-op")
+	world.free()
+	await process_frame
+
+func _expect_live_formation(world: WorldRuntimeController, expected: Dictionary) -> void:
+	var roster: RunRoster = world.get("_roster")
+	var slots: Array[RunCharacter] = roster.get_slot_snapshot()
+	var ids: Array[String] = []
+	var occupied: int = 0
+	for character: RunCharacter in slots:
+		ids.append(String(character.character_id) if is_instance_valid(character) else "")
+		if is_instance_valid(character):
+			occupied += 1
+	_expect(slots.size() == 6 and ids == expected.formation, "AC8.7 complete live slot IDs equal expected formation including recruit")
+	_expect(roster.size() == occupied and occupied == 6 - expected.formation.count(""), "AC8.7 live roster count matches occupied expected slots")
+
+func _expect_checkpoint(bytes: PackedByteArray, expected: Dictionary, message: String) -> void:
+	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(bytes)
+	_expect(decoded.ok and decoded.value.run_state.to_dictionary() == expected, message)
+
+func _last_empty_slot_case(slot: int) -> void:
+	var repo := Repository.new()
+	var session: Dictionary = _matrix_session(true, slot, 750)
+	var data: Dictionary = session.run_state.to_dictionary()
+	data.character_hp.erase(data.formation[slot])
+	data.formation[slot] = ""
+	var decoded: Dictionary = load("res://Scripts/Run/world_run_state.gd").from_dictionary(data, session.plan)
+	_expect(decoded.ok, "AC8.7 five-member wounded fixture valid")
+	session.run_state = decoded.value
+	var world := await _open(session, repo)
+	var before: Dictionary = world.get_durable_run_state().to_dictionary()
+	var roster: RunRoster = world.get("_roster")
+	var identities: Array[RunCharacter] = roster.get_slot_snapshot()
+	_expect(roster.size() == 5, "AC8.7 final empty-slot fixture has five members")
+	_expect(world.open_town_recruitment() and world.request_town_recruitment(&"scrapbroker").ok, "AC8.7 five-member purchase opens placement")
+	var party: PartyManagement = world.get("_active_party")
+	party.request_placement(slot, &"scrapbroker")
+	party.placement_requested.emit(slot, &"scrapbroker")
+	var expected: Dictionary = _purchase_expected(before, slot)
+	_expect(world.get_durable_run_state().to_dictionary() == expected, "AC8.7 five-to-six purchase preserves exact wounded state")
+	_expect_live_formation(world, expected)
+	_expect((world.get("_roster") as RunRoster).is_full() and repo.writes.size() == 1 and repo.successful_writes == 1, "AC8.7 fifth-to-sixth addition fills roster once")
+	var current: Array[RunCharacter] = (world.get("_roster") as RunRoster).get_slot_snapshot()
+	for index: int in 6:
+		if index != slot:
+			_expect(current[index] == identities[index], "AC8.7 boundary preserves survivor identities")
+	_expect_checkpoint(repo.checkpoint, expected, "AC8.7 boundary checkpoint exact")
 	world.free()
 	await process_frame
