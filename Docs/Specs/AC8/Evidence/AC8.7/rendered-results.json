@@ -1,0 +1,34 @@
+[
+  {
+    "width": 1280,
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/capture_ac8_7_placement.gd",
+      "--",
+      "--width=1280"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "width": 1920,
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/capture_ac8_7_placement.gd",
+      "--",
+      "--width=1920"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

@@ -1,0 +1,306 @@
+[
+  {
+    "case": "add",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "add",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "replace",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "replace",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "failed_add",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=failed_add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "failed_add",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=failed_add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "failed_replace",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=failed_replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "failed_replace",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=failed_replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "retry_add",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=retry_add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "retry_add",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=retry_add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "retry_replace",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=retry_replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "retry_replace",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=retry_replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "discard_add",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=discard_add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "discard_add",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=discard_add"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "discard_replace",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=discard_replace"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "discard_replace",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_7_placement_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=discard_replace"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

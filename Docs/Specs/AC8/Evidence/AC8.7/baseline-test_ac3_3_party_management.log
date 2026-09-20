@@ -1,0 +1,6 @@
+{"test": "UI/test_ac3_3_party_management", "command": ["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", "D:\\Projects\\two-dimension-exploration", "--quit-after", "1800", "--script", "res://Tests/UI/test_ac3_3_party_management.gd"], "exit": 0, "pass": true}
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC3.3 party management tests: PASS (31/31)

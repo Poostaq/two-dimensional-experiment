@@ -1,0 +1,38 @@
+{
+  "validation": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"target\": \"project\",\n  \"total_files_checked\": 231,\n  \"total_scenes_checked\": 22,\n  \"total_issues\": 41,\n  \"by_severity\": {\n    \"error\": 0,\n    \"warning\": 36,\n    \"info\": 5\n  },\n  \"files_checked\": 231,\n  \"project_files_discovered\": 231,\n  \"files_skipped\": [\n    {\n      \"path\": \"res://addons/godotiq\",\n      \"reason\": \"excluded_addon_dir\"\n    }\n  ]\n}"
+      }
+    ],
+    "isError": false
+  },
+  "parser": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"errors\": [],\n  \"scope\": \"project\",\n  \"scripts_checked\": 231,\n  \"total\": 0,\n  \"_editor_state\": {\n    \"game_running\": false,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  }\n}"
+      }
+    ],
+    "isError": false
+  },
+  "controller_signals": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"total_signals_defined\": 3,\n  \"total_emissions\": 12,\n  \"total_connections\": 179,\n  \"scope\": \"file:Scripts/WorldMap/world_runtime_controller.gd\",\n  \"find\": \"orphans\",\n  \"orphans\": [],\n  \"missing\": [],\n  \"files_checked\": 231,\n  \"project_files_discovered\": 231,\n  \"files_skipped\": [\n    {\n      \"path\": \"res://addons/godotiq\",\n      \"reason\": \"excluded_addon_dir\"\n    }\n  ]\n}"
+      }
+    ],
+    "isError": false
+  },
+  "party_signals": {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"total_signals_defined\": 6,\n  \"total_emissions\": 6,\n  \"total_connections\": 179,\n  \"scope\": \"file:Scripts/Party/party_management.gd\",\n  \"find\": \"orphans\",\n  \"orphans\": [],\n  \"missing\": [\n    {\n      \"name\": \"pressed\",\n      \"emitted_in\": \"res://Scripts/Party/party_management.gd\",\n      \"note\": \"Emitted but no signal definition found in the project\"\n    }\n  ],\n  \"files_checked\": 231,\n  \"project_files_discovered\": 231,\n  \"files_skipped\": [\n    {\n      \"path\": \"res://addons/godotiq\",\n      \"reason\": \"excluded_addon_dir\"\n    }\n  ]\n}"
+      }
+    ],
+    "isError": false
+  }
+}
