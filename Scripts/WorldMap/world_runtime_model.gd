@@ -6,6 +6,8 @@ const SUDDEN_DEATH_THRESHOLD := 30
 var _snapshot_script: GDScript = load("res://Scripts/WorldMap/world_runtime_snapshot.gd")
 var _result_script: GDScript = load("res://Scripts/WorldMap/world_move_result.gd")
 
+var _town_ownership_rules: GDScript = load("res://Scripts/WorldMap/town_ownership_rules.gd")
+
 var _plan: WorldPlan
 var _cells: Dictionary = {}
 var _player_coord: Vector2i
@@ -94,6 +96,10 @@ func get_valid_destinations() -> Array[Vector2i]:
     if not is_instance_valid(_plan) or _input_blocked or _boss_encounter_open:
         return []
     return HexWorldGeometry.get_neighbors(_player_coord)
+
+
+func get_town_ownership(coord: Vector2i) -> Dictionary:
+    return _town_ownership_rules.resolve(_plan, coord)
 
 
 func get_runtime_encounter_type(coord: Vector2i) -> String:
