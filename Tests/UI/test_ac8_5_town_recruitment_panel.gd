@@ -102,7 +102,11 @@ func _run() -> void:
 	_expect(probe.events > probe_start, "hidden panel releases world keyboard input")
 	panel.show()
 	var empty: Array[StringName] = []
+	var obsolete: Button = offers.get_child(0)
+	var request_count: int = requests.size()
 	panel.call("configure", &"unknown", 0, empty)
+	obsolete.pressed.emit()
+	_expect(requests.size() == request_count, "obsolete detached button cannot emit recruitment intent")
 	await process_frame
 	_expect(offers.get_child_count() == 0, "refresh removes stale offers")
 	_expect((panel.get_node("%EmptyLabel") as Label).text == "No eligible recruits available.", "exact empty message")

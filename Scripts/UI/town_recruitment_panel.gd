@@ -96,7 +96,7 @@ func _step_focus(direction: int) -> void:
 	_focus_controls[posmod(current + direction, _focus_controls.size())].grab_focus()
 
 func _request_recruit(class_id: StringName, offer: Button) -> void:
-	if is_visible_in_tree() and is_instance_valid(offer) and not offer.disabled:
+	if is_visible_in_tree() and is_instance_valid(offer) and offer.get_parent() == _offers and offer.name == String(class_id) and not offer.disabled:
 		recruit_requested.emit(class_id)
 
 func _request_close() -> void:

@@ -101,6 +101,10 @@ func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
 	_expect(battle_matches, "battle creation passes durable health into RunRoster")
 
 	players[0].current_hp = 0
+	var roster: RunRoster = world.get("_roster")
+	_expect(roster.has_character(players[0].unit_id), "AC8.6 passed-out unit remains a roster member")
+	_expect(not TownRecruitmentRules.eligible_class_ids(&"goblin", roster).has(&"scrapshield_bruiser"), "AC8.6 passed-out starter excludes its class")
+	_expect(not world.get_town_recruitment_context().ok, "active battle cannot browse recruitment")
 	players[1].current_hp = max(1, players[1].max_hp - 3)
 	var expected_recovery := expected_initial.duplicate()
 	expected_recovery[players[0].unit_id] = PostBattleRecoveryRules.calculate_next_hp(
@@ -129,6 +133,7 @@ func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
 		var acknowledgement: Dictionary = reloaded.acknowledge_gold_reward(reloaded.get_durable_run_state().pending_reward_battle_id)
 		_expect(acknowledgement.get("ok", false), "reward acknowledgement allows next battle")
 		_expect(reloaded.get_durable_run_state().get_character_hp_snapshot() == expected_recovery, "acknowledgement preserves recovered health")
+		_expect(not TownRecruitmentRules.eligible_class_ids(&"goblin", reloaded.get("_roster")).has(&"scrapshield_bruiser"), "AC8.6 recovered/reloaded member still excludes class")
 		reloaded.call("_on_battle_requested", reloaded.get_durable_run_state().get("player_coord"), WorldEncounterType.COMBAT)
 		await process_frame
 		var next_arena := _get_arena(reloaded)
@@ -138,6 +143,25 @@ func _verify_legacy_initialization_and_victory(plan: WorldPlan) -> void:
 				next_matches = next_matches and unit.current_hp == expected_recovery.get(unit.unit_id, -1)
 		_expect(next_matches, "next battle after save/reload uses committed recovery values")
 		reloaded.free()
+
+	# Resume the recovered formation at a town to exercise the real offer service.
+	var town_data: Dictionary = persisted.to_dictionary()
+	town_data["pending_reward_battle_id"] = ""
+	for coord: Vector2i in plan.get_cells():
+		if plan.get_cells()[coord].town_index >= 0 and coord != plan.get_boss_coord():
+			town_data["player_coord"] = [coord.x, coord.y]
+			break
+	var town_state: Dictionary = RUN_STATE_SCRIPT.from_dictionary(town_data, plan)
+	_expect(town_state.ok, "recovered town fixture valid")
+	var town: WorldRuntimeController = await _create_world(plan, FakeRepository.new(), town_state.value)
+	_expect(town.open_town_recruitment(), "recovered roster can browse actual town")
+	_expect(not town.get_town_recruitment_context().class_ids.has(&"scrapshield_bruiser"), "recovered starter absent from town offers")
+	town.close_town_recruitment()
+	var town_bytes: PackedByteArray = load("res://Scripts/Save/world_run_save_codec_v5.gd").encode(plan, "ac3-5-recovery-integration", town.get_durable_run_state())
+	var continued: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(town_bytes)
+	_expect(continued.ok and town.apply_session(continued.value, FakeRepository.new()), "recovered town Continue")
+	_expect(not town.get_town_recruitment_context().class_ids.has(&"scrapshield_bruiser"), "Continue excludes recovered class")
+	town.free()
 
 
 func _verify_non_victory_and_autosave_recovery(plan: WorldPlan) -> void:

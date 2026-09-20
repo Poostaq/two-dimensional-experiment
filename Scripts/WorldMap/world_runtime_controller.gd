@@ -54,6 +54,7 @@ var _town_panel: Control
 var _town_party: PartyManagement
 var _town_selection: Dictionary = {}
 var _town_generation: int = 0
+var _dismissal_pending: bool = false
 
 var _model: WorldRuntimeModel = WorldRuntimeModel.new()
 var _runtime_plan: WorldPlan
@@ -102,6 +103,9 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 		return false
 	_reset_world_debug()
 	_clear_town_service()
+	if has_active_party_management():
+		_close_recruitment_party()
+	_dismissal_pending = false
 	_session_generation += 1
 	_session_applied = false
 	if (
@@ -215,7 +219,7 @@ func retry_autosave() -> Dictionary:
 	if bool(result.get("ok", false)):
 		if not move_was_pending and is_instance_valid(_durable_run_state):
 			_model.restore_run_state(_durable_run_state)
-			if has_active_battle() or has_pending_gold_reward() or has_active_town_recruitment():
+			if has_active_battle() or has_pending_gold_reward() or has_active_town_recruitment() or has_active_party_management():
 				_model.set_surface_blocked(true)
 			_apply_snapshot(_model.get_snapshot())
 		autosave_recovered.emit()
@@ -232,6 +236,9 @@ func discard_pending_autosave() -> bool:
 	if not is_instance_valid(restored) or not _model.restore_run_state(restored):
 		return false
 	_clear_town_service()
+	if _dismissal_pending:
+		_close_recruitment_party()
+		_dismissal_pending = false
 	_durable_run_state = restored
 	_pending_ack_id = ""
 	_model.set_surface_blocked(has_active_battle() or has_pending_gold_reward())
@@ -320,6 +327,7 @@ func open_party_management() -> void:
 	_active_party.configure_normal(_roster.get_slot_snapshot())
 	_active_party.move_requested.connect(_on_party_move_requested)
 	_active_party.close_requested.connect(_on_party_close_requested)
+	_active_party.dismissal_requested.connect(_on_party_dismissal_requested.bind(_session_generation, _active_party))
 	_apply_snapshot(_model.get_snapshot())
 
 
@@ -1590,3 +1598,49 @@ func _clear_town_service() -> void:
 	if has_active_town_recruitment():
 		_town_panel.queue_free()
 	_town_panel = null
+
+
+# D1 user-requested extension: minimum one member, no refund/charge, save before publication.
+func request_party_dismissal(slot_index: int, expected_character_id: StringName) -> Dictionary:
+	if (not _session_applied or _integration_failed or _terminal_phase != TerminalPhase.PLAYING
+		or not is_instance_valid(_durable_run_state) or not _durable_run_state.is_playable()
+		or not is_instance_valid(_save_coordinator) or not has_active_party_management()
+		or not _active_party.is_normal_mode()
+		or has_active_battle() or has_active_encounter() or has_pending_gold_reward()
+		or has_active_town_recruitment() or not _town_selection.is_empty() or is_autosave_blocked()):
+		return {"ok": false, "error": &"service_blocked"}
+	var candidate := RunRoster.new(_roster.get_slot_snapshot())
+	var removed: int = candidate.try_remove_at(slot_index, expected_character_id)
+	var errors: Array[StringName] = [&"", &"invalid_slot", &"empty_target", &"stale_target", &"last_member"]
+	if removed != RunRoster.RemoveResult.REMOVED:
+		return {"ok": false, "error": errors[removed]}
+	var state: RefCounted = _build_candidate_state(_model, false, candidate)
+	if not is_instance_valid(state) or not state.is_valid(_runtime_plan):
+		return {"ok": false, "error": &"invalid_candidate"}
+	_dismissal_pending = true
+	var result: Dictionary = _save_coordinator.commit_candidate(state,
+		_publish_party_dismissal.bind(candidate, _session_generation, _active_party), "party_dismissal")
+	if not result.ok:
+		_model.set_surface_blocked(true)
+		_apply_snapshot(_model.get_snapshot())
+		autosave_failed.emit(result.get("error") as RefCounted)
+		return {"ok": false, "error": &"save_failed"}
+	return {"ok": true, "error": &""}
+
+
+func _publish_party_dismissal(state: RefCounted, candidate: RunRoster, session: int, source: PartyManagement) -> void:
+	if not _dismissal_pending or session != _session_generation or not is_instance_valid(source) or source != _active_party:
+		return
+	_dismissal_pending = false
+	_roster = candidate
+	_durable_run_state = state
+	source.clear_dismissal_confirmation()
+	source.refresh_slots(_roster.get_slot_snapshot())
+	_model.set_surface_blocked(true)
+	_queue_debug_refresh()
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _on_party_dismissal_requested(slot_index: int, expected_character_id: StringName, session: int, source: PartyManagement) -> void:
+	if session == _session_generation and is_instance_valid(source) and source == _active_party:
+		request_party_dismissal(slot_index, expected_character_id)
