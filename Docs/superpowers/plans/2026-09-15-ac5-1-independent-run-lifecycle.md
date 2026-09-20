@@ -1,5 +1,7 @@
 # AC5.1 Independent Run Lifecycle Implementation Plan
 
+> **Status: TO CONSIDER (2026-09-18).** Execution is on hold because both meta-progression and roguelike structure need to be rethought. Revisit the design and this plan before resuming any tasks below. See [TC-007](../../TO_CONSIDER.md#tc-007--how-should-run-independence-fit-the-revised-roguelike-structure).
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` and execute this plan inline in the active session, task-by-task, with review checkpoints. Do not use subagent-driven execution or delegate implementation tasks. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Certify and, only where evidence requires it, complete the existing single-slot lifecycle so Continue restores the last valid durable checkpoint and confirmed Start New Run atomically replaces it with an independent seeded run.

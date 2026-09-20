@@ -1,5 +1,7 @@
 # AC5.1 Independent Run Lifecycle Design
 
+> **Status: TO CONSIDER (2026-09-18).** On hold because both meta-progression and roguelike structure need to be rethought. The design below is retained for reference and must be revisited before implementation resumes. See [TC-007](../../TO_CONSIDER.md#tc-007--how-should-run-independence-fit-the-revised-roguelike-structure).
+
 ## Goal
 
 Integrate the existing single-slot run lifecycle so Continue Run restores the last durable session, while Start New Run requires confirmation before atomically replacing an existing session with a fresh seeded run whose roster and mutable run state are independent.

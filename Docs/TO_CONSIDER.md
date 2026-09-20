@@ -59,6 +59,20 @@ This is the living register for deliberately deferred product decisions. A quest
   - Can unlocks be revoked, reset, or migrated when the content model changes?
   - What presentation surface communicates unlocked content to the player between runs?
 
+### TC-007 — How should run independence fit the revised roguelike structure?
+
+- **Raised from:** All of AC5 (AC5.1–AC5.3), moved to **TO CONSIDER** on 2026-09-18.
+- **Reason:** Both meta-progression and roguelike structure need to be rethought.
+- **Current rule:** All of AC5 is deferred from active implementation and acceptance verification: run independence (AC5.1), cross-run persistence (AC5.2), and reproducible Run IDs (AC5.3). Existing behavior remains unchanged; the independent-run design and implementation plan are on hold pending this decision.
+- **Decision needed by:** Resuming any AC5 implementation or finalizing the relationship between run state and persistent progression.
+- **Questions to resolve:**
+  - What defines a run, and how should starting, continuing, finishing, or abandoning one work?
+  - Which roster and progression state resets or carries over between runs?
+  - How should seeded run independence fit the meta-progression model in TC-006?
+  - Which characters, items, and event-driven progression should persist across runs?
+  - Should Run IDs guarantee reproducible battles, and what choices and state must be included in that guarantee?
+- **Deferred documents:** [Design](superpowers/specs/2026-09-15-ac5-1-independent-run-lifecycle-design.md) and [implementation plan](superpowers/plans/2026-09-15-ac5-1-independent-run-lifecycle.md). Revisit both after the product decisions are made.
+
 ## Resolved questions
 
 Move an entry here when the project lead makes a durable decision. Record the decision date, affected acceptance criteria, and the specification or implementation link that made it authoritative.
