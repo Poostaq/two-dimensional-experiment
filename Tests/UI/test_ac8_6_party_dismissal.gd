@@ -1,6 +1,19 @@
 class_name Ac8_6PartyDismissalTests
 extends SceneTree
 
+class MapInputProbe:
+	extends Node
+	var keys: int = 0
+	var wheels: int = 0
+
+	func _unhandled_key_input(_event: InputEvent) -> void:
+		keys += 1
+
+	func _input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			wheels += 1
+
+
 var _failures: Array[String] = []
 var _events: Array[Array] = []
 var _closed: int = 0
@@ -9,6 +22,8 @@ func _init() -> void:
 	call_deferred("_run")
 
 func _run() -> void:
+	var probe: MapInputProbe = MapInputProbe.new()
+	root.add_child(probe)
 	var party: Control = (load("res://Scenes/party_management.tscn") as PackedScene).instantiate()
 	root.add_child(party)
 	await process_frame
@@ -33,6 +48,26 @@ func _run() -> void:
 	_expect(button.disabled and party.call("is_normal_mode"), "no selection is disabled in normal mode")
 	party.call("select_character", 0, first)
 	_expect(not button.disabled, "selected member can be dismissed")
+	var right: InputEventKey = InputEventKey.new()
+	right.keycode = KEY_RIGHT
+	right.pressed = true
+	root.push_input(right)
+	var wheel: InputEventMouseButton = InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	wheel.position = Vector2(12, 12)
+	root.push_input(wheel)
+	_expect(probe.keys == 0, "party blocks map unhandled key stage")
+	_expect(probe.wheels == 0, "party blocks map wheel input stage")
+	button.grab_focus()
+	var accept: InputEventKey = InputEventKey.new()
+	accept.keycode = KEY_ENTER
+	accept.pressed = true
+	root.push_input(accept)
+	accept.pressed = false
+	root.push_input(accept)
+	_expect(dialog.visible, "keyboard still activates focused Dismiss")
+	party.call("clear_dismissal_confirmation")
 	button.pressed.emit()
 	_expect(dialog.visible and dialog.dialog_text == "Dismiss %s? No gold is refunded." % slots[0].display_name, "button opens exact confirmation")
 	dialog.canceled.emit()
@@ -109,6 +144,7 @@ func _run() -> void:
 	party.call("request_dismissal", 1, first)
 	_expect(button.disabled and button.tooltip_text == "Keep at least one party member." and not dialog.visible, "last-member guard explains restriction")
 	party.queue_free()
+	probe.queue_free()
 	await process_frame
 	_finish()
 

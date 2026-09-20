@@ -333,6 +333,45 @@ func _occupied_count() -> int:
 	return count
 
 
+func _input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	if event is InputEventMouseButton and event.button_index in [
+		MOUSE_BUTTON_WHEEL_UP, MOUSE_BUTTON_WHEEL_DOWN,
+		MOUSE_BUTTON_WHEEL_LEFT, MOUSE_BUTTON_WHEEL_RIGHT,
+	]:
+		get_viewport().set_input_as_handled()
+		return
+	if _dismiss_confirmation.visible:
+		return
+	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		get_viewport().set_input_as_handled()
+		if event.is_action_pressed("ui_cancel"):
+			if is_normal_mode():
+				request_close()
+			else:
+				request_placement_cancel()
+		elif event.is_action_pressed("ui_focus_next") or event.is_action_pressed("ui_down") or event.is_action_pressed("ui_right"):
+			_step_focus(1)
+		elif event.is_action_pressed("ui_focus_prev") or event.is_action_pressed("ui_up") or event.is_action_pressed("ui_left"):
+			_step_focus(-1)
+		elif event.is_action_pressed("ui_accept") and not event.is_echo():
+			var focused: Button = get_viewport().gui_get_focus_owner() as Button
+			if is_instance_valid(focused) and is_ancestor_of(focused) and not focused.disabled:
+				focused.pressed.emit()
+
+
+func _step_focus(direction: int) -> void:
+	var controls: Array[Button] = []
+	for button: Button in [_return_button, _dismiss_button, _cancel_button]:
+		if button.is_visible_in_tree() and not button.disabled:
+			controls.append(button)
+	if controls.is_empty():
+		return
+	var current: int = controls.find(get_viewport().gui_get_focus_owner())
+	controls[posmod(current + direction, controls.size())].grab_focus()
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if not is_visible_in_tree():
 		return
