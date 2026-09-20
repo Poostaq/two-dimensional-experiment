@@ -8,6 +8,7 @@ signal replacement_requested(
 	expected_character_id: StringName,
 	expected_recruit_id: StringName
 )
+signal dismissal_requested(slot_index: int, expected_character_id: StringName)
 signal close_requested
 signal placement_cancelled
 
@@ -30,6 +31,13 @@ const SLOT_COUNT := 6
 @onready var _return_button: Button = %ReturnToMapButton
 @onready var _cancel_button: Button = %CancelPlacementButton
 
+@onready var _dismiss_button: Button = %DismissButton
+@onready var _dismiss_explanation: Label = %DismissExplanation
+@onready var _dismiss_confirmation: ConfirmationDialog = %DismissConfirmation
+
+var _dismiss_slot: int = -1
+var _dismiss_character_id: StringName = &""
+
 var _mode: Mode = Mode.NORMAL
 var _slots: Array[RunCharacter] = []
 var _slot_views: Array[PartySlot] = []
@@ -47,6 +55,12 @@ func _ready() -> void:
 		slot.pending_recruit_dropped.connect(_on_pending_recruit_dropped)
 	_return_button.pressed.connect(request_close)
 	_cancel_button.pressed.connect(request_placement_cancel)
+	_dismiss_button.pressed.connect(_on_dismiss_pressed)
+	_dismiss_confirmation.window_input.connect(_on_dismiss_window_input)
+	_dismiss_confirmation.confirmed.connect(_on_dismiss_confirmed)
+	_dismiss_confirmation.canceled.connect(clear_dismissal_confirmation)
+	_dismiss_confirmation.close_requested.connect(clear_dismissal_confirmation)
+	_dismiss_confirmation.visibility_changed.connect(_on_dismiss_visibility_changed)
 	_clear_transient_state()
 	_refresh_presentation()
 
@@ -76,6 +90,7 @@ func configure_replacement(slots: Array[RunCharacter], pending_recruit: RunChara
 
 
 func refresh_slots(slots: Array[RunCharacter]) -> void:
+	clear_dismissal_confirmation()
 	_set_slots(slots)
 	if not _selected_character_id.is_empty() and not _has_character(_selected_character_id):
 		_selected_character_id = &""
@@ -198,6 +213,10 @@ func _refresh_presentation() -> void:
 func _refresh_details() -> void:
 	_clear_skill_rows()
 	var selected := _find_character(_selected_character_id)
+	_dismiss_button.visible = is_normal_mode()
+	_dismiss_button.disabled = not is_instance_valid(selected) or _occupied_count() <= 1
+	_dismiss_button.tooltip_text = "Keep at least one party member." if _occupied_count() <= 1 else ""
+	_dismiss_explanation.visible = is_normal_mode() and is_instance_valid(selected) and _occupied_count() <= 1
 	_details_panel.visible = (
 		is_instance_valid(selected)
 		and (_mode == Mode.NORMAL or _mode == Mode.REPLACEMENT)
@@ -224,6 +243,7 @@ func _clear_skill_rows() -> void:
 
 
 func _clear_transient_state() -> void:
+	clear_dismissal_confirmation()
 	_selected_character_id = &""
 	if is_instance_valid(_details_panel):
 		_details_panel.visible = false
@@ -242,3 +262,87 @@ func _find_character(character_id: StringName) -> RunCharacter:
 
 func _has_character(character_id: StringName) -> bool:
 	return is_instance_valid(_find_character(character_id))
+
+
+func is_normal_mode() -> bool:
+	return _mode == Mode.NORMAL
+
+
+func request_dismissal(slot_index: int, expected_character_id: StringName) -> void:
+	clear_dismissal_confirmation()
+	if not is_node_ready() or not _can_dismiss(slot_index, expected_character_id):
+		return
+	_dismiss_slot = slot_index
+	_dismiss_character_id = expected_character_id
+	_dismiss_confirmation.dialog_text = "Dismiss %s? No gold is refunded." % _slots[slot_index].display_name
+	_dismiss_confirmation.popup_centered()
+	_dismiss_confirmation.get_cancel_button().grab_focus()
+
+
+func clear_dismissal_confirmation() -> void:
+	_dismiss_slot = -1
+	_dismiss_character_id = &""
+	if is_instance_valid(_dismiss_confirmation):
+		_dismiss_confirmation.hide()
+
+
+func _on_dismiss_pressed() -> void:
+	for slot_index: int in _slots.size():
+		var character: RunCharacter = _slots[slot_index]
+		if is_instance_valid(character) and character.character_id == _selected_character_id:
+			request_dismissal(slot_index, character.character_id)
+			return
+
+
+func _on_dismiss_confirmed() -> void:
+	var slot_index: int = _dismiss_slot
+	var character_id: StringName = _dismiss_character_id
+	var valid: bool = _can_dismiss(slot_index, character_id)
+	# Consume the confirmation key before callbacks can close this overlay.
+	get_viewport().set_input_as_handled()
+	clear_dismissal_confirmation()
+	if valid:
+		dismissal_requested.emit(slot_index, character_id)
+
+
+func _on_dismiss_window_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		_dismiss_confirmation.set_input_as_handled()
+		get_viewport().set_input_as_handled()
+		clear_dismissal_confirmation()
+
+
+func _on_dismiss_visibility_changed() -> void:
+	if not _dismiss_confirmation.visible:
+		_dismiss_slot = -1
+		_dismiss_character_id = &""
+
+
+func _can_dismiss(slot_index: int, character_id: StringName) -> bool:
+	if not is_normal_mode() or slot_index < 0 or slot_index >= _slots.size() or _occupied_count() <= 1:
+		return false
+	var character: RunCharacter = _slots[slot_index]
+	return is_instance_valid(character) and character.character_id == character_id
+
+
+func _occupied_count() -> int:
+	var count: int = 0
+	for character: RunCharacter in _slots:
+		if is_instance_valid(character):
+			count += 1
+	return count
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not is_visible_in_tree():
+		return
+	# GUI controls receive keys first; everything else remains inside the party overlay.
+	if event is InputEventKey or event is InputEventJoypadButton or event is InputEventJoypadMotion:
+		get_viewport().set_input_as_handled()
+		if event.is_action_pressed("ui_cancel"):
+			if _dismiss_confirmation.visible:
+				clear_dismissal_confirmation()
+			elif is_normal_mode():
+				request_close()
+			else:
+				request_placement_cancel()
