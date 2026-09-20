@@ -1,15 +1,22 @@
 extends SceneTree
 var failures: int = 0
+var checks: int = 0
 
 class Repository:
 	extends RefCounted
 	var writes: Array[PackedByteArray] = []
 	var fail_next: bool = false
+	var failures_remaining: int = 0
+	var successful_writes: int = 0
+	var checkpoint: PackedByteArray = PackedByteArray()
 	func replace_atomic(bytes: PackedByteArray) -> Dictionary:
 		writes.append(bytes.duplicate())
-		if fail_next:
+		if fail_next or failures_remaining > 0:
 			fail_next = false
+			failures_remaining = maxi(0, failures_remaining - 1)
 			return {"ok": false, "value": null, "error": null}
+		checkpoint = bytes.duplicate()
+		successful_writes += 1
 		return {"ok": true, "value": null, "error": null}
 
 func _init() -> void:
@@ -43,6 +50,16 @@ func _run() -> void:
 	await _eligibility_matrix_case()
 	await _stale_eligibility_case(false)
 	await _stale_eligibility_case(true)
+	for replace: bool in [false, true]:
+		for slot: int in 6:
+			for gold: int in [0, 499, 500, 750]:
+				await _placement_matrix_case(replace, slot, gold)
+		await _selection_lifetime_case(replace)
+		for change: String in ["funds", "town", "blocked"]:
+			await _commit_revalidation_case(replace, change)
+		await _repeated_failure_case(replace, false)
+		await _repeated_failure_case(replace, true)
+	print("AC8.7 town integration checks: %d; failures: %d" % [checks, failures])
 	if failures == 0:
 		print("PASS test_ac8_town_recruitment")
 	quit(0 if failures == 0 else 1)
@@ -166,6 +183,7 @@ func _availability_case() -> void:
 	await process_frame
 
 func _expect(condition: bool, message: String) -> void:
+	checks += 1
 	if not condition:
 		failures += 1
 		push_error(message)
@@ -511,5 +529,186 @@ func _dismissal_guard_case() -> void:
 	party.configure_replacement((world.get("_roster") as RunRoster).get_slot_snapshot(), RunCharacterCatalog.create_by_class_id(&"scrapbroker"))
 	_expect(not world.request_party_dismissal(0, &"player_0").ok, "replacement dismissal denied")
 	_expect(repo.writes.is_empty() and world.get_durable_run_state().to_dictionary() == before, "dismissal guard matrix no writes or state changes")
+	world.free()
+	await process_frame
+
+# AC8.7: each destination, both transaction modes, and exact durable state.
+func _matrix_session(replace: bool, slot: int, gold: int) -> Dictionary:
+	var session: Dictionary = _session(gold)
+	var data: Dictionary = session.run_state.to_dictionary()
+	var members: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+	members.append(RunCharacterCatalog.create_for_reward(RunCharacterCatalog.COMBAT_SCOUT_REWARD_ID))
+	members.append(RunCharacterCatalog.create_for_reward(RunCharacterCatalog.BOSS_CHAMPION_REWARD_ID))
+	members.append(RunCharacterCatalog.create_by_class_id(&"shivrunner"))
+	data.formation = ["", "", "", "", "", ""]
+	data.character_hp = {}
+	for index: int in 6:
+		if not replace and index % 2 == slot % 2:
+			continue
+		var member: RunCharacter = members[index]
+		data.formation[index] = String(member.character_id)
+		data.character_hp[String(member.character_id)] = maxi(1, member.max_hp - index - 2)
+	var decoded: Dictionary = load("res://Scripts/Run/world_run_state.gd").from_dictionary(data, session.plan)
+	_expect(decoded.ok, "AC8.7 sparse/full wounded fixture valid")
+	session.run_state = decoded.value
+	return session
+
+func _confirm_matrix(party: PartyManagement, replace: bool, slot: int, target: StringName) -> void:
+	if replace:
+		party.replacement_requested.emit(slot, target, &"scrapbroker")
+	else:
+		party.placement_requested.emit(slot, &"scrapbroker")
+
+func _purchase_expected(before: Dictionary, slot: int) -> Dictionary:
+	var expected: Dictionary = before.duplicate(true)
+	expected.gold -= 500
+	if not String(expected.formation[slot]).is_empty():
+		expected.character_hp.erase(expected.formation[slot])
+	expected.formation[slot] = "scrapbroker"
+	expected.character_hp["scrapbroker"] = RunCharacterCatalog.create_by_class_id(&"scrapbroker").max_hp
+	return expected
+
+func _placement_matrix_case(replace: bool, slot: int, gold: int) -> void:
+	var repo := Repository.new()
+	var world := await _open(_matrix_session(replace, slot, gold), repo)
+	var before: Dictionary = world.get_durable_run_state().to_dictionary()
+	var identities: Array[RunCharacter] = (world.get("_roster") as RunRoster).get_slot_snapshot()
+	_expect(world.open_town_recruitment(), "AC8.7 matrix town opens")
+	var selected: Dictionary = world.request_town_recruitment(&"scrapbroker")
+	if gold < 500:
+		_expect(not selected.ok and selected.error == &"insufficient_gold", "AC8.7 0/499 rejected in both modes")
+		_expect(world.get_durable_run_state().to_dictionary() == before and repo.writes.is_empty(), "AC8.7 unaffordable state exact")
+	else:
+		_expect(selected.ok, "AC8.7 affordable selection")
+		var party: PartyManagement = world.get("_active_party")
+		_expect(not world.request_town_recruitment(&"shivrunner").ok, "AC8.7 duplicate selection rejected")
+		for bad_slot: int in [-1, 6]:
+			_confirm_matrix(party, replace, bad_slot, &"wrong")
+		if replace:
+			party.replacement_requested.emit(slot, &"wrong", &"scrapbroker")
+			party.replacement_requested.emit(slot, StringName(before.formation[slot]), &"wrong")
+			party.placement_requested.emit(slot, &"scrapbroker")
+		else:
+			party.placement_requested.emit((slot + 1) % 6, &"scrapbroker")
+			party.placement_requested.emit(slot, &"wrong")
+			party.replacement_requested.emit((slot + 1) % 6, StringName(before.formation[(slot + 1) % 6]), &"scrapbroker")
+		_expect(world.get_durable_run_state().to_dictionary() == before and repo.writes.is_empty(), "AC8.7 invalid slots IDs targets and cross-mode signals reject")
+		_confirm_matrix(party, replace, slot, StringName(before.formation[slot]))
+		_confirm_matrix(party, replace, slot, StringName(before.formation[slot]))
+		var expected: Dictionary = _purchase_expected(before, slot)
+		_expect(world.get_durable_run_state().to_dictionary() == expected, "AC8.7 all slots preserve every unrelated field and wounded survivor HP")
+		_expect(repo.writes.size() == 1 and repo.successful_writes == 1, "AC8.7 duplicate confirmation publishes once")
+		var current: Array[RunCharacter] = (world.get("_roster") as RunRoster).get_slot_snapshot()
+		for index: int in 6:
+			if index != slot:
+				_expect(current[index] == identities[index], "AC8.7 survivor live identity preserved")
+		var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(repo.checkpoint)
+		_expect(decoded.ok and decoded.value.run_state.to_dictionary() == expected, "AC8.7 durable checkpoint exact")
+	world.free()
+	await process_frame
+
+func _selection_lifetime_case(replace: bool) -> void:
+	var repo := Repository.new()
+	var session: Dictionary = _matrix_session(replace, 5, 750)
+	var world := await _open(session, repo)
+	var before: Dictionary = world.get_durable_run_state().to_dictionary()
+	world.open_town_recruitment()
+	world.request_town_recruitment(&"scrapbroker")
+	var old: PartyManagement = world.get("_active_party")
+	old.request_placement_cancel()
+	_expect(world.get_durable_run_state().to_dictionary() == before and repo.writes.is_empty(), "AC8.7 cancellation preserves complete state without a write")
+	_expect(world.has_active_town_recruitment() and not world.has_active_party_management(), "AC8.7 cancel returns to town")
+	world.request_town_recruitment(&"scrapbroker")
+	_confirm_matrix(old, replace, 5, StringName(before.formation[5]))
+	old.close_requested.emit()
+	_expect(world.has_active_party_management() and repo.writes.is_empty(), "AC8.7 old cancel and confirm cannot affect reopened selection")
+	var current: PartyManagement = world.get("_active_party")
+	current.close_requested.emit()
+	_expect(world.get_durable_run_state().to_dictionary() == before and repo.writes.is_empty(), "AC8.7 close cancellation preserves complete state")
+	var old_panel: Control = world.get("_town_panel")
+	world.close_town_recruitment()
+	world.open_town_recruitment()
+	old_panel.emit_signal("recruit_requested", &"scrapbroker")
+	old_panel.emit_signal("close_requested")
+	_expect(world.has_active_town_recruitment() and not world.has_active_party_management() and repo.writes.is_empty(), "AC8.7 old town panel cannot select or close reopened town")
+	world.request_town_recruitment(&"scrapbroker")
+	current = world.get("_active_party")
+	_expect(world.apply_session(session, repo), "AC8.7 new session replaces open selection")
+	_confirm_matrix(current, replace, 5, StringName(before.formation[5]))
+	_expect(repo.writes.is_empty() and world.get_durable_run_state().to_dictionary() == before, "AC8.7 cancelled and old-session callbacks no-op")
+	world.free()
+	await process_frame
+
+func _commit_revalidation_case(replace: bool, change: String) -> void:
+	var repo := Repository.new()
+	var session: Dictionary = _matrix_session(replace, 5, 750)
+	var world := await _open(session, repo)
+	world.open_town_recruitment()
+	world.request_town_recruitment(&"scrapbroker")
+	var party: PartyManagement = world.get("_active_party")
+	# Adversarial fixture changes occur after selection; snapshot is taken afterwards.
+	if change == "funds":
+		world.get_durable_run_state().gold = 499
+	elif change == "town":
+		for coord: Vector2i in session.plan.get_cells():
+			if session.plan.get_cells()[coord].town_index >= 0 and coord != world.get_durable_run_state().player_coord and coord != session.plan.get_boss_coord():
+				world.get_durable_run_state().player_coord = coord
+				break
+	else:
+		world.set("_terminal_phase", WorldRuntimeController.TerminalPhase.LOSS_COMMITTING)
+	var before: Dictionary = world.get_durable_run_state().to_dictionary()
+	var roster: RunRoster = world.get("_roster")
+	var identities: Array[RunCharacter] = roster.get_slot_snapshot()
+	_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
+	_expect(repo.writes.is_empty() and world.get_durable_run_state().to_dictionary() == before, "AC8.7 commit revalidates " + change)
+	_expect(world.get("_roster") == roster and roster.get_slot_snapshot() == identities, "AC8.7 rejected commit preserves live roster")
+	world.free()
+	await process_frame
+
+func _repeated_failure_case(replace: bool, discard: bool) -> void:
+	var repo := Repository.new()
+	var session: Dictionary = _matrix_session(replace, 5, 750)
+	var world := await _open(session, repo)
+	var before: Dictionary = world.get_durable_run_state().to_dictionary()
+	var checkpoint: PackedByteArray = load("res://Scripts/Save/world_run_save_codec_v5.gd").encode(session.plan, session.resolved_seed, world.get_durable_run_state())
+	repo.checkpoint = checkpoint.duplicate()
+	var roster: RunRoster = world.get("_roster")
+	var identities: Array[RunCharacter] = roster.get_slot_snapshot()
+	var gold_label: Label = world.get_node("%WorldMapHud").get_node("%GoldLabel")
+	var gold_text: String = gold_label.text
+	world.open_town_recruitment()
+	world.request_town_recruitment(&"scrapbroker")
+	var party: PartyManagement = world.get("_active_party")
+	repo.failures_remaining = 2
+	_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
+	_expect(world.is_autosave_blocked(), "AC8.7 first failure blocks")
+	_expect(not world.retry_autosave().ok and world.is_autosave_blocked(), "AC8.7 second failure stays blocked")
+	_expect(repo.writes.size() == 2 and repo.writes[0] == repo.writes[1], "AC8.7 repeated failure retries exact bytes")
+	_expect(repo.checkpoint == checkpoint and repo.successful_writes == 0, "AC8.7 attempted writes never replace successful checkpoint")
+	world.close_town_recruitment()
+	party.request_placement_cancel()
+	party.close_requested.emit()
+	_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
+	_expect(not world.request_town_recruitment(&"scrapbroker").ok, "AC8.7 pending save blocks purchase")
+	_expect(not world.request_party_dismissal(0, &"player_0").ok, "AC8.7 pending save blocks dismissal")
+	_expect(not world.apply_session(_session(500), repo), "AC8.7 pending save blocks session replacement")
+	_expect(not world.request_move(world.get_runtime_snapshot().player_coord + Vector2i(1, 0)).is_accepted(), "AC8.7 pending save blocks map movement")
+	_expect(world.get_valid_destinations().is_empty() and world.has_active_party_management() and world.has_active_town_recruitment(), "AC8.7 pending modal cannot close")
+	_expect(world.get_durable_run_state().to_dictionary() == before and world.get("_roster") == roster and roster.get_slot_snapshot() == identities and gold_label.text == gold_text, "AC8.7 failure preserves live identities complete state HP and HUD gold")
+	_expect(repo.writes.size() == 2, "AC8.7 blocked actions do not write")
+	if discard:
+		_expect(world.discard_pending_autosave(), "AC8.7 discard succeeds after repeated failure")
+		_expect(repo.checkpoint == checkpoint and world.get_durable_run_state().to_dictionary() == before, "AC8.7 discard retains original checkpoint and state")
+		_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
+		_expect(repo.writes.size() == 2, "AC8.7 discard invalidates abandoned callback")
+		_expect(world.open_town_recruitment() and world.request_town_recruitment(&"scrapbroker").ok, "AC8.7 discard allows fresh purchase")
+		party = world.get("_active_party")
+		_confirm_matrix(party, replace, 5, StringName(before.formation[5]))
+	else:
+		_expect(world.retry_autosave().ok, "AC8.7 third attempt succeeds")
+		_expect(repo.writes[2] == repo.writes[0], "AC8.7 successful retry exact candidate bytes")
+	_expect(repo.writes.size() == 3 and repo.successful_writes == 1, "AC8.7 only one checkpoint publication")
+	_expect(world.get_durable_run_state().to_dictionary() == _purchase_expected(before, 5) and gold_label.text == "250g", "AC8.7 success charges once and updates HUD")
+	_expect(not world.retry_autosave().ok and repo.writes.size() == 3, "AC8.7 duplicate retry no-op")
 	world.free()
 	await process_frame
