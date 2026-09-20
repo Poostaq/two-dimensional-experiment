@@ -1,7 +1,7 @@
 class_name Ac3_1RunRosterTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 16
+const EXPECTED_TEST_COUNT := 17
 
 var _failures: Array[String] = []
 
@@ -23,6 +23,7 @@ func _initialize() -> void:
 	_test_battle_conversion_uses_run_health()
 	_test_battle_conversion_rejects_invalid_health_maps()
 	_test_brakka_battle_conversion()
+	_test_ac8_7_slots_and_capacity()
 	if _failures.is_empty():
 		print("AC3.1 run roster tests: PASS (%d/%d)" % [EXPECTED_TEST_COUNT, EXPECTED_TEST_COUNT])
 		quit(0)
@@ -199,3 +200,40 @@ func _test_brakka_battle_conversion() -> void:
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		_failures.append(message)
+
+func _test_ac8_7_slots_and_capacity() -> void:
+	for destination: int in 6:
+		var slots: Array[RunCharacter] = []
+		slots.resize(6)
+		for offset: int in [1, 3]:
+			slots[(destination + offset) % 6] = RunCharacter.new(
+				StringName("member_%d" % offset), "Member", 5, 20, [])
+		var roster := RunRoster.new(slots)
+		var recruit := RunCharacterCatalog.create_by_class_id(&"scrapbroker")
+		var before: Array[RunCharacter] = roster.get_slot_snapshot()
+		for invalid: int in [-1, 6]:
+			_expect(roster.try_add_at(recruit, invalid) == RunRoster.AddResult.INVALID_SLOT, "invalid add slot")
+		_expect(roster.try_add_at(recruit, (destination + 1) % 6) == RunRoster.AddResult.OCCUPIED, "occupied add slot")
+		_expect(roster.try_replace_at(recruit, (destination + 1) % 6, &"member_1") == RunRoster.ReplaceResult.NOT_FULL, "replacement requires capacity")
+		_expect(roster.get_slot_snapshot() == before, "all rejected sparse requests preserve exact slots")
+		_expect(roster.try_add_at(recruit, destination) == RunRoster.AddResult.ADDED, "every chosen empty slot accepts")
+		var expected: Array[RunCharacter] = before.duplicate()
+		expected[destination] = recruit
+		_expect(roster.get_slot_snapshot() == expected, "sparse add preserves holes and identities")
+		_expect(roster.try_add_at(recruit, (destination + 2) % 6) == RunRoster.AddResult.DUPLICATE, "duplicate identity rejects")
+		_expect(roster.get_slot_snapshot() == expected, "duplicate preserves exact slots")
+		var full: Array[RunCharacter] = []
+		for index: int in 6:
+			full.append(RunCharacter.new(StringName("full_%d" % index), "Full", 5, 20, []))
+		roster = RunRoster.new(full)
+		before = roster.get_slot_snapshot()
+		_expect(roster.try_add_at(recruit, destination) == RunRoster.AddResult.FULL, "seventh member rejects")
+		for invalid: int in [-1, 6]:
+			_expect(roster.try_replace_at(recruit, invalid, full[destination].character_id) == RunRoster.ReplaceResult.INVALID_SLOT, "invalid replacement slot")
+		_expect(roster.try_replace_at(recruit, destination, &"wrong") == RunRoster.ReplaceResult.STALE_TARGET, "stale replacement target rejects")
+		_expect(roster.try_replace_at(full[(destination + 1) % 6], destination, full[destination].character_id) == RunRoster.ReplaceResult.DUPLICATE, "duplicate replacement rejects")
+		_expect(roster.get_slot_snapshot() == before, "rejected full requests preserve exact identities")
+		_expect(roster.try_replace_at(recruit, destination, full[destination].character_id) == RunRoster.ReplaceResult.REPLACED, "every chosen replacement succeeds")
+		expected = before.duplicate()
+		expected[destination] = recruit
+		_expect(roster.size() == 6 and roster.get_slot_snapshot() == expected, "replacement changes only target at capacity")

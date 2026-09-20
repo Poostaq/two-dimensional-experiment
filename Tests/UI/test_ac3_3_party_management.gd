@@ -2,7 +2,7 @@ class_name Ac3_3PartyManagementTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/party_management.tscn"
-const EXPECTED_TEST_COUNT := 31
+const EXPECTED_TEST_COUNT := 47
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -100,6 +100,7 @@ func _run() -> void:
 	_expect(not (party.get_node("%PendingRecruitRegion") as Control).visible, "normal reconfiguration clears replacement presentation")
 	_expect((party.get_node("%ReturnToMapButton") as Control).visible, "normal mode retains Return to Map")
 
+	_test_ac8_7_intents(party as PartyManagement, slots, full_slots, scout)
 	party.queue_free()
 	await process_frame
 	_finish()
@@ -150,3 +151,45 @@ func _finish() -> void:
 	for failure: String in _failures:
 		push_error(failure)
 	quit(1)
+
+func _test_ac8_7_intents(party: PartyManagement, sparse: Array[RunCharacter], full: Array[RunCharacter], recruit: RunCharacter) -> void:
+	for replacement: bool in [false, true]:
+		if replacement:
+			party.configure_replacement(full, recruit)
+		else:
+			party.configure_placement(sparse, recruit)
+		var adds: int = _placement_events.size()
+		var replacements: int = _replacement_events.size()
+		var moves: int = _move_events.size()
+		_closed = false
+		party.request_close()
+		_expect(not _closed, "transaction cannot use normal close action")
+		party.request_move(0, 1, &"player_0")
+		_expect(_move_events.size() == moves, "transaction cannot rearrange members")
+		party.request_dismissal(0, full[0].character_id if replacement else sparse[0].character_id)
+		_expect(not (party.get_node("%DismissConfirmation") as ConfirmationDialog).visible, "transaction cannot dismiss")
+		for invalid: int in [-1, 6]:
+			party.request_placement(invalid, recruit.character_id)
+			party.request_replacement(invalid, &"wrong", recruit.character_id)
+		party.request_placement(0, recruit.character_id)
+		party.request_placement(1, &"wrong")
+		party.request_replacement(0, &"wrong", recruit.character_id)
+		party.request_replacement(0, full[0].character_id, &"wrong")
+		_expect(_placement_events.size() == adds and _replacement_events.size() == replacements, "invalid and wrong-mode requests emit no purchase")
+		if replacement:
+			party.refresh_slots(sparse)
+			party.request_replacement(0, full[0].character_id, recruit.character_id)
+		else:
+			var filled: Array[RunCharacter] = sparse.duplicate()
+			filled[1] = full[1]
+			party.refresh_slots(filled)
+			party.request_placement(1, recruit.character_id)
+		_expect(_placement_events.size() == adds and _replacement_events.size() == replacements, "changed slot rejects stale UI intent")
+		_cancelled = false
+		party.request_placement_cancel()
+		_expect(_cancelled, "both transaction modes cancel")
+		_expect(_placement_events.size() == adds and _replacement_events.size() == replacements, "cancel emits no purchase")
+		party.configure_normal(sparse)
+		party.request_placement(1, recruit.character_id)
+		party.request_replacement(0, sparse[0].character_id, recruit.character_id)
+		_expect(_placement_events.size() == adds and _replacement_events.size() == replacements, "normal mode rejects obsolete purchase")
