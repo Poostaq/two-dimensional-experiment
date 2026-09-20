@@ -29,6 +29,14 @@ enum ReplaceResult {
 	STALE_TARGET,
 }
 
+enum RemoveResult {
+	REMOVED,
+	INVALID_SLOT,
+	EMPTY_TARGET,
+	STALE_TARGET,
+	LAST_MEMBER,
+}
+
 const MAX_ROSTER_SIZE := 6
 
 var _slots: Array[RunCharacter] = []
@@ -107,6 +115,21 @@ func try_replace_at(
 		return ReplaceResult.DUPLICATE
 	_slots[slot_index] = recruit
 	return ReplaceResult.REPLACED
+
+
+func try_remove_at(slot_index: int, expected_character_id: StringName) -> RemoveResult:
+	if not _is_valid_slot(slot_index):
+		return RemoveResult.INVALID_SLOT
+	var target: RunCharacter = _slots[slot_index]
+	if not is_instance_valid(target):
+		return RemoveResult.EMPTY_TARGET
+	if target.character_id != expected_character_id:
+		return RemoveResult.STALE_TARGET
+	# D1 removal policy keeps at least one member in the run roster.
+	if size() <= 1:
+		return RemoveResult.LAST_MEMBER
+	_slots[slot_index] = null
+	return RemoveResult.REMOVED
 
 
 func try_move(
