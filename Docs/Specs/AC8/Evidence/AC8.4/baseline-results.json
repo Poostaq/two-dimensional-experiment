@@ -1,0 +1,22 @@
+[
+  {
+    "script": "Tests/WorldMap/test_world_plan_codec_v1.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_generator_v1_fixture_integrity.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_model.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_run_save_codec_v5.gd",
+    "exit": 0,
+    "pass": true
+  }
+]

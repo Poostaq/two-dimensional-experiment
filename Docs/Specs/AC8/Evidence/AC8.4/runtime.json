@@ -1,0 +1,56 @@
+[
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  },\n  \"error\": \"\",\n  \"result\": \"{ \\\"ok\\\": true, \\\"scene\\\": ^\\\"/root/WorldRunStart\\\" }\",\n  \"status\": \"OK\"\n}"
+      }
+    ],
+    "isError": false
+  },
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  },\n  \"error\": \"\",\n  \"result\": \"{ \\\"world_path\\\": ^\\\"/root/WorldRunStart/WorldHost/WorldMapRuntime\\\", \\\"seed\\\": \\\"6163382d746f776e2d72756e74696d65\\\", \\\"version\\\": 1, \\\"towns\\\": { \\\"(-8, 2)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-8, 8)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-5, 4)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-4, -4)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-2, 8)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(1, 0)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(1, 4)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" } }, \\\"player\\\": (-8, 0), \\\"boss\\\": (8, 0), \\\"moves\\\": 0, \\\"destinations\\\": [(-7, 0), (-7, -1), (-8, 1)], \\\"plan_sha\\\": \\\"74060e78d19351804cf29b3d21dc891d69193d54cb28904621bc3c66f285c53d\\\" }\",\n  \"status\": \"OK\"\n}"
+      }
+    ],
+    "isError": false
+  },
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  },\n  \"error\": \"\",\n  \"result\": \"{ \\\"accepted\\\": true, \\\"player\\\": (-8, 1), \\\"moves\\\": 1 }\",\n  \"status\": \"OK\"\n}"
+      }
+    ],
+    "isError": false
+  },
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  },\n  \"error\": \"\",\n  \"result\": \"{ \\\"continued\\\": true }\",\n  \"status\": \"OK\"\n}"
+      }
+    ],
+    "isError": false
+  },
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  },\n  \"error\": \"\",\n  \"result\": \"{ \\\"world_path\\\": ^\\\"/root/WorldRunStart/WorldHost/WorldMapRuntime\\\", \\\"seed\\\": \\\"6163382d746f776e2d72756e74696d65\\\", \\\"version\\\": 1, \\\"towns\\\": { \\\"(-8, 2)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-8, 8)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-5, 4)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-4, -4)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(-2, 8)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(1, 0)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" }, \\\"(1, 4)\\\": { \\\"ok\\\": true, \\\"clan_id\\\": &\\\"goblin\\\", \\\"error\\\": &\\\"\\\" } }, \\\"player\\\": (-8, 1), \\\"boss\\\": (8, 0), \\\"moves\\\": 1, \\\"destinations\\\": [(-7, 1), (-7, 0), (-8, 0), (-8, 2)], \\\"plan_sha\\\": \\\"74060e78d19351804cf29b3d21dc891d69193d54cb28904621bc3c66f285c53d\\\" }\",\n  \"status\": \"OK\"\n}"
+      }
+    ],
+    "isError": false
+  },
+  {
+    "content": [
+      {
+        "type": "text",
+        "text": "{\n  \"capture\": {\n    \"runtime_errors\": true,\n    \"script_errors\": true,\n    \"script_errors_note\": \"\"\n  },\n  \"cleared\": false,\n  \"entries\": [],\n  \"runtime_errors_total\": 0,\n  \"script_errors_total\": 0,\n  \"total\": 0,\n  \"truncated\": false,\n  \"_editor_state\": {\n    \"game_running\": true,\n    \"open_scene\": \"res://Scenes/world_run_start.tscn\",\n    \"recent_errors\": []\n  }\n}"
+      }
+    ],
+    "isError": false
+  }
+]

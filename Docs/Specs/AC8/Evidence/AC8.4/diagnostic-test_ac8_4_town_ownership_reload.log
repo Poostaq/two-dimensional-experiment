@@ -1,0 +1,77 @@
+["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", "D:\\Projects\\two-dimension-exploration", "--quit-after", "1800", "--script", "res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd"]
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (1, 2), "b": (1, 6) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (2, -3) }, { "a": (2, -3), "b": (3, -8) }, { "a": (1, 2), "b": (8, -2) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (1, 6) }, { "a": (1, 2), "b": (2, -3) }, { "a": (1, 2), "b": (8, -2) }, { "a": (2, -3), "b": (3, -8) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (1, 2), "b": (1, 6) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (2, -3) }, { "a": (2, -3), "b": (3, -8) }, { "a": (1, 2), "b": (8, -2) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (1, 6) }, { "a": (1, 2), "b": (2, -3) }, { "a": (1, 2), "b": (8, -2) }, { "a": (2, -3), "b": (3, -8) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (1, 2), "b": (1, 6) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (2, -3) }, { "a": (2, -3), "b": (3, -8) }, { "a": (1, 2), "b": (8, -2) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (1, 6) }, { "a": (1, 2), "b": (2, -3) }, { "a": (1, 2), "b": (8, -2) }, { "a": (2, -3), "b": (3, -8) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (1, 2), "b": (1, 6) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (2, -3) }, { "a": (2, -3), "b": (3, -8) }, { "a": (1, 2), "b": (8, -2) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 4), "b": (1, 2) }, { "a": (1, 2), "b": (1, 6) }, { "a": (1, 2), "b": (2, -3) }, { "a": (1, 2), "b": (8, -2) }, { "a": (2, -3), "b": (3, -8) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (3, -7), "b": (3, -3) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (3, 4) }], "after_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (-2, 4), "b": (3, 4) }, { "a": (3, -7), "b": (3, -3) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (3, -7), "b": (3, -3) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (3, 4) }], "after_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (-2, 4), "b": (3, 4) }, { "a": (3, -7), "b": (3, -3) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (3, -7), "b": (3, -3) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (3, 4) }], "after_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (-2, 4), "b": (3, 4) }, { "a": (3, -7), "b": (3, -3) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (3, -7), "b": (3, -3) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (3, 4) }], "after_roads": [{ "a": (-3, -3), "b": (-2, 0) }, { "a": (-2, 0), "b": (-2, 4) }, { "a": (-2, 0), "b": (3, -3) }, { "a": (-2, 4), "b": (-2, 8) }, { "a": (-2, 4), "b": (3, 4) }, { "a": (3, -7), "b": (3, -3) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }, { "a": (-4, 0), "b": (2, -5) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 0), "b": (2, -5) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }, { "a": (-4, 0), "b": (2, -5) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 0), "b": (2, -5) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }, { "a": (-4, 0), "b": (2, -5) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 0), "b": (2, -5) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }], "start": true, "boss": true }
+TOPOLOGY { "cells": true, "roads": false, "before_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }, { "a": (-4, 0), "b": (2, -5) }], "after_roads": [{ "a": (-4, 0), "b": (-4, 4) }, { "a": (-4, 0), "b": (2, -5) }, { "a": (2, -5), "b": (2, -1) }, { "a": (2, -1), "b": (4, 1) }, { "a": (4, 1), "b": (8, -2) }, { "a": (8, -6), "b": (8, -2) }], "start": true, "boss": true }
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)
+ERROR: towns roads and spawns preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:79)
+       [1] _run (res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd:53)

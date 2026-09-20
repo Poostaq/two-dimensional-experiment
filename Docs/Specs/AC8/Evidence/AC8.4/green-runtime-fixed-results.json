@@ -1,0 +1,22 @@
+[
+  {
+    "script": "Tests/WorldMap/test_ac8_4_town_ownership.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_ac8_4_town_ownership_reload.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/WorldMap/test_world_runtime_model.gd",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "script": "Tests/Save/test_world_run_save_codec_v5.gd",
+    "exit": 0,
+    "pass": true
+  }
+]

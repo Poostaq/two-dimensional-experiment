@@ -1,0 +1,7 @@
+[
+  {
+    "script": "Tests/WorldMap/test_ac8_4_town_ownership_reload.gd",
+    "exit": 1,
+    "pass": false
+  }
+]
