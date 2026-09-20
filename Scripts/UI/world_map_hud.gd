@@ -2,6 +2,7 @@ class_name WorldMapHud
 extends Control
 
 signal party_requested
+signal recruit_requested
 
 const BOSS_THRESHOLD := 30
 
@@ -14,12 +15,14 @@ const BOSS_THRESHOLD := 30
 @onready var _instruction_label: Label = %InstructionLabel
 @onready var _context_label: Label = %ContextLabel
 @onready var _manage_party_button: Button = %ManagePartyButton
+@onready var _recruit_button: Button = %RecruitButton
 @onready var _back_slots: Array[Label] = [%BackSlot0, %BackSlot1, %BackSlot2]
 @onready var _front_slots: Array[Label] = [%FrontSlot0, %FrontSlot1, %FrontSlot2]
 
 
 func _ready() -> void:
 	_manage_party_button.pressed.connect(_on_manage_party_pressed)
+	_recruit_button.pressed.connect(_on_recruit_pressed)
 
 
 func set_habitat(habitat: Dictionary) -> void:
@@ -75,6 +78,17 @@ func set_context(encounter_type: String, terrain_tags: Array[String], is_valid: 
 
 func set_party_available(value: bool) -> void:
 	_manage_party_button.disabled = not value
+
+
+func set_recruitment_available(value: bool) -> void:
+	_recruit_button.visible = value
+	_recruit_button.disabled = not value
+
+
+func _on_recruit_pressed() -> void:
+	if _recruit_button.disabled or not _recruit_button.visible:
+		return
+	recruit_requested.emit()
 
 
 func _slot_text(slots: Array[RunCharacter], index: int) -> String:

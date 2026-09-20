@@ -49,6 +49,12 @@ static var REPOSITORY_SCRIPT: GDScript = load(
 	"res://Scripts/Run/world_single_slot_repository.gd"
 )
 
+static var TOWN_RULES: Script = load("res://Scripts/Run/town_recruitment_rules.gd")
+var _town_panel: Control
+var _town_party: PartyManagement
+var _town_selection: Dictionary = {}
+var _town_generation: int = 0
+
 var _model: WorldRuntimeModel = WorldRuntimeModel.new()
 var _runtime_plan: WorldPlan
 var _integration_failed: bool = false
@@ -95,6 +101,7 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 	if not is_instance_valid(requested_state) or not requested_state.is_playable():
 		return false
 	_reset_world_debug()
+	_clear_town_service()
 	_session_generation += 1
 	_session_applied = false
 	if (
@@ -128,6 +135,7 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 		_present_pending_gold_reward()
 	else:
 		_restore_persisted_preparation()
+	_apply_snapshot(_model.get_snapshot())
 	return true
 
 
@@ -158,6 +166,8 @@ func configure_runtime(plan: WorldPlan) -> bool:
 	var hud := get_node("%WorldMapHud") as WorldMapHud
 	if not hud.party_requested.is_connected(open_party_management):
 		hud.party_requested.connect(open_party_management)
+	if not hud.recruit_requested.is_connected(open_town_recruitment):
+		hud.recruit_requested.connect(open_town_recruitment)
 	_apply_snapshot(_model.get_snapshot())
 	return not _integration_failed
 
@@ -205,7 +215,7 @@ func retry_autosave() -> Dictionary:
 	if bool(result.get("ok", false)):
 		if not move_was_pending and is_instance_valid(_durable_run_state):
 			_model.restore_run_state(_durable_run_state)
-			if has_active_battle() or has_pending_gold_reward():
+			if has_active_battle() or has_pending_gold_reward() or has_active_town_recruitment():
 				_model.set_surface_blocked(true)
 			_apply_snapshot(_model.get_snapshot())
 		autosave_recovered.emit()
@@ -221,6 +231,7 @@ func discard_pending_autosave() -> bool:
 	var restored := _save_coordinator.call("discard_pending") as RefCounted
 	if not is_instance_valid(restored) or not _model.restore_run_state(restored):
 		return false
+	_clear_town_service()
 	_durable_run_state = restored
 	_pending_ack_id = ""
 	_model.set_surface_blocked(has_active_battle() or has_pending_gold_reward())
@@ -301,7 +312,7 @@ func has_active_battle() -> bool:
 func open_party_management() -> void:
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
-	if _integration_failed or has_active_encounter() or has_active_battle() or has_active_party_management():
+	if _integration_failed or has_active_encounter() or has_active_battle() or has_active_party_management() or has_active_town_recruitment():
 		return
 	_model.set_surface_blocked(true)
 	_active_party = PARTY_SCENE.instantiate() as PartyManagement
@@ -418,6 +429,8 @@ func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
 	_queue_debug_refresh()
 	if has_pending_gold_reward() or has_active_encounter():
 		return
+	if _session_applied and get_town_recruitment_context().ok and open_town_recruitment():
+		return
 	_active_encounter = ENCOUNTER_SCENE.instantiate() as EncounterOverlay
 	get_node("EncounterHost").add_child(_active_encounter)
 	_active_encounter.configure(coord, encounter_type.to_lower())
@@ -443,7 +456,7 @@ func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
 	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
-	if has_active_battle():
+	if has_active_battle() or has_active_town_recruitment():
 		return
 	var normalized_encounter := encounter_type.to_lower()
 	if _session_applied and _model.get_runtime_encounter_type(coord) != normalized_encounter:
@@ -1130,6 +1143,7 @@ func _apply_snapshot(snapshot: WorldRuntimeSnapshot) -> void:
 		not destinations.is_empty()
 	)
 	hud.set_party_available(not snapshot.input_blocked)
+	hud.set_recruitment_available(get_town_recruitment_context().ok and not has_active_town_recruitment())
 	_apply_camera_visibility_rule(snapshot.player_coord)
 	_refresh_debug_view()
 
@@ -1281,6 +1295,7 @@ func _invalidate_gold_callbacks() -> void:
 
 func _exit_tree() -> void:
 	_invalidate_gold_callbacks()
+	_clear_town_service()
 
 # Detached diagnostics use committed model/run state, never pending move candidates.
 func get_debug_snapshot() -> Dictionary:
@@ -1383,3 +1398,195 @@ func _reset_world_debug() -> void:
 		drawer.reset_view()
 		drawer.set_available(false)
 	_queue_debug_refresh()
+
+# Town service availability is derived once here for every entry and commit.
+func get_town_recruitment_context() -> Dictionary:
+	var coord: Vector2i = Vector2i.ZERO
+	if is_instance_valid(_durable_run_state):
+		coord = _durable_run_state.player_coord
+	if not _session_applied or _integration_failed or not is_instance_valid(_model) or not is_instance_valid(_runtime_plan) or not is_instance_valid(_durable_run_state) or not is_instance_valid(_save_coordinator) or not _durable_run_state.is_playable():
+		return _town_failure(&"invalid_session", coord)
+	var ownership: Dictionary = _model.get_town_ownership(coord)
+	if not ownership.ok:
+		return _town_failure(ownership.error, coord)
+	# Ownership support alone must never enable services in a new world version.
+	if _runtime_plan.get_version() != 1:
+		return _town_failure(&"unsupported_world_version", coord)
+	if ownership.clan_id != &"goblin":
+		return _town_failure(&"unsupported_town_owner", coord)
+	var snapshot: WorldRuntimeSnapshot = _model.get_snapshot()
+	var matching_party: bool = is_instance_valid(_town_party) and _active_party == _town_party
+	if _terminal_phase != TerminalPhase.PLAYING or has_pending_gold_reward() or has_active_battle() or snapshot.boss_encounter_open or _model.get_runtime_encounter_type(coord) == WorldEncounterType.BOSS or has_active_encounter() or (has_active_party_management() and not matching_party) or is_autosave_blocked():
+		return _town_failure(&"service_blocked", coord)
+	return {"ok": true, "error": &"", "coord": coord, "clan_id": ownership.clan_id,
+		"gold": _durable_run_state.gold,
+		"class_ids": TOWN_RULES.eligible_class_ids(ownership.clan_id, _roster)}
+
+
+func _town_failure(error: StringName, coord: Vector2i) -> Dictionary:
+	var empty: Array[StringName] = []
+	return {"ok": false, "error": error, "coord": coord, "clan_id": &"", "gold": 0, "class_ids": empty}
+
+
+func has_active_town_recruitment() -> bool:
+	return is_instance_valid(_town_panel)
+
+
+func open_town_recruitment() -> bool:
+	var context: Dictionary = get_town_recruitment_context()
+	if not context.ok or has_active_town_recruitment():
+		return false
+	var scene: PackedScene = load("res://Scenes/UI/town_recruitment_panel.tscn")
+	_town_panel = scene.instantiate() as Control
+	get_node("UI").add_child(_town_panel)
+	_town_generation += 1
+	_town_panel.connect("recruit_requested", _on_town_offer.bind(_session_generation, _town_generation, _town_panel))
+	_town_panel.connect("close_requested", _on_town_close.bind(_session_generation, _town_generation, _town_panel))
+	_town_panel.call("configure", context.clan_id, context.gold, context.class_ids)
+	var camera: Camera2D = get_viewport().get_camera_2d()
+	if is_instance_valid(camera) and camera.has_method("end_drag"):
+		camera.call("end_drag")
+	_model.set_surface_blocked(true)
+	_apply_snapshot(_model.get_snapshot())
+	return true
+
+
+func close_town_recruitment() -> void:
+	if not has_active_town_recruitment() or is_autosave_blocked() or is_instance_valid(_town_party):
+		return
+	_clear_town_service()
+	_model.set_surface_blocked(false)
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _on_town_close(session: int, generation: int, source: Control) -> void:
+	if session == _session_generation and generation == _town_generation and is_instance_valid(source) and source == _town_panel:
+		close_town_recruitment()
+
+
+func _on_town_offer(class_id: StringName, session: int, generation: int, source: Control) -> void:
+	if session == _session_generation and generation == _town_generation and is_instance_valid(source) and source == _town_panel:
+		request_town_recruitment(class_id)
+
+
+func request_town_recruitment(class_id: StringName) -> Dictionary:
+	var context: Dictionary = get_town_recruitment_context()
+	if not context.ok:
+		return {"ok": false, "error": context.error}
+	if not has_active_town_recruitment() or is_instance_valid(_town_party) or not _town_selection.is_empty():
+		return {"ok": false, "error": &"selection_unavailable"}
+	var error: StringName = TOWN_RULES.purchase_error(context.clan_id, _roster, class_id, context.gold, context.ok)
+	if not error.is_empty():
+		return {"ok": false, "error": error}
+	var recruit: RunCharacter = RunCharacterCatalog.create_by_class_id(class_id)
+	if not is_instance_valid(recruit):
+		return {"ok": false, "error": &"class_not_recruitable"}
+	_town_generation += 1
+	_town_selection = {"coord": context.coord, "class_id": class_id, "recruit": recruit}
+	_town_party = PARTY_SCENE.instantiate() as PartyManagement
+	_active_party = _town_party
+	get_node("PartyHost").add_child(_town_party)
+	_town_party.placement_requested.connect(_on_town_add.bind(_session_generation, _town_generation, _town_party))
+	_town_party.replacement_requested.connect(_on_town_replace.bind(_session_generation, _town_generation, _town_party))
+	_town_party.placement_cancelled.connect(_on_town_cancel.bind(_session_generation, _town_generation, _town_party))
+	_town_party.close_requested.connect(_on_town_cancel.bind(_session_generation, _town_generation, _town_party))
+	if _roster.is_full():
+		_town_party.configure_replacement(_roster.get_slot_snapshot(), recruit)
+	else:
+		_town_party.configure_placement(_roster.get_slot_snapshot(), recruit)
+	_town_panel.hide()
+	_apply_snapshot(_model.get_snapshot())
+	return {"ok": true, "error": &""}
+
+
+func _valid_town_selection(session: int, generation: int, source: PartyManagement) -> bool:
+	return session == _session_generation and generation == _town_generation and is_instance_valid(source) and source == _town_party and not _town_selection.is_empty() and not is_autosave_blocked()
+
+
+func _on_town_add(slot: int, recruit_id: StringName, session: int, generation: int, source: PartyManagement) -> void:
+	if not _valid_town_selection(session, generation, source) or _town_selection.recruit.character_id != recruit_id:
+		return
+	var candidate := RunRoster.new(_roster.get_slot_snapshot())
+	if candidate.try_add_at(_town_selection.recruit, slot) == RunRoster.AddResult.ADDED:
+		_commit_town_purchase(candidate, session, generation, source)
+
+
+func _on_town_replace(slot: int, target_id: StringName, recruit_id: StringName, session: int, generation: int, source: PartyManagement) -> void:
+	if not _valid_town_selection(session, generation, source) or _town_selection.recruit.character_id != recruit_id:
+		return
+	var candidate := RunRoster.new(_roster.get_slot_snapshot())
+	if candidate.try_replace_at(_town_selection.recruit, slot, target_id) == RunRoster.ReplaceResult.REPLACED:
+		_commit_town_purchase(candidate, session, generation, source)
+
+
+func _commit_town_purchase(candidate: RunRoster, session: int, generation: int, source: PartyManagement) -> void:
+	var context: Dictionary = get_town_recruitment_context()
+	if not context.ok or context.coord != _town_selection.coord:
+		return
+	var error: StringName = TOWN_RULES.purchase_error(context.clan_id, _roster, _town_selection.class_id, context.gold, context.ok)
+	if not error.is_empty():
+		_on_town_cancel(session, generation, source)
+		return
+	var state: RefCounted = _build_candidate_state(_model, false, candidate)
+	if not is_instance_valid(state):
+		return
+	state.gold = context.gold - RunEconomyRules.RECRUITMENT_COST
+	if not state.is_valid(_runtime_plan):
+		return
+	var result: Dictionary = _save_coordinator.commit_candidate(state,
+		_publish_town_purchase.bind(candidate, session, generation, source), "town_recruitment")
+	if not result.ok:
+		_model.set_surface_blocked(true)
+		_apply_snapshot(_model.get_snapshot())
+		autosave_failed.emit(result.get("error") as RefCounted)
+
+
+func _publish_town_purchase(state: RefCounted, candidate: RunRoster, session: int, generation: int, source: PartyManagement) -> void:
+	if not _valid_town_selection(session, generation, source):
+		return
+	_roster = candidate
+	_durable_run_state = state
+	_finish_town_placement()
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _on_town_cancel(session: int, generation: int, source: PartyManagement) -> void:
+	if not _valid_town_selection(session, generation, source):
+		return
+	_finish_town_placement()
+	_apply_snapshot(_model.get_snapshot())
+
+
+func _finish_town_placement() -> void:
+	if is_instance_valid(_town_party):
+		_town_party.queue_free()
+		if _active_party == _town_party:
+			_active_party = null
+	_town_party = null
+	_town_selection.clear()
+	_town_generation += 1
+	# Replace panel callbacks with the new generation; old queued input stays invalid.
+	if has_active_town_recruitment():
+		for connection: Dictionary in _town_panel.get_signal_connection_list("recruit_requested"):
+			_town_panel.disconnect("recruit_requested", connection.callable)
+		for connection: Dictionary in _town_panel.get_signal_connection_list("close_requested"):
+			_town_panel.disconnect("close_requested", connection.callable)
+		_town_panel.connect("recruit_requested", _on_town_offer.bind(_session_generation, _town_generation, _town_panel))
+		_town_panel.connect("close_requested", _on_town_close.bind(_session_generation, _town_generation, _town_panel))
+		var context: Dictionary = get_town_recruitment_context()
+		_town_panel.call("configure", context.clan_id, context.gold, context.class_ids)
+		_town_panel.show()
+	_model.set_surface_blocked(true)
+
+
+func _clear_town_service() -> void:
+	_town_generation += 1
+	_town_selection.clear()
+	if is_instance_valid(_town_party):
+		_town_party.queue_free()
+		if _active_party == _town_party:
+			_active_party = null
+	_town_party = null
+	if has_active_town_recruitment():
+		_town_panel.queue_free()
+	_town_panel = null
