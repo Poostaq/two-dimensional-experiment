@@ -186,6 +186,13 @@ func _contract_case() -> void:
 		var before: Dictionary = world.get_durable_run_state().to_dictionary()
 		var context: Dictionary = world.call("get_town_recruitment_context")
 		_expect(context.ok and context.clan_id == &"goblin", "every v1 town available")
+		var expected_offers: Array[StringName] = [&"wirefang_skirmisher", &"scrapbroker", &"shivrunner", &"mobcaller"]
+		_expect(context.class_ids == expected_offers, "every town excludes present classes from starter-plus-Brakka roster")
+		var save_codec: Script = load("res://Scripts/Save/world_run_save_codec_v5.gd")
+		var town_save: PackedByteArray = save_codec.encode(plan, session.resolved_seed, world.get_durable_run_state())
+		var continued: Dictionary = save_codec.decode_any(town_save)
+		_expect(continued.ok and world.apply_session(continued.value, repo), "every town Continues")
+		_expect(world.get_town_recruitment_context().class_ids == expected_offers, "every town retains filtered offers after Continue")
 		world.call("open_town_recruitment")
 		world.call("close_town_recruitment")
 		_expect(world.get_durable_run_state().to_dictionary() == before and codec.serialize(plan) == bytes and repo.writes.is_empty(), "town close preserves all durable domain state and topology")

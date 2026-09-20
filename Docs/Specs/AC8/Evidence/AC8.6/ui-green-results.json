@@ -1,0 +1,32 @@
+[
+  {
+    "test": "UI/test_ac8_6_party_dismissal",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/UI/test_ac8_6_party_dismissal.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "UI/test_ac3_3_party_management",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/UI/test_ac3_3_party_management.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

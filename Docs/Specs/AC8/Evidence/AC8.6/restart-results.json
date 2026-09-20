@@ -1,0 +1,138 @@
+[
+  {
+    "case": "dismissal",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=dismissal"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "dismissal",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=dismissal"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "replacement",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=replacement"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "replacement",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=replacement"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "empty",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=empty"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "empty",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=empty"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "duplicate",
+    "mode": "writer",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=writer",
+      "--case=duplicate"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "case": "duplicate",
+    "mode": "reader",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--script",
+      "res://Tests/Run/test_ac8_6_eligibility_restart.gd",
+      "--",
+      "--mode=reader",
+      "--case=duplicate"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

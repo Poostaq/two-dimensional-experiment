@@ -1,0 +1,11 @@
+{"test": "WorldMap/test_ac8_town_recruitment", "command": ["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", "D:\\Projects\\two-dimension-exploration", "--quit-after", "1800", "--script", "res://Tests/WorldMap/test_ac8_town_recruitment.gd"], "exit": 1, "pass": false}
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: missing D1 production dismissal API
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:167)
+       [1] _dismissal_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:293)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:62)

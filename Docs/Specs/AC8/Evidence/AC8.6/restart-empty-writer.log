@@ -1,0 +1,6 @@
+{"case": "empty", "mode": "writer", "command": ["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", ".", "--script", "res://Tests/Run/test_ac8_6_eligibility_restart.gd", "--", "--mode=writer", "--case=empty"], "exit": 0, "pass": true}
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_6_eligibility_restart writer empty

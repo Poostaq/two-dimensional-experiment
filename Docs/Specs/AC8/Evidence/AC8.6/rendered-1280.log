@@ -1,0 +1,7 @@
+{"command": ["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--path", "D:\\Projects\\two-dimension-exploration", "--quit-after", "1200", "--script", "res://Tests/WorldMap/capture_ac8_6_eligibility.gd", "--", "--width=1280"], "exit": 0, "pass": true}
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+D3D12 12_0 - Forward Mobile - Using Device #0: NVIDIA - NVIDIA GeForce RTX 3080
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS capture_ac8_6_eligibility width=1280 actual_continue/click/drag/dialog_escape=true empty/dismiss/repurchase/replacement/reload/D1=true camera_unchanged=true

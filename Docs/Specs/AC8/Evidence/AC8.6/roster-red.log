@@ -1,0 +1,8 @@
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+FAIL AC8.6 roster: explicit roster removal API exists
+FAIL AC8.6 roster: 1/1 checks failed
+
+EXIT_CODE=1
