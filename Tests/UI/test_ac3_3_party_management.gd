@@ -173,11 +173,14 @@ func _test_ac8_7_intents(party: PartyManagement, sparse: Array[RunCharacter], fu
 			party.request_replacement(invalid, &"wrong", recruit.character_id)
 		party.request_placement(0, recruit.character_id)
 		party.request_placement(1, &"wrong")
+		if not replacement:
+			party.request_replacement(0, sparse[0].character_id, recruit.character_id)
 		party.request_replacement(0, &"wrong", recruit.character_id)
 		party.request_replacement(0, full[0].character_id, &"wrong")
 		_expect(_placement_events.size() == adds and _replacement_events.size() == replacements, "invalid and wrong-mode requests emit no purchase")
 		if replacement:
 			party.refresh_slots(sparse)
+			party.request_placement(1, recruit.character_id)
 			party.request_replacement(0, full[0].character_id, recruit.character_id)
 		else:
 			var filled: Array[RunCharacter] = sparse.duplicate()
