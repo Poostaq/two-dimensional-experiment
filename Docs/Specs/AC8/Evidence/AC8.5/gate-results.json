@@ -1,0 +1,317 @@
+[
+  {
+    "test": "Run/test_ac8_5_recruitment_rules",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_rules.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_town_recruitment",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_town_recruitment.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "UI/test_ac8_5_town_recruitment_panel",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/UI/test_ac8_5_town_recruitment_panel.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Run/test_ac8_economy",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_economy.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Run/test_ac3_1_run_roster",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac3_1_run_roster.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Run/test_ac3_3_party_formation",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac3_3_party_formation.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "UI/test_ac3_3_party_management",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/UI/test_ac3_3_party_management.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "UI/test_world_map_hud",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/UI/test_world_map_hud.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_world_runtime_save_coordinator",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_world_runtime_save_coordinator.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_world_production_scene",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_world_production_scene.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_world_runtime_scene",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_world_runtime_scene.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_scout_recruitment_flow",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_scout_recruitment_flow.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_1_gold_runtime",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_1_gold_runtime.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_2_defeat_ends_run",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_2_defeat_ends_run.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_3_reward_presentation",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_3_reward_presentation.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_4_town_ownership",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_4_town_ownership.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_4_town_ownership_reload",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_4_town_ownership_reload.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_4_world_debug_integration",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_ac8_4_world_debug_integration.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_cleared_battle_hex_revisit",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/WorldMap/test_cleared_battle_hex_revisit.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Save/test_goblin_starter_save_migration",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Save/test_goblin_starter_save_migration.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Save/test_world_run_save_codec_v5",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      "D:\\Projects\\two-dimension-exploration",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Save/test_world_run_save_codec_v5.gd"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

@@ -1,0 +1,16 @@
+res://Tests/UI/test_ac8_5_town_recruitment_panel.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC8.5 recruitment UI: PASS (36 assertions)
+
+Exit code: 0
+res://Tests/UI/test_world_map_hud.gd
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+World map HUD tests: PASS (59/59)
+
+Exit code: 0

@@ -1,0 +1,116 @@
+[
+  {
+    "mode": "writer",
+    "case": "success",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_restart.gd",
+      "--",
+      "writer",
+      "success"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "mode": "reader",
+    "case": "success",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_restart.gd",
+      "--",
+      "reader",
+      "success"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "mode": "writer",
+    "case": "retry",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_restart.gd",
+      "--",
+      "writer",
+      "retry"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "mode": "reader",
+    "case": "retry",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_restart.gd",
+      "--",
+      "reader",
+      "retry"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "mode": "writer",
+    "case": "discard",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_restart.gd",
+      "--",
+      "writer",
+      "discard"
+    ],
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "mode": "reader",
+    "case": "discard",
+    "command": [
+      "D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe",
+      "--headless",
+      "--path",
+      ".",
+      "--quit-after",
+      "1800",
+      "--script",
+      "res://Tests/Run/test_ac8_5_recruitment_restart.gd",
+      "--",
+      "reader",
+      "discard"
+    ],
+    "exit": 0,
+    "pass": true
+  }
+]

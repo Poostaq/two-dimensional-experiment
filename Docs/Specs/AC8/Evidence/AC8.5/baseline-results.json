@@ -1,0 +1,52 @@
+[
+  {
+    "test": "Run/test_ac8_economy",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Run/test_ac3_1_run_roster",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Run/test_ac3_3_party_formation",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "UI/test_ac3_3_party_management",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_world_runtime_save_coordinator",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "Save/test_world_run_save_codec_v5",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_4_town_ownership",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_4_town_ownership_reload",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_ac8_3_reward_presentation",
+    "exit": 0,
+    "pass": true
+  },
+  {
+    "test": "WorldMap/test_cleared_battle_hex_revisit",
+    "exit": 0,
+    "pass": true
+  }
+]

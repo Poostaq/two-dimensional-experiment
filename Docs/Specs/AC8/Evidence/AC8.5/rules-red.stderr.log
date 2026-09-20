@@ -1,0 +1,70 @@
+ERROR: starter canonical identity preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:19)
+ERROR: starter canonical identity preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:19)
+ERROR: starter canonical identity preserved
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:19)
+ERROR: regular factory identity: scrapshield_bruiser
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:22)
+ERROR: regular factory identity: wirefang_skirmisher
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:22)
+ERROR: regular factory identity: snarewright
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:22)
+ERROR: regular factory identity: scrapbroker
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:22)
+ERROR: regular factory identity: shivrunner
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:22)
+ERROR: regular factory identity: mobcaller
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:22)
+ERROR: legacy rewards have no canonical class
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:24)
+ERROR: legacy rewards have no canonical class
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:24)
+ERROR: recruitment costs exactly 500g
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:27)
+ERROR: clan allowlist exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:28)
+ERROR: pure recruitment rule module exists
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/Run/test_ac8_5_recruitment_rules.gd:76)
+       [1] _run (res://Tests/Run/test_ac8_5_recruitment_rules.gd:36)

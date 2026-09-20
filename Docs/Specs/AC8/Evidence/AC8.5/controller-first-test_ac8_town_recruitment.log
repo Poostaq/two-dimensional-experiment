@@ -1,0 +1,234 @@
+{"test": "WorldMap/test_ac8_town_recruitment", "command": ["D:/Program Files (x86)/Steam/steamapps/common/Godot Engine/godot.windows.opt.tools.64.exe", "--headless", "--path", "D:\\Projects\\two-dimension-exploration", "--quit-after", "1800", "--script", "res://Tests/WorldMap/test_ac8_town_recruitment.gd"], "exit": 1, "pass": false}
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() â€” debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+ERROR: Cannot open file 'res://Scenes/UI/town_recruitment_panel.tscn'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Failed loading resource: res://Scenes/UI/town_recruitment_panel.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Cannot call method 'instantiate' on a null value.
+   at: WorldRuntimeController.open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: open town
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: town modal blocks movement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:66)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: close twice is a domain no-op
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:71)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: reopen without move
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:72)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: 499g rejects
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:75)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: poor purchase unchanged
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:76)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Cannot open file 'res://Scenes/UI/town_recruitment_panel.tscn'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Failed loading resource: res://Scenes/UI/town_recruitment_panel.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Cannot call method 'instantiate' on a null value.
+   at: WorldRuntimeController.open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: open town
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: town modal blocks movement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:66)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: close twice is a domain no-op
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:71)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: reopen without move
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:72)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: selection opens placement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:78)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Invalid call. Nonexistent function 'request_placement_cancel' in base 'Nil'.
+   at: _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:80)
+   GDScript backtrace (most recent call first):
+       [0] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:80)
+       [1] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Cannot open file 'res://Scenes/UI/town_recruitment_panel.tscn'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Failed loading resource: res://Scenes/UI/town_recruitment_panel.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Cannot call method 'instantiate' on a null value.
+   at: WorldRuntimeController.open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: open town
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:65)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: town modal blocks movement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:66)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: close twice is a domain no-op
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:71)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: reopen without move
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:72)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: selection opens placement
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _expect (res://Tests/WorldMap/test_ac8_town_recruitment.gd:160)
+       [1] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:78)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Invalid call. Nonexistent function 'request_placement_cancel' in base 'Nil'.
+   at: _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:80)
+   GDScript backtrace (most recent call first):
+       [0] _purchase_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:80)
+       [1] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Cannot open file 'res://Scenes/UI/town_recruitment_panel.tscn'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:109)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Failed loading resource: res://Scenes/UI/town_recruitment_panel.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:109)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Cannot call method 'instantiate' on a null value.
+   at: WorldRuntimeController.open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+       [1] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:109)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Invalid call. Nonexistent function 'request_placement' in base 'Nil'.
+   at: _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:113)
+   GDScript backtrace (most recent call first):
+       [0] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:113)
+       [1] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Cannot open file 'res://Scenes/UI/town_recruitment_panel.tscn'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:109)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Failed loading resource: res://Scenes/UI/town_recruitment_panel.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:109)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Cannot call method 'instantiate' on a null value.
+   at: WorldRuntimeController.open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+       [1] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:109)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Invalid call. Nonexistent function 'request_placement' in base 'Nil'.
+   at: _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:113)
+   GDScript backtrace (most recent call first):
+       [0] _retry_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:113)
+       [1] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Cannot open file 'res://Scenes/UI/town_recruitment_panel.tscn'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _availability_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:148)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+ERROR: Failed loading resource: res://Scenes/UI/town_recruitment_panel.tscn.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1436)
+       [1] _availability_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:148)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Cannot call method 'instantiate' on a null value.
+   at: WorldRuntimeController.open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+   GDScript backtrace (most recent call first):
+       [0] open_town_recruitment (res://Scripts/WorldMap/world_runtime_controller.gd:1437)
+       [1] _availability_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:148)
+       [2] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
+SCRIPT ERROR: Invalid access to property or key 'placement_requested' on a base object of type 'Nil'.
+   at: _availability_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:152)
+   GDScript backtrace (most recent call first):
+       [0] _availability_case (res://Tests/WorldMap/test_ac8_town_recruitment.gd:152)
+       [1] _open (res://Tests/WorldMap/test_ac8_town_recruitment.gd:55)
