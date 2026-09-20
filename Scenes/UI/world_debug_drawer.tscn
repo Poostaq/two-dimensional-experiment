@@ -1,0 +1,117 @@
+[gd_scene format=3 uid="uid://6cn0gqsrpib4"]
+
+[ext_resource type="Script" uid="uid://c4g0vd81pka3d" path="res://Scripts/UI/world_debug_drawer.gd" id="1_1g2m6"]
+
+[node name="WorldDebugDrawer" type="Control" unique_id=1943490367]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("1_1g2m6")
+
+[node name="DebugHandle" type="Button" parent="." unique_id=505966876]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_top = 42.0
+offset_right = -12.0
+offset_bottom = 76.0
+text = "Debug"
+
+[node name="DrawerPanel" type="PanelContainer" parent="." unique_id=1213365300]
+unique_name_in_owner = true
+visible = false
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -488.0
+offset_top = 82.0
+offset_right = -12.0
+offset_bottom = -12.0
+mouse_force_pass_scroll_events = false
+
+[node name="Contents" type="VBoxContainer" parent="DrawerPanel" unique_id=1981985088]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="DrawerPanel/Contents" unique_id=730481818]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="DrawerPanel/Contents/Header" unique_id=1740030106]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "WORLD DIAGNOSTICS"
+
+[node name="CloseButton" type="Button" parent="DrawerPanel/Contents/Header" unique_id=1362583426]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Close"
+
+[node name="Separator" type="HSeparator" parent="DrawerPanel/Contents" unique_id=525822892]
+layout_mode = 2
+
+[node name="DiagnosticsScroll" type="ScrollContainer" parent="DrawerPanel/Contents" unique_id=730886204]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+focus_mode = 2
+mouse_filter = 0
+mouse_force_pass_scroll_events = false
+horizontal_scroll_mode = 0
+
+[node name="Sections" type="VBoxContainer" parent="DrawerPanel/Contents/DiagnosticsScroll" unique_id=504682824]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HexHeading" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1719879269]
+layout_mode = 2
+text = "CURRENT HEX"
+
+[node name="HexDetails" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=364277263]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="HabitatHeading" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=19723408]
+layout_mode = 2
+text = "HABITAT & OWNERSHIP"
+
+[node name="HabitatDetails" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1533609017]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="MapHeading" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1956804983]
+layout_mode = 2
+text = "MAP CONTEXT"
+
+[node name="MapDetails" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1130857995]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="RunHeading" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1649425927]
+layout_mode = 2
+text = "RUN STATE"
+
+[node name="RunDetails" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1284913546]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3
+
+[node name="PersistenceHeading" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=382633455]
+layout_mode = 2
+text = "INTERACTION & PERSISTENCE"
+
+[node name="PersistenceDetails" type="Label" parent="DrawerPanel/Contents/DiagnosticsScroll/Sections" unique_id=1463495130]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+autowrap_mode = 3

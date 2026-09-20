@@ -66,12 +66,14 @@ var _pending_candidate_model: WorldRuntimeModel
 var _pending_move_result: WorldMoveResult
 var _autosave_overlay: WorldAutosaveFailureOverlay
 var _session_applied: bool = false
+var _debug_refresh_queued: bool = false
 var _active_battle_recovery_handled: bool = false
 
 @export var auto_initialize_runtime: bool = true
 
 
 func _ready() -> void:
+	_reset_world_debug()
 	if not _validate_dependencies():
 		_fail_integration()
 		return
@@ -86,11 +88,13 @@ func _ready() -> void:
 
 
 func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return false
 	var requested_state: RefCounted = session.get("run_state") as RefCounted
 	if not is_instance_valid(requested_state) or not requested_state.is_playable():
 		return false
+	_reset_world_debug()
 	_session_generation += 1
 	_session_applied = false
 	if (
@@ -136,11 +140,13 @@ func get_durable_run_state() -> RefCounted:
 
 
 func configure_runtime(plan: WorldPlan) -> bool:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return false
 	if _integration_failed or not is_instance_valid(plan) or not _model.configure(plan):
 		_fail_integration()
 		return false
+	_reset_world_debug()
 	_runtime_plan = plan
 	if not present_plan(_runtime_plan):
 		_fail_integration()
@@ -161,6 +167,7 @@ func configure_persistence(
 	run_state: RefCounted,
 	repository: RefCounted
 ) -> bool:
+	_queue_debug_refresh()
 	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward() or not is_instance_valid(run_state) or not run_state.is_playable():
 		return false
 	if (
@@ -181,6 +188,7 @@ func configure_persistence(
 
 
 func retry_autosave() -> Dictionary:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase in [TerminalPhase.LOSS_COMMITTING, TerminalPhase.LOSS_DURABLE, TerminalPhase.RETURNED]:
 		return {"ok": false, "value": null, "error": null}
 	var terminal_retry: bool = _terminal_phase == TerminalPhase.LOSS_SAVE_FAILED
@@ -205,6 +213,7 @@ func retry_autosave() -> Dictionary:
 
 
 func discard_pending_autosave() -> bool:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING:
 		return false
 	if not is_instance_valid(_save_coordinator):
@@ -245,6 +254,7 @@ func get_runtime_snapshot() -> WorldRuntimeSnapshot:
 
 
 func request_move(destination: Vector2i) -> WorldMoveResult:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or has_pending_gold_reward():
 		_model.set_surface_blocked(true)
 		return _model.request_move(destination)
@@ -335,6 +345,7 @@ func _wire_autosave_overlay() -> void:
 
 
 func _on_autosave_failed(error: RefCounted) -> void:
+	_queue_debug_refresh()
 	if is_instance_valid(_autosave_overlay) and is_instance_valid(error):
 		_autosave_overlay.present(
 			error,
@@ -360,6 +371,7 @@ func _on_autosave_diagnostics_copied(_diagnostics: String) -> void:
 
 
 func _on_autosave_recovered() -> void:
+	_queue_debug_refresh()
 	if is_instance_valid(_autosave_overlay):
 		_autosave_overlay.dismiss()
 
@@ -403,6 +415,7 @@ func _restore_roster(run_state: RefCounted) -> bool:
 
 
 func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
+	_queue_debug_refresh()
 	if has_pending_gold_reward() or has_active_encounter():
 		return
 	_active_encounter = ENCOUNTER_SCENE.instantiate() as EncounterOverlay
@@ -413,6 +426,7 @@ func _open_encounter(coord: Vector2i, encounter_type: String) -> void:
 
 
 func _on_encounter_close_requested() -> void:
+	_queue_debug_refresh()
 	if has_pending_gold_reward() or not has_active_encounter():
 		return
 	var was_boss := _active_encounter.encounter_type.to_lower() == "boss"
@@ -426,6 +440,7 @@ func _on_encounter_close_requested() -> void:
 
 
 func _on_battle_requested(coord: Vector2i, encounter_type: String) -> void:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if has_active_battle():
@@ -571,6 +586,7 @@ func _build_preparation_candidate(record: RefCounted, consume_cache: bool) -> Re
 
 
 func _publish_preparation_offer(state: RefCounted) -> void:
+	_queue_debug_refresh()
 	if not is_instance_valid(state):
 		return
 	_durable_run_state = state
@@ -578,6 +594,7 @@ func _publish_preparation_offer(state: RefCounted) -> void:
 
 
 func _publish_preparation_commit(state: RefCounted) -> void:
+	_queue_debug_refresh()
 	if not is_instance_valid(state) or not has_active_battle():
 		return
 	var record := state.get("battle_preparation") as RefCounted
@@ -641,6 +658,7 @@ func _on_battle_completed(outcome: BattleOutcome.Type, session_generation: int =
 
 
 func _publish_battle_settlement(state: RefCounted, generation: int, battle_generation: int, source: BattleArena) -> void:
+	_queue_debug_refresh()
 	if generation != _session_generation or battle_generation != _battle_generation or not is_instance_valid(source) or source != _active_battle:
 		return
 	if _battle_settled:
@@ -870,6 +888,7 @@ func _close_recruitment_party(reset_state: bool = true) -> void:
 
 
 func _on_battle_closed() -> void:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if not has_active_battle():
@@ -898,6 +917,7 @@ func _on_party_move_requested(source_slot: int, destination_slot: int, character
 
 
 func _on_party_close_requested() -> void:
+	_queue_debug_refresh()
 	if _integration_failed or _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward():
 		return
 	if not has_active_party_management():
@@ -1109,6 +1129,7 @@ func _apply_snapshot(snapshot: WorldRuntimeSnapshot) -> void:
 	)
 	hud.set_party_available(not snapshot.input_blocked)
 	_apply_camera_visibility_rule(snapshot.player_coord)
+	_refresh_debug_view()
 
 
 func _apply_camera_visibility_rule(player_coord: Vector2i) -> void:
@@ -1158,6 +1179,7 @@ func _validate_dependencies() -> bool:
 
 
 func _fail_integration() -> void:
+	_queue_debug_refresh()
 	_integration_failed = true
 	_model.set_surface_blocked(true)
 	var empty_destinations: Array[Vector2i] = []
@@ -1222,6 +1244,7 @@ func acknowledge_gold_reward(battle_id: String) -> Dictionary:
 
 
 func _publish_reward_acknowledgement(state: RefCounted, generation: int, battle_id: String) -> void:
+	_queue_debug_refresh()
 	if generation != _session_generation or battle_id != _pending_ack_id or not has_pending_gold_reward():
 		return
 	if _durable_run_state.pending_reward_battle_id != battle_id or not is_instance_valid(state):
@@ -1256,3 +1279,105 @@ func _invalidate_gold_callbacks() -> void:
 
 func _exit_tree() -> void:
 	_invalidate_gold_callbacks()
+
+# Detached diagnostics use committed model/run state, never pending move candidates.
+func get_debug_snapshot() -> Dictionary:
+	var snapshot: WorldRuntimeSnapshot = _model.get_snapshot()
+	var view: Dictionary = {
+		"session_applied": _session_applied,
+		"input_blocked": snapshot.input_blocked,
+		"active_encounter": has_active_encounter(),
+		"active_battle": has_active_battle(),
+		"active_party": has_active_party_management(),
+		"autosave_blocked": is_autosave_blocked(),
+		"integration_failed": _integration_failed,
+	}
+	if not is_instance_valid(_runtime_plan):
+		return view
+	var coord: Vector2i = snapshot.player_coord
+	var cells: Dictionary = _runtime_plan.get_cells()
+	var cell: Dictionary = cells.get(coord, {})
+	var neighbors: Array[Vector2i] = []
+	for neighbor: Vector2i in HexWorldGeometry.get_neighbors(coord):
+		if cells.has(neighbor):
+			neighbors.append(neighbor)
+	var links: Array = []
+	for road: Dictionary in _runtime_plan.get_roads():
+		if road.get("a") == coord or road.get("b") == coord:
+			links.append(road.duplicate(true))
+	var forests: Array[int] = []
+	var clusters: Array = _runtime_plan.get_forest_clusters()
+	for index: int in clusters.size():
+		if clusters[index].has(coord):
+			forests.append(index)
+	view.merge({
+		"coord": coord,
+		"terrain": cell.get("terrain"),
+		"base_encounter": cell.get("encounter"),
+		"effective_encounter": _model.get_runtime_encounter_type(coord),
+		"town_index": cell.get("town_index"),
+		"habitat": _model.get_habitat(coord),
+		"ownership": _model.get_town_ownership(coord),
+		"neighbors": neighbors,
+		"destinations": _model.get_valid_destinations(),
+		"road_links": links,
+		"forest_clusters": forests,
+		"seed": _runtime_plan.get_seed_hex().hex_decode().get_string_from_utf8(),
+		"version": _runtime_plan.get_version(),
+		"player_coord": coord,
+		"boss_coord": snapshot.boss_coord,
+		"move_count": snapshot.move_count,
+		"boss_active": snapshot.sudden_death_active,
+		"boss_engaged": snapshot.boss_encounter_open,
+	})
+	if is_instance_valid(_durable_run_state):
+		var state: Dictionary = _durable_run_state.to_dictionary()
+		var defeated: bool = false
+		for receipt: Dictionary in state.get("battle_settlements", []):
+			if receipt.get("battle_id") == "boss" and receipt.get("outcome") == "victory":
+				defeated = true
+		view.merge({
+			"consumed": _durable_run_state.consumed_encounters.has(coord),
+			"boss_defeated": defeated,
+			"run_status": state.get("run_status"),
+			"gold": state.get("gold"),
+			"pending_reward_battle_id": state.get("pending_reward_battle_id"),
+			"preparation_state": state.get("battle_preparation", {}).get("state"),
+			"cache_progress": state.get("cache_move_progress"),
+			"cache_ready": state.get("cache_ready"),
+		})
+	return view.duplicate(true)
+
+
+func _queue_debug_refresh() -> void:
+	if _debug_refresh_queued or not is_inside_tree():
+		return
+	_debug_refresh_queued = true
+	_refresh_debug_view.call_deferred()
+
+
+func _refresh_debug_view() -> void:
+	_debug_refresh_queued = false
+	if not is_inside_tree():
+		return
+	var view: Dictionary = get_debug_snapshot()
+	var hud: WorldMapHud = get_node_or_null("%WorldMapHud") as WorldMapHud
+	if is_instance_valid(hud):
+		hud.set_habitat(view.get("habitat", {}))
+	var drawer: Control = get_node_or_null("UI/WorldDebugDrawer") as Control
+	if not is_instance_valid(drawer):
+		return
+	drawer.render(view)
+	drawer.set_available(is_instance_valid(_runtime_plan) and not (
+		view.input_blocked or view.active_encounter or view.active_battle
+		or view.active_party or view.autosave_blocked or view.integration_failed
+		or has_pending_gold_reward() or _terminal_phase != TerminalPhase.PLAYING
+	))
+
+
+func _reset_world_debug() -> void:
+	var drawer: Control = get_node_or_null("UI/WorldDebugDrawer") as Control
+	if is_instance_valid(drawer):
+		drawer.reset_view()
+		drawer.set_available(false)
+	_queue_debug_refresh()

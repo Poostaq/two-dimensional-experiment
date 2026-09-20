@@ -4,7 +4,9 @@
 [ext_resource type="Script" uid="uid://iw0tft40dhmb" path="res://Scripts/WorldMap/world_camera_controller.gd" id="2_wr8mu"]
 [ext_resource type="PackedScene" uid="uid://cs1abrmsf7038" path="res://Scenes/world_map_hud.tscn" id="3_ioilc"]
 [ext_resource type="PackedScene" uid="uid://ry5f32nn4nye" path="res://Scenes/world_minimap.tscn" id="5_8roes"]
+[ext_resource type="PackedScene" uid="uid://6cn0gqsrpib4" path="res://Scenes/UI/world_debug_drawer.tscn" id="5_m5ov0"]
 [ext_resource type="PackedScene" uid="uid://bpvrd5tjios57" path="res://Scenes/UI/battle_gold_reward_panel.tscn" id="6_m5ov0"]
+[ext_resource type="Script" uid="uid://c4g0vd81pka3d" path="res://Scripts/UI/world_debug_drawer.gd" id="6_wr8mu"]
 [ext_resource type="PackedScene" uid="uid://b36euxg5lv0i4" path="res://Scenes/world_autosave_failure_overlay.tscn" id="7_6n27o"]
 
 [node name="WorldMapRuntime" type="Node2D" unique_id=861273873]
@@ -42,6 +44,16 @@ unique_name_in_owner = true
 [node name="WorldMinimap" parent="UI" unique_id=349734234 instance=ExtResource("5_8roes")]
 unique_name_in_owner = true
 
+[node name="WorldDebugDrawer" type="Control" parent="UI" unique_id=1943490367 instance=ExtResource("5_m5ov0")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("6_wr8mu")
+
 [node name="EncounterHost" type="Node" parent="." unique_id=1732862383]
 
 [node name="BattleHost" type="CanvasLayer" parent="." unique_id=1601670911]
@@ -61,3 +73,5 @@ layer = 35
 
 [node name="BattleGoldRewardPanel" parent="GoldRewardHost" unique_id=594160737 instance=ExtResource("6_m5ov0")]
 anchors_preset = 15
+grow_horizontal = 2
+grow_vertical = 2

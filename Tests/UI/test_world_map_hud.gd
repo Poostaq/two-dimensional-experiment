@@ -2,7 +2,7 @@ class_name WorldMapHudTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_hud.tscn"
-const EXPECTED_TEST_COUNT := 53
+const EXPECTED_TEST_COUNT := 59
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -118,6 +118,18 @@ func _run() -> void:
 		_expect(_rect(top_bar).encloses(_rect(gold)), "wallet fits top bar")
 		_expect(_rect(hud.get_node("%MoveCountLabel")).end.x <= _rect(gold).position.x, "wallet follows moves without overlap")
 		_expect(_rect(gold).end.x <= _rect(remaining).position.x, "wallet does not overlap countdown")
+
+	var habitat: Label = hud.get_node("%HabitatLabel") as Label
+	_expect(is_instance_valid(habitat), "habitat label exists")
+	hud.call("set_habitat", {"ok": true, "display_name": "Goblin"})
+	_expect(habitat.text == "Habitat: Goblin", "current habitat is readable")
+	hud.call("set_context", "combat", terrain_tags, true)
+	_expect(habitat.text == "Habitat: Goblin", "hover context does not replace current habitat")
+	await process_frame
+	_expect(_rect(top_bar).encloses(_rect(habitat)), "habitat fits top bar")
+	_expect(_rect(habitat).end.x <= _rect(remaining).position.x, "habitat does not overlap countdown")
+	hud.call("set_habitat", {"ok": false, "error": &"unsupported_world_version"})
+	_expect(habitat.text == "Habitat: Unavailable", "unknown habitat never falls back to Goblin")
 
 	hud.queue_free()
 	await process_frame

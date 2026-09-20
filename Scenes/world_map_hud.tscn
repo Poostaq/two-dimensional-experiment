@@ -254,6 +254,11 @@ tooltip_text = "Gold"
 theme_override_font_sizes/font_size = 18
 text = "0g"
 
+[node name="HabitatLabel" type="Label" parent="StatusRow" unique_id=287626171]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Habitat: Unavailable"
+
 [node name="StatusSpacer" type="Control" parent="StatusRow" unique_id=1910051942]
 layout_mode = 2
 size_flags_horizontal = 3

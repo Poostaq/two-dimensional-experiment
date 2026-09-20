@@ -7,6 +7,7 @@ var _snapshot_script: GDScript = load("res://Scripts/WorldMap/world_runtime_snap
 var _result_script: GDScript = load("res://Scripts/WorldMap/world_move_result.gd")
 
 var _town_ownership_rules: GDScript = load("res://Scripts/WorldMap/town_ownership_rules.gd")
+var _habitat_rules: GDScript = load("res://Scripts/WorldMap/world_habitat_rules.gd")
 
 var _plan: WorldPlan
 var _cells: Dictionary = {}
@@ -96,6 +97,10 @@ func get_valid_destinations() -> Array[Vector2i]:
     if not is_instance_valid(_plan) or _input_blocked or _boss_encounter_open:
         return []
     return HexWorldGeometry.get_neighbors(_player_coord)
+
+
+func get_habitat(coord: Vector2i) -> Dictionary:
+    return _habitat_rules.resolve(_plan, coord)
 
 
 func get_town_ownership(coord: Vector2i) -> Dictionary:

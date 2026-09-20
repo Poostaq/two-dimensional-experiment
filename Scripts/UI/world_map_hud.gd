@@ -5,6 +5,7 @@ signal party_requested
 
 const BOSS_THRESHOLD := 30
 
+@onready var _habitat_label: Label = %HabitatLabel
 @onready var _gold_label: Label = %GoldLabel
 @onready var _move_count_label: Label = %MoveCountLabel
 @onready var _remaining_label: Label = %RemainingLabel
@@ -19,6 +20,11 @@ const BOSS_THRESHOLD := 30
 
 func _ready() -> void:
 	_manage_party_button.pressed.connect(_on_manage_party_pressed)
+
+
+func set_habitat(habitat: Dictionary) -> void:
+	var display_name: String = String(habitat.get("display_name", ""))
+	_habitat_label.text = "Habitat: %s" % (display_name if habitat.get("ok", false) and not display_name.is_empty() else "Unavailable")
 
 
 func set_gold_balance(balance: int) -> void:

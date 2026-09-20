@@ -22,7 +22,11 @@ static func resolve(plan: WorldPlan, coord: Vector2i) -> Dictionary:
         return _failure(&"invalid_town_record")
     if index == -1:
         return _failure(&"not_a_town")
-    return {"ok": true, "clan_id": GOBLIN_CLAN_ID, "error": &""}
+    var habitat_rules: GDScript = load("res://Scripts/WorldMap/world_habitat_rules.gd")
+    var habitat: Dictionary = habitat_rules.resolve(plan, coord)
+    if not habitat.ok:
+        return _failure(habitat.error)
+    return {"ok": true, "clan_id": habitat.clan_id, "error": &""}
 
 static func _failure(error: StringName) -> Dictionary:
     return {"ok": false, "clan_id": &"", "error": error}
