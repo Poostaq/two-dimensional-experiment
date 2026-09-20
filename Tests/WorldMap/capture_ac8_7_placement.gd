@@ -47,17 +47,13 @@ func _run() -> void:
 			expected.character_hp.erase(displaced)
 		expected.formation[4] = "scrapbroker"
 		expected.character_hp["scrapbroker"] = RunCharacterCatalog.create_by_class_id(&"scrapbroker").max_hp
+		var map_points: Array[Vector2] = _actionable_map_points()
 		await _open()
+		await _assert_modal_isolation(map_points)
 		await _select()
 		var party: PartyManagement = world.get("_active_party")
 		await _capture(tag)
-		var camera: Camera2D = world.find_children("*", "Camera2D", true, false)[0]
-		var position_before: Vector2 = camera.position
-		var zoom_before: Vector2 = camera.zoom
-		_key(KEY_RIGHT)
-		_mouse(Vector2(10, 350), MOUSE_BUTTON_WHEEL_UP, true)
-		await process_frame
-		assert(camera.position == position_before and camera.zoom == zoom_before)
+		await _assert_modal_isolation(map_points)
 		_key(KEY_ESCAPE)
 		await process_frame
 		assert(not world.has_active_party_management())
@@ -78,6 +74,7 @@ func _run() -> void:
 		await _drag_recruit(party, 4)
 		assert(world.is_autosave_blocked())
 		assert(world.get_durable_run_state().to_dictionary() == before)
+		await _assert_modal_isolation(map_points)
 		await _capture(tag + "-failed")
 		var overlay: Control = _failure_overlay()
 		_click(overlay.get_node("%RetryButton"))
@@ -178,6 +175,8 @@ func _fixture(replacement: bool) -> Dictionary:
 	return session
 
 func _drag_recruit(party: PartyManagement, slot_index: int) -> void:
+	await RenderingServer.frame_post_draw
+	assert(not root.gui_is_dragging(), "previous input released drag")
 	var source: Vector2 = (party.get_node("%PendingRecruitCard") as Control).get_global_rect().get_center()
 	var target: Vector2 = (party.get_node("%%Slot%d" % slot_index) as Control).get_global_rect().get_center()
 	_motion(source, Vector2.ZERO, 0)
@@ -187,6 +186,7 @@ func _drag_recruit(party: PartyManagement, slot_index: int) -> void:
 	await process_frame
 	_motion(target, target - source - Vector2(20, 0), MOUSE_BUTTON_MASK_LEFT)
 	await process_frame
+	assert(root.gui_is_dragging(), "actual recruit drag started")
 	_mouse(target, MOUSE_BUTTON_LEFT, false)
 	await process_frame
 	await process_frame
@@ -274,3 +274,58 @@ func _key(code: Key) -> void:
 		event.physical_keycode = code
 		event.pressed = pressed
 		root.push_input(event, true)
+
+func _actionable_map_points() -> Array[Vector2]:
+	var points: Array[Vector2] = []
+	var destinations: Array[Vector2i] = world.get_valid_destinations()
+	assert(not destinations.is_empty(), "fixture has a legal map destination")
+	for node: Node in world.find_children("*", "Node2D", true, false):
+		if node is WorldCellView and destinations.has(node.coordinate):
+			var point: Vector2 = node.get_global_transform_with_canvas().origin
+			if point.x > 20 and point.x < width - 20 and point.y > 100 and point.y < root.size.y - 150:
+				points.append(point)
+	assert(not points.is_empty(), "fixture needs visible actionable map cell")
+	return points
+
+func _assert_modal_isolation(map_points: Array[Vector2]) -> void:
+	# Avoid activating a legitimate overlay button while targeting the map beneath it.
+	var map_point := Vector2(-1, -1)
+	for candidate: Vector2 in map_points:
+		var over_button: bool = false
+		for node: Node in world.find_children("*", "Button", true, false):
+			var button := node as Button
+			if button.is_visible_in_tree() and button.get_global_rect().has_point(candidate):
+				over_button = true
+				break
+		if not over_button:
+			map_point = candidate
+			break
+	assert(map_point != Vector2(-1, -1), "need a map cell not covered by an actionable button")
+	var before: Dictionary = world.get_durable_run_state().to_dictionary()
+	var camera: Camera2D = world.find_children("*", "Camera2D", true, false)[0]
+	var old_position: Vector2 = camera.position
+	var old_zoom: Vector2 = camera.zoom
+	# Coordinate is measured from an actual legal cell before opening the modal.
+	_mouse(map_point, MOUSE_BUTTON_LEFT, true)
+	await process_frame
+	_mouse(map_point, MOUSE_BUTTON_LEFT, false)
+	_mouse(Vector2(10, 350), MOUSE_BUTTON_LEFT, true)
+	_motion(Vector2(150, 400), Vector2(140, 50), MOUSE_BUTTON_MASK_LEFT)
+	_mouse(Vector2(150, 400), MOUSE_BUTTON_LEFT, false)
+	_mouse(Vector2(10, 350), MOUSE_BUTTON_WHEEL_UP, true)
+	var event := InputEventKey.new()
+	event.keycode = KEY_RIGHT
+	event.physical_keycode = KEY_RIGHT
+	event.pressed = true
+	root.push_input(event, true)
+	await process_frame
+	await process_frame
+	event = InputEventKey.new()
+	event.keycode = KEY_RIGHT
+	event.physical_keycode = KEY_RIGHT
+	event.pressed = false
+	root.push_input(event, true)
+	await process_frame
+	assert(not root.gui_is_dragging(), "map probe leaves no GUI drag pending")
+	assert(camera.position == old_position and camera.zoom == old_zoom, "modal blocks map drag and zoom")
+	assert(world.get_durable_run_state().to_dictionary() == before, "modal blocks legal-cell click and world movement")
