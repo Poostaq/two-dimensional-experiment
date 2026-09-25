@@ -21,7 +21,7 @@ func _run() -> void:
 	await _test_stun_guard_action_contract()
 	_test_leech_contract()
 	_test_adjacent_ally_contract()
-	_test_adjacent_ally_reaction_contract()
+	_test_adjacent_ally_action_end_reaction_contract()
 	await _test_leech_commit_contract()
 	_finish()
 
@@ -141,16 +141,17 @@ func _test_adjacent_ally_contract() -> void:
 	_expect(BattleFormationRules.closest_active_adjacent_ally(owner, units) == null, "Inactive owners cannot select adjacent allies")
 
 
-func _test_adjacent_ally_reaction_contract() -> void:
+func _test_adjacent_ally_action_end_reaction_contract() -> void:
 	var catalog := load("res://Scripts/Run/run_character_catalog.gd") as Script
 	var goruk: RunCharacter = catalog.create_by_class_id(&"goruk_ironline")
 	var owner := BattleUnitState.new(&"goruk_ironline", "Goruk", BattleUnitState.Side.PLAYER, 0, 5, 20, goruk.get_skills())
 	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 5, 20)
 	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5, 20)
 	var units: Array[BattleUnitState] = [owner, ally, enemy]
-	var reactions: Array[Dictionary] = BattleReactionDispatcher.collect_action_start_reactions(owner, units, 1)
-	_expect(reactions.size() == 1, "Goruk resolves one action-start passive candidate")
-	if reactions.size() == 1:
+	var dispatcher_script := load("res://Scripts/Battle/battle_reaction_dispatcher.gd") as Script
+	var reactions: Variant = dispatcher_script.call("collect_action_end_reactions", owner, units, 1)
+	_expect(reactions is Array and reactions.size() == 1, "Goruk resolves one action-end passive candidate")
+	if reactions is Array and reactions.size() == 1:
 		_expect(reactions[0].get("target_id") == ally.unit_id, "Goruk resolves Iron Decree to the adjacent ally")
 
 

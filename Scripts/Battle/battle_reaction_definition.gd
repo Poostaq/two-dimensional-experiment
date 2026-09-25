@@ -5,6 +5,7 @@ enum Trigger {
 	DIRECT_HIT,
 	FORCED_MOVEMENT,
 	ACTION_START,
+	ACTION_END,
 }
 
 enum TargetPolicy {
@@ -179,7 +180,7 @@ static func _is_valid_input(
 ) -> bool:
 	return (
 		not definition_passive_skill_id.is_empty()
-		and definition_trigger in [Trigger.DIRECT_HIT, Trigger.FORCED_MOVEMENT, Trigger.ACTION_START]
+		and definition_trigger in [Trigger.DIRECT_HIT, Trigger.FORCED_MOVEMENT, Trigger.ACTION_START, Trigger.ACTION_END]
 		and definition_target_policy in [TargetPolicy.CLOSEST_OPPONENT, TargetPolicy.ADJACENT_ALLY]
 		and definition_frequency in [Frequency.ONCE_PER_ACTION, Frequency.ONCE_PER_ROUND, Frequency.ONCE_PER_BATTLE]
 		and is_instance_valid(definition_operation)
