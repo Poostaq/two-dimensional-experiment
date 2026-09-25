@@ -201,6 +201,17 @@ static func stun(role: int) -> RefCounted:
 	)
 
 
+static func leech(role: int, percent: int) -> RefCounted:
+	return _create(
+		Kind.KEYWORD,
+		role,
+		0,
+		0,
+		BattleKeywordOperation.Kind.LEECH,
+		percent
+	)
+
+
 static func speed(
 	role: int,
 	effect_magnitude: int,
@@ -364,6 +375,7 @@ static func _is_valid_input(
 				BattleKeywordOperation.Kind.APPLY_BLEED,
 				BattleKeywordOperation.Kind.APPLY_POISON,
 				BattleKeywordOperation.Kind.APPLY_STUN,
+				BattleKeywordOperation.Kind.LEECH,
 				BattleKeywordOperation.Kind.REDUCE_COOLDOWN,
 			]:
 				return false
@@ -373,6 +385,8 @@ static func _is_valid_input(
 				return effect_magnitude > 0 and effect_duration > 0 and poison_axis_value in [&"power", &"defense", &"speed"]
 			if operation_kind == BattleKeywordOperation.Kind.APPLY_STUN:
 				return effect_magnitude == 0 and effect_duration == 1
+			if operation_kind == BattleKeywordOperation.Kind.LEECH:
+				return role == TargetRole.ACTOR and effect_magnitude > 0 and effect_magnitude <= 100 and effect_duration == 0
 			if operation_kind in [
 				BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 				BattleKeywordOperation.Kind.APPLY_SNARED,

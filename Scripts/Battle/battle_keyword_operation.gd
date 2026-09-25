@@ -147,6 +147,7 @@ static func _is_valid_input(
 		Kind.APPLY_BLEED,
 		Kind.APPLY_POISON,
 		Kind.APPLY_STUN,
+		Kind.LEECH,
 		Kind.REDUCE_COOLDOWN,
 	] or operation_target_id.is_empty():
 		return false
@@ -161,6 +162,8 @@ static func _is_valid_input(
 			return operation_magnitude > 0 and operation_duration > 0 and operation_poison_axis in [&"power", &"defense", &"speed"] and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_STUN:
 			return operation_magnitude == 0 and operation_duration == 1 and _is_valid_keyword_source(operation_source)
+		Kind.LEECH:
+			return operation_magnitude > 0 and operation_magnitude <= 100 and operation_duration == 0
 		Kind.REDUCE_COOLDOWN:
 			return operation_magnitude > 0 and operation_duration == 0 and not operation_affected_skill_id.is_empty()
 	return false

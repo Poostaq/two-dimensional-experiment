@@ -19,6 +19,7 @@ func _run() -> void:
 	await _test_poison_commit_contract()
 	await _test_stun_turn_skip_contract()
 	_test_leech_contract()
+	await _test_leech_commit_contract()
 	_finish()
 
 
@@ -109,6 +110,30 @@ func _test_leech_contract() -> void:
 	var status: BattleDamageResult = BattleDamageResolver.apply_status_damage(actor, status_target, 4)
 	_expect(actor.apply_leech(status, 35) == 0, "Leech ignores status damage")
 	_expect(actor.apply_leech(null, 35) == 0, "Leech rejects missing damage results")
+	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
+	var leech: RefCounted = effect_script.leech(effect_script.TargetRole.ACTOR, 35)
+	_expect(is_instance_valid(leech), "Leech authored effect is valid")
+	if is_instance_valid(leech):
+		_expect(leech.keyword_kind == BattleKeywordOperation.Kind.LEECH, "Leech effect uses its keyword")
+		_expect(leech.magnitude == 35, "Leech effect preserves its healing percentage")
+
+
+func _test_leech_commit_contract() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as BattleArena
+	root.add_child(arena)
+	await process_frame
+	var actor := BattleUnitState.new(&"leecher", "Leecher", BattleUnitState.Side.PLAYER, 0, 5, 20)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 6)
+	actor.current_hp = 5
+	arena.configure_units([actor, target])
+	var direct: BattleDamageResult = BattleDamageResolver.apply_direct_damage(actor, target, 10)
+	var operation: RefCounted = BattleKeywordOperation.create(BattleKeywordOperation.Kind.LEECH, actor.unit_id, 35)
+	var deltas: Array[Dictionary] = []
+	_expect(arena._apply_leech_operation(operation, actor, [direct], deltas), "Confirmed Leech applies after direct damage")
+	_expect(actor.current_hp == 7, "Confirmed Leech heals only from committed damage")
+	arena.queue_free()
+	await process_frame
 
 
 func _expect(condition: bool, message: String) -> void:

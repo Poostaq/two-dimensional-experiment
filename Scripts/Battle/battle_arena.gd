@@ -1286,7 +1286,10 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		if target == actor:
 			new_actor_speed_sources.append(operation["source_id"])
 	for operation: RefCounted in plan.keyword_operations:
-		_apply_keyword_operation(operation, action_round, keyword_deltas, false)
+		if int(operation.get("kind")) == BattleKeywordOperation.Kind.LEECH:
+			_apply_leech_operation(operation, actor, action_damage_results, keyword_deltas)
+		else:
+			_apply_keyword_operation(operation, action_round, keyword_deltas, false)
 	if plan.cooldown_actions > 0:
 		actor.set_skill_cooldown(plan.skill_id, plan.cooldown_actions)
 	var excluded_cooldowns: Array[StringName] = []
@@ -1427,6 +1430,23 @@ func _append_action_start_message(message_text: String) -> void:
 	_battle_log_entries.append(entry)
 	if is_node_ready():
 		_append_log_control(entry, _battle_log_entries.size() - 1)
+
+
+func _apply_leech_operation(
+	operation: RefCounted,
+	actor: BattleUnitState,
+	results: Array[BattleDamageResult],
+	keyword_deltas: Array[Dictionary]
+) -> bool:
+	if not is_instance_valid(operation) or not is_instance_valid(actor) or operation.get("target_id") != actor.unit_id:
+		return false
+	var healed: int = 0
+	for result: BattleDamageResult in results:
+		healed += actor.apply_leech(result, int(operation.get("magnitude")))
+	if healed <= 0:
+		return false
+	keyword_deltas.append(_keyword_delta(operation, actor.unit_id, healed, false))
+	return true
 
 
 func _apply_keyword_operation(
