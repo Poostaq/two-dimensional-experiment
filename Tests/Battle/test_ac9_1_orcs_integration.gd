@@ -9,6 +9,15 @@ const ORC_CLASS_IDS: Array[StringName] = [
 	&"orc_siegebreaker",
 ]
 
+const EXPECTED_STATS: Dictionary[StringName, Array] = {
+	&"orc_iron_tusk_vanguard": [2, 30, 5, 5, [&"brace_line", &"shield_ram", &"hold_the_gap"]],
+	&"orc_bonebreaker_reaver": [4, 26, 8, 2, [&"crushing_entry", &"break_formation", &"execution_swing"]],
+	&"orc_bloodbanner_captain": [3, 28, 5, 4, [&"plant_banner", &"rally_strike", &"last_standard"]],
+	&"orc_chainwarden": [4, 27, 4, 4, [&"chain_lash", &"yank_back", &"lockdown"]],
+	&"orc_war_drummer": [5, 24, 4, 3, [&"marching_beat", &"crushing_cadence", &"war_tempo"]],
+	&"orc_siegebreaker": [2, 25, 8, 3, [&"test_the_plate", &"crack_armor", &"demolishing_blow"]],
+}
+
 var _assertions: int = 0
 var _failures: Array[String] = []
 
@@ -26,6 +35,12 @@ func _run() -> void:
 		if is_instance_valid(character):
 			_expect(character.class_id == class_id, "Orc class preserves identity: %s" % class_id)
 			_expect(character.race_id == &"orc", "Orc class preserves race: %s" % class_id)
+			var expected: Array = EXPECTED_STATS[class_id]
+			_expect(character.base_speed == expected[0] and character.max_hp == expected[1] and character.power == expected[2] and character.defense == expected[3], "Orc class preserves documented stats: %s" % class_id)
+			var skill_ids: Array[StringName] = []
+			for skill: CharacterSkill in character.get_skills():
+				skill_ids.append(skill.skill_id)
+			_expect(skill_ids == expected[4], "Orc class preserves documented skills: %s" % class_id)
 	_expect(RunCharacterCatalog.create_by_class_id(&"orc_unknown") == null, "Orc catalog rejects unknown IDs")
 	_finish()
 

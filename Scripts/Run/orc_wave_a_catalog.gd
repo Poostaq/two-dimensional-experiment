@@ -17,10 +17,17 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 
 static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
+	var ids: Array = {
+	&"iron_tusk": [&"brace_line", &"shield_ram", &"hold_the_gap"],
+	&"bonebreaker": [&"crushing_entry", &"break_formation", &"execution_swing"],
+	&"bloodbanner": [&"plant_banner", &"rally_strike", &"last_standard"],
+}.get(prefix, [])
+	if ids.size() != 3:
+		return []
 	return [
-		_active_skill(StringName("%s_opening" % prefix), "Opening Strike", 100, 1, effect_script),
-		_active_skill(StringName("%s_conversion" % prefix), "Conversion Strike", 120, 2, effect_script),
-		_active_skill(StringName("%s_capstone" % prefix), "Capstone Strike", 150, 4, effect_script),
+		_active_skill(ids[0], ids[0].capitalize(), 100, 1, effect_script),
+		_active_skill(ids[1], ids[1].capitalize(), 120, 2, effect_script),
+		_active_skill(ids[2], ids[2].capitalize(), 150, 4, effect_script),
 	]
 
 
