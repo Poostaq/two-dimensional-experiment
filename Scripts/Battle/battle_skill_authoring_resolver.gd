@@ -127,6 +127,7 @@ static func build_plan(
 						BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 						BattleKeywordOperation.Kind.APPLY_SNARED,
 						BattleKeywordOperation.Kind.APPLY_BLEED,
+						BattleKeywordOperation.Kind.APPLY_POISON,
 					]:
 						source = BattleKeywordSource.create(actor.unit_id, skill.skill_id, actor.power)
 					var operation: RefCounted = BattleKeywordOperation.create(
@@ -136,7 +137,8 @@ static func build_plan(
 						int(authored_effect.get("duration")),
 						source,
 						&"",
-						bool(authored_effect.get("arms_snared_follow_up"))
+						bool(authored_effect.get("arms_snared_follow_up")),
+						authored_effect.get("poison_axis") as StringName
 					)
 					if not is_instance_valid(operation):
 						return null
