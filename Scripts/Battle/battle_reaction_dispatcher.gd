@@ -31,7 +31,11 @@ static func collect_action_start_reactions(
 			round_number
 		):
 			continue
-		var target: BattleUnitState = BattleFormationRules.closest_active_opponent(actor, units)
+		var target: BattleUnitState = _resolve_action_start_target(
+			actor,
+			units,
+			int(definition.get("target_policy"))
+		)
 		if not is_instance_valid(target):
 			reactions.append({
 				"definition": definition.call("with_owner", actor.unit_id),
@@ -59,12 +63,23 @@ static func collect_action_start_reactions(
 static func is_action_start_target_current(
 	owner: BattleUnitState,
 	target_id: StringName,
-	units: Array[BattleUnitState]
+	units: Array[BattleUnitState],
+	target_policy: int = BattleReactionDefinition.TargetPolicy.CLOSEST_OPPONENT
 ) -> bool:
 	if target_id.is_empty():
 		return false
-	var current: BattleUnitState = BattleFormationRules.closest_active_opponent(owner, units)
+	var current: BattleUnitState = _resolve_action_start_target(owner, units, target_policy)
 	return is_instance_valid(current) and current.unit_id == target_id
+
+
+static func _resolve_action_start_target(
+	owner: BattleUnitState,
+	units: Array[BattleUnitState],
+	target_policy: int
+) -> BattleUnitState:
+	if target_policy == BattleReactionDefinition.TargetPolicy.ADJACENT_ALLY:
+		return BattleFormationRules.closest_active_adjacent_ally(owner, units)
+	return BattleFormationRules.closest_active_opponent(owner, units)
 
 
 static func collect_reactions(
