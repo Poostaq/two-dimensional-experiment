@@ -44,6 +44,7 @@ var _snared_follow_up_armed: bool = false
 var _bleed_states: Dictionary[StringName, RefCounted] = {}
 var _poison_states: Dictionary[StringName, Dictionary] = {}
 var _stun_source: RefCounted = null
+var _stun_guard_active: bool = false
 var _passive_action_guards: Dictionary[StringName, bool] = {}
 var _passive_round_guards: Dictionary[StringName, bool] = {}
 var _passive_battle_guards: Dictionary[StringName, bool] = {}
@@ -347,7 +348,7 @@ func get_bleed_snapshot() -> Array[RefCounted]:
 
 
 func apply_stun(source: RefCounted) -> bool:
-	if not _is_valid_keyword_source(source) or is_instance_valid(_stun_source):
+	if not _is_valid_keyword_source(source) or is_instance_valid(_stun_source) or _stun_guard_active:
 		return false
 	_stun_source = source.call("duplicate_source")
 	return true
@@ -361,6 +362,18 @@ func consume_stun() -> bool:
 	if not is_stunned():
 		return false
 	_stun_source = null
+	_stun_guard_active = true
+	return true
+
+
+func has_stun_guard() -> bool:
+	return _stun_guard_active
+
+
+func complete_stun_guard() -> bool:
+	if not _stun_guard_active:
+		return false
+	_stun_guard_active = false
 	return true
 
 
@@ -454,6 +467,7 @@ func clear_battle_local_state() -> void:
 	_bleed_states.clear()
 	_poison_states.clear()
 	_stun_source = null
+	_stun_guard_active = false
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 	_passive_battle_guards.clear()

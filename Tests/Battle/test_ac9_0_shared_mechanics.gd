@@ -56,6 +56,10 @@ func _test_stun_contract() -> void:
 	_expect(not target.apply_stun(source), "Stun cannot stack or refresh")
 	_expect(target.consume_stun(), "Stun consumes exactly one eligible action")
 	_expect(not target.is_stunned(), "Stun clears after its skipped action")
+	_expect(target.has_stun_guard(), "Stun Guard begins after the skipped action")
+	_expect(not target.apply_stun(source), "Stun Guard rejects immediate restun")
+	_expect(target.complete_stun_guard(), "Stun Guard clears after the target completes an action")
+	_expect(target.apply_stun(source), "Stun applies again after Stun Guard clears")
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	var stun: RefCounted = effect_script.stun(effect_script.TargetRole.PRIMARY)
 	_expect(is_instance_valid(stun), "Stun authored effect is valid")
