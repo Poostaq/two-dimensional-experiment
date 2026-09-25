@@ -189,6 +189,18 @@ static func poison(role: int, axis: StringName, stacks: int = 1, duration_rounds
 	)
 
 
+static func stun(role: int) -> RefCounted:
+	return _create(
+		Kind.KEYWORD,
+		role,
+		0,
+		0,
+		BattleKeywordOperation.Kind.APPLY_STUN,
+		0,
+		1
+	)
+
+
 static func speed(
 	role: int,
 	effect_magnitude: int,
@@ -351,6 +363,7 @@ static func _is_valid_input(
 				BattleKeywordOperation.Kind.APPLY_SNARED,
 				BattleKeywordOperation.Kind.APPLY_BLEED,
 				BattleKeywordOperation.Kind.APPLY_POISON,
+				BattleKeywordOperation.Kind.APPLY_STUN,
 				BattleKeywordOperation.Kind.REDUCE_COOLDOWN,
 			]:
 				return false
@@ -358,6 +371,8 @@ static func _is_valid_input(
 				return effect_magnitude > 0 and effect_duration == 0
 			if operation_kind == BattleKeywordOperation.Kind.APPLY_POISON:
 				return effect_magnitude > 0 and effect_duration > 0 and poison_axis_value in [&"power", &"defense", &"speed"]
+			if operation_kind == BattleKeywordOperation.Kind.APPLY_STUN:
+				return effect_magnitude == 0 and effect_duration == 1
 			if operation_kind in [
 				BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 				BattleKeywordOperation.Kind.APPLY_SNARED,

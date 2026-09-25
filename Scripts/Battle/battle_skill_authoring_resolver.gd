@@ -128,6 +128,7 @@ static func build_plan(
 						BattleKeywordOperation.Kind.APPLY_SNARED,
 						BattleKeywordOperation.Kind.APPLY_BLEED,
 						BattleKeywordOperation.Kind.APPLY_POISON,
+						BattleKeywordOperation.Kind.APPLY_STUN,
 					]:
 						source = BattleKeywordSource.create(actor.unit_id, skill.skill_id, actor.power)
 					var operation: RefCounted = BattleKeywordOperation.create(

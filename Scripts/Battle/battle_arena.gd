@@ -1471,6 +1471,10 @@ func _apply_keyword_operation(
 			)
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, int(operation.get("magnitude")), from_reaction))
+		BattleKeywordOperation.Kind.APPLY_STUN:
+			applied = target.apply_stun(operation.get("source") as RefCounted)
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
 		BattleKeywordOperation.Kind.REDUCE_COOLDOWN:
 			var remaining: int = target.reduce_skill_cooldown(operation.get("affected_skill_id"), int(operation.get("magnitude")))
 			applied = true

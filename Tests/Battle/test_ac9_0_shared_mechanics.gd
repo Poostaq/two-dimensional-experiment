@@ -46,6 +46,11 @@ func _test_stun_contract() -> void:
 	_expect(not target.apply_stun(source), "Stun cannot stack or refresh")
 	_expect(target.consume_stun(), "Stun consumes exactly one eligible action")
 	_expect(not target.is_stunned(), "Stun clears after its skipped action")
+	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
+	var stun: RefCounted = effect_script.stun(effect_script.TargetRole.PRIMARY)
+	_expect(is_instance_valid(stun), "Stun authored effect is valid")
+	if is_instance_valid(stun):
+		_expect(stun.keyword_kind == BattleKeywordOperation.Kind.APPLY_STUN, "Stun effect uses its keyword")
 
 
 func _test_poison_commit_contract() -> void:
