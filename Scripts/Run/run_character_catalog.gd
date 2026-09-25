@@ -3,6 +3,15 @@ extends RefCounted
 
 const COMBAT_SCOUT_REWARD_ID := &"combat_recruit_scout"
 const BOSS_CHAMPION_REWARD_ID := &"boss_recruit_champion"
+const ORC_CLASS_IDS: Array[StringName] = [
+	&"orc_iron_tusk_vanguard",
+	&"orc_bonebreaker_reaver",
+	&"orc_bloodbanner_captain",
+	&"orc_chainwarden",
+	&"orc_war_drummer",
+	&"orc_siegebreaker",
+]
+
 const GOBLIN_CLASS_IDS: Array[StringName] = [
 	&"scrapshield_bruiser",
 	&"wirefang_skirmisher",
@@ -20,12 +29,24 @@ static func get_goblin_class_ids() -> Array[StringName]:
 static func get_recruitable_class_ids(clan_id: StringName) -> Array[StringName]:
 	if clan_id == &"goblin":
 		return get_goblin_class_ids()
+	if clan_id == &"orc":
+		return ORC_CLASS_IDS.duplicate()
 	return []
 
 
 static func create_by_class_id(class_id: StringName) -> RunCharacter:
+	var orc_wave_a_script := load("res://Scripts/Run/orc_wave_a_catalog.gd") as Script
+	var character: RunCharacter = orc_wave_a_script.create_by_class_id(class_id)
+	if is_instance_valid(character):
+		character.class_id = class_id
+		return character
+	var orc_wave_b_script := load("res://Scripts/Run/orc_wave_b_catalog.gd") as Script
+	character = orc_wave_b_script.create_by_class_id(class_id)
+	if is_instance_valid(character):
+		character.class_id = class_id
+		return character
 	var wave_a_script := load("res://Scripts/Run/goblin_wave_a_catalog.gd") as Script
-	var character: RunCharacter = wave_a_script.create_by_class_id(class_id)
+	character = wave_a_script.create_by_class_id(class_id)
 	if is_instance_valid(character):
 		character.class_id = class_id
 		return character
