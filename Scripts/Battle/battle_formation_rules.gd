@@ -51,6 +51,31 @@ static func closest_active_opponent(
 	return winner
 
 
+static func closest_active_adjacent_ally(
+	owner: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> BattleUnitState:
+	if not is_instance_valid(owner) or not owner.is_active() or not is_valid_slot(owner.slot_index):
+		return null
+	var winner: BattleUnitState = null
+	for candidate: BattleUnitState in units:
+		if (
+			not is_instance_valid(candidate)
+			or not candidate.is_active()
+			or candidate.unit_id == owner.unit_id
+			or candidate.side != owner.side
+			or not is_move_one(owner.slot_index, candidate.slot_index)
+		):
+			continue
+		if (
+			not is_instance_valid(winner)
+			or candidate.slot_index < winner.slot_index
+			or (candidate.slot_index == winner.slot_index and String(candidate.unit_id) < String(winner.unit_id))
+		):
+			winner = candidate
+	return winner
+
+
 static func _opponent_comes_before(
 	actor: BattleUnitState,
 	first: BattleUnitState,

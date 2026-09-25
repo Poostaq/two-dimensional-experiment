@@ -20,6 +20,7 @@ func _run() -> void:
 	await _test_stun_turn_skip_contract()
 	await _test_stun_guard_action_contract()
 	_test_leech_contract()
+	_test_adjacent_ally_contract()
 	await _test_leech_commit_contract()
 	_finish()
 
@@ -123,6 +124,20 @@ func _test_stun_guard_action_contract() -> void:
 	_expect(not stunned.has_stun_guard(), "Stun Guard clears after the guarded unit completes an action")
 	arena.queue_free()
 	await process_frame
+
+
+func _test_adjacent_ally_contract() -> void:
+	var owner := BattleUnitState.new(&"owner", "Owner", BattleUnitState.Side.PLAYER, 0, 5, 20)
+	var slot_one := BattleUnitState.new(&"slot_one", "Slot One", BattleUnitState.Side.PLAYER, 1, 5, 20)
+	var slot_three := BattleUnitState.new(&"slot_three", "Slot Three", BattleUnitState.Side.PLAYER, 3, 5, 20)
+	var units: Array[BattleUnitState] = [owner, slot_three, slot_one]
+	var adjacent: BattleUnitState = BattleFormationRules.closest_active_adjacent_ally(owner, units)
+	_expect(is_instance_valid(adjacent) and adjacent.unit_id == slot_one.unit_id, "Adjacent ally selection uses the lowest slot tie-break")
+	slot_one.current_hp = 0
+	adjacent = BattleFormationRules.closest_active_adjacent_ally(owner, units)
+	_expect(is_instance_valid(adjacent) and adjacent.unit_id == slot_three.unit_id, "Adjacent ally selection ignores inactive candidates")
+	owner.current_hp = 0
+	_expect(BattleFormationRules.closest_active_adjacent_ally(owner, units) == null, "Inactive owners cannot select adjacent allies")
 
 
 func _test_leech_contract() -> void:
