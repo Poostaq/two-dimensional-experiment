@@ -15,6 +15,7 @@ func _run() -> void:
 	_expect(BattleKeywordOperation.Kind.has("LEECH"), "Leech operation exists")
 	_expect(BattleUnitState.MAX_ARMOR == 10, "Armor cap is fixed at 10")
 	_test_poison_contract()
+	await _test_poison_commit_contract()
 	_finish()
 
 
@@ -34,6 +35,25 @@ func _test_poison_contract() -> void:
 	if is_instance_valid(poison):
 		_expect(poison.keyword_kind == BattleKeywordOperation.Kind.APPLY_POISON, "Poison effect uses its keyword")
 		_expect(poison.poison_axis == &"power", "Poison effect preserves its declared axis")
+
+
+func _test_poison_commit_contract() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as BattleArena
+	root.add_child(arena)
+	await process_frame
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20)
+	arena.configure_units([target])
+	var source: RefCounted = BattleKeywordSource.create(&"source", &"poison", 4)
+	var operation: RefCounted = BattleKeywordOperation.create(
+		BattleKeywordOperation.Kind.APPLY_POISON, &"target", 1, 3, source, &"", false, &"power"
+	)
+	_expect(target.get_poison_stacks(&"power") == 0, "Unapplied Poison operation does not mutate state")
+	var deltas: Array[Dictionary] = []
+	_expect(arena._apply_keyword_operation(operation, 1, deltas, false), "Confirmed Poison operation applies")
+	_expect(target.get_poison_stacks(&"power", 1) == 1, "Confirmed Poison operation mutates target")
+	arena.queue_free()
+	await process_frame
 
 
 func _expect(condition: bool, message: String) -> void:
