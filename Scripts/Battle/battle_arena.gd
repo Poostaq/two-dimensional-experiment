@@ -1693,7 +1693,7 @@ func advance_turn() -> void:
 		if _effect_highlight_turns_remaining == 0:
 			_clear_effect_highlights()
 	_battle_revision += 1
-	_resolve_current_action_start_reactions()
+	_resolve_current_turn_start()
 	notify_authoritative_battle_change(false)
 	_refresh_turn_ui()
 
@@ -1810,7 +1810,7 @@ func _advance_after_action(attacker_id: StringName) -> void:
 			break
 	if attacker_index < 0:
 		_current_turn_index = 0
-		_resolve_current_action_start_reactions()
+		_resolve_current_turn_start()
 		return
 	_current_turn_index = attacker_index + 1
 	if _current_turn_index >= _turn_queue.size():
@@ -1822,6 +1822,14 @@ func _advance_after_action(attacker_id: StringName) -> void:
 		_effect_highlight_turns_remaining -= 1
 		if _effect_highlight_turns_remaining == 0:
 			_clear_effect_highlights()
+	_resolve_current_turn_start()
+
+
+func _resolve_current_turn_start() -> void:
+	var actor: BattleUnitState = get_current_unit()
+	if is_instance_valid(actor) and actor.is_active() and actor.consume_stun():
+		_advance_after_action(actor.unit_id)
+		return
 	_resolve_current_action_start_reactions()
 
 

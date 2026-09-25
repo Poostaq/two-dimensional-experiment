@@ -17,6 +17,7 @@ func _run() -> void:
 	_test_poison_contract()
 	_test_stun_contract()
 	await _test_poison_commit_contract()
+	await _test_stun_turn_skip_contract()
 	_finish()
 
 
@@ -68,6 +69,23 @@ func _test_poison_commit_contract() -> void:
 	var deltas: Array[Dictionary] = []
 	_expect(arena._apply_keyword_operation(operation, 1, deltas, false), "Confirmed Poison operation applies")
 	_expect(target.get_poison_stacks(&"power", 1) == 1, "Confirmed Poison operation mutates target")
+	arena.queue_free()
+	await process_frame
+
+
+func _test_stun_turn_skip_contract() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as BattleArena
+	root.add_child(arena)
+	await process_frame
+	var first := BattleUnitState.new(&"first", "First", BattleUnitState.Side.PLAYER, 0, 10, 20)
+	var stunned := BattleUnitState.new(&"stunned", "Stunned", BattleUnitState.Side.ENEMY, 0, 1, 20)
+	arena.configure_units([first, stunned])
+	var source: RefCounted = BattleKeywordSource.create(&"source", &"stun", 4)
+	_expect(stunned.apply_stun(source), "Stun applies before an eligible turn")
+	arena.advance_turn()
+	_expect(arena.get_current_unit().unit_id == first.unit_id, "Stunned unit loses its next eligible turn")
+	_expect(not stunned.is_stunned(), "Stun clears after the skipped turn")
 	arena.queue_free()
 	await process_frame
 
