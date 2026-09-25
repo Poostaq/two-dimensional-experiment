@@ -42,6 +42,10 @@ func _run() -> void:
 				skill_ids.append(skill.skill_id)
 			_expect(skill_ids == expected[4], "Orc class preserves documented skills: %s" % class_id)
 	_expect(RunCharacterCatalog.create_by_class_id(&"orc_unknown") == null, "Orc catalog rejects unknown IDs")
+	var vanguard: RunCharacter = RunCharacterCatalog.create_by_class_id(&"orc_iron_tusk_vanguard")
+	var brace: CharacterSkill = vanguard.get_skills()[0]
+	_expect(brace.authored_effects.size() == 2, "Brace Line grants Armor to actor and selected ally")
+	_expect(brace.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and brace.authored_effects[0].magnitude == 4, "Brace Line grants four Armor")
 	_finish()
 
 
