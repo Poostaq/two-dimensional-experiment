@@ -14,7 +14,17 @@ func _run() -> void:
 	_expect(BattleKeywordOperation.Kind.has("APPLY_STUN"), "Stun operation exists")
 	_expect(BattleKeywordOperation.Kind.has("LEECH"), "Leech operation exists")
 	_expect(BattleUnitState.MAX_ARMOR == 10, "Armor cap is fixed at 10")
+	_test_poison_contract()
 	_finish()
+
+
+func _test_poison_contract() -> void:
+	var source: RefCounted = BattleKeywordSource.create(&"source", &"poison", 4)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 20)
+	_expect(target.apply_poison(source, &"power", 1, 3), "Poison applies one Power stack")
+	_expect(target.get_poison_stacks(&"power") == 1, "Poison records declared axis")
+	_expect(target.apply_poison(source, &"power", 3, 3), "Poison reapplies through the cap")
+	_expect(target.get_poison_stacks(&"power") == 3, "Poison caps at three stacks")
 
 
 func _expect(condition: bool, message: String) -> void:

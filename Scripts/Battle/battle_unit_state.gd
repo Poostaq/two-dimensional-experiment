@@ -14,6 +14,7 @@ enum ModifierExpiry {
 const DEFAULT_MAX_HP := 20
 const MAX_CHARACTER_SKILLS := 4
 const MAX_ARMOR := 10
+const MAX_POISON_STACKS := 3
 const BLEED_STATE_PATH := "res://Scripts/Battle/battle_bleed_state.gd"
 
 var unit_id: StringName
@@ -41,6 +42,7 @@ var _snared_source: RefCounted = null
 var _snared_expiry_round: int = 0
 var _snared_follow_up_armed: bool = false
 var _bleed_states: Dictionary[StringName, RefCounted] = {}
+var _poison_states: Dictionary[StringName, Dictionary] = {}
 var _passive_action_guards: Dictionary[StringName, bool] = {}
 var _passive_round_guards: Dictionary[StringName, bool] = {}
 var _passive_battle_guards: Dictionary[StringName, bool] = {}
@@ -318,6 +320,39 @@ func get_bleed_snapshot() -> Array[RefCounted]:
 	return snapshot
 
 
+func apply_poison(
+	source: RefCounted,
+	axis: StringName,
+	stacks: int = 1,
+	expiry_round: int = 3
+) -> bool:
+	if (
+		not _is_valid_keyword_source(source)
+		or axis not in [&"power", &"defense", &"speed"]
+		or stacks < 1
+		or expiry_round < 1
+	):
+		return false
+	var prior: Dictionary = _poison_states.get(axis, {})
+	var prior_stacks: int = int(prior.get("stacks", 0))
+	_poison_states[axis] = {
+		"source": source.call("duplicate_source"),
+		"stacks": min(MAX_POISON_STACKS, prior_stacks + stacks),
+		"expiry_round": max(expiry_round, int(prior.get("expiry_round", 0))),
+	}
+	return true
+
+
+func get_poison_stacks(axis: StringName, current_round: int = 1) -> int:
+	if current_round < 1 or not _poison_states.has(axis):
+		return 0
+	var poison: Dictionary = _poison_states[axis]
+	if int(poison.get("expiry_round", 0)) < current_round:
+		_poison_states.erase(axis)
+		return 0
+	return int(poison.get("stacks", 0))
+
+
 func reduce_skill_cooldown(skill_id: StringName, amount: int) -> int:
 	if skill_id.is_empty() or amount <= 0 or not _has_skill(skill_id):
 		return get_skill_cooldown(skill_id)
@@ -373,6 +408,7 @@ func clear_battle_local_state() -> void:
 	_clear_advantage()
 	_clear_snared()
 	_bleed_states.clear()
+	_poison_states.clear()
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 	_passive_battle_guards.clear()
