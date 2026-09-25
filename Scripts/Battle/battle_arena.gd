@@ -1462,6 +1462,15 @@ func _apply_keyword_operation(
 			applied = target.apply_bleed(operation.get("source") as RefCounted, max(1, int(operation.get("duration"))))
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+		BattleKeywordOperation.Kind.APPLY_POISON:
+			applied = target.apply_poison(
+				operation.get("source") as RefCounted,
+				operation.get("poison_axis") as StringName,
+				max(1, int(operation.get("magnitude"))),
+				action_round + max(1, int(operation.get("duration"))) - 1
+			)
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, int(operation.get("magnitude")), from_reaction))
 		BattleKeywordOperation.Kind.REDUCE_COOLDOWN:
 			var remaining: int = target.reduce_skill_cooldown(operation.get("affected_skill_id"), int(operation.get("magnitude")))
 			applied = true
