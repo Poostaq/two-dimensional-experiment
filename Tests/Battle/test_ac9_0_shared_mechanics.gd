@@ -31,6 +31,13 @@ func _test_poison_contract() -> void:
 	_expect(not target.apply_poison(source, &"health", 1, 3), "Poison rejects an undeclared axis")
 	_expect(not target.apply_poison(source, &"speed", 1, 0), "Poison rejects an invalid expiry")
 	_expect(target.get_poison_stacks(&"power", 4) == 0, "Poison expires after its authored round")
+	var poisoned := BattleUnitState.new(&"poisoned", "Poisoned", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 6, 3)
+	_expect(poisoned.apply_poison(source, &"power", 2, 3), "Power Poison applies a stat penalty")
+	_expect(poisoned.get_effective_power() == 4, "Power Poison reduces effective Power per stack")
+	_expect(poisoned.apply_poison(source, &"defense", 3, 3), "Defense Poison applies a stat penalty")
+	_expect(poisoned.get_effective_defense() == 0, "Defense Poison cannot reduce below zero")
+	_expect(poisoned.apply_poison(source, &"speed", 2, 3), "Speed Poison applies a stat penalty")
+	_expect(poisoned.get_effective_speed() == 3, "Speed Poison reduces effective Speed per stack")
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	var poison: RefCounted = effect_script.poison(effect_script.TargetRole.PRIMARY, &"power", 1, 3)
 	_expect(is_instance_valid(poison), "Poison authored effect is valid")

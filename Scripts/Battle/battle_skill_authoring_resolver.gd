@@ -76,9 +76,9 @@ static func build_plan(
 							locked_advantage_source = target.get_advantage_source(round_number)
 							consume_advantage = is_instance_valid(locked_advantage_source)
 					var requested: int = BattleDamageRules.physical_damage(
-						actor.power,
+						actor.get_effective_power(),
 						float(percent) / 100.0,
-						target.defense
+						target.get_effective_defense()
 					)
 					damage_operations.append({
 						&"target_id": target.unit_id,
@@ -101,7 +101,7 @@ static func build_plan(
 						int(authored_effect.get("maximum_power_percent")),
 						int(authored_effect.get("power_percent")) + count * int(authored_effect.get("history_increment"))
 					)
-					var requested: int = BattleDamageRules.physical_damage(actor.power, float(percent) / 100.0, target.defense)
+					var requested: int = BattleDamageRules.physical_damage(actor.get_effective_power(), float(percent) / 100.0, target.get_effective_defense())
 					damage_operations.append({
 						&"target_id": target.unit_id,
 						&"base_damage": requested,

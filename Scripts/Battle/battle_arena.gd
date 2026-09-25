@@ -726,9 +726,9 @@ func confirm_default_attack(
 	if not _is_valid_default_attack(actor, target):
 		return false
 	var requested_damage: int = BattleDamageRules.physical_damage(
-		actor.power,
+		actor.get_effective_power(),
 		1.0,
-		target.defense
+		target.get_effective_defense()
 	)
 	if requested_damage < 1:
 		return false

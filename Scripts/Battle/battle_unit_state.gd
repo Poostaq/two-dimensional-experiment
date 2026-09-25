@@ -117,7 +117,15 @@ func get_effective_speed() -> int:
 	var total := _base_speed
 	for modifier: Dictionary in _speed_modifiers.values():
 		total += int(modifier.get("amount", 0))
-	return max(1, total)
+	return max(1, total - get_poison_stacks(&"speed"))
+
+
+func get_effective_power() -> int:
+	return max(1, power - get_poison_stacks(&"power"))
+
+
+func get_effective_defense() -> int:
+	return max(0, defense - get_poison_stacks(&"defense"))
 
 
 func get_skill_cooldown(skill_id: StringName) -> int:
