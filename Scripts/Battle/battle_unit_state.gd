@@ -226,6 +226,23 @@ func get_armor() -> int:
 	return _armor
 
 
+func apply_leech(result: BattleDamageResult, percent: int) -> int:
+	if (
+		not is_instance_valid(result)
+		or result.attacker_id != unit_id
+		or not result.was_direct_hit
+		or result.is_status_damage
+		or result.applied_damage <= 0
+		or percent <= 0
+	):
+		return 0
+	var healing: int = min(max_hp - current_hp, result.applied_damage * percent / 100)
+	if healing <= 0:
+		return 0
+	current_hp += healing
+	return healing
+
+
 func apply_advantage(source: RefCounted, expiry_round: int) -> bool:
 	if not _is_valid_keyword_source(source) or expiry_round < 1:
 		return false

@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_stun_contract()
 	await _test_poison_commit_contract()
 	await _test_stun_turn_skip_contract()
+	_test_leech_contract()
 	_finish()
 
 
@@ -95,6 +96,19 @@ func _test_stun_turn_skip_contract() -> void:
 	_expect(not stunned.is_stunned(), "Stun clears after the skipped turn")
 	arena.queue_free()
 	await process_frame
+
+
+func _test_leech_contract() -> void:
+	var actor := BattleUnitState.new(&"leecher", "Leecher", BattleUnitState.Side.PLAYER, 0, 5, 20)
+	var target := BattleUnitState.new(&"target", "Target", BattleUnitState.Side.ENEMY, 0, 5, 6)
+	actor.current_hp = 5
+	var direct: BattleDamageResult = BattleDamageResolver.apply_direct_damage(actor, target, 10)
+	_expect(actor.apply_leech(direct, 35) == 2, "Leech heals from actual direct HP damage")
+	_expect(actor.current_hp == 7, "Leech rounds down and cannot use overkill damage")
+	var status_target := BattleUnitState.new(&"status_target", "Status Target", BattleUnitState.Side.ENEMY, 1, 5, 6)
+	var status: BattleDamageResult = BattleDamageResolver.apply_status_damage(actor, status_target, 4)
+	_expect(actor.apply_leech(status, 35) == 0, "Leech ignores status damage")
+	_expect(actor.apply_leech(null, 35) == 0, "Leech rejects missing damage results")
 
 
 func _expect(condition: bool, message: String) -> void:
