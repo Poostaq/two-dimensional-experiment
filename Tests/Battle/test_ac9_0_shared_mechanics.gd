@@ -15,6 +15,7 @@ func _run() -> void:
 	_expect(BattleKeywordOperation.Kind.has("LEECH"), "Leech operation exists")
 	_expect(BattleUnitState.MAX_ARMOR == 10, "Armor cap is fixed at 10")
 	_test_poison_contract()
+	_test_stun_contract()
 	await _test_poison_commit_contract()
 	_finish()
 
@@ -35,6 +36,16 @@ func _test_poison_contract() -> void:
 	if is_instance_valid(poison):
 		_expect(poison.keyword_kind == BattleKeywordOperation.Kind.APPLY_POISON, "Poison effect uses its keyword")
 		_expect(poison.poison_axis == &"power", "Poison effect preserves its declared axis")
+
+
+func _test_stun_contract() -> void:
+	var source: RefCounted = BattleKeywordSource.create(&"source", &"stun", 4)
+	var target := BattleUnitState.new(&"stunned", "Stunned", BattleUnitState.Side.ENEMY, 0, 5, 20)
+	_expect(target.apply_stun(source), "Stun applies to an unstunned target")
+	_expect(target.is_stunned(), "Stun remains active before the eligible action")
+	_expect(not target.apply_stun(source), "Stun cannot stack or refresh")
+	_expect(target.consume_stun(), "Stun consumes exactly one eligible action")
+	_expect(not target.is_stunned(), "Stun clears after its skipped action")
 
 
 func _test_poison_commit_contract() -> void:

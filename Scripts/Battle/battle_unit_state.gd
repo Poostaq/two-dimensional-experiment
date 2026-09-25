@@ -43,6 +43,7 @@ var _snared_expiry_round: int = 0
 var _snared_follow_up_armed: bool = false
 var _bleed_states: Dictionary[StringName, RefCounted] = {}
 var _poison_states: Dictionary[StringName, Dictionary] = {}
+var _stun_source: RefCounted = null
 var _passive_action_guards: Dictionary[StringName, bool] = {}
 var _passive_round_guards: Dictionary[StringName, bool] = {}
 var _passive_battle_guards: Dictionary[StringName, bool] = {}
@@ -320,6 +321,24 @@ func get_bleed_snapshot() -> Array[RefCounted]:
 	return snapshot
 
 
+func apply_stun(source: RefCounted) -> bool:
+	if not _is_valid_keyword_source(source) or is_instance_valid(_stun_source):
+		return false
+	_stun_source = source.call("duplicate_source")
+	return true
+
+
+func is_stunned() -> bool:
+	return is_instance_valid(_stun_source)
+
+
+func consume_stun() -> bool:
+	if not is_stunned():
+		return false
+	_stun_source = null
+	return true
+
+
 func apply_poison(
 	source: RefCounted,
 	axis: StringName,
@@ -409,6 +428,7 @@ func clear_battle_local_state() -> void:
 	_clear_snared()
 	_bleed_states.clear()
 	_poison_states.clear()
+	_stun_source = null
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 	_passive_battle_guards.clear()
