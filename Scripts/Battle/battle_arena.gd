@@ -816,6 +816,7 @@ func confirm_default_attack(
 		_invalidate_character_info()
 		return false
 	_action_records.append(action_record)
+	actor.complete_stun_guard()
 	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
 	if resolved_outcome == BattleOutcome.Type.IN_PROGRESS:
 		_advance_after_action(actor.unit_id)
@@ -951,6 +952,7 @@ func confirm_formation_move(
 		false
 	)
 	_battle_action_log_entries.append(committed_entry)
+	actor.complete_stun_guard()
 	_advance_after_action(actor.unit_id)
 	_action_in_progress = false
 	_publish_character_info()
@@ -1345,6 +1347,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_action_has_combo_bonus(action_combo_bonus_damage_by_target)
 	)
 	_battle_action_log_entries.append(action_entry)
+	actor.complete_stun_guard()
 	_battle_revision = next_revision
 	_action_records.append(action_record)
 	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)

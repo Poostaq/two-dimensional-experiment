@@ -18,6 +18,7 @@ func _run() -> void:
 	_test_stun_contract()
 	await _test_poison_commit_contract()
 	await _test_stun_turn_skip_contract()
+	await _test_stun_guard_action_contract()
 	_test_leech_contract()
 	await _test_leech_commit_contract()
 	_finish()
@@ -99,6 +100,27 @@ func _test_stun_turn_skip_contract() -> void:
 	arena.advance_turn()
 	_expect(arena.get_current_unit().unit_id == first.unit_id, "Stunned unit loses its next eligible turn")
 	_expect(not stunned.is_stunned(), "Stun clears after the skipped turn")
+	arena.queue_free()
+	await process_frame
+
+
+func _test_stun_guard_action_contract() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as BattleArena
+	root.add_child(arena)
+	await process_frame
+	var first := BattleUnitState.new(&"first", "First", BattleUnitState.Side.PLAYER, 0, 10, 20)
+	var stunned := BattleUnitState.new(&"stunned", "Stunned", BattleUnitState.Side.ENEMY, 0, 1, 20)
+	arena.configure_units([first, stunned])
+	var source: RefCounted = BattleKeywordSource.create(&"source", &"stun", 4)
+	_expect(stunned.apply_stun(source), "Stun applies before the skipped turn")
+	arena.advance_turn()
+	_expect(stunned.has_stun_guard(), "Skipped unit enters Stun Guard")
+	_expect(arena.confirm_default_attack(first.unit_id, stunned.unit_id, arena.get_battle_revision()), "First unit completes its action")
+	arena._executing_enemy_action = true
+	_expect(arena.confirm_default_attack(stunned.unit_id, first.unit_id, arena.get_battle_revision()), "Guarded unit completes its next action")
+	arena._executing_enemy_action = false
+	_expect(not stunned.has_stun_guard(), "Stun Guard clears after the guarded unit completes an action")
 	arena.queue_free()
 	await process_frame
 
