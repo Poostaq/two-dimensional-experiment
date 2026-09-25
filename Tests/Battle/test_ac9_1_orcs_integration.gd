@@ -46,6 +46,14 @@ func _run() -> void:
 	var brace: CharacterSkill = vanguard.get_skills()[0]
 	_expect(brace.authored_effects.size() == 2, "Brace Line grants Armor to actor and selected ally")
 	_expect(brace.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and brace.authored_effects[0].magnitude == 4, "Brace Line grants four Armor")
+	var goruk: RunCharacter = RunCharacterCatalog.create_by_class_id(&"goruk_ironline")
+	_expect(is_instance_valid(goruk), "Goruk commander constructs")
+	if is_instance_valid(goruk):
+		_expect(goruk.race_id == &"orc" and goruk.class_id == &"goruk_ironline", "Goruk preserves stable commander identity")
+		var goruk_skills: Array[CharacterSkill] = goruk.get_skills()
+		_expect(goruk_skills.size() == 4, "Goruk inherits three skills and appends one")
+		if goruk_skills.size() == 4:
+			_expect(goruk_skills[3].skill_id == &"iron_decree", "Goruk appends Iron Decree")
 	_finish()
 
 

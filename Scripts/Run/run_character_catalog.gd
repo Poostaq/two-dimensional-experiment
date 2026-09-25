@@ -45,6 +45,10 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 	if is_instance_valid(character):
 		character.class_id = class_id
 		return character
+	var orc_commander_script := load("res://Scripts/Run/orc_commander_catalog.gd") as Script
+	character = orc_commander_script.create_by_commander_id(class_id)
+	if is_instance_valid(character):
+		return character
 	var wave_a_script := load("res://Scripts/Run/goblin_wave_a_catalog.gd") as Script
 	character = wave_a_script.create_by_class_id(class_id)
 	if is_instance_valid(character):
