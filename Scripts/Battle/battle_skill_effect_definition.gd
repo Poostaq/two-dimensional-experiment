@@ -60,6 +60,9 @@ var maximum_power_percent: int:
 var conditional_magnitude: int:
 	get:
 		return _conditional_magnitude
+var poison_axis: StringName:
+	get:
+		return _poison_axis
 
 var bonus_condition: BonusCondition:
 	get:
@@ -94,6 +97,7 @@ var _arms_snared_follow_up: bool = false
 var _history_increment: int = 0
 var _maximum_power_percent: int = 0
 var _conditional_magnitude: int = 0
+var _poison_axis: StringName = &""
 var _is_valid: bool = false
 
 
@@ -108,7 +112,8 @@ func _init(
 	arm_snared_follow_up: bool = false,
 	history_step: int = 0,
 	maximum_percent: int = 0,
-	conditional_amount: int = 0
+	conditional_amount: int = 0,
+	poison_axis_value: StringName = &""
 ) -> void:
 	if not _is_valid_input(
 		effect_kind,
@@ -121,7 +126,8 @@ func _init(
 		arm_snared_follow_up,
 		history_step,
 		maximum_percent,
-		conditional_amount
+		conditional_amount,
+		poison_axis_value
 	):
 		return
 	_kind = effect_kind as Kind
@@ -135,6 +141,7 @@ func _init(
 	_history_increment = history_step
 	_maximum_power_percent = maximum_percent
 	_conditional_magnitude = conditional_amount
+	_poison_axis = poison_axis_value
 	_is_valid = true
 
 
@@ -162,6 +169,23 @@ static func keyword(
 		effect_magnitude,
 		effect_duration,
 		arm_snared_follow_up
+	)
+
+
+static func poison(role: int, axis: StringName, stacks: int = 1, duration_rounds: int = 3) -> RefCounted:
+	return _create(
+		Kind.KEYWORD,
+		role,
+		0,
+		0,
+		BattleKeywordOperation.Kind.APPLY_POISON,
+		stacks,
+		duration_rounds,
+		false,
+		0,
+		0,
+		0,
+		axis
 	)
 
 
@@ -247,7 +271,8 @@ func duplicate_definition() -> RefCounted:
 		_arms_snared_follow_up,
 		_history_increment,
 		_maximum_power_percent,
-		_conditional_magnitude
+		_conditional_magnitude,
+		_poison_axis
 	)
 	copied._bonus_condition = _bonus_condition
 	copied._upgraded_power_percent = _upgraded_power_percent
@@ -268,7 +293,8 @@ static func _create(
 	arm_snared_follow_up: bool = false,
 	history_step: int = 0,
 	maximum_percent: int = 0,
-	conditional_amount: int = 0
+	conditional_amount: int = 0,
+	poison_axis_value: StringName = &""
 ) -> RefCounted:
 	var definition: RefCounted = load("res://Scripts/Battle/battle_skill_effect_definition.gd").new(
 		effect_kind,
@@ -281,7 +307,8 @@ static func _create(
 		arm_snared_follow_up,
 		history_step,
 		maximum_percent,
-		conditional_amount
+		conditional_amount,
+		poison_axis_value
 	)
 	return definition if definition.is_valid() else null
 
@@ -297,7 +324,8 @@ static func _is_valid_input(
 	arm_snared_follow_up: bool,
 	history_step: int,
 	maximum_percent: int,
-	conditional_amount: int
+	conditional_amount: int,
+	poison_axis_value: StringName
 ) -> bool:
 	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR]:
 		return false
@@ -322,11 +350,14 @@ static func _is_valid_input(
 				BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 				BattleKeywordOperation.Kind.APPLY_SNARED,
 				BattleKeywordOperation.Kind.APPLY_BLEED,
+				BattleKeywordOperation.Kind.APPLY_POISON,
 				BattleKeywordOperation.Kind.REDUCE_COOLDOWN,
 			]:
 				return false
 			if operation_kind == BattleKeywordOperation.Kind.ADD_ARMOR:
 				return effect_magnitude > 0 and effect_duration == 0
+			if operation_kind == BattleKeywordOperation.Kind.APPLY_POISON:
+				return effect_magnitude > 0 and effect_duration > 0 and poison_axis_value in [&"power", &"defense", &"speed"]
 			if operation_kind in [
 				BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 				BattleKeywordOperation.Kind.APPLY_SNARED,
