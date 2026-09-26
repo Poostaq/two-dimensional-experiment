@@ -1302,11 +1302,24 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		)
 		if target == actor:
 			new_actor_speed_sources.append(operation["source_id"])
+	var authored_leech_percent: int = 0
 	for operation: RefCounted in plan.keyword_operations:
 		if int(operation.get("kind")) == BattleKeywordOperation.Kind.LEECH:
+			authored_leech_percent = min(50, authored_leech_percent + int(operation.get("magnitude")))
 			_apply_leech_operation(operation, actor, action_damage_results, keyword_deltas)
 		else:
 			_apply_keyword_operation(operation, action_round, keyword_deltas, false)
+	var pending_healing: int = actor.apply_pending_leech(
+		action_damage_results, action_round, 50 - authored_leech_percent
+	)
+	if pending_healing > 0:
+		keyword_deltas.append({
+			&"kind": BattleKeywordOperation.Kind.LEECH,
+			&"target_id": actor.unit_id,
+			&"value": pending_healing,
+			&"affected_skill_id": &"",
+			&"from_reaction": true,
+		})
 	if plan.cooldown_actions > 0:
 		actor.set_skill_cooldown(plan.skill_id, plan.cooldown_actions)
 	var excluded_cooldowns: Array[StringName] = []
@@ -1524,6 +1537,22 @@ func _apply_keyword_operation(
 					action_round
 					)
 					keyword_deltas.append(_keyword_delta(operation, owner.unit_id, int(operation.get("magnitude")), from_reaction))
+		BattleKeywordOperation.Kind.GRANT_ADVANTAGE_AND_NEXT_HIT_LEECH:
+			var alpha_source: RefCounted = operation.get("source") as RefCounted
+			var alpha_owner: BattleUnitState = _unit_for_keyword_source(alpha_source)
+			if is_instance_valid(alpha_owner) and alpha_owner.side == target.side:
+				var advantage_applied: bool = alpha_owner.apply_advantage(
+					alpha_source,
+					action_round + max(1, int(operation.get("duration"))) - 1
+				)
+				var leech_granted: bool = target.grant_next_hit_leech(
+					int(operation.get("magnitude")),
+					action_round + max(1, int(operation.get("duration"))) - 1
+				)
+				applied = advantage_applied and leech_granted
+				if applied:
+					keyword_deltas.append(_keyword_delta(operation, alpha_owner.unit_id, 1, from_reaction))
+					keyword_deltas.append(_keyword_delta(operation, target.unit_id, int(operation.get("magnitude")), from_reaction))
 		BattleKeywordOperation.Kind.APPLY_SNARED:
 			applied = target.apply_snared(
 				operation.get("source") as RefCounted,
@@ -1537,14 +1566,27 @@ func _apply_keyword_operation(
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
 		BattleKeywordOperation.Kind.APPLY_POISON:
+			var poison_axis: StringName = operation.get("poison_axis") as StringName
+			var prior_source: RefCounted = target.get_poison_source(poison_axis, action_round)
+			var operation_source: RefCounted = operation.get("source") as RefCounted
+			var was_reapplication: bool = (
+				is_instance_valid(prior_source)
+				and prior_source.get("source_unit_id") == operation_source.get("source_unit_id")
+			)
 			applied = target.apply_poison(
-				operation.get("source") as RefCounted,
-				operation.get("poison_axis") as StringName,
+				operation_source,
+				poison_axis,
 				max(1, int(operation.get("magnitude"))),
 				action_round + max(1, int(operation.get("duration"))) - 1
 			)
 			if applied:
-				keyword_deltas.append(_keyword_delta(operation, target.unit_id, int(operation.get("magnitude")), from_reaction))
+				var poison_delta: Dictionary = _keyword_delta(
+					operation, target.unit_id, int(operation.get("magnitude")), from_reaction
+				)
+				poison_delta["poison_axis"] = poison_axis
+				poison_delta["source_unit_id"] = operation_source.get("source_unit_id")
+				poison_delta["was_reapplication"] = was_reapplication
+				keyword_deltas.append(poison_delta)
 		BattleKeywordOperation.Kind.APPLY_STUN:
 			applied = target.apply_stun(operation.get("source") as RefCounted)
 			if applied:

@@ -11,6 +11,7 @@ enum Kind {
 	APPLY_STUN,
 	LEECH,
 	APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED,
+	GRANT_ADVANTAGE_AND_NEXT_HIT_LEECH,
 }
 
 var kind: Kind:
@@ -114,6 +115,30 @@ func duplicate_operation() -> RefCounted:
 	return operation_script.call("create", _kind, _target_id, _magnitude, _duration, _source, _affected_skill_id, _arms_snared_follow_up, _poison_axis)
 
 
+func with_target_and_poison_axis(
+	resolved_target_id: StringName,
+	resolved_poison_axis: StringName
+) -> RefCounted:
+	if (
+		resolved_target_id.is_empty()
+		or resolved_poison_axis not in [&"power", &"defense", &"speed"]
+		or not is_valid()
+	):
+		return null
+	var operation_script := load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
+	return operation_script.call(
+		"create",
+		_kind,
+		resolved_target_id,
+		_magnitude,
+		_duration,
+		_source,
+		_affected_skill_id,
+		_arms_snared_follow_up,
+		resolved_poison_axis
+	)
+
+
 func with_target(resolved_target_id: StringName) -> RefCounted:
 	if resolved_target_id.is_empty() or not is_valid():
 		return null
@@ -151,6 +176,7 @@ static func _is_valid_input(
 		Kind.LEECH,
 		Kind.REDUCE_COOLDOWN,
 		Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED,
+		Kind.GRANT_ADVANTAGE_AND_NEXT_HIT_LEECH,
 	] or operation_target_id.is_empty():
 		return false
 	if arm_snared_follow_up and operation_kind != Kind.APPLY_SNARED:
@@ -162,6 +188,8 @@ static func _is_valid_input(
 			return operation_duration > 0 and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED:
 			return operation_magnitude > 0 and operation_duration > 0 and _is_valid_keyword_source(operation_source)
+		Kind.GRANT_ADVANTAGE_AND_NEXT_HIT_LEECH:
+			return operation_magnitude > 0 and operation_magnitude <= 50 and operation_duration > 0 and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_POISON:
 			return operation_magnitude > 0 and operation_duration > 0 and operation_poison_axis in [&"power", &"defense", &"speed"] and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_STUN:

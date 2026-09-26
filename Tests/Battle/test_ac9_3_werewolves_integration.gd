@@ -46,7 +46,35 @@ func _run() -> void:
 		_expect(commander.race_id == &"werewolf" and skills.size() == 4, "Veyra preserves faction and four-skill loadout")
 		_expect(skills[0].skill_id == &"scent_blood" and skills[3].skill_id == &"mark_of_the_alpha", "Veyra inherits Moonfang and appends signature")
 	_expect(RunCharacterCatalog.create_by_class_id(&"werewolf_unknown") == null, "Werewolf catalog rejects unknown IDs")
+	_test_mark_of_the_alpha(commander)
 	_finish()
+
+
+func _test_mark_of_the_alpha(commander: RunCharacter) -> void:
+	if not is_instance_valid(commander):
+		return
+	var veyra := BattleUnitState.new(commander.character_id, commander.display_name, BattleUnitState.Side.PLAYER, 1, 9, commander.max_hp, commander.get_skills(), commander.power, commander.defense, commander.race_id)
+	var ally := BattleUnitState.new(&"werewolf_triggering_ally", "Triggering Ally", BattleUnitState.Side.PLAYER, 0, 10, 20)
+	var target := BattleUnitState.new(&"werewolf_threshold_target", "Threshold Target", BattleUnitState.Side.ENEMY, 0, 1, 20)
+	target.current_hp = 9
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([ally, veyra, target])
+	var record := BattleActionRecord.new(
+		BattleActionRecord.Kind.SKILL, ally.unit_id, [target.unit_id], {target.unit_id: 3},
+		{}, {}, 1, 1, 1, ally.side, &"threshold_hit", false,
+		{target.unit_id: true}
+	)
+	var deltas: Array[Dictionary] = []
+	arena.call("_dispatch_passive_reactions", record, 1, deltas)
+	_expect(veyra.has_advantage(1), "Mark of the Alpha grants Veyra Advantage on a half-HP crossing")
+	_expect(ally.has_method("get_pending_leech_percent"), "Battle units expose pending one-hit Leech")
+	if ally.has_method("get_pending_leech_percent"):
+		_expect(ally.call("get_pending_leech_percent", 1) == 15, "Mark of the Alpha grants the triggering ally 15 percent Leech")
+	arena.call("_dispatch_passive_reactions", record, 1, deltas)
+	if ally.has_method("get_pending_leech_percent"):
+		_expect(ally.call("get_pending_leech_percent", 1) == 15, "Mark of the Alpha fires once per round")
+	arena.free()
 
 
 func _expect(condition: bool, message: String) -> void:

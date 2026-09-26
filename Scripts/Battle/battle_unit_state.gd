@@ -45,6 +45,8 @@ var _bleed_states: Dictionary[StringName, RefCounted] = {}
 var _poison_states: Dictionary[StringName, Dictionary] = {}
 var _stun_source: RefCounted = null
 var _stun_guard_active: bool = false
+var _pending_leech_percent: int = 0
+var _pending_leech_expiry_round: int = 0
 var _passive_action_guards: Dictionary[StringName, bool] = {}
 var _passive_round_guards: Dictionary[StringName, bool] = {}
 var _passive_battle_guards: Dictionary[StringName, bool] = {}
@@ -244,6 +246,44 @@ func apply_leech(result: BattleDamageResult, percent: int) -> int:
 	return healing
 
 
+func grant_next_hit_leech(percent: int, expiry_round: int) -> bool:
+	if percent <= 0 or percent > 50 or expiry_round < 1:
+		return false
+	_pending_leech_percent = min(50, _pending_leech_percent + percent)
+	_pending_leech_expiry_round = max(_pending_leech_expiry_round, expiry_round)
+	return true
+
+
+func get_pending_leech_percent(current_round: int) -> int:
+	if current_round < 1 or _pending_leech_expiry_round < current_round:
+		_pending_leech_percent = 0
+		_pending_leech_expiry_round = 0
+		return 0
+	return _pending_leech_percent
+
+
+func apply_pending_leech(
+	results: Array[BattleDamageResult],
+	current_round: int,
+	available_percent: int = 50
+) -> int:
+	var percent: int = min(get_pending_leech_percent(current_round), max(0, available_percent))
+	if percent <= 0:
+		return 0
+	for result: BattleDamageResult in results:
+		if (
+			is_instance_valid(result)
+			and result.attacker_id == unit_id
+			and result.was_direct_hit
+			and not result.is_status_damage
+			and result.applied_damage > 0
+		):
+			_pending_leech_percent = 0
+			_pending_leech_expiry_round = 0
+			return apply_leech(result, percent)
+	return 0
+
+
 func apply_advantage(source: RefCounted, expiry_round: int) -> bool:
 	if not _is_valid_keyword_source(source) or expiry_round < 1:
 		return false
@@ -410,6 +450,13 @@ func get_poison_stacks(axis: StringName, current_round: int = 1) -> int:
 	return int(poison.get("stacks", 0))
 
 
+func get_poison_source(axis: StringName, current_round: int = 1) -> RefCounted:
+	if get_poison_stacks(axis, current_round) <= 0:
+		return null
+	var source: RefCounted = _poison_states[axis].get("source") as RefCounted
+	return source.call("duplicate_source") if is_instance_valid(source) else null
+
+
 func reduce_skill_cooldown(skill_id: StringName, amount: int) -> int:
 	if skill_id.is_empty() or amount <= 0 or not _has_skill(skill_id):
 		return get_skill_cooldown(skill_id)
@@ -426,6 +473,9 @@ func clear_round_keywords(completed_round: int) -> void:
 	if is_instance_valid(_snared_source) and _snared_expiry_round <= completed_round:
 		_clear_snared()
 	expire_speed_modifiers_for_round(completed_round)
+	if _pending_leech_expiry_round <= completed_round:
+		_pending_leech_percent = 0
+		_pending_leech_expiry_round = 0
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 
@@ -468,6 +518,8 @@ func clear_battle_local_state() -> void:
 	_poison_states.clear()
 	_stun_source = null
 	_stun_guard_active = false
+	_pending_leech_percent = 0
+	_pending_leech_expiry_round = 0
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 	_passive_battle_guards.clear()

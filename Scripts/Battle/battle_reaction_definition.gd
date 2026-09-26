@@ -6,6 +6,8 @@ enum Trigger {
 	FORCED_MOVEMENT,
 	ACTION_START,
 	ACTION_END,
+	ENEMY_HP_THRESHOLD_CROSSED,
+	POISON_REAPPLIED,
 }
 
 enum TargetPolicy {
@@ -182,7 +184,14 @@ static func _is_valid_input(
 ) -> bool:
 	return (
 		not definition_passive_skill_id.is_empty()
-		and definition_trigger in [Trigger.DIRECT_HIT, Trigger.FORCED_MOVEMENT, Trigger.ACTION_START, Trigger.ACTION_END]
+		and definition_trigger in [
+			Trigger.DIRECT_HIT,
+			Trigger.FORCED_MOVEMENT,
+			Trigger.ACTION_START,
+			Trigger.ACTION_END,
+			Trigger.ENEMY_HP_THRESHOLD_CROSSED,
+			Trigger.POISON_REAPPLIED,
+		]
 		and definition_target_policy in [
 			TargetPolicy.CLOSEST_OPPONENT,
 			TargetPolicy.ADJACENT_ALLY,

@@ -33,4 +33,22 @@ static func get_presentation(commander_id: StringName) -> Dictionary:
 
 
 static func _cartographer_of_venoms() -> CharacterSkill:
-	return CharacterSkill.create(&"cartographer_of_venoms", "Cartographer of Venoms", CharacterSkill.Kind.PASSIVE, "Once per round, Sszek's first same-axis Poison reapplication spreads one stack to an adjacent enemy for two rounds.", "Adjacent enemy.", "Same-axis reapplication.", "Once per round.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE)
+	var source: RefCounted = BattleKeywordSource.create(COMMANDER_ID, &"cartographer_of_venoms", 4)
+	var operation: RefCounted = BattleKeywordOperation.create(
+		BattleKeywordOperation.Kind.APPLY_POISON,
+		COMMANDER_ID,
+		1,
+		2,
+		source,
+		&"",
+		false,
+		&"power"
+	)
+	var reaction: RefCounted = BattleReactionDefinition.create(
+		&"cartographer_of_venoms",
+		BattleReactionDefinition.Trigger.POISON_REAPPLIED,
+		BattleReactionDefinition.Frequency.ONCE_PER_ROUND,
+		0,
+		operation
+	)
+	return CharacterSkill.create(&"cartographer_of_venoms", "Cartographer of Venoms", CharacterSkill.Kind.PASSIVE, "Once per round, Sszek's first same-axis Poison reapplication spreads one stack to an adjacent enemy for two rounds.", "Adjacent enemy.", "Same-axis reapplication.", "Once per round.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, [], null, reaction)

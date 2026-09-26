@@ -52,7 +52,40 @@ func _run() -> void:
 		_expect(commander.race_id == &"lizardman" and skills.size() == 4, "Sszek preserves faction and four-skill loadout")
 		_expect(skills[0].skill_id == &"weakening_bite" and skills[3].skill_id == &"cartographer_of_venoms", "Sszek inherits Venom Saurian and appends signature")
 	_expect(RunCharacterCatalog.create_by_class_id(&"lizardman_unknown") == null, "Lizardman catalog rejects unknown IDs")
+	_test_cartographer_of_venoms(commander)
 	_finish()
+
+
+func _test_cartographer_of_venoms(commander: RunCharacter) -> void:
+	if not is_instance_valid(commander):
+		return
+	var sszek := BattleUnitState.new(commander.character_id, commander.display_name, BattleUnitState.Side.PLAYER, 0, 9, commander.max_hp, commander.get_skills(), commander.power, commander.defense, commander.race_id)
+	var primary := BattleUnitState.new(&"poison_primary", "Primary", BattleUnitState.Side.ENEMY, 0, 2, 20)
+	var adjacent := BattleUnitState.new(&"poison_adjacent", "Adjacent", BattleUnitState.Side.ENEMY, 1, 1, 20)
+	var source: RefCounted = BattleKeywordSource.create(sszek.unit_id, &"weakening_bite", sszek.power)
+	primary.apply_poison(source, &"power", 1, 3)
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([sszek, primary, adjacent])
+	var poison_delta := {
+		&"kind": BattleKeywordOperation.Kind.APPLY_POISON,
+		&"target_id": primary.unit_id,
+		&"value": 1,
+		&"from_reaction": false,
+		&"poison_axis": &"power",
+		&"source_unit_id": sszek.unit_id,
+		&"was_reapplication": true,
+	}
+	var record := BattleActionRecord.new(
+		BattleActionRecord.Kind.SKILL, sszek.unit_id, [primary.unit_id], {}, {}, {},
+		1, 1, 1, sszek.side, &"weakening_bite", false, {}, [poison_delta]
+	)
+	var deltas: Array[Dictionary] = []
+	arena.call("_dispatch_passive_reactions", record, 1, deltas)
+	_expect(adjacent.get_poison_stacks(&"power", 1) == 1, "Cartographer spreads one same-axis Poison stack")
+	arena.call("_dispatch_passive_reactions", record, 1, deltas)
+	_expect(adjacent.get_poison_stacks(&"power", 1) == 1, "Cartographer cannot chain or repeat in the same round")
+	arena.free()
 
 
 func _expect(condition: bool, message: String) -> void:
