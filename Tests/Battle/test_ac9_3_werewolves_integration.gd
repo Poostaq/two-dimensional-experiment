@@ -1,3 +1,4 @@
+class_name TestAc93WerewolvesIntegration
 extends SceneTree
 
 const CLASS_IDS: Array[StringName] = [&"werewolf_moonfang_skirmisher", &"werewolf_pack_howler", &"werewolf_bloodtrail_stalker", &"werewolf_duskhide_ravager", &"werewolf_den_warden", &"werewolf_moonblood_seer"]
@@ -18,6 +19,8 @@ func _init() -> void:
 
 
 func _run() -> void:
+	_expect(BattleSkillEffectDefinition.Kind.has("CONDITIONAL_LEECH"), "Werewolf Advantage riders support conditional Leech")
+	_expect(BattleSkillEffectDefinition.Kind.has("CAPPED_SELF_DAMAGE"), "Werewolf risk skills support capped self-damage")
 	_expect(RunCharacterCatalog.get_recruitable_class_ids(&"werewolf") == CLASS_IDS, "Werewolf catalog exposes six stable IDs")
 	for class_id: StringName in CLASS_IDS:
 		var character: RunCharacter = RunCharacterCatalog.create_by_class_id(class_id)
@@ -33,10 +36,19 @@ func _run() -> void:
 		_expect(skill_ids == expected[4], "Werewolf skills match: %s" % class_id)
 	var skirmisher: RunCharacter = RunCharacterCatalog.create_by_class_id(&"werewolf_moonfang_skirmisher")
 	if is_instance_valid(skirmisher):
+		var scent: CharacterSkill = skirmisher.get_skills()[0]
+		_expect(not scent.conditions.is_empty(), "Scent Blood enforces its wounded-prey threshold")
+		var pounce: CharacterSkill = skirmisher.get_skills()[1]
+		_expect(pounce.authored_effects[1].magnitude == 2, "Pounce authors Move 2")
 		var finish: CharacterSkill = skirmisher.get_skills()[2]
-		_expect(finish.authored_effects.size() == 2 and finish.authored_effects[1].keyword_kind == BattleKeywordOperation.Kind.LEECH and finish.authored_effects[1].magnitude == 35, "Moonfang Finish authors 35 percent direct-damage Leech")
+		_expect(finish.authored_effects.size() == 2 and finish.authored_effects[1].kind == BattleSkillEffectDefinition.Kind.CONDITIONAL_LEECH and finish.authored_effects[1].magnitude == 35 and finish.authored_effects[1].conditional_magnitude == 40, "Moonfang Finish authors 35 percent Leech, upgraded to 40 with Advantage")
+	var howler: RunCharacter = RunCharacterCatalog.create_by_class_id(&"werewolf_pack_howler")
+	if is_instance_valid(howler):
+		_expect(howler.get_skills()[1].authored_effects[0].kind == BattleSkillEffectDefinition.Kind.FORCED_TARGET_MOVE, "Drive the Pack authors movement instead of placeholder Armor")
+		_expect(howler.get_skills()[2].authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.GRANT_NEXT_HIT_LEECH and howler.get_skills()[2].authored_effects[0].magnitude == 25, "Full-Moon Chorus grants 25 percent next-hit Leech")
 	var ravager: RunCharacter = RunCharacterCatalog.create_by_class_id(&"werewolf_duskhide_ravager")
 	if is_instance_valid(ravager):
+		_expect(ravager.get_skills()[0].authored_effects[1].kind == BattleSkillEffectDefinition.Kind.CAPPED_SELF_DAMAGE, "Reckless Claw authors capped self-damage")
 		var feed: CharacterSkill = ravager.get_skills()[1]
 		_expect(feed.authored_effects.size() == 2 and feed.authored_effects[1].magnitude == 40, "Feed Through Pain authors 40 percent direct-damage Leech")
 	var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(&"veyra_moontrace")

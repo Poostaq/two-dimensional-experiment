@@ -1659,6 +1659,22 @@ func _apply_keyword_operation(
 			applied = target.apply_bleed(operation.get("source") as RefCounted, max(1, int(operation.get("duration"))))
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+		BattleKeywordOperation.Kind.GRANT_NEXT_HIT_LEECH:
+			applied = target.grant_next_hit_leech(
+				int(operation.get("magnitude")),
+				action_round + max(1, int(operation.get("duration"))) - 1
+			)
+			if applied:
+				keyword_deltas.append(
+					_keyword_delta(operation, target.unit_id, int(operation.get("magnitude")), from_reaction)
+				)
+		BattleKeywordOperation.Kind.CAPPED_SELF_DAMAGE:
+			var self_damage: int = target.apply_capped_self_damage_percent(
+				int(operation.get("magnitude"))
+			)
+			applied = self_damage > 0
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, -self_damage, from_reaction))
 		BattleKeywordOperation.Kind.APPLY_POISON:
 			var poison_axis: StringName = operation.get("poison_axis") as StringName
 			var operation_source: RefCounted = operation.get("source") as RefCounted

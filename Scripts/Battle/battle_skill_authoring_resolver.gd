@@ -59,6 +59,10 @@ static func build_plan(
 			round_number,
 			effect_script
 		)
+		if int(authored_effect.get("target_role")) == effect_script.TargetRole.ALL_ACTIVE_ALLIES:
+			for automatic_target: BattleUnitState in targets:
+				if not target_ids.has(automatic_target.unit_id):
+					target_ids.append(automatic_target.unit_id)
 		if targets.is_empty():
 			if int(authored_effect.get("target_role")) in [effect_script.TargetRole.HISTORY_ALLY, effect_script.TargetRole.SECONDARY]:
 				continue
@@ -201,6 +205,28 @@ static func build_plan(
 				if not is_instance_valid(transfer_operation):
 					return null
 				keyword_operations.append(transfer_operation)
+			effect_script.Kind.CONDITIONAL_LEECH:
+				var leech_percent: int = int(authored_effect.get("magnitude"))
+				if not locked_targets.is_empty() and locked_targets[0].has_advantage(round_number):
+					leech_percent = int(authored_effect.get("conditional_magnitude"))
+					locked_advantage_source = locked_targets[0].get_advantage_source(round_number)
+					consume_advantage = is_instance_valid(locked_advantage_source)
+				if leech_percent > 0:
+					var leech_operation: RefCounted = BattleKeywordOperation.create(
+						BattleKeywordOperation.Kind.LEECH, actor.unit_id, leech_percent
+					)
+					if not is_instance_valid(leech_operation):
+						return null
+					keyword_operations.append(leech_operation)
+			effect_script.Kind.CAPPED_SELF_DAMAGE:
+				var self_damage_operation: RefCounted = BattleKeywordOperation.create(
+					BattleKeywordOperation.Kind.CAPPED_SELF_DAMAGE,
+					actor.unit_id,
+					int(authored_effect.get("magnitude"))
+				)
+				if not is_instance_valid(self_damage_operation):
+					return null
+				keyword_operations.append(self_damage_operation)
 			effect_script.Kind.CONDITIONAL_ARMOR:
 				for target: BattleUnitState in targets:
 					var amount: int = int(authored_effect.get("magnitude"))
@@ -228,6 +254,8 @@ static func build_plan(
 						BattleKeywordOperation.Kind.APPLY_BLEED,
 						BattleKeywordOperation.Kind.APPLY_POISON,
 						BattleKeywordOperation.Kind.APPLY_STUN,
+						BattleKeywordOperation.Kind.GRANT_NEXT_HIT_LEECH,
+						BattleKeywordOperation.Kind.ARM_POST_HIT_MOVE_ONE,
 					]:
 						var authored_source_skill_id: StringName = authored_effect.get("source_skill_id") as StringName
 						if authored_source_skill_id.is_empty():
@@ -370,6 +398,34 @@ static func _conditions_met(
 			condition_script.Kind.ACTOR_HAS_ARMOR:
 				if actor.get_armor() <= 0:
 					return false
+			condition_script.Kind.PRIMARY_BELOW_SEVENTY_PERCENT_HP:
+				if locked_targets.is_empty() or locked_targets[0].current_hp * 10 >= locked_targets[0].max_hp * 7:
+					return false
+			condition_script.Kind.ACTOR_BELOW_SEVENTY_PERCENT_HP:
+				if actor.current_hp * 10 >= actor.max_hp * 7:
+					return false
+			condition_script.Kind.ACTOR_BELOW_HALF_HP:
+				if actor.current_hp * 2 >= actor.max_hp:
+					return false
+			condition_script.Kind.ANY_ENEMY_BELOW_SEVENTY_PERCENT_HP:
+				if not _any_enemy_matches_health(actor, units, 7, 10, true):
+					return false
+			condition_script.Kind.ANY_ENEMY_BELOW_HALF_HP:
+				if not _any_enemy_matches_health(actor, units, 1, 2, true):
+					return false
+			condition_script.Kind.ANY_ENEMY_ABOVE_HALF_HP:
+				if not _any_enemy_matches_health(actor, units, 1, 2, false):
+					return false
+			condition_script.Kind.PRIMARY_ENCLOSED:
+				if locked_targets.is_empty() or _active_ring_neighbor_count(
+					locked_targets[0], units
+				) < 2:
+					return false
+			condition_script.Kind.PRIMARY_ATTACKED_ARMORED_ALLY_THIS_ROUND:
+				if locked_targets.is_empty() or not _primary_attacked_armored_ally(
+					actor, locked_targets[0], units, action_records, round_number
+				):
+					return false
 			condition_script.Kind.PRIMARY_SNARED:
 				if locked_targets.is_empty() or not locked_targets[0].is_snared(round_number):
 					return false
@@ -432,6 +488,10 @@ static func _targets_for_role(
 		effect_script.TargetRole.SECONDARY:
 			if locked_targets.size() > 1:
 				result.append(locked_targets[1])
+		effect_script.TargetRole.ALL_ACTIVE_ALLIES:
+			for unit: BattleUnitState in units:
+				if is_instance_valid(unit) and unit.is_active() and unit.side == actor.side:
+					result.append(unit)
 		effect_script.TargetRole.HISTORY_ALLY:
 			var ally_id: StringName = _latest_ally_attacked_by_primary(
 				actor,
@@ -489,6 +549,60 @@ static func _latest_ally_attacked_by_primary(
 				):
 					return unit.unit_id
 	return &""
+
+
+static func _any_enemy_matches_health(
+	actor: BattleUnitState,
+	units: Array[BattleUnitState],
+	numerator: int,
+	denominator: int,
+	below: bool
+) -> bool:
+	for unit: BattleUnitState in units:
+		if not is_instance_valid(unit) or not unit.is_active() or unit.side == actor.side:
+			continue
+		var comparison: int = unit.current_hp * denominator - unit.max_hp * numerator
+		if below and comparison < 0 or not below and comparison > 0:
+			return true
+	return false
+
+
+static func _active_ring_neighbor_count(
+	target: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> int:
+	var count: int = 0
+	for unit: BattleUnitState in units:
+		if (
+			is_instance_valid(unit)
+			and unit != target
+			and unit.is_active()
+			and unit.side == target.side
+			and BattleFormationRules.is_move_one(target.slot_index, unit.slot_index)
+		):
+			count += 1
+	return count
+
+
+static func _primary_attacked_armored_ally(
+	actor: BattleUnitState,
+	primary: BattleUnitState,
+	units: Array[BattleUnitState],
+	records: Array[BattleActionRecord],
+	round_number: int
+) -> bool:
+	for record: BattleActionRecord in records:
+		if not is_instance_valid(record) or record.round_number != round_number or record.actor_id != primary.unit_id:
+			continue
+		for unit: BattleUnitState in units:
+			if (
+				is_instance_valid(unit)
+				and unit.side == actor.side
+				and unit.get_armor() > 0
+				and bool(record.direct_hit_by_target.get(unit.unit_id, false))
+			):
+				return true
+	return false
 
 
 static func _has_poison_from_actor(

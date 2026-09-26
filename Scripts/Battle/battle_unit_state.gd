@@ -231,6 +231,15 @@ func get_armor() -> int:
 	return _armor
 
 
+func apply_capped_self_damage_percent(percent_of_max_hp: int) -> int:
+	if percent_of_max_hp <= 0 or percent_of_max_hp > 100 or current_hp <= 1:
+		return 0
+	var requested: int = ceili(float(max_hp * percent_of_max_hp) / 100.0)
+	var applied: int = min(requested, current_hp - 1)
+	current_hp -= applied
+	return applied
+
+
 func apply_leech(result: BattleDamageResult, percent: int) -> int:
 	if (
 		not is_instance_valid(result)

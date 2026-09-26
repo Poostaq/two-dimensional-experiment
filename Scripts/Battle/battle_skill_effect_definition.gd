@@ -12,6 +12,8 @@ enum Kind {
 	POISON_SCALED_DAMAGE,
 	ARMOR_SPEND_DAMAGE,
 	POISON_TRANSFER,
+	CONDITIONAL_LEECH,
+	CAPPED_SELF_DAMAGE,
 }
 
 enum BonusCondition {
@@ -30,6 +32,7 @@ enum TargetRole {
 	ALL_SELECTED,
 	HISTORY_ALLY,
 	SECONDARY,
+	ALL_ACTIVE_ALLIES,
 }
 
 var kind: Kind:
@@ -240,6 +243,43 @@ static func leech(role: int, percent: int) -> RefCounted:
 		0,
 		BattleKeywordOperation.Kind.LEECH,
 		percent
+	)
+
+
+static func next_hit_leech(role: int, percent: int, duration_rounds: int = 1) -> RefCounted:
+	return keyword(
+		role,
+		BattleKeywordOperation.Kind.GRANT_NEXT_HIT_LEECH,
+		percent,
+		duration_rounds
+	)
+
+
+static func post_hit_move_one(role: int, duration_rounds: int = 1) -> RefCounted:
+	return keyword(
+		role,
+		BattleKeywordOperation.Kind.ARM_POST_HIT_MOVE_ONE,
+		0,
+		duration_rounds
+	)
+
+
+static func conditional_leech(
+	role: int,
+	base_percent: int,
+	advantage_percent: int
+) -> RefCounted:
+	return _create(
+		Kind.CONDITIONAL_LEECH, role, 0, 0,
+		BattleKeywordOperation.Kind.LEECH, base_percent, 0, false, 0, 0,
+		advantage_percent
+	)
+
+
+static func capped_self_damage(percent_of_max_hp: int) -> RefCounted:
+	return _create(
+		Kind.CAPPED_SELF_DAMAGE, TargetRole.ACTOR, 0, 0,
+		BattleKeywordOperation.Kind.CAPPED_SELF_DAMAGE, percent_of_max_hp
 	)
 
 
@@ -460,9 +500,9 @@ static func _is_valid_input(
 	source_specific: bool,
 	poison_source_skill_id: StringName
 ) -> bool:
-	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE, Kind.POISON_SCALED_DAMAGE, Kind.ARMOR_SPEND_DAMAGE, Kind.POISON_TRANSFER]:
+	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE, Kind.POISON_SCALED_DAMAGE, Kind.ARMOR_SPEND_DAMAGE, Kind.POISON_TRANSFER, Kind.CONDITIONAL_LEECH, Kind.CAPPED_SELF_DAMAGE]:
 		return false
-	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY]:
+	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES]:
 		return false
 	if not poison_source_skill_id.is_empty() and not (
 		effect_kind == Kind.POISON_SCALED_DAMAGE
@@ -494,6 +534,8 @@ static func _is_valid_input(
 				BattleKeywordOperation.Kind.APPLY_STUN,
 				BattleKeywordOperation.Kind.LEECH,
 				BattleKeywordOperation.Kind.REDUCE_COOLDOWN,
+				BattleKeywordOperation.Kind.GRANT_NEXT_HIT_LEECH,
+				BattleKeywordOperation.Kind.ARM_POST_HIT_MOVE_ONE,
 			]:
 				return false
 			if operation_kind == BattleKeywordOperation.Kind.ADD_ARMOR:
@@ -504,6 +546,10 @@ static func _is_valid_input(
 				return effect_magnitude == 0 and effect_duration == 1
 			if operation_kind == BattleKeywordOperation.Kind.LEECH:
 				return role == TargetRole.ACTOR and effect_magnitude > 0 and effect_magnitude <= 100 and effect_duration == 0
+			if operation_kind == BattleKeywordOperation.Kind.GRANT_NEXT_HIT_LEECH:
+				return effect_magnitude > 0 and effect_magnitude <= 100 and effect_duration > 0
+			if operation_kind == BattleKeywordOperation.Kind.ARM_POST_HIT_MOVE_ONE:
+				return effect_magnitude == 0 and effect_duration > 0
 			if operation_kind in [
 				BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 				BattleKeywordOperation.Kind.APPLY_SNARED,
@@ -524,6 +570,15 @@ static func _is_valid_input(
 			return role == TargetRole.PRIMARY and percent > 0 and history_step > 0 and maximum_percent >= percent + history_step and advantage_percent >= 0 and poison_axis_value in [&"", &"power", &"defense", &"speed"]
 		Kind.ARMOR_SPEND_DAMAGE:
 			return role == TargetRole.PRIMARY and percent > 0 and effect_magnitude >= 1 and effect_magnitude <= 10 and advantage_percent == 0 and not source_specific
+		Kind.CONDITIONAL_LEECH:
+			return (
+				role == TargetRole.ACTOR
+				and effect_magnitude >= 0
+				and conditional_amount > effect_magnitude
+				and conditional_amount <= 100
+			)
+		Kind.CAPPED_SELF_DAMAGE:
+			return role == TargetRole.ACTOR and effect_magnitude > 0 and effect_magnitude <= 100
 		Kind.POISON_TRANSFER:
 			return (
 				role == TargetRole.ALL_SELECTED
@@ -534,7 +589,7 @@ static func _is_valid_input(
 				and not source_specific
 			)
 		Kind.CONDITIONAL_ARMOR:
-			return role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY] and effect_magnitude > 0 and conditional_amount >= effect_magnitude
+			return role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES] and effect_magnitude > 0 and conditional_amount >= effect_magnitude
 		Kind.OPTIONAL_SELF_MOVE:
 			return (
 				role == TargetRole.ACTOR
