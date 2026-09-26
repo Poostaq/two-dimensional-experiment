@@ -12,6 +12,11 @@ const ORC_CLASS_IDS: Array[StringName] = [
 	&"orc_siegebreaker",
 ]
 
+const WEREWOLF_CLASS_IDS: Array[StringName] = [
+	&"werewolf_moonfang_skirmisher", &"werewolf_pack_howler", &"werewolf_bloodtrail_stalker",
+	&"werewolf_duskhide_ravager", &"werewolf_den_warden", &"werewolf_moonblood_seer",
+]
+
 const LIZARDMAN_CLASS_IDS: Array[StringName] = [
 	&"lizardman_venom_saurian",
 	&"lizardman_scale_sentinel",
@@ -42,11 +47,22 @@ static func get_recruitable_class_ids(clan_id: StringName) -> Array[StringName]:
 		return ORC_CLASS_IDS.duplicate()
 	if clan_id == &"lizardman":
 		return LIZARDMAN_CLASS_IDS.duplicate()
+	if clan_id == &"werewolf":
+		return WEREWOLF_CLASS_IDS.duplicate()
 	return []
 
 
 static func create_by_class_id(class_id: StringName) -> RunCharacter:
-	var character: RunCharacter = _create_from_catalog("res://Scripts/Run/lizardman_wave_a_catalog.gd", class_id, false)
+	var character: RunCharacter = _create_from_catalog("res://Scripts/Run/werewolf_wave_a_catalog.gd", class_id, false)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/werewolf_wave_b_catalog.gd", class_id, false)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/werewolf_commander_catalog.gd", class_id, true)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/lizardman_wave_a_catalog.gd", class_id, false)
 	if is_instance_valid(character):
 		return character
 	character = _create_from_catalog("res://Scripts/Run/lizardman_wave_b_catalog.gd", class_id, false)
