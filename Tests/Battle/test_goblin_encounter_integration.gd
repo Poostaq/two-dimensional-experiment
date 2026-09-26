@@ -31,6 +31,7 @@ func _run() -> void:
 	for index: int in 3:
 		_test_enemy_pair(index)
 	_test_selection_and_scheduling()
+	_test_enemy_movement_skill()
 	if failures.is_empty():
 		print("Goblin encounter integration: PASS")
 		quit(0)
@@ -74,6 +75,30 @@ func _test_enemy_pair(index: int) -> void:
 	_expect(records.size() == 2 and records[1].source_skill_id == payoff[index], "partner uses intended combo")
 	_expect(records.size() == 2 and records[0].target_ids == records[1].target_ids, "pair focuses prepared target")
 	_expect(arena.get_current_unit() == target, "control returns to player")
+	arena.free()
+
+func _test_enemy_movement_skill() -> void:
+	var effects: Script = load("res://Scripts/Battle/battle_skill_effect_definition.gd")
+	var movement_skill: CharacterSkill = CharacterSkill.create(
+		&"forced_move", "Forced Move", CharacterSkill.Kind.ACTIVE,
+		"Move an enemy 1.", "One enemy.", "Legal path.", "CD1",
+		CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS, 1, 0, null, [], null, null,
+		BattleSkillTargetProfile.create(1, 1, BattleUnitState.Side.PLAYER), [],
+		[effects.call("forced_target_move", effects.TargetRole.PRIMARY, 1)]
+	)
+	var enemy := BattleUnitState.new(&"enemy_mover", "Enemy Mover", BattleUnitState.Side.ENEMY, 4, 10, 20, [movement_skill], 5, 0)
+	var target := BattleUnitState.new(&"movement_target", "Movement Target", BattleUnitState.Side.PLAYER, 1, 1, 20, [], 5, 0)
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([enemy, target])
+	var before: int = target.slot_index
+	_expect(arena.call("_perform_enemy_turn"), "enemy forced-movement skill commits through transaction")
+	_expect(target.slot_index != before, "enemy action applies its declared movement path")
+	var records: Array[BattleActionRecord] = arena.get_action_records()
+	_expect(records.size() == 1 and records[0].source_skill_id == &"forced_move", "enemy movement is recorded as the authored skill")
 	arena.free()
 
 func _test_selection_and_scheduling() -> void:

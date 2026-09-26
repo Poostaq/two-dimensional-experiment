@@ -309,6 +309,10 @@ func _perform_enemy_turn() -> bool:
 	var committed: bool = false
 	if not choice.is_empty() and begin_skill_action(actor.unit_id, choice["skill_id"]):
 		var selected: bool = true
+		var move_path: Array[int] = []
+		move_path.assign(choice.get("move_path", []))
+		if not move_path.is_empty():
+			selected = set_skill_move_path(move_path)
 		for target_id: StringName in choice["target_ids"]:
 			selected = select_skill_target(target_id) and selected
 		if selected:
@@ -992,7 +996,7 @@ func _is_valid_plan_movement(
 		not is_battle_complete()
 		and is_instance_valid(actor)
 		and actor.is_active()
-		and actor.side == BattleUnitState.Side.PLAYER
+		and (actor.side == BattleUnitState.Side.PLAYER or _executing_enemy_action)
 		and is_instance_valid(current)
 		and current.unit_id == actor.unit_id
 		and is_instance_valid(movement_unit)

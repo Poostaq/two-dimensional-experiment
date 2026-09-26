@@ -12,7 +12,7 @@ func _run() -> void:
 		_failures.append("Encounter catalog must exist")
 	else:
 		var catalog: Script = load(CATALOG_PATH)
-		var names: Array = [["Ranger", "Crossbowman"], ["Siege Smith", "Thunderbreaker"], ["Star Archer", "Moon Sage"]]
+		var names: Array = [["Ranger", "Crosbowman"], ["Siege Smith", "Thunderbreaker"], ["Star Archer", "Moon Sage"]]
 		var races: Array[StringName] = [&"human", &"dwarf", &"elf"]
 		var stats: Array = [[[18, 7, 7, 1], [20, 6, 6, 2]], [[26, 8, 3, 3], [25, 8, 2, 3]], [[16, 7, 8, 1], [15, 7, 7, 0]]]
 		for index: int in 3:
@@ -36,6 +36,7 @@ func _run() -> void:
 			enemies[0].current_hp = 1
 			_expect(fresh[0].current_hp == fresh[0].max_hp, "Encounters return fresh state and wrap deterministically")
 		_test_choices(catalog)
+		_test_movement_choices(catalog)
 	for failure: String in _failures:
 		push_error(failure)
 	print("Encounter catalog: %d failures" % _failures.size())
@@ -86,6 +87,30 @@ func _test_choices(catalog: Script) -> void:
 	for skill: CharacterSkill in elves[1].skills:
 		elves[1].set_skill_cooldown(skill.skill_id, 1)
 	_expect(catalog.choose_action(elves[1], units, 1, 0, history, records).is_empty(), "All cooldowns safely fall back")
+
+func _test_movement_choices(catalog: Script) -> void:
+	var effects: Script = load("res://Scripts/Battle/battle_skill_effect_definition.gd")
+	var forced_move: CharacterSkill = CharacterSkill.create(
+		&"forced_move", "Forced Move", CharacterSkill.Kind.ACTIVE,
+		"Move an enemy 1.", "One enemy.", "Legal path.", "CD1",
+		CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY,
+		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE,
+		CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE,
+		CharacterSkill.CooldownMode.POST_USE_ACTIONS, 1, 0, null, [], null, null,
+		BattleSkillTargetProfile.create(1, 1, BattleUnitState.Side.PLAYER), [],
+		[effects.call("forced_target_move", effects.TargetRole.PRIMARY, 1)]
+	)
+	var actor := BattleUnitState.new(&"mover", "Mover", BattleUnitState.Side.ENEMY, 4, 5, 20, [forced_move], 5, 0)
+	var target := BattleUnitState.new(&"move_target", "Target", BattleUnitState.Side.PLAYER, 1, 5, 20, [], 5, 0)
+	var units: Array[BattleUnitState] = [actor, target]
+	var history: Array[BattleActionLogEntry] = []
+	var records: Array[BattleActionRecord] = []
+	var action: Dictionary = catalog.choose_action(actor, units, 1, 0, history, records)
+	_expect(action.get("skill_id") == &"forced_move", "AI selects a legal forced-movement skill")
+	_expect(action.get("move_path", []).size() == 2, "AI supplies the required Move 1 path")
+	if action.get("move_path", []).size() == 2:
+		_expect(action["move_path"][0] == target.slot_index, "AI movement path begins at the moved target")
+		_expect(BattleFormationRules.is_valid_ring_path(action["move_path"], 1), "AI movement path is legal and deterministic")
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:

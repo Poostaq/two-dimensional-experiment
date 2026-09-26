@@ -159,7 +159,8 @@ static func choose_action(actor: BattleUnitState, units: Array[BattleUnitState],
 			continue
 		for target_id: StringName in evaluation.valid_target_ids:
 			var targets: Array[StringName] = [target_id]
-			var confirmation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(actor, skill, units, actor.unit_id, false, round_number, targets, revision, revision, history, [], action_records, true)
+			var move_path: Array[int] = _move_path_for(actor, skill, target_id, units)
+			var confirmation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(actor, skill, units, actor.unit_id, false, round_number, targets, revision, revision, history, move_path, action_records, true)
 			if not confirmation.accepted:
 				continue
 			var score: int = 20 if skill_index == 0 else 10
@@ -173,11 +174,59 @@ static func choose_action(actor: BattleUnitState, units: Array[BattleUnitState],
 				for second_id: StringName in evaluation.valid_target_ids:
 					if second_id != target_id:
 						var pair: Array[StringName] = [target_id, second_id]
-						var pair_check: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(actor, skill, units, actor.unit_id, false, round_number, pair, revision, revision, history, [], action_records, true)
+						var pair_check: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(actor, skill, units, actor.unit_id, false, round_number, pair, revision, revision, history, move_path, action_records, true)
 						if pair_check.accepted:
 							targets = pair
 							break
 			if score > best_score:
 				best_score = score
-				best = {"skill_id": skill.skill_id, "target_ids": targets}
+				best = {"skill_id": skill.skill_id, "target_ids": targets, "move_path": move_path}
 	return best
+
+
+static func _move_path_for(
+	actor: BattleUnitState,
+	skill: CharacterSkill,
+	target_id: StringName,
+	units: Array[BattleUnitState]
+) -> Array[int]:
+	var effect_script: Script = load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
+	for effect: RefCounted in skill.authored_effects:
+		match int(effect.get("kind")):
+			effect_script.Kind.FORCED_TARGET_MOVE:
+				var target: BattleUnitState = _find_unit(units, target_id)
+				if not is_instance_valid(target):
+					return []
+				return _deterministic_ring_path(target.slot_index, int(effect.get("magnitude")))
+			effect_script.Kind.OPTIONAL_SELF_MOVE:
+				return _deterministic_ring_path(actor.slot_index, 1)
+	return []
+
+
+static func _deterministic_ring_path(start_slot: int, distance: int) -> Array[int]:
+	if not BattleFormationRules.is_valid_slot(start_slot) or distance < 1 or distance > 3:
+		return []
+	var path: Array[int] = [start_slot]
+	if _append_path_step(path, distance):
+		return path
+	return []
+
+
+static func _append_path_step(path: Array[int], remaining: int) -> bool:
+	if remaining == 0:
+		return true
+	for candidate: int in BattleFormationRules.SLOT_COUNT:
+		if path.has(candidate) or not BattleFormationRules.is_move_one(path[-1], candidate):
+			continue
+		path.append(candidate)
+		if _append_path_step(path, remaining - 1):
+			return true
+		path.pop_back()
+	return false
+
+
+static func _find_unit(units: Array[BattleUnitState], unit_id: StringName) -> BattleUnitState:
+	for unit: BattleUnitState in units:
+		if is_instance_valid(unit) and unit.unit_id == unit_id:
+			return unit
+	return null

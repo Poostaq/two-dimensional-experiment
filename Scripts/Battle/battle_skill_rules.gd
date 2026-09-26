@@ -118,7 +118,7 @@ static func evaluate_targets(
 		skill.effect_magnitude if is_instance_valid(skill) else 0,
 		int(authored_profile.get("minimum_targets")) if is_instance_valid(authored_profile) else legacy_target_count,
 		int(authored_profile.get("maximum_targets")) if is_instance_valid(authored_profile) else legacy_target_count,
-		bool(authored_profile.get("allows_optional_self_move")) if is_instance_valid(authored_profile) else false
+		_skill_allows_move_path(skill, authored_profile)
 	)
 
 
@@ -497,6 +497,20 @@ static func _farthest_comes_before(
 	if first_back != second_back:
 		return first_back
 	return first.slot_index > second.slot_index
+
+
+static func _skill_allows_move_path(skill: CharacterSkill, profile: RefCounted) -> bool:
+	if not is_instance_valid(skill):
+		return false
+	if is_instance_valid(profile) and bool(profile.get("allows_optional_self_move")):
+		return true
+	for effect: RefCounted in skill.authored_effects:
+		if int(effect.get("kind")) in [
+			BattleSkillEffectDefinition.Kind.OPTIONAL_SELF_MOVE,
+			BattleSkillEffectDefinition.Kind.FORCED_TARGET_MOVE,
+		]:
+			return true
+	return false
 
 
 static func _sorted_units(units: Array[BattleUnitState]) -> Array[BattleUnitState]:
