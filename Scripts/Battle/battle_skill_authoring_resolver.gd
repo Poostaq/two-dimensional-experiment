@@ -115,6 +115,92 @@ static func build_plan(
 						&"combo_bonus_damage": 0,
 						&"total_requested_damage": requested,
 					})
+			effect_script.Kind.POISON_SCALED_DAMAGE:
+				for target: BattleUnitState in targets:
+					var stack_count: int = 0
+					var axis: StringName = authored_effect.get("poison_axis") as StringName
+					var source_skill_id: StringName = authored_effect.get("source_skill_id") as StringName
+					var poison_axes: Array[StringName] = []
+					if axis.is_empty():
+						poison_axes.assign([&"power", &"defense", &"speed"])
+					else:
+						poison_axes.append(axis)
+					for poison_axis: StringName in poison_axes:
+						if bool(authored_effect.get("source_only")):
+							stack_count += target.get_poison_source_stacks(
+								poison_axis, actor.unit_id, source_skill_id, round_number
+							)
+						else:
+							stack_count += target.get_poison_stacks(poison_axis, round_number)
+					var poison_percent: int = min(
+						int(authored_effect.get("maximum_power_percent")),
+						int(authored_effect.get("power_percent"))
+							+ stack_count * int(authored_effect.get("history_increment"))
+					)
+					var poison_advantage_bonus: int = int(authored_effect.get("advantage_power_percent"))
+					if poison_advantage_bonus > 0 and target.has_advantage(round_number):
+						poison_percent += poison_advantage_bonus
+						locked_advantage_source = target.get_advantage_source(round_number)
+						consume_advantage = is_instance_valid(locked_advantage_source)
+					var poison_damage: int = BattleDamageRules.physical_damage(
+						actor.get_effective_power(),
+						float(poison_percent) / 100.0,
+						target.get_effective_defense()
+					)
+					damage_operations.append({
+						&"target_id": target.unit_id,
+						&"base_damage": poison_damage,
+						&"combo_bonus_damage": 0,
+						&"total_requested_damage": poison_damage,
+					})
+			effect_script.Kind.ARMOR_SPEND_DAMAGE:
+				var armor_spend: int = min(actor.get_armor(), int(authored_effect.get("magnitude")))
+				if armor_spend <= 0:
+					return null
+				for target: BattleUnitState in targets:
+					var armor_spend_percent: int = armor_spend * int(authored_effect.get("power_percent"))
+					var armor_spend_damage: int = BattleDamageRules.physical_damage(
+						actor.get_effective_power(),
+						float(armor_spend_percent) / 100.0,
+						target.get_effective_defense()
+					)
+					damage_operations.append({
+						&"target_id": target.unit_id,
+						&"base_damage": armor_spend_damage,
+						&"combo_bonus_damage": 0,
+						&"total_requested_damage": armor_spend_damage,
+						&"actor_armor_spend": armor_spend,
+					})
+			effect_script.Kind.POISON_TRANSFER:
+				if locked_targets.size() != 2:
+					return null
+				var transfer_ally: BattleUnitState = locked_targets[0]
+				var transfer_enemy: BattleUnitState = locked_targets[1]
+				var transfer_snapshot: Dictionary = {}
+				for transfer_axis: StringName in [&"power", &"defense", &"speed"]:
+					var source_snapshots: Array[Dictionary] = transfer_ally.get_poison_source_snapshots(
+						transfer_axis, round_number
+					)
+					if not source_snapshots.is_empty():
+						transfer_snapshot = source_snapshots[0]
+						break
+				if transfer_snapshot.is_empty():
+					return null
+				var transfer_source: RefCounted = transfer_snapshot.get("source") as RefCounted
+				var remaining_rounds: int = int(transfer_snapshot.get("expiry_round", 0)) - round_number + 1
+				var transfer_operation: RefCounted = BattleKeywordOperation.create(
+					BattleKeywordOperation.Kind.TRANSFER_POISON,
+					transfer_ally.unit_id,
+					1,
+					remaining_rounds,
+					transfer_source,
+					transfer_enemy.unit_id,
+					false,
+					transfer_snapshot.get("axis") as StringName
+				)
+				if not is_instance_valid(transfer_operation):
+					return null
+				keyword_operations.append(transfer_operation)
 			effect_script.Kind.CONDITIONAL_ARMOR:
 				for target: BattleUnitState in targets:
 					var amount: int = int(authored_effect.get("magnitude"))
@@ -143,7 +229,10 @@ static func build_plan(
 						BattleKeywordOperation.Kind.APPLY_POISON,
 						BattleKeywordOperation.Kind.APPLY_STUN,
 					]:
-						source = BattleKeywordSource.create(actor.unit_id, skill.skill_id, actor.power)
+						var authored_source_skill_id: StringName = authored_effect.get("source_skill_id") as StringName
+						if authored_source_skill_id.is_empty():
+							authored_source_skill_id = skill.skill_id
+						source = BattleKeywordSource.create(actor.unit_id, authored_source_skill_id, actor.power)
 					var operation: RefCounted = BattleKeywordOperation.create(
 						operation_kind,
 						target.unit_id,
@@ -171,10 +260,18 @@ static func build_plan(
 				if movement_effect_seen:
 					return null
 				movement_effect_seen = true
-				if not declared_move_path.is_empty():
+				var maximum_distance: int = int(authored_effect.get("magnitude"))
+				var minimum_distance: int = int(authored_effect.get("conditional_magnitude"))
+				if declared_move_path.is_empty():
+					if minimum_distance > 0:
+						return null
+				else:
+					var move_distance: int = declared_move_path.size() - 1
 					if (
 						declared_move_path[0] != actor.slot_index
-						or not BattleFormationRules.is_valid_ring_path(declared_move_path, 3)
+						or move_distance < minimum_distance
+						or move_distance > maximum_distance
+						or not BattleFormationRules.is_valid_ring_path(declared_move_path, maximum_distance)
 					):
 						return null
 					movement_unit_id = actor.unit_id
@@ -246,6 +343,32 @@ static func _conditions_met(
 					if is_instance_valid(unit) and unit.is_active() and unit.side == actor.side and unit.current_hp * 2 < unit.max_hp:
 						wounded_allies += 1
 				if wounded_allies < 2:
+					return false
+			condition_script.Kind.PRIMARY_POWER_POISON_FROM_ACTOR:
+				if locked_targets.is_empty() or not _has_poison_from_actor(
+					locked_targets[0], actor.unit_id, &"power", round_number
+				):
+					return false
+			condition_script.Kind.PRIMARY_SPEED_POISON_FROM_ACTOR:
+				if locked_targets.is_empty() or not _has_poison_from_actor(
+					locked_targets[0], actor.unit_id, &"speed", round_number
+				):
+					return false
+			condition_script.Kind.PRIMARY_HAS_ANY_POISON:
+				if locked_targets.is_empty() or (
+					locked_targets[0].get_poison_stacks(&"power", round_number)
+					+ locked_targets[0].get_poison_stacks(&"defense", round_number)
+					+ locked_targets[0].get_poison_stacks(&"speed", round_number)
+				) <= 0:
+					return false
+			condition_script.Kind.ACTOR_NOT_MOVED_THIS_ROUND:
+				if BattleHistoryQuery.moved_this_round(action_records, actor.unit_id, round_number):
+					return false
+			condition_script.Kind.ACTOR_ARMOR_AT_MOST_TWO:
+				if actor.get_armor() > 2:
+					return false
+			condition_script.Kind.ACTOR_HAS_ARMOR:
+				if actor.get_armor() <= 0:
 					return false
 			condition_script.Kind.PRIMARY_SNARED:
 				if locked_targets.is_empty() or not locked_targets[0].is_snared(round_number):
@@ -366,6 +489,23 @@ static func _latest_ally_attacked_by_primary(
 				):
 					return unit.unit_id
 	return &""
+
+
+static func _has_poison_from_actor(
+	target: BattleUnitState,
+	actor_id: StringName,
+	axis: StringName,
+	round_number: int
+) -> bool:
+	for snapshot: Dictionary in target.get_poison_source_snapshots(axis, round_number):
+		var source: RefCounted = snapshot.get("source") as RefCounted
+		if (
+			is_instance_valid(source)
+			and source.get("source_unit_id") == actor_id
+			and int(snapshot.get("stacks", 0)) > 0
+		):
+			return true
+	return false
 
 
 static func _damage_bonus_met(

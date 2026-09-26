@@ -13,6 +13,7 @@ enum Kind {
 	APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED,
 	GRANT_ADVANTAGE_AND_NEXT_HIT_LEECH,
 	ARM_POST_HIT_MOVE_ONE,
+	TRANSFER_POISON,
 }
 
 var kind: Kind:
@@ -112,7 +113,7 @@ func is_valid() -> bool:
 func duplicate_operation() -> RefCounted:
 	if not is_valid():
 		return null
-	var operation_script := load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
+	var operation_script: Script = load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
 	return operation_script.call("create", _kind, _target_id, _magnitude, _duration, _source, _affected_skill_id, _arms_snared_follow_up, _poison_axis)
 
 
@@ -126,7 +127,7 @@ func with_target_and_poison_axis(
 		or not is_valid()
 	):
 		return null
-	var operation_script := load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
+	var operation_script: Script = load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
 	return operation_script.call(
 		"create",
 		_kind,
@@ -143,7 +144,7 @@ func with_target_and_poison_axis(
 func with_target(resolved_target_id: StringName) -> RefCounted:
 	if resolved_target_id.is_empty() or not is_valid():
 		return null
-	var operation_script := load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
+	var operation_script: Script = load("res://Scripts/Battle/battle_keyword_operation.gd") as Script
 	return operation_script.call(
 		"create",
 		_kind,
@@ -179,6 +180,7 @@ static func _is_valid_input(
 		Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED,
 		Kind.GRANT_ADVANTAGE_AND_NEXT_HIT_LEECH,
 		Kind.ARM_POST_HIT_MOVE_ONE,
+		Kind.TRANSFER_POISON,
 	] or operation_target_id.is_empty():
 		return false
 	if arm_snared_follow_up and operation_kind != Kind.APPLY_SNARED:
@@ -196,6 +198,14 @@ static func _is_valid_input(
 			return operation_magnitude == 0 and operation_duration > 0 and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_POISON:
 			return operation_magnitude > 0 and operation_duration > 0 and operation_poison_axis in [&"power", &"defense", &"speed"] and _is_valid_keyword_source(operation_source)
+		Kind.TRANSFER_POISON:
+			return (
+				operation_magnitude == 1
+				and operation_duration > 0
+				and not operation_affected_skill_id.is_empty()
+				and operation_poison_axis in [&"power", &"defense", &"speed"]
+				and _is_valid_keyword_source(operation_source)
+			)
 		Kind.APPLY_STUN:
 			return operation_magnitude == 0 and operation_duration == 1 and _is_valid_keyword_source(operation_source)
 		Kind.LEECH:

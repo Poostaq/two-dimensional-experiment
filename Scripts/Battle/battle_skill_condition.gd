@@ -16,6 +16,12 @@ enum Kind {
 	PRIMARY_MOVED_THIS_ROUND,
 	PRIMARY_MOVED_OR_STUNNED_THIS_ROUND,
 	ALLIES_BELOW_HALF_AT_LEAST_TWO,
+	PRIMARY_POWER_POISON_FROM_ACTOR,
+	PRIMARY_SPEED_POISON_FROM_ACTOR,
+	PRIMARY_HAS_ANY_POISON,
+	ACTOR_NOT_MOVED_THIS_ROUND,
+	ACTOR_ARMOR_AT_MOST_TWO,
+	ACTOR_HAS_ARMOR,
 }
 
 var kind: Kind:
@@ -42,6 +48,12 @@ func _init(condition_kind: int) -> void:
 		Kind.PRIMARY_MOVED_THIS_ROUND,
 		Kind.PRIMARY_MOVED_OR_STUNNED_THIS_ROUND,
 		Kind.ALLIES_BELOW_HALF_AT_LEAST_TWO,
+		Kind.PRIMARY_POWER_POISON_FROM_ACTOR,
+		Kind.PRIMARY_SPEED_POISON_FROM_ACTOR,
+		Kind.PRIMARY_HAS_ANY_POISON,
+		Kind.ACTOR_NOT_MOVED_THIS_ROUND,
+		Kind.ACTOR_ARMOR_AT_MOST_TWO,
+		Kind.ACTOR_HAS_ARMOR,
 	]:
 		return
 	_kind = condition_kind as Kind
@@ -60,5 +72,5 @@ func is_valid() -> bool:
 func duplicate_condition() -> RefCounted:
 	if not is_valid():
 		return null
-	var condition_script := load("res://Scripts/Battle/battle_skill_condition.gd") as Script
+	var condition_script: Script = load("res://Scripts/Battle/battle_skill_condition.gd") as Script
 	return condition_script.create(_kind)

@@ -1,3 +1,4 @@
+class_name TestAc92LizardmenIntegration
 extends SceneTree
 
 const CLASS_IDS: Array[StringName] = [
@@ -21,6 +22,8 @@ func _init() -> void:
 
 
 func _run() -> void:
+	_expect(BattleSkillEffectDefinition.Kind.has("POISON_SCALED_DAMAGE"), "Shared effects support Poison stack scaling")
+	_expect(BattleSkillEffectDefinition.Kind.has("ARMOR_SPEND_DAMAGE"), "Shared effects support Armor-spend damage")
 	_expect(RunCharacterCatalog.get_recruitable_class_ids(&"lizardman") == CLASS_IDS, "Lizardman catalog exposes six stable IDs")
 	for class_id: StringName in CLASS_IDS:
 		var character: RunCharacter = RunCharacterCatalog.create_by_class_id(class_id)
@@ -39,12 +42,27 @@ func _run() -> void:
 		var weakening_bite: CharacterSkill = saurian.get_skills()[0]
 		_expect(weakening_bite.authored_effects.size() == 2, "Weakening Bite authors damage plus Poison")
 		_expect(weakening_bite.authored_effects[1].poison_axis == &"power" and weakening_bite.authored_effects[1].magnitude == 1 and weakening_bite.authored_effects[1].duration == 3, "Weakening Bite uses canonical Power Poison")
+		var venom_pulse: CharacterSkill = saurian.get_skills()[1]
+		_expect(not venom_pulse.conditions.is_empty() and venom_pulse.authored_effects.size() == 2, "Venom Pulse requires and deepens the actor's Power Poison")
+		var cold_finish: CharacterSkill = saurian.get_skills()[2]
+		_expect(cold_finish.authored_effects[0].power_percent == 120 and cold_finish.authored_effects[0].history_increment == 20 and cold_finish.authored_effects[0].maximum_power_percent == 180 and cold_finish.authored_effects[0].advantage_power_percent == 20, "Cold Finish scales 120 +20 per source stack, max 180, plus 20 with Advantage")
 	var spitter: RunCharacter = RunCharacterCatalog.create_by_class_id(&"lizardman_mire_spitter")
 	if is_instance_valid(spitter):
 		_expect(spitter.get_skills()[0].authored_effects[1].poison_axis == &"speed", "Slowing Spit uses Speed Poison")
+		var bog_down: CharacterSkill = spitter.get_skills()[1]
+		_expect(not bog_down.conditions.is_empty() and bog_down.authored_effects.size() == 2 and bog_down.authored_effects[1].kind == BattleSkillEffectDefinition.Kind.FORCED_TARGET_MOVE and bog_down.authored_effects[1].magnitude == 1, "Bog Down requires source Poison, adds a stack, and moves one")
+		_expect(spitter.get_skills()[2].target_profile.minimum_targets == 2 and spitter.get_skills()[2].target_profile.maximum_targets == 3, "Saturate Ground targets two or three enemies")
 	var alchemist: RunCharacter = RunCharacterCatalog.create_by_class_id(&"lizardman_fang_alchemist")
 	if is_instance_valid(alchemist):
 		_expect(alchemist.get_skills()[0].authored_effects[1].poison_axis == &"defense", "Corrosive Dose uses Defense Poison")
+		var catalyze: CharacterSkill = alchemist.get_skills()[1]
+		_expect(catalyze.authored_effects[0].power_percent == 80 and catalyze.authored_effects[0].history_increment == 20 and catalyze.authored_effects[0].maximum_power_percent == 160 and catalyze.authored_effects[0].advantage_power_percent == 20, "Catalyze scales from all Poison stacks with its Advantage bonus")
+	var sentinel: RunCharacter = RunCharacterCatalog.create_by_class_id(&"lizardman_scale_sentinel")
+	_expect(sentinel.get_skills()[1].authored_effects.size() == 2 and sentinel.get_skills()[1].authored_effects[1].kind == BattleSkillEffectDefinition.Kind.FORCED_TARGET_MOVE, "Tail Check deals damage and moves one")
+	var ambusher: RunCharacter = RunCharacterCatalog.create_by_class_id(&"lizardman_reed_ambusher")
+	_expect(ambusher.get_skills()[1].authored_effects[1].magnitude == 3 and ambusher.get_skills()[2].authored_effects[0].magnitude == 2, "Reed Ambusher preserves Move 3 and Move 2 ranges")
+	var warder: RunCharacter = RunCharacterCatalog.create_by_class_id(&"lizardman_sunscale_warder")
+	_expect(warder.get_skills()[1].authored_effects[0].magnitude == 3 and warder.get_skills()[1].authored_effects[0].power_percent == 50, "Reflecting Scale spends up to three Armor for 50 percent each")
 	var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(&"sszek_still_mire")
 	_expect(is_instance_valid(commander), "Sszek commander constructs")
 	if is_instance_valid(commander):
@@ -53,7 +71,41 @@ func _run() -> void:
 		_expect(skills[0].skill_id == &"weakening_bite" and skills[3].skill_id == &"cartographer_of_venoms", "Sszek inherits Venom Saurian and appends signature")
 	_expect(RunCharacterCatalog.create_by_class_id(&"lizardman_unknown") == null, "Lizardman catalog rejects unknown IDs")
 	_test_cartographer_of_venoms(commander)
+	_test_antidote_exchange_plan()
 	_finish()
+
+
+func _test_antidote_exchange_plan() -> void:
+	var alchemist_character: RunCharacter = RunCharacterCatalog.create_by_class_id(
+		&"lizardman_fang_alchemist"
+	)
+	var alchemist := BattleUnitState.new(
+		&"alchemist", "Alchemist", BattleUnitState.Side.PLAYER, 0, 5, 21,
+		alchemist_character.get_skills(), 6, 2, &"lizardman"
+	)
+	var ally := BattleUnitState.new(
+		&"poisoned_ally", "Ally", BattleUnitState.Side.PLAYER, 1, 4, 20
+	)
+	var enemy := BattleUnitState.new(
+		&"transfer_enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 4, 20
+	)
+	var poison_source: RefCounted = BattleKeywordSource.create(&"enemy_source", &"toxin", 7)
+	ally.apply_poison(poison_source, &"defense", 2, 3)
+	var empty_history: Array[BattleActionLogEntry] = []
+	var empty_records: Array[BattleActionRecord] = []
+	var plan: SkillEffectPlan = BattleSkillAuthoringResolver.build_plan(
+		alchemist, alchemist_character.get_skills()[2], [ally, enemy],
+		[alchemist, ally, enemy], 1, 0, empty_history, [], empty_records
+	)
+	_expect(is_instance_valid(plan), "Antidote Exchange builds from an ally Poison source")
+	if is_instance_valid(plan):
+		_expect(
+			plan.keyword_operations.size() == 1
+			and plan.keyword_operations[0].kind == BattleKeywordOperation.Kind.TRANSFER_POISON
+			and plan.keyword_operations[0].target_id == ally.unit_id
+			and plan.keyword_operations[0].affected_skill_id == enemy.unit_id,
+			"Antidote Exchange preserves the source while addressing ally and enemy"
+		)
 
 
 func _test_cartographer_of_venoms(commander: RunCharacter) -> void:

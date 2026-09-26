@@ -455,31 +455,124 @@ func apply_poison(
 		or expiry_round < 1
 	):
 		return false
-	var prior: Dictionary = _poison_states.get(axis, {})
-	var prior_stacks: int = int(prior.get("stacks", 0))
-	_poison_states[axis] = {
+	var source_key: StringName = _poison_source_key(
+		source.get("source_unit_id") as StringName,
+		source.get("source_skill_id") as StringName
+	)
+	if source_key.is_empty():
+		return false
+	var sources: Dictionary = _poison_states.get(axis, {})
+	var prior: Dictionary = sources.get(source_key, {})
+	sources[source_key] = {
 		"source": source.call("duplicate_source"),
-		"stacks": min(MAX_POISON_STACKS, prior_stacks + stacks),
+		"stacks": min(MAX_POISON_STACKS, int(prior.get("stacks", 0)) + stacks),
 		"expiry_round": max(expiry_round, int(prior.get("expiry_round", 0))),
 	}
+	_poison_states[axis] = sources
 	return true
 
 
 func get_poison_stacks(axis: StringName, current_round: int = 1) -> int:
 	if current_round < 1 or not _poison_states.has(axis):
 		return 0
-	var poison: Dictionary = _poison_states[axis]
-	if int(poison.get("expiry_round", 0)) < current_round:
-		_poison_states.erase(axis)
+	_expire_poison_sources(axis, current_round)
+	var total: int = 0
+	for poison: Dictionary in (_poison_states.get(axis, {}) as Dictionary).values():
+		total += int(poison.get("stacks", 0))
+	return min(MAX_POISON_STACKS, total)
+
+
+func get_poison_source_stacks(
+	axis: StringName,
+	source_unit_id: StringName,
+	source_skill_id: StringName,
+	current_round: int = 1
+) -> int:
+	if current_round < 1 or not _poison_states.has(axis):
 		return 0
+	_expire_poison_sources(axis, current_round)
+	var key: StringName = _poison_source_key(source_unit_id, source_skill_id)
+	var poison: Dictionary = (_poison_states.get(axis, {}) as Dictionary).get(key, {})
 	return int(poison.get("stacks", 0))
 
 
 func get_poison_source(axis: StringName, current_round: int = 1) -> RefCounted:
-	if get_poison_stacks(axis, current_round) <= 0:
+	var snapshots: Array[Dictionary] = get_poison_source_snapshots(axis, current_round)
+	if snapshots.is_empty():
 		return null
-	var source: RefCounted = _poison_states[axis].get("source") as RefCounted
+	var source: RefCounted = snapshots[0].get("source") as RefCounted
 	return source.call("duplicate_source") if is_instance_valid(source) else null
+
+
+func get_poison_source_snapshots(
+	axis: StringName,
+	current_round: int = 1
+) -> Array[Dictionary]:
+	var snapshots: Array[Dictionary] = []
+	if current_round < 1 or not _poison_states.has(axis):
+		return snapshots
+	_expire_poison_sources(axis, current_round)
+	var sources: Dictionary = _poison_states.get(axis, {})
+	var keys: Array = sources.keys()
+	keys.sort_custom(func(first: Variant, second: Variant) -> bool:
+		return String(first) < String(second)
+	)
+	for key: Variant in keys:
+		var poison: Dictionary = sources[key]
+		var source: RefCounted = poison.get("source") as RefCounted
+		snapshots.append({
+			"axis": axis,
+			"source": source.call("duplicate_source") if is_instance_valid(source) else null,
+			"stacks": int(poison.get("stacks", 0)),
+			"expiry_round": int(poison.get("expiry_round", 0)),
+		})
+	return snapshots
+
+
+func remove_poison_source(
+	axis: StringName,
+	source_unit_id: StringName,
+	source_skill_id: StringName,
+	current_round: int = 1
+) -> Dictionary:
+	if current_round < 1 or not _poison_states.has(axis):
+		return {}
+	_expire_poison_sources(axis, current_round)
+	var sources: Dictionary = _poison_states.get(axis, {})
+	var key: StringName = _poison_source_key(source_unit_id, source_skill_id)
+	if not sources.has(key):
+		return {}
+	var poison: Dictionary = sources[key]
+	sources.erase(key)
+	if sources.is_empty():
+		_poison_states.erase(axis)
+	else:
+		_poison_states[axis] = sources
+	var source: RefCounted = poison.get("source") as RefCounted
+	return {
+		"axis": axis,
+		"source": source.call("duplicate_source") if is_instance_valid(source) else null,
+		"stacks": int(poison.get("stacks", 0)),
+		"expiry_round": int(poison.get("expiry_round", 0)),
+	}
+
+
+func _expire_poison_sources(axis: StringName, current_round: int) -> void:
+	var sources: Dictionary = _poison_states.get(axis, {})
+	for key: Variant in sources.keys():
+		var poison: Dictionary = sources[key]
+		if int(poison.get("expiry_round", 0)) < current_round:
+			sources.erase(key)
+	if sources.is_empty():
+		_poison_states.erase(axis)
+	else:
+		_poison_states[axis] = sources
+
+
+func _poison_source_key(source_unit_id: StringName, source_skill_id: StringName) -> StringName:
+	if source_unit_id.is_empty() or source_skill_id.is_empty():
+		return &""
+	return StringName("%s::%s" % [source_unit_id, source_skill_id])
 
 
 func reduce_skill_cooldown(skill_id: StringName, amount: int) -> int:

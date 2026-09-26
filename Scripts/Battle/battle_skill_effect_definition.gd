@@ -9,6 +9,9 @@ enum Kind {
 	HISTORY_SCALED_DAMAGE,
 	CONDITIONAL_ARMOR,
 	FORCED_TARGET_MOVE,
+	POISON_SCALED_DAMAGE,
+	ARMOR_SPEND_DAMAGE,
+	POISON_TRANSFER,
 }
 
 enum BonusCondition {
@@ -65,6 +68,12 @@ var conditional_magnitude: int:
 var poison_axis: StringName:
 	get:
 		return _poison_axis
+var source_only: bool:
+	get:
+		return _source_only
+var source_skill_id: StringName:
+	get:
+		return _source_skill_id
 
 var bonus_condition: BonusCondition:
 	get:
@@ -104,6 +113,8 @@ var _history_increment: int = 0
 var _maximum_power_percent: int = 0
 var _conditional_magnitude: int = 0
 var _poison_axis: StringName = &""
+var _source_only: bool = false
+var _source_skill_id: StringName = &""
 var _is_valid: bool = false
 
 
@@ -119,7 +130,9 @@ func _init(
 	history_step: int = 0,
 	maximum_percent: int = 0,
 	conditional_amount: int = 0,
-	poison_axis_value: StringName = &""
+	poison_axis_value: StringName = &"",
+	source_specific: bool = false,
+	poison_source_skill_id: StringName = &""
 ) -> void:
 	if not _is_valid_input(
 		effect_kind,
@@ -133,7 +146,9 @@ func _init(
 		history_step,
 		maximum_percent,
 		conditional_amount,
-		poison_axis_value
+		poison_axis_value,
+		source_specific,
+		poison_source_skill_id
 	):
 		return
 	_kind = effect_kind as Kind
@@ -148,6 +163,8 @@ func _init(
 	_maximum_power_percent = maximum_percent
 	_conditional_magnitude = conditional_amount
 	_poison_axis = poison_axis_value
+	_source_only = source_specific
+	_source_skill_id = poison_source_skill_id
 	_is_valid = true
 
 
@@ -178,7 +195,13 @@ static func keyword(
 	)
 
 
-static func poison(role: int, axis: StringName, stacks: int = 1, duration_rounds: int = 3) -> RefCounted:
+static func poison(
+	role: int,
+	axis: StringName,
+	stacks: int = 1,
+	duration_rounds: int = 3,
+	poison_source_skill_id: StringName = &""
+) -> RefCounted:
 	return _create(
 		Kind.KEYWORD,
 		role,
@@ -191,7 +214,9 @@ static func poison(role: int, axis: StringName, stacks: int = 1, duration_rounds
 		0,
 		0,
 		0,
-		axis
+		axis,
+		false,
+		poison_source_skill_id
 	)
 
 
@@ -234,8 +259,16 @@ static func speed(
 	)
 
 
-static func optional_self_move() -> RefCounted:
-	return _create(Kind.OPTIONAL_SELF_MOVE, TargetRole.ACTOR)
+static func optional_self_move(maximum_distance: int = 3, minimum_distance: int = 0) -> RefCounted:
+	return _create(
+		Kind.OPTIONAL_SELF_MOVE, TargetRole.ACTOR, 0, 0,
+		BattleKeywordOperation.Kind.ADD_ARMOR, maximum_distance, 0, false, 0, 0,
+		minimum_distance
+	)
+
+
+static func self_move(maximum_distance: int, minimum_distance: int = 1) -> RefCounted:
+	return optional_self_move(maximum_distance, minimum_distance)
 
 
 static func forced_target_move(role: int, distance: int) -> RefCounted:
@@ -247,6 +280,34 @@ static func forced_target_move(role: int, distance: int) -> RefCounted:
 		BattleKeywordOperation.Kind.ADD_ARMOR,
 		distance
 	)
+
+
+static func poison_scaled_damage(
+	role: int,
+	base_percent: int,
+	percent_per_stack: int,
+	maximum_percent: int,
+	axis: StringName = &"",
+	source_specific: bool = false,
+	advantage_bonus_percent: int = 0,
+	poison_source_skill_id: StringName = &""
+) -> RefCounted:
+	return _create(
+		Kind.POISON_SCALED_DAMAGE, role, base_percent, advantage_bonus_percent,
+		BattleKeywordOperation.Kind.ADD_ARMOR, 0, 0, false, percent_per_stack,
+		maximum_percent, 0, axis, source_specific, poison_source_skill_id
+	)
+
+
+static func armor_spend_damage(role: int, percent_per_armor: int, maximum_spend: int) -> RefCounted:
+	return _create(
+		Kind.ARMOR_SPEND_DAMAGE, role, percent_per_armor, 0,
+		BattleKeywordOperation.Kind.ADD_ARMOR, maximum_spend
+	)
+
+
+static func poison_transfer() -> RefCounted:
+	return _create(Kind.POISON_TRANSFER, TargetRole.ALL_SELECTED)
 
 
 static func history_scaled_damage(
@@ -335,7 +396,9 @@ func duplicate_definition() -> RefCounted:
 		_history_increment,
 		_maximum_power_percent,
 		_conditional_magnitude,
-		_poison_axis
+		_poison_axis,
+		_source_only,
+		_source_skill_id
 	)
 	copied._bonus_condition = _bonus_condition
 	copied._upgraded_power_percent = _upgraded_power_percent
@@ -358,7 +421,9 @@ static func _create(
 	history_step: int = 0,
 	maximum_percent: int = 0,
 	conditional_amount: int = 0,
-	poison_axis_value: StringName = &""
+	poison_axis_value: StringName = &"",
+	source_specific: bool = false,
+	poison_source_skill_id: StringName = &""
 ) -> RefCounted:
 	var definition: RefCounted = load("res://Scripts/Battle/battle_skill_effect_definition.gd").new(
 		effect_kind,
@@ -372,7 +437,9 @@ static func _create(
 		history_step,
 		maximum_percent,
 		conditional_amount,
-		poison_axis_value
+		poison_axis_value,
+		source_specific,
+		poison_source_skill_id
 	)
 	return definition if definition.is_valid() else null
 
@@ -389,11 +456,20 @@ static func _is_valid_input(
 	history_step: int,
 	maximum_percent: int,
 	conditional_amount: int,
-	poison_axis_value: StringName
+	poison_axis_value: StringName,
+	source_specific: bool,
+	poison_source_skill_id: StringName
 ) -> bool:
-	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE]:
+	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE, Kind.POISON_SCALED_DAMAGE, Kind.ARMOR_SPEND_DAMAGE, Kind.POISON_TRANSFER]:
 		return false
 	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY]:
+		return false
+	if not poison_source_skill_id.is_empty() and not (
+		effect_kind == Kind.POISON_SCALED_DAMAGE
+		or effect_kind == Kind.KEYWORD and operation_kind == BattleKeywordOperation.Kind.APPLY_POISON
+	):
+		return false
+	if source_specific and poison_source_skill_id.is_empty():
 		return false
 	if arm_snared_follow_up and (effect_kind != Kind.KEYWORD or operation_kind != BattleKeywordOperation.Kind.APPLY_SNARED):
 		return false
@@ -443,7 +519,20 @@ static func _is_valid_input(
 				and effect_duration > 0
 			)
 		Kind.HISTORY_SCALED_DAMAGE:
-			return role == TargetRole.PRIMARY and percent > 0 and history_step > 0 and maximum_percent >= percent + history_step
+			return role == TargetRole.PRIMARY and percent > 0 and history_step > 0 and maximum_percent >= percent + history_step and not source_specific
+		Kind.POISON_SCALED_DAMAGE:
+			return role == TargetRole.PRIMARY and percent > 0 and history_step > 0 and maximum_percent >= percent + history_step and advantage_percent >= 0 and poison_axis_value in [&"", &"power", &"defense", &"speed"]
+		Kind.ARMOR_SPEND_DAMAGE:
+			return role == TargetRole.PRIMARY and percent > 0 and effect_magnitude >= 1 and effect_magnitude <= 10 and advantage_percent == 0 and not source_specific
+		Kind.POISON_TRANSFER:
+			return (
+				role == TargetRole.ALL_SELECTED
+				and percent == 0
+				and advantage_percent == 0
+				and effect_magnitude == 0
+				and effect_duration == 0
+				and not source_specific
+			)
 		Kind.CONDITIONAL_ARMOR:
 			return role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY] and effect_magnitude > 0 and conditional_amount >= effect_magnitude
 		Kind.OPTIONAL_SELF_MOVE:
@@ -451,8 +540,12 @@ static func _is_valid_input(
 				role == TargetRole.ACTOR
 				and advantage_percent == 0
 				and percent == 0
-				and effect_magnitude == 0
+				and effect_magnitude >= 1
+				and effect_magnitude <= 3
+				and conditional_amount >= 0
+				and conditional_amount <= effect_magnitude
 				and effect_duration == 0
+				and not source_specific
 			)
 		Kind.FORCED_TARGET_MOVE:
 			return (

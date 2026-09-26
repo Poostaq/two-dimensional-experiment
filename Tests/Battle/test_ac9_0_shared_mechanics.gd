@@ -15,6 +15,7 @@ func _run() -> void:
 	_expect(BattleKeywordOperation.Kind.has("LEECH"), "Leech operation exists")
 	_expect(BattleUnitState.MAX_ARMOR == 10, "Armor cap is fixed at 10")
 	_test_poison_contract()
+	_test_poison_source_isolation_contract()
 	_test_stun_contract()
 	await _test_poison_commit_contract()
 	await _test_stun_turn_skip_contract()
@@ -58,6 +59,19 @@ func _test_poison_contract() -> void:
 		_expect(poison.keyword_kind == BattleKeywordOperation.Kind.APPLY_POISON, "Poison effect uses its keyword")
 		_expect(poison.poison_axis == &"power", "Poison effect preserves its declared axis")
 
+
+func _test_poison_source_isolation_contract() -> void:
+	var first_source: RefCounted = BattleKeywordSource.create(&"first", &"dose", 4)
+	var second_source: RefCounted = BattleKeywordSource.create(&"second", &"dose", 7)
+	var target: BattleUnitState = BattleUnitState.new(&"multi_poison", "Multi Poison", BattleUnitState.Side.ENEMY, 0, 5, 20, [], 8, 4)
+	_expect(target.apply_poison(first_source, &"power", 2, 3), "First Poison source applies independently")
+	_expect(target.apply_poison(second_source, &"power", 2, 3), "Second Poison source coexists on the same axis")
+	_expect(target.has_method("get_poison_source_stacks"), "Poison exposes source-specific stack queries")
+	if target.has_method("get_poison_source_stacks"):
+		_expect(target.call("get_poison_source_stacks", &"power", &"first", &"dose", 1) == 2, "First Poison source keeps its own stacks")
+		_expect(target.call("get_poison_source_stacks", &"power", &"second", &"dose", 1) == 2, "Second Poison source keeps its own stacks")
+	_expect(target.get_poison_stacks(&"power", 1) == 3, "Same-axis Poison penalty remains capped at three across sources")
+	_expect(target.get_effective_power() == 5, "Aggregate Poison penalty applies the capped production stat reduction")
 
 func _test_multi_target_profile_contract() -> void:
 	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script

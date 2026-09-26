@@ -1222,10 +1222,18 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	var skill: CharacterSkill = _find_skill(actor, plan.skill_id)
 	if not is_instance_valid(actor) or not is_instance_valid(skill):
 		return false
+	var actor_armor_spend: int = 0
 	for operation: Dictionary in plan.damage_operations:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
 		if not is_instance_valid(target) or not target.is_active() or int(operation.get(&"total_requested_damage", 0)) <= 0:
 			return false
+		var operation_armor_spend: int = int(operation.get(&"actor_armor_spend", 0))
+		if operation_armor_spend > 0:
+			if actor_armor_spend > 0 and actor_armor_spend != operation_armor_spend:
+				return false
+			actor_armor_spend = operation_armor_spend
+	if actor.get_armor() < actor_armor_spend:
+		return false
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id", &""))
 		if not is_instance_valid(target) or not target.is_active():
@@ -1234,6 +1242,12 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id"))
 		if not is_instance_valid(target) or not target.is_active():
 			return false
+		if int(operation.get("kind")) == BattleKeywordOperation.Kind.TRANSFER_POISON:
+			var transfer_destination: BattleUnitState = get_unit_by_id(
+				operation.get("affected_skill_id")
+			)
+			if not is_instance_valid(transfer_destination) or not transfer_destination.is_active():
+				return false
 	var movement_unit: BattleUnitState = null
 	var movement_occupant: BattleUnitState = null
 	if not plan.movement_path.is_empty():
@@ -1253,6 +1267,14 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	var keyword_deltas: Array[Dictionary] = []
 	var direct_hit_by_target: Dictionary[StringName, bool] = {}
 	var affected_units: Dictionary[StringName, BattleUnitState] = {}
+	if actor_armor_spend > 0:
+		var actor_armor_before: int = actor.get_armor()
+		if actor.spend_armor(actor_armor_spend) != actor_armor_spend:
+			_action_in_progress = false
+			_invalidate_character_info()
+			return false
+		_record_armor_loss(keyword_deltas, actor, actor_armor_before)
+		affected_units[actor.unit_id] = actor
 	var advantage_consumed: RefCounted = null
 	if (plan.consume_advantage or is_instance_valid(plan.advantage_rider)) and not plan.damage_operations.is_empty():
 		var marked_target: BattleUnitState = get_unit_by_id(plan.damage_operations[0].get("target_id", &""))
@@ -1639,12 +1661,13 @@ func _apply_keyword_operation(
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
 		BattleKeywordOperation.Kind.APPLY_POISON:
 			var poison_axis: StringName = operation.get("poison_axis") as StringName
-			var prior_source: RefCounted = target.get_poison_source(poison_axis, action_round)
 			var operation_source: RefCounted = operation.get("source") as RefCounted
-			var was_reapplication: bool = (
-				is_instance_valid(prior_source)
-				and prior_source.get("source_unit_id") == operation_source.get("source_unit_id")
-			)
+			var was_reapplication: bool = target.get_poison_source_stacks(
+				poison_axis,
+				operation_source.get("source_unit_id") as StringName,
+				operation_source.get("source_skill_id") as StringName,
+				action_round
+			) > 0
 			applied = target.apply_poison(
 				operation_source,
 				poison_axis,
@@ -1659,6 +1682,36 @@ func _apply_keyword_operation(
 				poison_delta["source_unit_id"] = operation_source.get("source_unit_id")
 				poison_delta["was_reapplication"] = was_reapplication
 				keyword_deltas.append(poison_delta)
+		BattleKeywordOperation.Kind.TRANSFER_POISON:
+			var transfer_axis: StringName = operation.get("poison_axis") as StringName
+			var transfer_source: RefCounted = operation.get("source") as RefCounted
+			var destination: BattleUnitState = get_unit_by_id(operation.get("affected_skill_id"))
+			var removed: Dictionary = target.remove_poison_source(
+				transfer_axis,
+				transfer_source.get("source_unit_id") as StringName,
+				transfer_source.get("source_skill_id") as StringName,
+				action_round
+			)
+			if not removed.is_empty() and is_instance_valid(destination):
+				applied = destination.apply_poison(
+					transfer_source,
+					transfer_axis,
+					1,
+					action_round + max(1, int(operation.get("duration"))) - 1
+				)
+				if applied:
+					var removal_delta: Dictionary = _keyword_delta(
+						operation, target.unit_id, -int(removed.get("stacks", 0)), from_reaction
+					)
+					removal_delta["poison_axis"] = transfer_axis
+					removal_delta["source_unit_id"] = transfer_source.get("source_unit_id")
+					keyword_deltas.append(removal_delta)
+					var transfer_delta: Dictionary = _keyword_delta(
+						operation, destination.unit_id, 1, from_reaction
+					)
+					transfer_delta["poison_axis"] = transfer_axis
+					transfer_delta["source_unit_id"] = transfer_source.get("source_unit_id")
+					keyword_deltas.append(transfer_delta)
 		BattleKeywordOperation.Kind.APPLY_STUN:
 			applied = target.apply_stun(operation.get("source") as RefCounted)
 			if applied:
@@ -2529,7 +2582,7 @@ func _collect_effect_highlight_colors(
 		var target_id: StringName = delta.get(&"target_id", &"")
 		if target_id.is_empty():
 			continue
-		var effect_color := _effect_color_for_keyword_kind(int(delta.get(&"kind", -1)))
+		var effect_color: Color = _effect_color_for_keyword_kind(int(delta.get(&"kind", -1)))
 		if int(delta.get(&"kind", -1)) == BattleKeywordOperation.Kind.ADD_ARMOR and int(delta.get(&"value", 0)) < 0:
 			effect_color = EFFECT_NEGATIVE_BORDER_COLOR
 		if effect_color == Color.TRANSPARENT:
