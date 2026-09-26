@@ -93,7 +93,7 @@ static func _is_valid_input(
 ) -> bool:
 	if side not in [BattleUnitState.Side.PLAYER, BattleUnitState.Side.ENEMY]:
 		return false
-	if minimum < 0 or maximum < minimum or maximum > 2:
+	if minimum < 0 or maximum < minimum or maximum > 6:
 		return false
 	if not ordered_target_sides.is_empty():
 		if ordered_target_sides.size() != maximum:

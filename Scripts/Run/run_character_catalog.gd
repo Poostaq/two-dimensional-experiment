@@ -12,6 +12,15 @@ const ORC_CLASS_IDS: Array[StringName] = [
 	&"orc_siegebreaker",
 ]
 
+const LIZARDMAN_CLASS_IDS: Array[StringName] = [
+	&"lizardman_venom_saurian",
+	&"lizardman_scale_sentinel",
+	&"lizardman_mire_spitter",
+	&"lizardman_fang_alchemist",
+	&"lizardman_reed_ambusher",
+	&"lizardman_sunscale_warder",
+]
+
 const GOBLIN_CLASS_IDS: Array[StringName] = [
 	&"scrapshield_bruiser",
 	&"wirefang_skirmisher",
@@ -31,12 +40,23 @@ static func get_recruitable_class_ids(clan_id: StringName) -> Array[StringName]:
 		return get_goblin_class_ids()
 	if clan_id == &"orc":
 		return ORC_CLASS_IDS.duplicate()
+	if clan_id == &"lizardman":
+		return LIZARDMAN_CLASS_IDS.duplicate()
 	return []
 
 
 static func create_by_class_id(class_id: StringName) -> RunCharacter:
+	var character: RunCharacter = _create_from_catalog("res://Scripts/Run/lizardman_wave_a_catalog.gd", class_id, false)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/lizardman_wave_b_catalog.gd", class_id, false)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/lizardman_commander_catalog.gd", class_id, true)
+	if is_instance_valid(character):
+		return character
 	var orc_wave_a_script := load("res://Scripts/Run/orc_wave_a_catalog.gd") as Script
-	var character: RunCharacter = orc_wave_a_script.create_by_class_id(class_id)
+	character = orc_wave_a_script.create_by_class_id(class_id)
 	if is_instance_valid(character):
 		character.class_id = class_id
 		return character
@@ -61,6 +81,14 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 		return character
 	var commander_script := load("res://Scripts/Run/goblin_commander_catalog.gd") as Script
 	return commander_script.create_by_commander_id(class_id)
+
+
+static func _create_from_catalog(path: String, identity: StringName, commander: bool) -> RunCharacter:
+	var catalog := load(path) as Script
+	var character: RunCharacter = catalog.create_by_commander_id(identity) if commander else catalog.create_by_class_id(identity)
+	if is_instance_valid(character) and not commander:
+		character.class_id = identity
+	return character
 
 
 static func create_starters() -> Array[RunCharacter]:

@@ -20,6 +20,7 @@ func _run() -> void:
 	await _test_stun_turn_skip_contract()
 	await _test_stun_guard_action_contract()
 	_test_leech_contract()
+	_test_multi_target_profile_contract()
 	_test_adjacent_ally_contract()
 	_test_adjacent_ally_action_end_reaction_contract()
 	_test_action_end_reaction_requires_contact()
@@ -51,6 +52,12 @@ func _test_poison_contract() -> void:
 	if is_instance_valid(poison):
 		_expect(poison.keyword_kind == BattleKeywordOperation.Kind.APPLY_POISON, "Poison effect uses its keyword")
 		_expect(poison.poison_axis == &"power", "Poison effect preserves its declared axis")
+
+
+func _test_multi_target_profile_contract() -> void:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(2, 3, BattleUnitState.Side.ENEMY)
+	_expect(is_instance_valid(profile), "Authored skills can select up to three targets")
 
 
 func _test_stun_contract() -> void:
