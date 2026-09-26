@@ -1,3 +1,4 @@
+class_name TestAc97DwarvesIntegration
 extends SceneTree
 
 const CLASS_IDS: Array[StringName] = [&"dwarf_forgewarden", &"dwarf_siege_smith", &"dwarf_rune_sentinel", &"dwarf_quarrel_engineer", &"dwarf_hearthkeeper", &"dwarf_thunderbreaker"]
@@ -31,6 +32,7 @@ func _run() -> void:
 		for skill: CharacterSkill in character.get_skills():
 			ids.append(skill.skill_id)
 		_expect(ids == expected[4], "Dwarf skills match: %s" % class_id)
+	_test_authored_dwarf_skill_contracts()
 	var smith: RunCharacter = RunCharacterCatalog.create_by_class_id(&"dwarf_siege_smith")
 	if is_instance_valid(smith):
 		_expect(smith.get_skills()[0].authored_effects[0].armor_strip == 2, "Dwarf Siege Smith uses typed Armor strip")
@@ -47,6 +49,38 @@ func _run() -> void:
 	_expect(party.size() >= 3 and count == 1, "Dwarf boss party contains Brokk exactly once")
 	_test_stonevein_bulwark(commander)
 	_finish()
+
+
+func _test_authored_dwarf_skill_contracts() -> void:
+	var forgewarden: RunCharacter = RunCharacterCatalog.create_by_class_id(&"dwarf_forgewarden")
+	if is_instance_valid(forgewarden):
+		var skills: Array[CharacterSkill] = forgewarden.get_skills()
+		_expect(skills[0].authored_effects.size() == 2 and skills[0].authored_effects[0].magnitude == 4, "Iron Brace grants both units Armor 4")
+		_expect(skills[1].authored_effects.size() == 3 and skills[1].authored_effects[0].power_percent == 90, "Runed Guard deals 90 percent and conditionally protects two units")
+		_expect(skills[2].authored_effects[0].conditional_magnitude == 7 and skills[2].authored_effects[1].conditional_magnitude == 7, "Unyielding Stone upgrades wounded targets to Armor 7")
+	var sentinel: RunCharacter = RunCharacterCatalog.create_by_class_id(&"dwarf_rune_sentinel")
+	if is_instance_valid(sentinel):
+		var skills: Array[CharacterSkill] = sentinel.get_skills()
+		_expect(skills[0].authored_effects[0].magnitude == 1 and skills[0].authored_effects[1].magnitude == 3, "Warded Step moves 1 and grants Armor 3")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].power_percent == 100 and skills[1].authored_effects[1].duration == 1, "Rune of Hold requires movement and applies Snared")
+		_expect(skills[2].target_profile.maximum_targets == 0 and skills[2].authored_effects.size() == 2, "Living Plate protects all allies and adds an injured-ally rider")
+	var engineer: RunCharacter = RunCharacterCatalog.create_by_class_id(&"dwarf_quarrel_engineer")
+	if is_instance_valid(engineer):
+		var skills: Array[CharacterSkill] = engineer.get_skills()
+		_expect(skills[0].authored_effects[0].power_percent == 85 and skills[0].authored_effects[1].duration == 1, "Shot-Lock deals 85 percent and applies Snared")
+		_expect(skills[2].target_profile.maximum_targets == 2 and skills[2].authored_effects[0].power_percent == 180 and skills[2].authored_effects[1].upgraded_power_percent == 120, "Explosive Refit authors exact primary and secondary damage")
+	var keeper: RunCharacter = RunCharacterCatalog.create_by_class_id(&"dwarf_hearthkeeper")
+	if is_instance_valid(keeper):
+		var skills: Array[CharacterSkill] = keeper.get_skills()
+		_expect(not skills[0].conditions.is_empty() and skills[0].authored_effects[0].magnitude == 4 and skills[0].authored_effects[0].conditional_magnitude == 6, "Hearth Reset enforces its health gate and wounded bonus")
+		_expect(skills[1].authored_effects.size() == 2 and skills[1].authored_effects[0].conditional_magnitude == 5, "Warm the Line grants Armor 3 or 5 to self and neighbors")
+		_expect(skills[2].target_profile.maximum_targets == 0 and skills[2].authored_effects[0].conditional_magnitude == 6, "Shared Forge protects all allies and upgrades during collapse")
+	var breaker: RunCharacter = RunCharacterCatalog.create_by_class_id(&"dwarf_thunderbreaker")
+	if is_instance_valid(breaker):
+		var skills: Array[CharacterSkill] = breaker.get_skills()
+		_expect(skills[0].authored_effects[0].armor_strip == 2 and skills[0].authored_effects[0].power_percent == 100, "Weight of the Hammer strips Armor 2 and deals 100 percent")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].upgraded_power_percent == 190, "Cracked Foundation requires Armor loss and upgrades at three")
+		_expect(skills[2].authored_effects[0].ignore_armor and skills[2].authored_effects[0].upgraded_power_percent == 250, "Thunderfall Decision ignores Armor and upgrades after Armor loss")
 
 
 func _test_stonevein_bulwark(commander: RunCharacter) -> void:

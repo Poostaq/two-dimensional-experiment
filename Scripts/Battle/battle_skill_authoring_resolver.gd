@@ -62,6 +62,7 @@ static func build_plan(
 		if int(authored_effect.get("target_role")) in [
 			effect_script.TargetRole.ALL_ACTIVE_ALLIES,
 			effect_script.TargetRole.ALL_ACTIVE_WOUNDED_ALLIES,
+			effect_script.TargetRole.MOST_INJURED_ACTIVE_ALLY,
 		]:
 			for automatic_target: BattleUnitState in targets:
 				if not target_ids.has(automatic_target.unit_id):
@@ -572,6 +573,22 @@ static func _targets_for_role(
 					and unit.current_hp * 2 < unit.max_hp
 				):
 					result.append(unit)
+		effect_script.TargetRole.MOST_INJURED_ACTIVE_ALLY:
+			var most_injured: BattleUnitState = null
+			for unit: BattleUnitState in units:
+				if not is_instance_valid(unit) or not unit.is_active() or unit.side != actor.side:
+					continue
+				if (
+					not is_instance_valid(most_injured)
+					or unit.current_hp * most_injured.max_hp < most_injured.current_hp * unit.max_hp
+					or (
+						unit.current_hp * most_injured.max_hp == most_injured.current_hp * unit.max_hp
+						and unit.slot_index < most_injured.slot_index
+					)
+				):
+					most_injured = unit
+			if is_instance_valid(most_injured):
+				result.append(most_injured)
 		effect_script.TargetRole.HISTORY_ALLY:
 			var ally_id: StringName = _latest_ally_attacked_by_primary(
 				actor,
@@ -769,6 +786,12 @@ static func _damage_bonus_met(
 					locked_targets[0].slot_index, locked_targets[1].slot_index
 				)
 			)
+		BattleSkillEffectDefinition.BonusCondition.ACTOR_HAS_ARMOR:
+			return actor.get_armor() > 0
+		BattleSkillEffectDefinition.BonusCondition.ACTOR_HAS_AT_LEAST_THREE_ARMOR:
+			return actor.get_armor() >= 3
+		BattleSkillEffectDefinition.BonusCondition.PRIMARY_SELECTED_SNARED:
+			return not locked_targets.is_empty() and locked_targets[0].is_snared(round_number)
 		BattleSkillEffectDefinition.BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR:
 			return actor.get_armor() >= 2
 	return false

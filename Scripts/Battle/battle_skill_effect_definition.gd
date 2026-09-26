@@ -34,6 +34,9 @@ enum BonusCondition {
 	ALL_SELECTED_SNARED,
 	DECLARED_PATH_CROSSES_OCCUPIED_SLOT,
 	PRIMARY_AND_SECONDARY_ADJACENT,
+	ACTOR_HAS_ARMOR,
+	ACTOR_HAS_AT_LEAST_THREE_ARMOR,
+	PRIMARY_SELECTED_SNARED,
 	ACTOR_HAS_AT_LEAST_TWO_ARMOR,
 }
 
@@ -45,6 +48,7 @@ enum TargetRole {
 	SECONDARY,
 	ALL_ACTIVE_ALLIES,
 	ALL_ACTIVE_WOUNDED_ALLIES,
+	MOST_INJURED_ACTIVE_ALLY,
 }
 
 var kind: Kind:
@@ -544,7 +548,7 @@ static func _is_valid_input(
 ) -> bool:
 	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE, Kind.POISON_SCALED_DAMAGE, Kind.ARMOR_SPEND_DAMAGE, Kind.POISON_TRANSFER, Kind.CONDITIONAL_LEECH, Kind.CAPPED_SELF_DAMAGE]:
 		return false
-	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES]:
+	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES, TargetRole.MOST_INJURED_ACTIVE_ALLY]:
 		return false
 	if not poison_source_skill_id.is_empty() and not (
 		effect_kind == Kind.POISON_SCALED_DAMAGE
@@ -632,7 +636,7 @@ static func _is_valid_input(
 			)
 		Kind.CONDITIONAL_ARMOR:
 			return (
-				role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES]
+				role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES, TargetRole.MOST_INJURED_ACTIVE_ALLY]
 				and effect_magnitude >= 0
 				and conditional_amount > 0
 				and conditional_amount >= effect_magnitude
