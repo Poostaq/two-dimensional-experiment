@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_leech_contract()
 	_test_adjacent_ally_contract()
 	_test_adjacent_ally_action_end_reaction_contract()
+	await _test_iron_decree_default_attack_commit_contract()
 	await _test_leech_commit_contract()
 	_finish()
 
@@ -153,6 +154,25 @@ func _test_adjacent_ally_action_end_reaction_contract() -> void:
 	_expect(reactions is Array and reactions.size() == 1, "Goruk resolves one action-end passive candidate")
 	if reactions is Array and reactions.size() == 1:
 		_expect(reactions[0].get("target_id") == ally.unit_id, "Goruk resolves Iron Decree to the adjacent ally")
+
+
+func _test_iron_decree_default_attack_commit_contract() -> void:
+	var packed := load("res://Scenes/battle_arena.tscn") as PackedScene
+	var arena := packed.instantiate() as BattleArena
+	root.add_child(arena)
+	await process_frame
+	var catalog := load("res://Scripts/Run/run_character_catalog.gd") as Script
+	var goruk: RunCharacter = catalog.create_by_class_id(&"goruk_ironline")
+	var owner := BattleUnitState.new(&"goruk_ironline", "Goruk", BattleUnitState.Side.PLAYER, 0, 5, 20, goruk.get_skills())
+	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 5, 20)
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 0, 5, 20)
+	arena.configure_units([owner, ally, enemy])
+	_expect(ally.get_armor() == 0, "Iron Decree has no action-start effect")
+	var preview := arena.preview_default_attack(owner.unit_id, enemy.unit_id)
+	_expect(not preview.is_empty(), "Goruk can commit a contacted default attack")
+	arena.confirm_default_attack(owner.unit_id, enemy.unit_id, int(preview.get("revision", -1)))
+	_expect(ally.get_armor() == 2, "Iron Decree applies Armor after Goruk's contacted action")
+	arena.queue_free()
 
 
 func _test_leech_contract() -> void:

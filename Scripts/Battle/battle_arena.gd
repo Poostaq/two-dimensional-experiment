@@ -815,6 +815,7 @@ func confirm_default_attack(
 		_action_in_progress = false
 		_invalidate_character_info()
 		return false
+	_dispatch_action_end_reactions(actor, action_round, empty_keyword_deltas)
 	_action_records.append(action_record)
 	actor.complete_stun_guard()
 	var resolved_outcome: BattleOutcome.Type = BattleOutcome.evaluate(_units)
@@ -1549,6 +1550,25 @@ func _unit_for_keyword_source(source: RefCounted) -> BattleUnitState:
 	if not is_instance_valid(source):
 		return null
 	return get_unit_by_id(source.get("source_unit_id"))
+
+
+func _dispatch_action_end_reactions(
+	actor: BattleUnitState,
+	action_round: int,
+	keyword_deltas: Array[Dictionary]
+) -> void:
+	var dispatcher_script: Script = load("res://Scripts/Battle/battle_reaction_dispatcher.gd") as Script
+	if not is_instance_valid(dispatcher_script):
+		return
+	var candidates: Array[Dictionary] = dispatcher_script.call(
+		"collect_action_end_reactions", actor, _units, action_round
+	)
+	for candidate: Dictionary in candidates:
+		var definition: RefCounted = candidate.get("definition") as RefCounted
+		if not is_instance_valid(definition):
+			continue
+		var operation: RefCounted = definition.get("operation") as RefCounted
+		_apply_keyword_operation(operation, action_round, keyword_deltas, true)
 
 
 func _dispatch_passive_reactions(
