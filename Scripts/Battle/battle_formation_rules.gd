@@ -51,6 +51,14 @@ static func closest_active_opponent(
 	return winner
 
 
+static func is_in_contact(
+	actor: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> bool:
+	var opponent: BattleUnitState = closest_active_opponent(actor, units)
+	return is_instance_valid(opponent) and lane_distance(actor.slot_index, opponent.slot_index) == 0
+
+
 static func closest_active_adjacent_ally(
 	owner: BattleUnitState,
 	units: Array[BattleUnitState]

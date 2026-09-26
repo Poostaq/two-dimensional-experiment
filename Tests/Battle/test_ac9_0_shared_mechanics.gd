@@ -22,6 +22,7 @@ func _run() -> void:
 	_test_leech_contract()
 	_test_adjacent_ally_contract()
 	_test_adjacent_ally_action_end_reaction_contract()
+	_test_action_end_reaction_requires_contact()
 	await _test_iron_decree_default_attack_commit_contract()
 	await _test_leech_commit_contract()
 	_finish()
@@ -154,6 +155,17 @@ func _test_adjacent_ally_action_end_reaction_contract() -> void:
 	_expect(reactions is Array and reactions.size() == 1, "Goruk resolves one action-end passive candidate")
 	if reactions is Array and reactions.size() == 1:
 		_expect(reactions[0].get("target_id") == ally.unit_id, "Goruk resolves Iron Decree to the adjacent ally")
+
+
+func _test_action_end_reaction_requires_contact() -> void:
+	var catalog := load("res://Scripts/Run/run_character_catalog.gd") as Script
+	var goruk: RunCharacter = catalog.create_by_class_id(&"goruk_ironline")
+	var owner := BattleUnitState.new(&"goruk_ironline", "Goruk", BattleUnitState.Side.PLAYER, 0, 5, 20, goruk.get_skills())
+	var ally := BattleUnitState.new(&"ally", "Ally", BattleUnitState.Side.PLAYER, 1, 5, 20)
+	var enemy := BattleUnitState.new(&"enemy", "Enemy", BattleUnitState.Side.ENEMY, 5, 5, 20)
+	var units: Array[BattleUnitState] = [owner, ally, enemy]
+	var reactions: Array[Dictionary] = BattleReactionDispatcher.collect_action_end_reactions(owner, units, 1)
+	_expect(reactions.is_empty(), "Action-end reactions require the owner to finish in contact")
 
 
 func _test_iron_decree_default_attack_commit_contract() -> void:

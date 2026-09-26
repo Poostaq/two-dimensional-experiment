@@ -73,6 +73,8 @@ static func collect_action_end_reactions(
 		or not units.has(actor)
 	):
 		return reactions
+	if not BattleFormationRules.is_in_contact(actor, units):
+		return reactions
 	for skill: CharacterSkill in actor.skills:
 		if not is_instance_valid(skill) or skill.kind != CharacterSkill.Kind.PASSIVE:
 			continue

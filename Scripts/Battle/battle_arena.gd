@@ -1330,6 +1330,7 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		_invalidate_character_info()
 		return false
 	_dispatch_passive_reactions(action_record, action_round, keyword_deltas)
+	_dispatch_action_end_reactions(actor, action_round, keyword_deltas)
 	var effect_highlight_colors := _collect_effect_highlight_colors(keyword_deltas)
 	for target_id: StringName in action_speed_target_ids:
 		effect_highlight_colors[target_id] = EFFECT_POSITIVE_BORDER_COLOR
