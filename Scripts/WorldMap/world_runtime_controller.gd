@@ -401,32 +401,26 @@ func _restore_roster(run_state: RefCounted) -> bool:
 	var ids := run_state.get("formation") as Array[StringName]
 	if ids.size() != RunRoster.MAX_ROSTER_SIZE:
 		return false
-	var available: Array[RunCharacter] = RunCharacterCatalog.create_starters()
-	for class_id: StringName in RunCharacterCatalog.get_goblin_class_ids():
-		var regular_character := RunCharacterCatalog.create_by_class_id(class_id)
-		if is_instance_valid(regular_character):
-			available.append(regular_character)
-	for commander_id: StringName in GoblinCommanderCatalog.get_commander_ids():
-		var commander_character := GoblinCommanderCatalog.create_by_commander_id(commander_id)
-		if is_instance_valid(commander_character):
-			available.append(commander_character)
+	var legacy_characters: Array[RunCharacter] = RunCharacterCatalog.create_starters()
 	for reward_id: StringName in [
 		RunCharacterCatalog.COMBAT_SCOUT_REWARD_ID,
 		RunCharacterCatalog.BOSS_CHAMPION_REWARD_ID,
 	]:
 		var reward_character := RunCharacterCatalog.create_for_reward(reward_id)
 		if is_instance_valid(reward_character):
-			available.append(reward_character)
+			legacy_characters.append(reward_character)
 	var restored_slots: Array[RunCharacter] = []
 	restored_slots.resize(RunRoster.MAX_ROSTER_SIZE)
 	for slot_index: int in ids.size():
 		var expected_id := ids[slot_index]
 		if expected_id.is_empty():
 			continue
-		for character: RunCharacter in available:
+		for character: RunCharacter in legacy_characters:
 			if character.character_id == expected_id:
 				restored_slots[slot_index] = character
 				break
+		if not is_instance_valid(restored_slots[slot_index]):
+			restored_slots[slot_index] = RunCharacterCatalog.create_by_class_id(expected_id)
 		if not is_instance_valid(restored_slots[slot_index]):
 			return false
 	_roster = RunRoster.new(restored_slots)

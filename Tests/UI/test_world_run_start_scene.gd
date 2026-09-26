@@ -345,7 +345,68 @@ func _run() -> void:
     _expect(launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Previous returns to Brakka")
     launcher.queue_free()
     await process_frame
+    _cleanup_commander_launch_fixture("user://tests/ac9-commander-world-launch")
+    for commander_id: StringName in [
+        &"brakka_rustbanner",
+        &"goruk_ironline",
+        &"veyra_moontrace",
+        &"sszek_still_mire",
+        &"kyris_windscar",
+    ]:
+        await _verify_commander_world_launch(packed, commander_id)
     _finish()
+
+
+func _verify_commander_world_launch(
+    packed: PackedScene,
+    commander_id: StringName
+) -> void:
+    var fixture_root: String = "user://tests/ac9-commander-world-launch"
+    _cleanup_commander_launch_fixture(fixture_root)
+    var repository: RefCounted = load(
+        "res://Scripts/Run/world_single_slot_repository.gd"
+    ).new(fixture_root + "/slot.json")
+    var launcher: Control = packed.instantiate() as Control
+    launcher.set("_repository", repository)
+    root.add_child(launcher)
+    await process_frame
+    var launch: Dictionary = launcher.call(
+        "request_start", "ac9-runtime-" + String(commander_id), commander_id
+    )
+    _expect(launch.get("ok", false), "%s run persists successfully" % commander_id)
+    await process_frame
+    var world_host: Control = launcher.get_node("%WorldHost") as Control
+    var runtime_world: WorldRuntimeController = null
+    if world_host.get_child_count() == 1:
+        runtime_world = world_host.get_child(0) as WorldRuntimeController
+    _expect(
+        is_instance_valid(runtime_world),
+        "%s run opens the production world" % commander_id,
+    )
+    if is_instance_valid(runtime_world):
+        _expect(
+            runtime_world.is_session_applied(),
+            "%s session applies to the production world" % commander_id,
+        )
+    launcher.queue_free()
+    await process_frame
+    _cleanup_commander_launch_fixture(fixture_root)
+
+
+func _cleanup_commander_launch_fixture(root_path: String) -> void:
+    var absolute := ProjectSettings.globalize_path(root_path)
+    var expected := ProjectSettings.globalize_path(
+        "user://tests/ac9-commander-world-launch"
+    )
+    if absolute != expected:
+        _fail("unsafe commander-launch cleanup path")
+        return
+    for suffix: String in ["", ".tmp", ".bak"]:
+        var path := absolute + "/slot.json" + suffix
+        if FileAccess.file_exists(path):
+            DirAccess.remove_absolute(path)
+    if DirAccess.dir_exists_absolute(absolute):
+        DirAccess.remove_absolute(absolute)
 
 
 func _expect(condition: bool, message: String) -> void:
