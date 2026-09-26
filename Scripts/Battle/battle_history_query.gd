@@ -153,10 +153,25 @@ static func moved_this_round(
 	target_id: StringName,
 	round_number: int
 ) -> bool:
+	return movement_distance_this_round(records, target_id, round_number) > 0
+
+
+static func movement_distance_this_round(
+	records: Array[BattleActionRecord],
+	target_id: StringName,
+	round_number: int
+) -> int:
+	var distance: int = 0
 	for record: BattleActionRecord in records:
 		if not is_instance_valid(record) or not record.is_valid() or record.round_number != round_number:
 			continue
-		if record.slot_before_by_unit.has(target_id) and record.slot_after_by_unit.has(target_id):
-			if record.slot_before_by_unit[target_id] != record.slot_after_by_unit[target_id]:
-				return true
-	return false
+		if not record.slot_before_by_unit.has(target_id) or not record.slot_after_by_unit.has(target_id):
+			continue
+		var slot_before: int = int(record.slot_before_by_unit[target_id])
+		var slot_after: int = int(record.slot_after_by_unit[target_id])
+		if slot_before == slot_after:
+			continue
+		distance += BattleFormationRules.lane_distance(slot_before, slot_after)
+		if BattleFormationRules.is_front_slot(slot_before) != BattleFormationRules.is_front_slot(slot_after):
+			distance += 1
+	return distance

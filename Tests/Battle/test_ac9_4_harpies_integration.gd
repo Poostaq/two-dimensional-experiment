@@ -1,3 +1,4 @@
+class_name TestAc94HarpiesIntegration
 extends SceneTree
 
 const CLASS_IDS: Array[StringName] = [&"harpy_talon_duelist", &"harpy_storm_siren", &"harpy_gale_scout", &"harpy_skyhook_raider", &"harpy_nestguard", &"harpy_carrion_cantor"]
@@ -39,6 +40,7 @@ func _run() -> void:
 		for effect: RefCounted in raking_pass.authored_effects:
 			has_move_effect = has_move_effect or effect.kind == BattleSkillEffectDefinition.Kind.OPTIONAL_SELF_MOVE
 		_expect(has_move_effect, "Raking Pass authors movement through the typed effect seam")
+	_test_authored_harpy_skill_contracts()
 	var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(&"kyris_windscar")
 	_expect(is_instance_valid(commander), "Kyris commander constructs")
 	if is_instance_valid(commander):
@@ -49,6 +51,46 @@ func _run() -> void:
 	_expect(RunCharacterCatalog.create_by_class_id(&"harpy_unknown") == null, "Harpy catalog rejects unknown IDs")
 	_test_forced_target_movement()
 	_finish()
+
+
+func _test_authored_harpy_skill_contracts() -> void:
+	var duelist: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_talon_duelist")
+	if is_instance_valid(duelist):
+		var skills: Array[CharacterSkill] = duelist.get_skills()
+		_expect(skills[0].authored_effects[0].power_percent == 90 and skills[0].authored_effects[1].magnitude == 2, "Raking Pass authors 90 percent damage and Move 2")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].advantage_power_percent == 180, "Exploit Opening requires movement and upgrades to 180 with Advantage")
+		_expect(skills[2].authored_effects[0].magnitude == 2 and skills[2].authored_effects[1].magnitude == 4, "Wingbeat Retreat authors Move 2 and Armor 4")
+	var siren: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_storm_siren")
+	if is_instance_valid(siren):
+		var skills: Array[CharacterSkill] = siren.get_skills()
+		_expect(skills[0].target_profile.target_sides == [BattleUnitState.Side.ENEMY, BattleUnitState.Side.PLAYER], "Gust Call selects enemy then ally")
+		_expect(skills[0].authored_effects.size() == 2 and skills[0].authored_effects[1].target_role == BattleSkillEffectDefinition.TargetRole.SECONDARY, "Gust Call moves the enemy and grants the ally Advantage")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].magnitude == 2, "Crosswind Pull requires prior movement and moves the enemy 2")
+		_expect(skills[2].authored_effects[0].magnitude == 3, "Eye of the Storm forces Move 3")
+	var scout: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_gale_scout")
+	if is_instance_valid(scout):
+		var skills: Array[CharacterSkill] = scout.get_skills()
+		_expect(skills[0].target_profile.target_sides == [BattleUnitState.Side.ENEMY, BattleUnitState.Side.PLAYER], "Spot the Straggler selects enemy then ally")
+		_expect(skills[1].authored_effects[0].power_percent == 110 and skills[1].authored_effects[0].advantage_power_percent == 150, "Diving Signal authors 110 percent damage, upgraded to 150")
+		_expect(skills[2].authored_effects[0].kind == BattleSkillEffectDefinition.Kind.FORCED_TARGET_MOVE and skills[2].authored_effects[0].magnitude == 2 and skills[2].authored_effects[1].magnitude == 2, "Updraft Reposition moves an ally 2 and grants Armor 2")
+	var raider: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_skyhook_raider")
+	if is_instance_valid(raider):
+		var skills: Array[CharacterSkill] = raider.get_skills()
+		_expect(skills[0].target_profile.target_sides == [BattleUnitState.Side.ENEMY, BattleUnitState.Side.PLAYER] and skills[0].authored_effects.size() == 2, "Hook and Lift moves an enemy and grants an ally Advantage")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].power_percent == 160 and skills[1].authored_effects[0].advantage_power_percent == 190, "Drop Out of Line gates on Move 2 and authors exact damage")
+		_expect(skills[2].authored_effects[0].kind == BattleSkillEffectDefinition.Kind.FORCED_TARGET_MOVE and skills[2].authored_effects[0].magnitude == 3, "Snatch Away forces Move 3")
+	var nestguard: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_nestguard")
+	if is_instance_valid(nestguard):
+		var skills: Array[CharacterSkill] = nestguard.get_skills()
+		_expect(skills[0].target_profile.require_adjacent_lane and skills[0].authored_effects[0].magnitude == 4, "Covering Wings grants adjacent ally Armor 4")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].power_percent == 130 and skills[1].authored_effects[0].advantage_power_percent == 160, "Warning Screech enforces its retaliatory gate")
+		_expect(skills[2].authored_effects.size() == 3 and skills[2].authored_effects[1].magnitude == 3 and skills[2].authored_effects[2].magnitude == 3, "Rescue Flight swaps and grants both units Armor 3")
+	var cantor: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_carrion_cantor")
+	if is_instance_valid(cantor):
+		var skills: Array[CharacterSkill] = cantor.get_skills()
+		_expect(skills[0].authored_effects[0].power_percent == 90 and skills[0].authored_effects[1].magnitude == 1, "Cutting Note deals 90 percent and forces Move 1")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].power_percent == 110 and skills[1].authored_effects[1].duration == 2, "Rending Chorus requires movement and applies Bleed 2")
+		_expect(skills[2].target_profile.maximum_targets == 2 and skills[2].authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.ALL_SELECTED and skills[2].authored_effects[1].magnitude == 3, "Funeral Spiral hits up to two Bleeding enemies while moving 3")
 
 
 func _test_open_sky_command(commander: RunCharacter) -> void:
@@ -105,13 +147,14 @@ func _test_forced_target_movement() -> void:
 	_expect(has_forced_move, "Gust Call authors forced enemy Move 1")
 	var actor := BattleUnitState.new(&"siren_actor", "Siren", BattleUnitState.Side.PLAYER, 0, 8, 17, siren.get_skills(), siren.power, siren.defense, siren.race_id)
 	var target := BattleUnitState.new(&"forced_target", "Target", BattleUnitState.Side.ENEMY, 0, 1, 20)
-	var units: Array[BattleUnitState] = [actor, target]
+	var ally := BattleUnitState.new(&"gust_ally", "Gust Ally", BattleUnitState.Side.PLAYER, 2, 5, 20)
+	var units: Array[BattleUnitState] = [actor, ally, target]
 	var validation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
-		actor, gust_call, units, actor.unit_id, false, 1, [target.unit_id], 0, 0, [], [0, 1]
+		actor, gust_call, units, actor.unit_id, false, 1, [target.unit_id, ally.unit_id], 0, 0, [], [0, 1]
 	)
 	_expect(validation.accepted, "Gust Call accepts a legal declared target path")
 	var stale: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
-		actor, gust_call, units, actor.unit_id, false, 1, [target.unit_id], 0, 1, [], [0, 1]
+		actor, gust_call, units, actor.unit_id, false, 1, [target.unit_id, ally.unit_id], 0, 1, [], [0, 1]
 	)
 	_expect(not stale.accepted and target.slot_index == 0, "Stale forced movement rejects without mutation")
 	if validation.accepted:
@@ -125,6 +168,7 @@ func _test_forced_target_movement() -> void:
 		transaction.skill_id = gust_call.skill_id
 		var committed: bool = arena.call("_commit_skill_effect_plan", validation.effect_plan)
 		_expect(committed and target.slot_index == 1, "Forced movement commits to the enemy formation slot")
+		_expect(ally.has_advantage(1), "Gust Call grants the selected ally Advantage")
 		var records: Array[BattleActionRecord] = arena.call("get_action_records")
 		_expect(not records.is_empty() and not records[-1].voluntary_movement, "Forced movement is recorded as hostile movement")
 		arena.free()

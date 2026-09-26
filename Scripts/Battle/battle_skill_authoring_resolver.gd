@@ -362,6 +362,11 @@ static func _conditions_met(
 			condition_script.Kind.PRIMARY_MOVED_THIS_ROUND:
 				if locked_targets.is_empty() or not BattleHistoryQuery.moved_this_round(action_records, locked_targets[0].unit_id, round_number):
 					return false
+			condition_script.Kind.PRIMARY_MOVED_TWO_OR_MORE_THIS_ROUND:
+				if locked_targets.is_empty() or BattleHistoryQuery.movement_distance_this_round(
+					action_records, locked_targets[0].unit_id, round_number
+				) < 2:
+					return false
 			condition_script.Kind.PRIMARY_MOVED_OR_STUNNED_THIS_ROUND:
 				if locked_targets.is_empty() or not (BattleHistoryQuery.moved_this_round(action_records, locked_targets[0].unit_id, round_number) or locked_targets[0].is_stunned()):
 					return false
