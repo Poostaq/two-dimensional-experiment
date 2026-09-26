@@ -85,6 +85,8 @@ func _capture_boss_party(encounter_index: int, faction: String) -> void:
 
 
 func _capture(filename: String) -> void:
+	_clear_tooltips(root)
+	Input.warp_mouse(Vector2(10.0, 10.0))
 	await process_frame
 	await process_frame
 	await RenderingServer.frame_post_draw
@@ -96,6 +98,13 @@ func _capture(filename: String) -> void:
 		"capture dimensions match: " + filename
 	)
 	print("CAPTURE ", filename, " ", screenshot.get_width(), "x", screenshot.get_height())
+
+
+func _clear_tooltips(node: Node) -> void:
+	if node is Control:
+		(node as Control).tooltip_text = ""
+	for child: Node in node.get_children():
+		_clear_tooltips(child)
 
 
 func _expect(condition: bool, message: String) -> void:
