@@ -51,6 +51,9 @@ func _run() -> void:
 	_expect(hold_the_gap.target_profile.require_adjacent_lane, "Hold the Gap requires adjacent allied selections")
 	for effect: RefCounted in hold_the_gap.authored_effects:
 		_expect(effect.keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and effect.magnitude == 5, "Hold the Gap grants five Armor per target")
+	var captain: RunCharacter = RunCharacterCatalog.create_by_class_id(&"orc_bloodbanner_captain")
+	var plant_banner: CharacterSkill = captain.get_skills()[0]
+	_expect(plant_banner.authored_effects.size() == 1 and plant_banner.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and plant_banner.authored_effects[0].magnitude == 3, "Plant Banner grants three Armor to selected allies")
 	var goruk: RunCharacter = RunCharacterCatalog.create_by_class_id(&"goruk_ironline")
 	_expect(is_instance_valid(goruk), "Goruk commander constructs")
 	if is_instance_valid(goruk):

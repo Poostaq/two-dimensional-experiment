@@ -19,10 +19,11 @@ static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	if prefix == &"iron_tusk":
 		return [_brace_line(effect_script), _active_skill(&"shield_ram", "Shield Ram", 100, 2, effect_script), _hold_the_gap(effect_script)]
+	if prefix == &"bloodbanner":
+		return [_plant_banner(effect_script), _active_skill(&"rally_strike", "Rally Strike", 90, 2, effect_script), _active_skill(&"last_standard", "Last Standard", 150, 5, effect_script)]
 	var ids: Array = {
 	&"iron_tusk": [&"brace_line", &"shield_ram", &"hold_the_gap"],
 	&"bonebreaker": [&"crushing_entry", &"break_formation", &"execution_swing"],
-	&"bloodbanner": [&"plant_banner", &"rally_strike", &"last_standard"],
 }.get(prefix, [])
 	if ids.size() != 3:
 		return []
@@ -37,6 +38,12 @@ static func _brace_line(effect_script: Script) -> CharacterSkill:
 	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
 	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.PLAYER, true, false)
 	return CharacterSkill.create(&"brace_line", "Brace Line", CharacterSkill.Kind.ACTIVE, "You and a neighboring ally each gain 4 Armor.", "One active adjacent ally.", "Requires a legal adjacent ally.", "CD1", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 1, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.ACTOR, BattleKeywordOperation.Kind.ADD_ARMOR, 4), effect_script.keyword(effect_script.TargetRole.PRIMARY, BattleKeywordOperation.Kind.ADD_ARMOR, 4)])
+
+
+static func _plant_banner(effect_script: Script) -> CharacterSkill:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(1, 2, BattleUnitState.Side.PLAYER, true, false)
+	return CharacterSkill.create(&"plant_banner", "Plant Banner", CharacterSkill.Kind.ACTIVE, "You and neighboring allies each gain 3 Armor.", "One or two active adjacent allies.", "Requires an ally able to gain Armor.", "CD2", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 2, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.ALL_SELECTED, BattleKeywordOperation.Kind.ADD_ARMOR, 3)])
 
 
 static func _hold_the_gap(effect_script: Script) -> CharacterSkill:
