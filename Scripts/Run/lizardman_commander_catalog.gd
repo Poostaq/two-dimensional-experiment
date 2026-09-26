@@ -1,3 +1,4 @@
+class_name LizardmanCommanderCatalog
 extends RefCounted
 
 const COMMANDER_ID: StringName = &"sszek_still_mire"

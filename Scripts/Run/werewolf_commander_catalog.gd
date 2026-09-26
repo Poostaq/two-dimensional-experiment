@@ -1,3 +1,4 @@
+class_name WerewolfCommanderCatalog
 extends RefCounted
 
 const COMMANDER_ID: StringName = &"veyra_moontrace"

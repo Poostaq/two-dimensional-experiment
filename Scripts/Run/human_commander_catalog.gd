@@ -1,3 +1,4 @@
+class_name HumanCommanderCatalog
 extends RefCounted
 
 const COMMANDER_ID: StringName = &"marshal_elian_voss"

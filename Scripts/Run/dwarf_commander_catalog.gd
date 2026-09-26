@@ -1,3 +1,4 @@
+class_name DwarfCommanderCatalog
 extends RefCounted
 
 const COMMANDER_ID: StringName = &"thane_brokk_stonevein"

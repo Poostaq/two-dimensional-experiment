@@ -1,3 +1,4 @@
+class_name ElfCommanderCatalog
 extends RefCounted
 
 const COMMANDER_ID: StringName = &"lady_saelith_moonfall"

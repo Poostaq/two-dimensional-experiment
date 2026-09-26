@@ -1,3 +1,4 @@
+class_name OrcCommanderCatalog
 extends RefCounted
 
 const GORUK_ID: StringName = &"goruk_ironline"

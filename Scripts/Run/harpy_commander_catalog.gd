@@ -1,3 +1,4 @@
+class_name HarpyCommanderCatalog
 extends RefCounted
 
 const COMMANDER_ID: StringName = &"kyris_windscar"
