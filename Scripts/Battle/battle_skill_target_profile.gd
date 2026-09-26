@@ -105,6 +105,6 @@ static func _is_valid_input(
 		return minimum == 0 and maximum == 0 and not requires_adjacency
 	if minimum == 0 or maximum == 0:
 		return false
-	if requires_adjacency and (minimum != 1 or maximum != 1):
+	if requires_adjacency and maximum > 2:
 		return false
 	return true

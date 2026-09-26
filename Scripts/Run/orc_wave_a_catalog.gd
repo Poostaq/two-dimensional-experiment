@@ -41,7 +41,7 @@ static func _brace_line(effect_script: Script) -> CharacterSkill:
 
 static func _hold_the_gap(effect_script: Script) -> CharacterSkill:
 	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
-	var profile: RefCounted = profile_script.create(2, 2, BattleUnitState.Side.PLAYER, false, false)
+	var profile: RefCounted = profile_script.create(2, 2, BattleUnitState.Side.PLAYER, true, false)
 	return CharacterSkill.create(&"hold_the_gap", "Hold the Gap", CharacterSkill.Kind.ACTIVE, "You and both neighboring allies each gain 5 Armor.", "Two active adjacent allies.", "Requires two legal adjacent allies able to gain Armor.", "CD4", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 4, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.ACTOR, BattleKeywordOperation.Kind.ADD_ARMOR, 5), effect_script.keyword(effect_script.TargetRole.PRIMARY, BattleKeywordOperation.Kind.ADD_ARMOR, 5), effect_script.keyword(effect_script.TargetRole.ALL_SELECTED, BattleKeywordOperation.Kind.ADD_ARMOR, 5)])
 
 
