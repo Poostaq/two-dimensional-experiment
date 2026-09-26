@@ -54,6 +54,9 @@ func _run() -> void:
 	var captain: RunCharacter = RunCharacterCatalog.create_by_class_id(&"orc_bloodbanner_captain")
 	var plant_banner: CharacterSkill = captain.get_skills()[0]
 	_expect(plant_banner.authored_effects.size() == 1 and plant_banner.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and plant_banner.authored_effects[0].magnitude == 3, "Plant Banner grants three Armor to selected allies")
+	var drummer: RunCharacter = RunCharacterCatalog.create_by_class_id(&"orc_war_drummer")
+	var war_tempo: CharacterSkill = drummer.get_skills()[2]
+	_expect(war_tempo.authored_effects.size() == 1 and war_tempo.authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.ALL_SELECTED and war_tempo.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and war_tempo.authored_effects[0].magnitude == 3, "War Tempo grants three Armor to all selected allies")
 	var last_standard: CharacterSkill = captain.get_skills()[2]
 	_expect(last_standard.authored_effects.size() == 1 and last_standard.authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.ALL_SELECTED and last_standard.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and last_standard.authored_effects[0].magnitude == 5, "Last Standard grants five Armor to all selected allies")
 	var goruk: RunCharacter = RunCharacterCatalog.create_by_class_id(&"goruk_ironline")
