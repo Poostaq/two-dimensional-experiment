@@ -21,6 +21,8 @@ static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 		return [_marching_beat(effect_script), _crushing_cadence(effect_script), _war_tempo(effect_script)]
 	if prefix == &"chainwarden":
 		return [_active_skill(&"chain_lash", "Chain Lash", 70, 1, effect_script), _active_skill(&"yank_back", "Yank Back", 100, 3, effect_script), _lockdown(effect_script)]
+	if prefix == &"siegebreaker":
+		return [_armor_stripping_skill(&"test_the_plate", "Test the Plate", 110, 2, 1, effect_script), _armor_stripping_skill(&"crack_armor", "Crack Armor", 140, 3, 3, effect_script), _ignoring_armor_skill(&"demolishing_blow", "Demolishing Blow", 210, 5, effect_script)]
 	var ids: Array = {
 	&"chainwarden": [&"chain_lash", &"yank_back", &"lockdown"],
 	&"war_drummer": [&"marching_beat", &"crushing_cadence", &"war_tempo"],
@@ -57,6 +59,18 @@ static func _war_tempo(effect_script: Script) -> CharacterSkill:
 	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
 	var profile: RefCounted = profile_script.create(1, 2, BattleUnitState.Side.PLAYER, false, false)
 	return CharacterSkill.create(&"war_tempo", "War Tempo", CharacterSkill.Kind.ACTIVE, "All active allies gain 3 Armor.", "All active allies.", "Requires two allies able to gain Armor.", "CD5", CharacterSkill.TargetingMode.PREDEFINED, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.ALL_ACTIVE_ALLIES, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 5, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.ALL_SELECTED, BattleKeywordOperation.Kind.ADD_ARMOR, 3)])
+
+
+static func _armor_stripping_skill(id: StringName, name: String, percent: int, strip_amount: int, cooldown: int, effect_script: Script) -> CharacterSkill:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.ENEMY, false, false)
+	return CharacterSkill.create(id, name, CharacterSkill.Kind.ACTIVE, "Remove up to %d Armor, then deal %d%% Power." % [strip_amount, percent], "One active enemy.", "None", "CD%d" % cooldown, CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, cooldown, 0, null, [], null, null, profile, [], [effect_script.armor_stripping_damage(effect_script.TargetRole.PRIMARY, percent, strip_amount)])
+
+
+static func _ignoring_armor_skill(id: StringName, name: String, percent: int, cooldown: int, effect_script: Script) -> CharacterSkill:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.ENEMY, false, false)
+	return CharacterSkill.create(id, name, CharacterSkill.Kind.ACTIVE, "Deal %d%% Power, ignoring Armor." % percent, "One active enemy.", "None", "CD%d" % cooldown, CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, cooldown, 0, null, [], null, null, profile, [], [effect_script.ignoring_armor_damage(effect_script.TargetRole.PRIMARY, percent)])
 
 
 static func _active_skill(id: StringName, name: String, percent: int, cooldown: int, effect_script: Script) -> CharacterSkill:

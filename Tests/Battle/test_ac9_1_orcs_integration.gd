@@ -62,6 +62,13 @@ func _run() -> void:
 	_expect(lockdown.authored_effects.size() == 1 and lockdown.authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.PRIMARY and lockdown.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.APPLY_STUN, "Lockdown applies canonical Stun")
 	var crushing_cadence: CharacterSkill = drummer.get_skills()[1]
 	_expect(crushing_cadence.authored_effects.size() == 1 and crushing_cadence.authored_effects[0].advantage_power_percent == 150, "Crushing Cadence has its 150 percent Advantage rider")
+	var siegebreaker: RunCharacter = RunCharacterCatalog.create_by_class_id(&"orc_siegebreaker")
+	var test_the_plate: CharacterSkill = siegebreaker.get_skills()[0]
+	_expect(test_the_plate.authored_effects.size() == 1 and test_the_plate.authored_effects[0].power_percent == 110 and test_the_plate.authored_effects[0].armor_strip == 2, "Test the Plate strips two Armor then deals 110 percent Power")
+	var crack_armor: CharacterSkill = siegebreaker.get_skills()[1]
+	_expect(crack_armor.authored_effects.size() == 1 and crack_armor.authored_effects[0].power_percent == 140 and crack_armor.authored_effects[0].armor_strip == 3, "Crack Armor strips three Armor then deals 140 percent Power")
+	var demolishing_blow: CharacterSkill = siegebreaker.get_skills()[2]
+	_expect(demolishing_blow.authored_effects.size() == 1 and demolishing_blow.authored_effects[0].power_percent == 210 and demolishing_blow.authored_effects[0].ignore_armor, "Demolishing Blow deals 210 percent Power ignoring Armor")
 	var war_tempo: CharacterSkill = drummer.get_skills()[2]
 	_expect(war_tempo.authored_effects.size() == 1 and war_tempo.authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.ALL_SELECTED and war_tempo.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and war_tempo.authored_effects[0].magnitude == 3, "War Tempo grants three Armor to all selected allies")
 	var last_standard: CharacterSkill = captain.get_skills()[2]

@@ -276,6 +276,13 @@ static func armor_stripping_damage(role: int, percent: int, strip_amount: int) -
 	return definition
 
 
+static func ignoring_armor_damage(role: int, percent: int) -> RefCounted:
+	var definition: RefCounted = damage(role, percent)
+	if is_instance_valid(definition):
+		definition._ignore_armor = true
+	return definition
+
+
 func is_valid() -> bool:
 	return _is_valid
 
