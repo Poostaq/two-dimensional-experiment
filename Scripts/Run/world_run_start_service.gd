@@ -85,7 +85,7 @@ func start(
     var consumed_encounters: Array[Vector2i] = []
     var formation: Array[StringName] = []
     formation.resize(RunRoster.MAX_ROSTER_SIZE)
-    var starters: Array[RunCharacter] = RunCharacterCatalog.create_starters()
+    var starters: Array[RunCharacter] = RunCharacterCatalog.create_starters_for_commander(commander_id)
     if starters.size() <= 1:
         return {
             "ok": false,

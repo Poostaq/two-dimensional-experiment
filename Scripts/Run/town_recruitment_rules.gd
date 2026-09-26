@@ -9,6 +9,8 @@ static func eligible_class_ids(clan_id: StringName, roster: RunRoster) -> Array[
 	var occupied: Dictionary[StringName, bool] = {}
 	for character: RunCharacter in roster.get_characters():
 		occupied[character.class_id] = true
+		if not character.root_class_id.is_empty():
+			occupied[character.root_class_id] = true
 	for class_id: StringName in RunCharacterCatalog.get_recruitable_class_ids(clan_id):
 		if not occupied.has(class_id):
 			result.append(class_id)

@@ -42,6 +42,41 @@ func _run() -> void:
         _assert_equal(presentation.get("commander_id", &""), commander_id, "presentation identity")
         _assert_equal(presentation.get("skills", []).size(), 4, "presentation has four skills")
 
+    var expected_starter_formations: Dictionary[StringName, Array] = {
+        &"brakka_rustbanner": [&"wirefang_skirmisher", &"brakka_rustbanner", &"snarewright"],
+        &"goruk_ironline": [&"orc_bonebreaker_reaver", &"goruk_ironline", &"orc_bloodbanner_captain"],
+        &"veyra_moontrace": [&"werewolf_pack_howler", &"veyra_moontrace", &"werewolf_bloodtrail_stalker"],
+        &"sszek_still_mire": [&"lizardman_scale_sentinel", &"sszek_still_mire", &"lizardman_mire_spitter"],
+        &"kyris_windscar": [&"harpy_storm_siren", &"kyris_windscar", &"harpy_gale_scout"],
+    }
+    var race_service: RefCounted = service_script.new(func(_plan: RefCounted) -> void: pass)
+    for commander_id: StringName in expected_player_commanders:
+        var race_id: StringName = catalog_script.get_commander_faction_id(commander_id)
+        var race_start: Dictionary = race_service.call(
+            "start",
+            "race-starters-" + String(commander_id),
+            {},
+            "RETURN_RESULT",
+            commander_id,
+            race_id
+        )
+        _assert_true(race_start.get("ok", false), "%s race-specific start succeeds" % commander_id)
+        if not race_start.get("ok", false):
+            continue
+        var actual_formation: Array[StringName] = race_start["run_state"].formation
+        var expected_formation: Array = expected_starter_formations[commander_id]
+        for slot_index: int in expected_formation.size():
+            var identity: StringName = expected_formation[slot_index]
+            _assert_equal(
+                actual_formation[slot_index],
+                identity,
+                "%s starter slot %d uses the fixed race member" % [commander_id, slot_index]
+            )
+            var member: RunCharacter = catalog_script.create_by_class_id(identity)
+            _assert_true(is_instance_valid(member), "%s starter constructs" % identity)
+            if is_instance_valid(member):
+                _assert_equal(member.race_id, race_id, "%s starter matches captain race" % identity)
+
     var success: Dictionary = service.call(
         "start",
         "golden-alpha",
@@ -59,9 +94,9 @@ func _run() -> void:
         _assert_true(success["run_state"].has_character_hp_snapshot(), "fresh run persists explicit health")
         _assert_equal(success["run_state"].get_character_hp_snapshot().size(), 3, "fresh health includes three starters")
         var formation: Array[StringName] = success["run_state"].formation
-        _assert_equal(formation[0], &"player_0", "left frontline starter retained")
+        _assert_equal(formation[0], &"wirefang_skirmisher", "Goblin left starter is fixed")
         _assert_equal(formation[1], &"brakka_rustbanner", "Brakka occupies middle frontline")
-        _assert_equal(formation[2], &"player_2", "right frontline starter retained")
+        _assert_equal(formation[2], &"snarewright", "Goblin right starter is fixed")
 
     var generator_spy := GeneratorSpy.new()
     var rejecting_service: RefCounted = service_script.new(

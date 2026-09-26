@@ -213,6 +213,22 @@ static func _create_from_catalog(path: String, identity: StringName, commander: 
 	return character
 
 
+static func create_starters_for_commander(commander_id: StringName) -> Array[RunCharacter]:
+	if not PLAYER_COMMANDER_IDS.has(commander_id):
+		return []
+	var commander: RunCharacter = create_by_class_id(commander_id)
+	if not is_instance_valid(commander):
+		return []
+	var class_ids: Array[StringName] = get_recruitable_class_ids(commander.race_id)
+	if class_ids.size() < 3:
+		return []
+	var left_member: RunCharacter = create_by_class_id(class_ids[1])
+	var right_member: RunCharacter = create_by_class_id(class_ids[2])
+	if not is_instance_valid(left_member) or not is_instance_valid(right_member):
+		return []
+	return [left_member, commander, right_member]
+
+
 static func create_starters() -> Array[RunCharacter]:
 	var starters: Array[RunCharacter] = []
 	for index: int in 3:

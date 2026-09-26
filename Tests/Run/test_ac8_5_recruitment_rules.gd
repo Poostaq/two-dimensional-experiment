@@ -44,6 +44,23 @@ func _test_rules(rules: Script, ids: Array[StringName]) -> void:
 	var before: Array[RunCharacter] = roster.get_slot_snapshot()
 	var expected: Array[StringName] = [&"scrapbroker", &"shivrunner", &"mobcaller"]
 	_expect(rules.eligible_class_ids(&"goblin", roster) == expected, "all starter classes excluded regardless of instance ID")
+	var commander_roster := RunRoster.new(
+		RunCharacterCatalog.create_starters_for_commander(&"brakka_rustbanner")
+	)
+	_expect(
+		rules.eligible_class_ids(&"goblin", commander_roster) == expected,
+		"captain root class and fixed race companions are excluded"
+	)
+	_expect(
+		rules.purchase_error(
+			&"goblin",
+			commander_roster,
+			&"scrapshield_bruiser",
+			500,
+			true
+		) == &"class_already_present",
+		"captain root class cannot be recruited twice"
+	)
 	_expect(rules.eligible_class_ids(&"unknown", roster).is_empty(), "unknown clan offers empty")
 	_expect(rules.eligible_class_ids(&"goblin", null).is_empty(), "invalid roster offers empty")
 	_expect(rules.purchase_error(&"goblin", roster, &"scrapbroker", 499, true) == &"insufficient_gold", "499g rejected")
