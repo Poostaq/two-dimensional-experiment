@@ -68,8 +68,13 @@ static func build_plan(
 				for target: BattleUnitState in targets:
 					var percent: int = int(authored_effect.get("power_percent"))
 					var advantage_percent: int = int(authored_effect.get("advantage_power_percent"))
-					if advantage_percent > 0 and target.has_advantage(round_number):
-						percent = advantage_percent
+					var resolved_armor_strip: int = int(authored_effect.get("armor_strip"))
+					var advantage_armor_strip: int = int(authored_effect.get("advantage_armor_strip"))
+					if target.has_advantage(round_number) and (advantage_percent > 0 or advantage_armor_strip > 0):
+						if advantage_percent > 0:
+							percent = advantage_percent
+						if advantage_armor_strip > 0:
+							resolved_armor_strip = advantage_armor_strip
 						locked_advantage_source = target.get_advantage_source(round_number)
 						consume_advantage = is_instance_valid(locked_advantage_source)
 					if _damage_bonus_met(int(authored_effect.get("bonus_condition")), target, round_number, action_records):
@@ -87,7 +92,7 @@ static func build_plan(
 						&"base_damage": requested,
 						&"combo_bonus_damage": 0,
 						&"total_requested_damage": requested,
-						&"armor_strip": int(authored_effect.get("armor_strip")),
+						&"armor_strip": resolved_armor_strip,
 						&"ignore_armor": bool(authored_effect.get("ignore_armor")),
 					})
 			effect_script.Kind.HISTORY_SCALED_DAMAGE:
@@ -113,7 +118,13 @@ static func build_plan(
 			effect_script.Kind.CONDITIONAL_ARMOR:
 				for target: BattleUnitState in targets:
 					var amount: int = int(authored_effect.get("magnitude"))
-					if BattleHistoryQuery.consumed_advantage_this_round(action_records, target.unit_id, round_number):
+					var armor_bonus_condition: int = int(authored_effect.get("bonus_condition"))
+					var armor_bonus_met: bool = (
+						BattleHistoryQuery.consumed_advantage_this_round(action_records, target.unit_id, round_number)
+						if armor_bonus_condition == effect_script.BonusCondition.NONE
+						else armor_bonus_condition == effect_script.BonusCondition.PRIMARY_ADVANTAGE and not locked_targets.is_empty() and locked_targets[0].has_advantage(round_number)
+					)
+					if armor_bonus_met:
 						amount = int(authored_effect.get("conditional_magnitude"))
 					var armor_operation: RefCounted = BattleKeywordOperation.create(
 						BattleKeywordOperation.Kind.ADD_ARMOR, target.unit_id, amount
@@ -222,6 +233,19 @@ static func _conditions_met(
 					return false
 			condition_script.Kind.PRIMARY_LOST_ARMOR_THIS_ROUND:
 				if locked_targets.is_empty() or BattleHistoryQuery.armor_lost_this_round(action_records, locked_targets[0].unit_id, round_number) <= 0:
+					return false
+			condition_script.Kind.PRIMARY_MOVED_THIS_ROUND:
+				if locked_targets.is_empty() or not BattleHistoryQuery.moved_this_round(action_records, locked_targets[0].unit_id, round_number):
+					return false
+			condition_script.Kind.PRIMARY_MOVED_OR_STUNNED_THIS_ROUND:
+				if locked_targets.is_empty() or not (BattleHistoryQuery.moved_this_round(action_records, locked_targets[0].unit_id, round_number) or locked_targets[0].is_stunned()):
+					return false
+			condition_script.Kind.ALLIES_BELOW_HALF_AT_LEAST_TWO:
+				var wounded_allies: int = 0
+				for unit: BattleUnitState in units:
+					if is_instance_valid(unit) and unit.is_active() and unit.side == actor.side and unit.current_hp * 2 < unit.max_hp:
+						wounded_allies += 1
+				if wounded_allies < 2:
 					return false
 			condition_script.Kind.PRIMARY_SNARED:
 				if locked_targets.is_empty() or not locked_targets[0].is_snared(round_number):
