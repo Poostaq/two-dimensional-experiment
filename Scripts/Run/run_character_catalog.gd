@@ -12,6 +12,11 @@ const ORC_CLASS_IDS: Array[StringName] = [
 	&"orc_siegebreaker",
 ]
 
+const ELF_CLASS_IDS: Array[StringName] = [
+	&"elf_star_archer", &"elf_moon_sage", &"elf_wind_dancer",
+	&"elf_warden_of_the_grove", &"elf_crescent_duelist", &"elf_highborn_mystic",
+]
+
 const HUMAN_CLASS_IDS: Array[StringName] = [
 	&"human_vanguard", &"human_ranger", &"human_iron_sentinel",
 	&"human_field_medic", &"human_crosbowman", &"human_duelist",
@@ -63,11 +68,22 @@ static func get_recruitable_class_ids(clan_id: StringName) -> Array[StringName]:
 		return HARPY_CLASS_IDS.duplicate()
 	if clan_id == &"human":
 		return HUMAN_CLASS_IDS.duplicate()
+	if clan_id == &"elf":
+		return ELF_CLASS_IDS.duplicate()
 	return []
 
 
 static func create_by_class_id(class_id: StringName) -> RunCharacter:
-	var character: RunCharacter = _create_from_catalog("res://Scripts/Run/human_wave_a_catalog.gd", class_id, false)
+	var character: RunCharacter = _create_from_catalog("res://Scripts/Run/elf_wave_a_catalog.gd", class_id, false)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/elf_wave_b_catalog.gd", class_id, false)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/elf_commander_catalog.gd", class_id, true)
+	if is_instance_valid(character):
+		return character
+	character = _create_from_catalog("res://Scripts/Run/human_wave_a_catalog.gd", class_id, false)
 	if is_instance_valid(character):
 		return character
 	character = _create_from_catalog("res://Scripts/Run/human_wave_b_catalog.gd", class_id, false)

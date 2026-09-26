@@ -6,7 +6,9 @@ static func create_by_enemy_clan_id(enemy_clan_id: StringName) -> Array[RunChara
 	match enemy_clan_id:
 		&"human":
 			return _create_party([&"marshal_elian_voss", &"human_iron_sentinel", &"human_ranger", &"human_field_medic"])
-		&"elf", &"dwarf":
+		&"elf":
+			return _create_party([&"lady_saelith_moonfall", &"elf_warden_of_the_grove", &"elf_star_archer", &"elf_crescent_duelist"])
+		&"dwarf":
 			return []
 		_:
 			return []
