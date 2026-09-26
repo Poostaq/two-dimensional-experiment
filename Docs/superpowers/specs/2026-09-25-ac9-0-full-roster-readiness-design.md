@@ -2,7 +2,7 @@
 
 **Acceptance criterion:** AC9.0 — Implement and verify the remaining races and their commanders before habitat, habitat-town-placement, or inter-habitat-road implementation.
 
-**Status:** Implemented and verified — 2026-09-26.
+**Status:** Implementation review remediation active — AC9.0 remains unchecked.
 
 **Owner:** Project Lead — AC9.0 content-readiness delivery owner.
 
@@ -148,8 +148,8 @@ When the final integration and evidence gate passes, update `Docs/Specs/GAME_DES
 
 ## Evidence checklist
 
-- [x] `ac9-0-roster-readiness` is defined and its complete job payload passes locally; output is stored in `Docs/Specs/AC9/Evidence/AC9.0/automated-test.log`.
+- [ ] `ac9-0-roster-readiness` is defined, rejects unexpected runtime errors, and its complete job payload passes locally; output is stored in `Docs/Specs/AC9/Evidence/AC9.0/automated-test.log`.
 - [x] Every faction integration test named in the concrete artifact contract is green and represented in `automated-test.log`.
 - [x] Shared-mechanics, catalog, persistence, Goblin, AC6, and AC8 regression runners are green and represented in `automated-test.log`.
-- [x] Required 1152×648 and 1920×1080 golden-fixture comparisons, runtime commands, and debug-console result are recorded in `Docs/Specs/AC9/Evidence/AC9.0/rendered-qa.log`.
-- [x] `Docs/Specs/AC9/Evidence/AC9.0/verification.md` links the two logs, lists generated screenshots, confirms every numerical threshold, and records the Project Lead's AC9.0 sign-off.
+- [ ] Required 1152×648 and 1920×1080 golden-fixture comparisons, runtime commands, and debug-console result are recorded in `Docs/Specs/AC9/Evidence/AC9.0/rendered-qa.log`.
+- [ ] `Docs/Specs/AC9/Evidence/AC9.0/verification.md` links the two logs, lists generated screenshots, confirms every numerical threshold, and records the Project Lead's AC9.0 sign-off.
