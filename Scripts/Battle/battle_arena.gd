@@ -267,7 +267,11 @@ func configure_units(units: Array[BattleUnitState]) -> void:
 
 func configure_party_units(player_units: Array[BattleUnitState]) -> void:
 	var catalog: Script = load("res://Scripts/Battle/debug_encounter_catalog.gd")
-	var battle_units: Array[BattleUnitState] = catalog.create_enemies(debug_encounter_index)
+	var battle_units: Array[BattleUnitState] = (
+		catalog.create_boss_enemies(debug_encounter_index)
+		if encounter_type == WorldEncounterType.BOSS
+		else catalog.create_enemies(debug_encounter_index)
+	)
 	battle_units.append_array(player_units)
 	configure_units(battle_units)
 	_auto_enemy_turns = true

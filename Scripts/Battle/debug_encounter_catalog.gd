@@ -1,94 +1,149 @@
 class_name DebugEncounterCatalog
 extends RefCounted
 
-const EFFECT_PATH: String = "res://Scripts/Battle/battle_skill_effect_definition.gd"
-const CONDITION_PATH: String = "res://Scripts/Battle/battle_skill_condition.gd"
 
 static func get_encounter_name(encounter_index: int = 0) -> String:
 	return ["Human Marksmen", "Dwarven Breakers", "Elven Moonwatch"][posmod(encounter_index, 3)]
 
+
 static func create_enemies(encounter_index: int = 0) -> Array[BattleUnitState]:
-	var result: Array[BattleUnitState] = []
 	match posmod(encounter_index, 3):
 		0:
-			result.append(_unit(&"enemy_0", "Ranger", &"human", 0, 18, 7, 7, 1, _ranger()))
-			result.append(_unit(&"enemy_4", "Crossbowman", &"human", 4, 20, 6, 6, 2, _crossbowman()))
+			return _create_roster_units([
+				{&"class_id": &"human_ranger", &"unit_id": &"enemy_0", &"slot": 0},
+				{&"class_id": &"human_crosbowman", &"unit_id": &"enemy_4", &"slot": 4},
+			])
 		1:
-			result.append(_unit(&"enemy_0", "Siege Smith", &"dwarf", 0, 26, 8, 3, 3, _siege_smith()))
-			result.append(_unit(&"enemy_4", "Thunderbreaker", &"dwarf", 4, 25, 8, 2, 3, _thunderbreaker()))
+			return _create_roster_units([
+				{&"class_id": &"dwarf_siege_smith", &"unit_id": &"enemy_0", &"slot": 0},
+				{&"class_id": &"dwarf_thunderbreaker", &"unit_id": &"enemy_4", &"slot": 4},
+			])
 		2:
-			result.append(_unit(&"enemy_0", "Star Archer", &"elf", 0, 16, 7, 8, 1, _star_archer()))
-			result.append(_unit(&"enemy_4", "Moon Sage", &"elf", 4, 15, 7, 7, 0, _moon_sage()))
+			return _create_roster_units([
+				{&"class_id": &"elf_star_archer", &"unit_id": &"enemy_0", &"slot": 0},
+				{&"class_id": &"elf_moon_sage", &"unit_id": &"enemy_4", &"slot": 4},
+			])
+	return []
+
+
+static func create_boss_enemies(encounter_index: int = 0) -> Array[BattleUnitState]:
+	var clan_ids: Array[StringName] = [&"human", &"dwarf", &"elf"]
+	var party: Array[RunCharacter] = BossPartyCatalog.create_by_enemy_clan_id(
+		clan_ids[posmod(encounter_index, clan_ids.size())]
+	)
+	if party.size() != 4:
+		return []
+	var slots: Array[int] = [1, 0, 2, 4]
+	var result: Array[BattleUnitState] = []
+	for index: int in party.size():
+		result.append(_battle_unit_from_character(
+			party[index],
+			party[index].class_id,
+			slots[index]
+		))
 	return result
 
-static func _unit(id: StringName, title: String, race: StringName, slot: int, hp: int, power: int, speed: int, defense: int, skills: Array[CharacterSkill]) -> BattleUnitState:
-	return BattleUnitState.new(id, title, BattleUnitState.Side.ENEMY, slot, speed, hp, skills, power, defense, race)
 
-static func _ranger() -> Array[CharacterSkill]:
-	var effect: Script = load(EFFECT_PATH)
-	var condition: Script = load(CONDITION_PATH)
-	return [
-		_skill(&"quick_draw", "Quick Draw", 1, "Deal 90% Power and apply Snared until round end.", [], [effect.damage(1, 90), effect.keyword(1, BattleKeywordOperation.Kind.APPLY_SNARED, 0, 1)]),
-		_skill(&"pinning_volley", "Pinning Volley", 2, "Deal 130% Power to a Snared enemy, then apply Advantage until round end.", [condition.create(condition.Kind.PRIMARY_SNARED)], [effect.damage(1, 130), effect.keyword(1, BattleKeywordOperation.Kind.APPLY_ADVANTAGE, 0, 1)]),
-		_skill(&"break_the_angle", "Break the Angle", 4, "Deal 170% Power to a Snared or Advantage enemy; with both, consume Advantage and deal 210%.", [condition.create(condition.Kind.PRIMARY_SNARED_OR_ADVANTAGE)], [effect.conditional_damage(1, 170, 210, effect.BonusCondition.SNARED_AND_ADVANTAGE, true)]),
-	]
+static func _create_roster_units(entries: Array[Dictionary]) -> Array[BattleUnitState]:
+	var result: Array[BattleUnitState] = []
+	for entry: Dictionary in entries:
+		var character: RunCharacter = RunCharacterCatalog.create_by_class_id(
+			entry.get(&"class_id", &"")
+		)
+		if not is_instance_valid(character):
+			return []
+		result.append(_battle_unit_from_character(
+			character,
+			entry.get(&"unit_id", &""),
+			int(entry.get(&"slot", -1))
+		))
+	return result
 
-static func _crossbowman() -> Array[CharacterSkill]:
-	var effect: Script = load(EFFECT_PATH)
-	var condition: Script = load(CONDITION_PATH)
-	return [
-		_skill(&"sightline_mark", "Sightline Mark", 1, "Deal 80% Power and apply Advantage until round end.", [], [effect.damage(1, 80), effect.keyword(1, BattleKeywordOperation.Kind.APPLY_ADVANTAGE, 0, 1)]),
-		_skill(&"repeating_shot", "Repeating Shot", 2, "Deal 140% Power to a Snared or Advantage enemy; consume Advantage for 170%.", [condition.create(condition.Kind.PRIMARY_SNARED_OR_ADVANTAGE)], [effect.damage(1, 140, 170)]),
-		_skill(&"commanding_volley", "Commanding Volley", 5, "Choose up to two enemies; the first takes 180% Power with Advantage or 120% otherwise, the second takes 120%.", [], [effect.damage(1, 120, 180), effect.damage(effect.TargetRole.SECONDARY, 120)], false, 2),
-	]
 
-static func _siege_smith() -> Array[CharacterSkill]:
-	var effect: Script = load(EFFECT_PATH)
-	var condition: Script = load(CONDITION_PATH)
-	return [
-		_skill(&"test_the_plate", "Test the Plate", 1, "Remove up to 2 Armor, then deal 110% Power.", [], [effect.armor_stripping_damage(1, 110, 2)], true),
-		_skill(&"hollow_core", "Hollow Core", 3, "Deal 150% Power to an enemy that lost Armor this round; 180% if it lost at least 3.", [condition.create(condition.Kind.PRIMARY_LOST_ARMOR_THIS_ROUND)], [effect.conditional_damage(1, 150, 180, effect.BonusCondition.LOST_THREE_ARMOR_THIS_ROUND)]),
-		_skill(&"breakers_verdict", "Breaker's Verdict", 5, "Deal 210% Power ignoring Armor; an unarmored target takes 240%.", [], [effect.conditional_damage(1, 210, 240, effect.BonusCondition.NO_ARMOR, false, true)], true),
-	]
-
-static func _thunderbreaker() -> Array[CharacterSkill]:
-	var effect: Script = load(EFFECT_PATH)
-	var condition: Script = load(CONDITION_PATH)
-	return [
-		_skill(&"weight_of_the_hammer", "Weight of the Hammer", 1, "Remove up to 2 Armor, then deal 100% Power.", [], [effect.armor_stripping_damage(1, 100, 2)], true),
-		_skill(&"cracked_foundation", "Cracked Foundation", 3, "Deal 160% Power to an enemy that lost Armor this round; 190% if it lost at least 3.", [condition.create(condition.Kind.PRIMARY_LOST_ARMOR_THIS_ROUND)], [effect.conditional_damage(1, 160, 190, effect.BonusCondition.LOST_THREE_ARMOR_THIS_ROUND)]),
-		_skill(&"thunderfall_decision", "Thunderfall Decision", 5, "Deal 220% Power ignoring Armor; Armor-loss targets take 250%.", [], [effect.conditional_damage(1, 220, 250, effect.BonusCondition.LOST_ARMOR_THIS_ROUND, false, true)], true),
-	]
-
-static func _star_archer() -> Array[CharacterSkill]:
-	var effect: Script = load(EFFECT_PATH)
-	var condition: Script = load(CONDITION_PATH)
-	return [
-		_skill(&"threaded_aim", "Threaded Aim", 1, "Deal 90% Power and apply Advantage until round end.", [], [effect.damage(1, 90), effect.keyword(1, BattleKeywordOperation.Kind.APPLY_ADVANTAGE, 0, 1)]),
-		_skill(&"needle_shot", "Needle Shot", 2, "Deal 140% Power to an Advantage enemy; moved targets take 170%.", [condition.create(condition.Kind.PRIMARY_ADVANTAGE)], [effect.conditional_damage(1, 140, 170, effect.BonusCondition.MOVED_THIS_ROUND)]),
-		_skill(&"horizon_pierce", "Horizon Pierce", 5, "Deal 200% Power to a Snared or Advantage enemy; consume Advantage for 230%.", [condition.create(condition.Kind.PRIMARY_SNARED_OR_ADVANTAGE)], [effect.damage(1, 200, 230)]),
-	]
-
-static func _moon_sage() -> Array[CharacterSkill]:
-	var effect: Script = load(EFFECT_PATH)
-	var condition: Script = load(CONDITION_PATH)
-	return [
-		_skill(&"silver_sigil", "Silver Sigil", 1, "Deal 70% Power and apply Snared until round end.", [], [effect.damage(1, 70), effect.keyword(1, BattleKeywordOperation.Kind.APPLY_SNARED, 0, 1)]),
-		_skill(&"lunar_thread", "Lunar Thread", 2, "Deal 120% Power to a Snared enemy; moved targets take 150%.", [condition.create(condition.Kind.PRIMARY_SNARED)], [effect.conditional_damage(1, 120, 150, effect.BonusCondition.MOVED_THIS_ROUND)]),
-		_skill(&"crescent_collapse", "Crescent Collapse", 5, "Deal 210% Power to a Snared or Advantage enemy; with both, consume Advantage and deal 240%.", [condition.create(condition.Kind.PRIMARY_SNARED_OR_ADVANTAGE)], [effect.conditional_damage(1, 210, 240, effect.BonusCondition.SNARED_AND_ADVANTAGE, true)]),
-	]
-
-static func _skill(id: StringName, title: String, cooldown: int, description: String, conditions: Array[RefCounted], effects: Array[RefCounted], adjacent: bool = false, maximum: int = 1) -> CharacterSkill:
-	var profile: RefCounted = load("res://Scripts/Battle/battle_skill_target_profile.gd").create(1, maximum, BattleUnitState.Side.PLAYER, adjacent, false)
-	return CharacterSkill.create(
-		id, title, CharacterSkill.Kind.ACTIVE, description,
-		"Neighboring enemy." if adjacent else ("Up to two enemies." if maximum == 2 else "One enemy."),
-		description if not conditions.is_empty() else "None",
-		"CD%d" % cooldown, CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY,
-		CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE,
-		0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS,
-		cooldown, 0, null, [], null, null, profile, conditions, effects
+static func _battle_unit_from_character(
+	character: RunCharacter,
+	unit_id: StringName,
+	slot_index: int
+) -> BattleUnitState:
+	if (
+		not is_instance_valid(character)
+		or unit_id.is_empty()
+		or not BattleFormationRules.is_valid_slot(slot_index)
+	):
+		return null
+	return BattleUnitState.new(
+		unit_id,
+		character.display_name,
+		BattleUnitState.Side.ENEMY,
+		slot_index,
+		character.base_speed,
+		character.max_hp,
+		_enemy_skills(character.get_skills()),
+		character.power,
+		character.defense,
+		character.race_id
 	)
+
+
+static func _enemy_skills(source_skills: Array[CharacterSkill]) -> Array[CharacterSkill]:
+	var result: Array[CharacterSkill] = []
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	for skill: CharacterSkill in source_skills:
+		var source_profile: RefCounted = skill.target_profile
+		if skill.kind != CharacterSkill.Kind.ACTIVE or not is_instance_valid(source_profile):
+			result.append(skill.duplicate_skill())
+			continue
+		var ordered_sides: Array[int] = []
+		for target_side: int in source_profile.get("target_sides"):
+			ordered_sides.append(_opposing_side(target_side))
+		var enemy_profile: RefCounted = profile_script.create(
+			int(source_profile.get("minimum_targets")),
+			int(source_profile.get("maximum_targets")),
+			_opposing_side(int(source_profile.get("target_side"))),
+			bool(source_profile.get("require_adjacent_lane")),
+			bool(source_profile.get("allows_optional_self_move")),
+			ordered_sides
+		)
+		var enemy_skill: CharacterSkill = CharacterSkill.create(
+			skill.skill_id,
+			skill.display_name,
+			skill.kind,
+			skill.effect_text,
+			skill.targeting_text,
+			skill.requirements_text,
+			skill.cooldown_text,
+			skill.targeting_mode,
+			skill.target_side,
+			skill.target_rule,
+			skill.requirement,
+			skill.effect,
+			skill.effect_magnitude,
+			skill.effect_duration,
+			skill.effect_duration_mode,
+			skill.cooldown_mode,
+			skill.cooldown_actions,
+			skill.unavailable_through_round,
+			skill.combo_definition,
+			skill.keyword_operations,
+			skill.advantage_rider,
+			skill.reaction_definition,
+			enemy_profile,
+			skill.conditions,
+			skill.authored_effects
+		)
+		if not is_instance_valid(enemy_skill):
+			return []
+		result.append(enemy_skill)
+	return result
+
+
+static func _opposing_side(side: int) -> int:
+	return (
+		BattleUnitState.Side.PLAYER
+		if side == BattleUnitState.Side.ENEMY
+		else BattleUnitState.Side.ENEMY
+	)
+
 
 # The same authoritative confirmation planner filters cooldowns, range and setup requirements.
 # Prefer a legal conversion, then an opener, retaining unit/skill order to break ties.

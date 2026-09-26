@@ -19,9 +19,10 @@ static func _character(id: StringName, name: String, speed: int, hp: int, power:
 
 static func _thunderbreaker() -> Array[CharacterSkill]:
 	var e := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
+	var c := load("res://Scripts/Battle/battle_skill_condition.gd") as Script
 	return [
 		_skill(&"weight_of_the_hammer", 1, e.armor_stripping_damage(e.TargetRole.PRIMARY, 100, 2)),
-		_skill(&"cracked_foundation", 3, e.conditional_damage(e.TargetRole.PRIMARY, 160, 190, e.BonusCondition.LOST_THREE_ARMOR_THIS_ROUND)),
+		_skill(&"cracked_foundation", 3, e.conditional_damage(e.TargetRole.PRIMARY, 160, 190, e.BonusCondition.LOST_THREE_ARMOR_THIS_ROUND), [c.create(c.Kind.PRIMARY_LOST_ARMOR_THIS_ROUND)]),
 		_skill(&"thunderfall_decision", 5, e.conditional_damage(e.TargetRole.PRIMARY, 220, 250, e.BonusCondition.LOST_ARMOR_THIS_ROUND, false, true)),
 	]
 
@@ -34,7 +35,7 @@ static func _skills(ids: Array[StringName]) -> Array[CharacterSkill]:
 	return result
 
 
-static func _skill(id: StringName, cooldown: int, effect: RefCounted) -> CharacterSkill:
+static func _skill(id: StringName, cooldown: int, effect: RefCounted, conditions: Array[RefCounted] = []) -> CharacterSkill:
 	var p := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
 	var profile: RefCounted = p.create(1, 1, BattleUnitState.Side.ENEMY)
-	return CharacterSkill.create(id, String(id).replace("_", " ").capitalize(), CharacterSkill.Kind.ACTIVE, String(id), "Authored target.", "See class record.", "CD%d" % cooldown, CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, cooldown, 0, null, [], null, null, profile, [], [effect])
+	return CharacterSkill.create(id, String(id).replace("_", " ").capitalize(), CharacterSkill.Kind.ACTIVE, String(id), "Authored target.", "See class record.", "CD%d" % cooldown, CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, cooldown, 0, null, [], null, null, profile, conditions, [effect])

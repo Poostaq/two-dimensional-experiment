@@ -6,11 +6,27 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 		&"human_vanguard":
 			return _character(class_id, "Vanguard", 5, 22, 5, 3, [&"commanding_step", &"shielded_advance", &"lineholders_verdict"])
 		&"human_ranger":
-			return _character(class_id, "Ranger", 7, 18, 7, 1, [&"quick_draw", &"pinning_volley", &"break_the_angle"])
+			return RunCharacter.new(class_id, "Ranger", 7, 18, _ranger(), 7, 1, &"human")
 		&"human_iron_sentinel":
 			return _character(class_id, "Iron Sentinel", 4, 25, 4, 4, [&"brace_the_line", &"field_fortification", &"wall_of_steel"])
 		_:
 			return null
+
+
+static func _ranger() -> Array[CharacterSkill]:
+	var e := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
+	var c := load("res://Scripts/Battle/battle_skill_condition.gd") as Script
+	return [
+		_authored_skill(&"quick_draw", "Quick Draw", 1, [], [e.damage(e.TargetRole.PRIMARY, 90), e.keyword(e.TargetRole.PRIMARY, BattleKeywordOperation.Kind.APPLY_SNARED, 0, 1)]),
+		_authored_skill(&"pinning_volley", "Pinning Volley", 2, [c.create(c.Kind.PRIMARY_SNARED)], [e.damage(e.TargetRole.PRIMARY, 130), e.keyword(e.TargetRole.PRIMARY, BattleKeywordOperation.Kind.APPLY_ADVANTAGE, 0, 1)]),
+		_authored_skill(&"break_the_angle", "Break the Angle", 4, [c.create(c.Kind.PRIMARY_SNARED_OR_ADVANTAGE)], [e.conditional_damage(e.TargetRole.PRIMARY, 170, 210, e.BonusCondition.SNARED_AND_ADVANTAGE, true)]),
+	]
+
+
+static func _authored_skill(id: StringName, title: String, cooldown: int, conditions: Array[RefCounted], effects: Array[RefCounted]) -> CharacterSkill:
+	var p := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = p.create(1, 1, BattleUnitState.Side.ENEMY)
+	return CharacterSkill.create(id, title, CharacterSkill.Kind.ACTIVE, title, "One enemy.", "See class record.", "CD%d" % cooldown, CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, cooldown, 0, null, [], null, null, profile, conditions, effects)
 
 
 static func _character(id: StringName, name: String, speed: int, hp: int, power: int, defense: int, skill_ids: Array[StringName]) -> RunCharacter:
