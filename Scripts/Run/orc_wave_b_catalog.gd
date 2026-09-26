@@ -19,6 +19,8 @@ static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	if prefix == &"war_drummer":
 		return [_marching_beat(effect_script), _crushing_cadence(effect_script), _war_tempo(effect_script)]
+	if prefix == &"chainwarden":
+		return [_active_skill(&"chain_lash", "Chain Lash", 70, 1, effect_script), _active_skill(&"yank_back", "Yank Back", 100, 3, effect_script), _lockdown(effect_script)]
 	var ids: Array = {
 	&"chainwarden": [&"chain_lash", &"yank_back", &"lockdown"],
 	&"war_drummer": [&"marching_beat", &"crushing_cadence", &"war_tempo"],
@@ -31,6 +33,12 @@ static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 		_active_skill(ids[1], ids[1].capitalize(), 120, 2, effect_script),
 		_active_skill(ids[2], ids[2].capitalize(), 150, 4, effect_script),
 	]
+
+
+static func _lockdown(effect_script: Script) -> CharacterSkill:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.ENEMY, false, false)
+	return CharacterSkill.create(&"lockdown", "Lockdown", CharacterSkill.Kind.ACTIVE, "Stun one enemy moved this round.", "One active enemy.", "Requires an enemy moved this round without Stun Guard.", "CD5", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ENEMY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.FRONT_ROW, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 5, 0, null, [], null, null, profile, [], [effect_script.stun(effect_script.TargetRole.PRIMARY)])
 
 
 static func _crushing_cadence(effect_script: Script) -> CharacterSkill:
