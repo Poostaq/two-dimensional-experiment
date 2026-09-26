@@ -102,6 +102,20 @@ static func _opponent_comes_before(
 	return String(first.unit_id) < String(second.unit_id)
 
 
+static func is_valid_ring_path(path: Array[int], maximum_steps: int = 3) -> bool:
+	if maximum_steps < 1 or path.size() < 2 or path.size() > maximum_steps + 1:
+		return false
+	var visited: Dictionary[int, bool] = {}
+	for index: int in path.size():
+		var slot: int = path[index]
+		if not is_valid_slot(slot) or visited.has(slot):
+			return false
+		visited[slot] = true
+		if index > 0 and not is_move_one(path[index - 1], slot):
+			return false
+	return true
+
+
 static func is_move_one(from_slot: int, to_slot: int) -> bool:
 	if not is_valid_slot(from_slot) or not is_valid_slot(to_slot) or from_slot == to_slot:
 		return false

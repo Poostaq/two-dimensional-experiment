@@ -21,6 +21,7 @@ func _run() -> void:
 	await _test_stun_guard_action_contract()
 	_test_leech_contract()
 	_test_multi_target_profile_contract()
+	_test_declared_ring_path_contract()
 	_test_adjacent_ally_contract()
 	_test_adjacent_ally_action_end_reaction_contract()
 	_test_action_end_reaction_requires_contact()
@@ -58,6 +59,16 @@ func _test_multi_target_profile_contract() -> void:
 	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
 	var profile: RefCounted = profile_script.create(2, 3, BattleUnitState.Side.ENEMY)
 	_expect(is_instance_valid(profile), "Authored skills can select up to three targets")
+
+
+func _test_declared_ring_path_contract() -> void:
+	_expect(BattleFormationRules.is_valid_ring_path([0, 1, 2, 5], 3), "Move 3 accepts a contiguous declared ring path")
+	_expect(not BattleFormationRules.is_valid_ring_path([0, 2], 3), "Declared paths reject non-neighbor hops")
+	_expect(not BattleFormationRules.is_valid_ring_path([0, 1, 0], 3), "Declared paths reject repeated slots")
+	var targets: Array[StringName] = [&"target"]
+	var path: Array[int] = [0, 1, 2]
+	var plan: SkillEffectPlan = SkillEffectPlan.create(&"actor", &"move_two", targets, [], [], 1, true, 1, [], null, null, false, &"actor", path)
+	_expect(is_instance_valid(plan), "Effect plans retain legal Move 2 paths")
 
 
 func _test_stun_contract() -> void:

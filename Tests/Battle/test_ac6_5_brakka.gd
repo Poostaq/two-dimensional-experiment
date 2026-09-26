@@ -157,8 +157,8 @@ func _test_action_start_reaction_contract() -> void:
 	var has_revalidate: bool = dispatcher_script.has_method("is_action_start_target_current")
 	_expect(has_retarget, "keyword operation exposes immutable retargeting")
 	_expect(
-		definition_script.Trigger.size() == 3 and int(definition_script.Trigger.get("ACTION_START", -1)) == 2,
-		"reaction definition exposes ACTION_START without renumbering existing triggers"
+		definition_script.Trigger.size() == 4 and int(definition_script.Trigger.get("ACTION_START", -1)) == 2 and int(definition_script.Trigger.get("ACTION_END", -1)) == 3,
+		"reaction definition preserves ACTION_START and appends ACTION_END"
 	)
 	_expect(has_collect, "dispatcher exposes action-start collection")
 	_expect(has_revalidate, "dispatcher exposes action-start target revalidation")

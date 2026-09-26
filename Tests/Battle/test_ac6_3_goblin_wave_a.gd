@@ -71,7 +71,7 @@ func _test_authoring_value_objects() -> void:
 
 	_expect(target_profile_script.create(0, 0, BattleUnitState.Side.ENEMY, false, false) == null, "empty non-movement profile rejects")
 	_expect(target_profile_script.create(2, 1, BattleUnitState.Side.ENEMY, false, false) == null, "minimum above maximum rejects")
-	_expect(target_profile_script.create(1, 3, BattleUnitState.Side.ENEMY, false, false) == null, "more than two selected targets rejects")
+	_expect(target_profile_script.create(1, 7, BattleUnitState.Side.ENEMY, false, false) == null, "more than six selected targets rejects")
 	_expect(target_profile_script.create(1, 1, BattleUnitState.Side.PLAYER, false, true) == null, "movement combined with selection rejects")
 	_expect(effect_definition_script.damage(effect_definition_script.TargetRole.PRIMARY, 0) == null, "non-positive Power percentage rejects")
 	_expect(

@@ -974,6 +974,21 @@ func _is_valid_move_actor(actor: BattleUnitState, destination_slot: int) -> bool
 	)
 
 
+func _is_valid_move_path_actor(actor: BattleUnitState, path: Array[int]) -> bool:
+	var current: BattleUnitState = get_current_unit()
+	return (
+		not is_battle_complete()
+		and is_instance_valid(actor)
+		and actor.is_active()
+		and actor.side == BattleUnitState.Side.PLAYER
+		and is_instance_valid(current)
+		and current.unit_id == actor.unit_id
+		and not path.is_empty()
+		and path[0] == actor.slot_index
+		and BattleFormationRules.is_valid_ring_path(path, 3)
+	)
+
+
 func _allied_occupant_at(
 	side: int,
 	slot_index: int,
@@ -1198,11 +1213,10 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	if not plan.movement_path.is_empty():
 		if (
 			plan.movement_unit_id != actor.unit_id
-			or plan.movement_path[0] != actor.slot_index
-			or not _is_valid_move_actor(actor, plan.movement_path[1])
+			or not _is_valid_move_path_actor(actor, plan.movement_path)
 		):
 			return false
-		movement_occupant = _allied_occupant_at(actor.side, plan.movement_path[1], actor.unit_id)
+		movement_occupant = _allied_occupant_at(actor.side, plan.movement_path[-1], actor.unit_id)
 	_action_in_progress = true
 	_refresh_character_info()
 	var action_round: int = round_number
@@ -1269,12 +1283,12 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	var slot_after: Dictionary[StringName, int] = {}
 	if not plan.movement_path.is_empty():
 		slot_before[actor.unit_id] = actor.slot_index
-		slot_after[actor.unit_id] = plan.movement_path[1]
+		slot_after[actor.unit_id] = plan.movement_path[-1]
 		if is_instance_valid(movement_occupant):
 			slot_before[movement_occupant.unit_id] = movement_occupant.slot_index
 			slot_after[movement_occupant.unit_id] = actor.slot_index
 			movement_occupant.slot_index = actor.slot_index
-		actor.slot_index = plan.movement_path[1]
+		actor.slot_index = plan.movement_path[-1]
 	var new_actor_speed_sources: Array[StringName] = []
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])

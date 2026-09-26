@@ -191,7 +191,7 @@ func set_declared_move_path(path: Array[int], callback_generation: int) -> bool:
 	if path.is_empty():
 		declared_move_path.clear()
 		return true
-	if path.size() != 2 or not BattleFormationRules.is_move_one(path[0], path[1]):
+	if not BattleFormationRules.is_valid_ring_path(path, 3):
 		return false
 	declared_move_path = path.duplicate()
 	return true
