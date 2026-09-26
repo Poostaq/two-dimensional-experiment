@@ -18,7 +18,7 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	if prefix == &"war_drummer":
-		return [_active_skill(&"marching_beat", "Marching Beat", 100, 2, effect_script), _active_skill(&"crushing_cadence", "Crushing Cadence", 120, 2, effect_script), _war_tempo(effect_script)]
+		return [_marching_beat(effect_script), _active_skill(&"crushing_cadence", "Crushing Cadence", 120, 2, effect_script), _war_tempo(effect_script)]
 	var ids: Array = {
 	&"chainwarden": [&"chain_lash", &"yank_back", &"lockdown"],
 	&"war_drummer": [&"marching_beat", &"crushing_cadence", &"war_tempo"],
@@ -31,6 +31,12 @@ static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 		_active_skill(ids[1], ids[1].capitalize(), 120, 2, effect_script),
 		_active_skill(ids[2], ids[2].capitalize(), 150, 4, effect_script),
 	]
+
+
+static func _marching_beat(effect_script: Script) -> CharacterSkill:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.PLAYER, false, false)
+	return CharacterSkill.create(&"marching_beat", "Marching Beat", CharacterSkill.Kind.ACTIVE, "Grant one eligible ally Advantage until round end.", "One active ally.", "Requires an eligible ally.", "CD2", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 2, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.PRIMARY, BattleKeywordOperation.Kind.APPLY_ADVANTAGE, 0, 1)])
 
 
 static func _war_tempo(effect_script: Script) -> CharacterSkill:
