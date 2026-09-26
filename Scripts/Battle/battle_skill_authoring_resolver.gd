@@ -59,7 +59,10 @@ static func build_plan(
 			round_number,
 			effect_script
 		)
-		if int(authored_effect.get("target_role")) == effect_script.TargetRole.ALL_ACTIVE_ALLIES:
+		if int(authored_effect.get("target_role")) in [
+			effect_script.TargetRole.ALL_ACTIVE_ALLIES,
+			effect_script.TargetRole.ALL_ACTIVE_WOUNDED_ALLIES,
+		]:
 			for automatic_target: BattleUnitState in targets:
 				if not target_ids.has(automatic_target.unit_id):
 					target_ids.append(automatic_target.unit_id)
@@ -74,6 +77,10 @@ static func build_plan(
 					var advantage_percent: int = int(authored_effect.get("advantage_power_percent"))
 					var resolved_armor_strip: int = int(authored_effect.get("armor_strip"))
 					var advantage_armor_strip: int = int(authored_effect.get("advantage_armor_strip"))
+					var bonus_condition: int = int(authored_effect.get("bonus_condition"))
+					var bonus_met: bool = _damage_bonus_met(
+						bonus_condition, actor, target, units, round_number, action_records
+					)
 					if target.has_advantage(round_number) and (advantage_percent > 0 or advantage_armor_strip > 0):
 						if advantage_percent > 0:
 							percent = advantage_percent
@@ -81,7 +88,13 @@ static func build_plan(
 							resolved_armor_strip = advantage_armor_strip
 						locked_advantage_source = target.get_advantage_source(round_number)
 						consume_advantage = is_instance_valid(locked_advantage_source)
-					if _damage_bonus_met(int(authored_effect.get("bonus_condition")), target, round_number, action_records):
+					if (
+						bonus_condition != effect_script.BonusCondition.NONE
+						and resolved_armor_strip > 0
+						and not bonus_met
+					):
+						resolved_armor_strip = 0
+					if bonus_met and int(authored_effect.get("upgraded_power_percent")) > 0:
 						percent = int(authored_effect.get("upgraded_power_percent"))
 						if bool(authored_effect.get("consume_bonus_advantage")):
 							locked_advantage_source = target.get_advantage_source(round_number)
@@ -231,11 +244,25 @@ static func build_plan(
 				for target: BattleUnitState in targets:
 					var amount: int = int(authored_effect.get("magnitude"))
 					var armor_bonus_condition: int = int(authored_effect.get("bonus_condition"))
-					var armor_bonus_met: bool = (
-						BattleHistoryQuery.consumed_advantage_this_round(action_records, target.unit_id, round_number)
-						if armor_bonus_condition == effect_script.BonusCondition.NONE
-						else armor_bonus_condition == effect_script.BonusCondition.PRIMARY_ADVANTAGE and not locked_targets.is_empty() and locked_targets[0].has_advantage(round_number)
-					)
+					var armor_bonus_met: bool = false
+					if armor_bonus_condition == effect_script.BonusCondition.NONE:
+						armor_bonus_met = BattleHistoryQuery.consumed_advantage_this_round(
+							action_records, target.unit_id, round_number
+						)
+					elif armor_bonus_condition == effect_script.BonusCondition.PRIMARY_ADVANTAGE:
+						armor_bonus_met = (
+							not locked_targets.is_empty()
+							and locked_targets[0].has_advantage(round_number)
+						)
+					else:
+						armor_bonus_met = _damage_bonus_met(
+							armor_bonus_condition,
+							actor,
+							target,
+							units,
+							round_number,
+							action_records
+						)
 					if armor_bonus_met:
 						amount = int(authored_effect.get("conditional_magnitude"))
 					var armor_operation: RefCounted = BattleKeywordOperation.create(
@@ -406,6 +433,12 @@ static func _conditions_met(
 			condition_script.Kind.PRIMARY_BELOW_SEVENTY_PERCENT_HP:
 				if locked_targets.is_empty() or locked_targets[0].current_hp * 10 >= locked_targets[0].max_hp * 7:
 					return false
+			condition_script.Kind.PRIMARY_BELOW_SEVENTY_FIVE_PERCENT_HP:
+				if locked_targets.is_empty() or locked_targets[0].current_hp * 4 >= locked_targets[0].max_hp * 3:
+					return false
+			condition_script.Kind.PRIMARY_HAS_ARMOR:
+				if locked_targets.is_empty() or locked_targets[0].get_armor() <= 0:
+					return false
 			condition_script.Kind.ACTOR_BELOW_SEVENTY_PERCENT_HP:
 				if actor.current_hp * 10 >= actor.max_hp * 7:
 					return false
@@ -428,6 +461,11 @@ static func _conditions_met(
 					return false
 			condition_script.Kind.PRIMARY_ATTACKED_ARMORED_ALLY_THIS_ROUND:
 				if locked_targets.is_empty() or not _primary_attacked_armored_ally(
+					actor, locked_targets[0], units, action_records, round_number
+				):
+					return false
+			condition_script.Kind.PRIMARY_ATTACKED_ACTOR_OR_ADJACENT_ALLY_THIS_ROUND:
+				if locked_targets.is_empty() or not _primary_attacked_actor_or_adjacent_ally(
 					actor, locked_targets[0], units, action_records, round_number
 				):
 					return false
@@ -496,6 +534,15 @@ static func _targets_for_role(
 		effect_script.TargetRole.ALL_ACTIVE_ALLIES:
 			for unit: BattleUnitState in units:
 				if is_instance_valid(unit) and unit.is_active() and unit.side == actor.side:
+					result.append(unit)
+		effect_script.TargetRole.ALL_ACTIVE_WOUNDED_ALLIES:
+			for unit: BattleUnitState in units:
+				if (
+					is_instance_valid(unit)
+					and unit.is_active()
+					and unit.side == actor.side
+					and unit.current_hp * 2 < unit.max_hp
+				):
 					result.append(unit)
 		effect_script.TargetRole.HISTORY_ALLY:
 			var ally_id: StringName = _latest_ally_attacked_by_primary(
@@ -629,7 +676,9 @@ static func _has_poison_from_actor(
 
 static func _damage_bonus_met(
 	condition: int,
+	actor: BattleUnitState,
 	target: BattleUnitState,
+	units: Array[BattleUnitState],
 	round_number: int,
 	records: Array[BattleActionRecord]
 ) -> bool:
@@ -644,4 +693,85 @@ static func _damage_bonus_met(
 			return target.get_armor() == 0
 		BattleSkillEffectDefinition.BonusCondition.LOST_ARMOR_THIS_ROUND:
 			return BattleHistoryQuery.armor_lost_this_round(records, target.unit_id, round_number) > 0
+		BattleSkillEffectDefinition.BonusCondition.PRIMARY_ADVANTAGE:
+			return target.has_advantage(round_number)
+		BattleSkillEffectDefinition.BonusCondition.ACTOR_OR_ADJACENT_ALLY_HAS_ARMOR:
+			return _actor_or_adjacent_ally_has_armor(actor, units)
+		BattleSkillEffectDefinition.BonusCondition.TARGET_BELOW_HALF_HP:
+			return target.current_hp * 2 < target.max_hp
+		BattleSkillEffectDefinition.BonusCondition.TARGET_HAS_ARMOR:
+			return target.get_armor() > 0
+		BattleSkillEffectDefinition.BonusCondition.ALLIES_BELOW_HALF_AT_LEAST_TWO:
+			return _allies_below_half_count(actor, units) >= 2
+		BattleSkillEffectDefinition.BonusCondition.SNARED_OR_ADVANTAGE:
+			return target.is_snared(round_number) or target.has_advantage(round_number)
+		BattleSkillEffectDefinition.BonusCondition.ALLY_ACTED_BEFORE_ACTOR_THIS_ROUND:
+			return BattleHistoryQuery.ally_acted_before_this_round(
+				records, actor.side as BattleUnitState.Side, actor.unit_id, round_number
+			)
+		BattleSkillEffectDefinition.BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR:
+			return actor.get_armor() >= 2
+	return false
+
+
+static func _actor_or_adjacent_ally_has_armor(
+	actor: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> bool:
+	if actor.get_armor() > 0:
+		return true
+	for unit: BattleUnitState in units:
+		if (
+			is_instance_valid(unit)
+			and unit.is_active()
+			and unit.unit_id != actor.unit_id
+			and unit.side == actor.side
+			and unit.get_armor() > 0
+			and BattleFormationRules.is_move_one(actor.slot_index, unit.slot_index)
+		):
+			return true
+	return false
+
+
+static func _allies_below_half_count(
+	actor: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> int:
+	var count: int = 0
+	for unit: BattleUnitState in units:
+		if (
+			is_instance_valid(unit)
+			and unit.is_active()
+			and unit.side == actor.side
+			and unit.current_hp * 2 < unit.max_hp
+		):
+			count += 1
+	return count
+
+
+static func _primary_attacked_actor_or_adjacent_ally(
+	actor: BattleUnitState,
+	primary: BattleUnitState,
+	units: Array[BattleUnitState],
+	records: Array[BattleActionRecord],
+	round_number: int
+) -> bool:
+	for record: BattleActionRecord in records:
+		if (
+			not is_instance_valid(record)
+			or record.round_number != round_number
+			or record.actor_id != primary.unit_id
+		):
+			continue
+		for unit: BattleUnitState in units:
+			if (
+				is_instance_valid(unit)
+				and unit.side == actor.side
+				and (
+					unit.unit_id == actor.unit_id
+					or BattleFormationRules.is_move_one(actor.slot_index, unit.slot_index)
+				)
+				and bool(record.direct_hit_by_target.get(unit.unit_id, false))
+			):
+				return true
 	return false

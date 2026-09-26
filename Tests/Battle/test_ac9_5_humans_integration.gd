@@ -1,3 +1,4 @@
+class_name TestAc95HumansIntegration
 extends SceneTree
 
 const CLASS_IDS: Array[StringName] = [&"human_vanguard", &"human_ranger", &"human_iron_sentinel", &"human_field_medic", &"human_crosbowman", &"human_duelist"]
@@ -31,6 +32,7 @@ func _run() -> void:
 		for skill: CharacterSkill in character.get_skills():
 			ids.append(skill.skill_id)
 		_expect(ids == expected[4], "Human skills match: %s" % class_id)
+	_test_authored_human_skill_contracts()
 	var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(&"marshal_elian_voss")
 	_expect(is_instance_valid(commander), "Elian commander constructs")
 	if is_instance_valid(commander):
@@ -45,6 +47,38 @@ func _run() -> void:
 	_expect(commander_count == 1, "Human boss party contains Elian exactly once")
 	_test_marshal_the_line(commander)
 	_finish()
+
+
+func _test_authored_human_skill_contracts() -> void:
+	var vanguard: RunCharacter = RunCharacterCatalog.create_by_class_id(&"human_vanguard")
+	if is_instance_valid(vanguard):
+		var skills: Array[CharacterSkill] = vanguard.get_skills()
+		_expect(skills[0].authored_effects.size() == 3 and skills[0].authored_effects[0].magnitude == 1 and skills[0].authored_effects[1].magnitude == 3, "Commanding Step moves 1 and grants both units Armor 3")
+		_expect(skills[1].authored_effects[0].power_percent == 115 and skills[1].authored_effects[0].upgraded_power_percent == 145, "Shielded Advance authors its protected-formation damage upgrade")
+		_expect(skills[2].authored_effects[0].power_percent == 180 and skills[2].authored_effects[0].upgraded_power_percent == 210 and skills[2].authored_effects[0].bonus_condition != BattleSkillEffectDefinition.BonusCondition.NONE, "Lineholder's Verdict rewards allied sequencing")
+	var sentinel: RunCharacter = RunCharacterCatalog.create_by_class_id(&"human_iron_sentinel")
+	if is_instance_valid(sentinel):
+		var skills: Array[CharacterSkill] = sentinel.get_skills()
+		_expect(skills[0].authored_effects.size() == 2 and skills[0].authored_effects[0].magnitude == 4 and skills[0].authored_effects[1].magnitude == 4, "Brace the Line grants both units Armor 4")
+		_expect(skills[1].authored_effects[0].power_percent == 100 and skills[1].authored_effects[0].armor_strip == 2 and skills[1].authored_effects[0].bonus_condition != BattleSkillEffectDefinition.BonusCondition.NONE, "Field Fortification conditionally strips Armor 2")
+		_expect(skills[2].authored_effects.size() == 2 and skills[2].authored_effects[0].magnitude == 5 and skills[2].authored_effects[0].conditional_magnitude == 7, "Wall of Steel grants Armor 5, upgraded to 7 when wounded")
+	var medic: RunCharacter = RunCharacterCatalog.create_by_class_id(&"human_field_medic")
+	if is_instance_valid(medic):
+		var skills: Array[CharacterSkill] = medic.get_skills()
+		_expect(not skills[0].conditions.is_empty() and skills[0].authored_effects[0].magnitude == 4 and skills[0].authored_effects[0].conditional_magnitude == 6, "Combat Patch enforces its health gate and wounded bonus")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].conditional_magnitude == 5, "Guarded Recovery requires Armor and upgrades to Armor 5")
+		_expect(skills[2].target_profile.maximum_targets == 0 and skills[2].authored_effects[0].magnitude == 4 and skills[2].authored_effects[0].conditional_magnitude == 6, "Hold the Wound automatically protects every wounded ally")
+	var crossbowman: RunCharacter = RunCharacterCatalog.create_by_class_id(&"human_crosbowman")
+	if is_instance_valid(crossbowman):
+		var skills: Array[CharacterSkill] = crossbowman.get_skills()
+		_expect(skills[1].authored_effects[0].power_percent == 140 and skills[1].authored_effects[0].upgraded_power_percent == 170 and skills[1].authored_effects[0].consume_bonus_advantage, "Repeating Shot consumes Advantage for 170 percent damage")
+		_expect(skills[2].target_profile.maximum_targets == 2 and skills[2].authored_effects[0].upgraded_power_percent == 180 and skills[2].authored_effects[1].power_percent == 120, "Commanding Volley authors distinct first and second target damage")
+	var duelist: RunCharacter = RunCharacterCatalog.create_by_class_id(&"human_duelist")
+	if is_instance_valid(duelist):
+		var skills: Array[CharacterSkill] = duelist.get_skills()
+		_expect(skills[0].authored_effects[0].power_percent == 100 and skills[0].authored_effects[0].upgraded_power_percent == 130 and skills[0].authored_effects[1].magnitude == 2, "Cut the Distance moves 2 and punishes prior movement")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].power_percent == 140 and skills[1].authored_effects[0].upgraded_power_percent == 170, "Counterstep enforces retaliation and marked-target bonus")
+		_expect(not skills[2].conditions.is_empty() and skills[2].authored_effects[0].power_percent == 210 and skills[2].authored_effects[0].upgraded_power_percent == 240 and skills[2].authored_effects[0].consume_bonus_advantage, "Final Verdict consumes Advantage for 240 percent damage")
 
 
 func _test_marshal_the_line(commander: RunCharacter) -> void:

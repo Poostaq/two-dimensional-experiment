@@ -24,6 +24,13 @@ enum BonusCondition {
 	NO_ARMOR,
 	LOST_ARMOR_THIS_ROUND,
 	PRIMARY_ADVANTAGE,
+	ACTOR_OR_ADJACENT_ALLY_HAS_ARMOR,
+	TARGET_BELOW_HALF_HP,
+	TARGET_HAS_ARMOR,
+	ALLIES_BELOW_HALF_AT_LEAST_TWO,
+	SNARED_OR_ADVANTAGE,
+	ALLY_ACTED_BEFORE_ACTOR_THIS_ROUND,
+	ACTOR_HAS_AT_LEAST_TWO_ARMOR,
 }
 
 enum TargetRole {
@@ -33,6 +40,7 @@ enum TargetRole {
 	HISTORY_ALLY,
 	SECONDARY,
 	ALL_ACTIVE_ALLIES,
+	ALL_ACTIVE_WOUNDED_ALLIES,
 }
 
 var kind: Kind:
@@ -365,7 +373,7 @@ static func conditional_armor(
 	upgraded_amount: int,
 	bonus_condition_value: int = BonusCondition.NONE
 ) -> RefCounted:
-	if bonus_condition_value < BonusCondition.NONE or bonus_condition_value > BonusCondition.PRIMARY_ADVANTAGE:
+	if bonus_condition_value < BonusCondition.NONE or bonus_condition_value > BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR:
 		return null
 	var definition: RefCounted = _create(Kind.CONDITIONAL_ARMOR, role, 0, 0, BattleKeywordOperation.Kind.ADD_ARMOR, base_amount, 0, false, 0, 0, upgraded_amount)
 	if is_instance_valid(definition):
@@ -381,9 +389,12 @@ static func conditional_damage(
 	consume_advantage: bool = false,
 	bypass_armor: bool = false
 ) -> RefCounted:
-	if bonus_condition_value < BonusCondition.MOVED_THIS_ROUND or bonus_condition_value > BonusCondition.PRIMARY_ADVANTAGE or upgraded_percent <= base_percent:
+	if bonus_condition_value < BonusCondition.MOVED_THIS_ROUND or bonus_condition_value > BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR or upgraded_percent <= base_percent:
 		return null
-	if consume_advantage and bonus_condition_value != BonusCondition.SNARED_AND_ADVANTAGE:
+	if consume_advantage and bonus_condition_value not in [
+		BonusCondition.SNARED_AND_ADVANTAGE,
+		BonusCondition.PRIMARY_ADVANTAGE,
+	]:
 		return null
 	var definition: RefCounted = damage(role, base_percent)
 	if not is_instance_valid(definition):
@@ -399,14 +410,21 @@ static func armor_stripping_damage(
 	role: int,
 	percent: int,
 	strip_amount: int,
-	advantage_strip_amount: int = 0
+	advantage_strip_amount: int = 0,
+	bonus_condition_value: int = BonusCondition.NONE
 ) -> RefCounted:
-	if strip_amount <= 0 or (advantage_strip_amount != 0 and advantage_strip_amount < strip_amount):
+	if (
+		strip_amount <= 0
+		or advantage_strip_amount != 0 and advantage_strip_amount < strip_amount
+		or bonus_condition_value < BonusCondition.NONE
+		or bonus_condition_value > BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR
+	):
 		return null
 	var definition: RefCounted = damage(role, percent)
 	if is_instance_valid(definition):
 		definition._armor_strip = strip_amount
 		definition._advantage_armor_strip = advantage_strip_amount
+		definition._bonus_condition = bonus_condition_value
 	return definition
 
 
@@ -502,7 +520,7 @@ static func _is_valid_input(
 ) -> bool:
 	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE, Kind.POISON_SCALED_DAMAGE, Kind.ARMOR_SPEND_DAMAGE, Kind.POISON_TRANSFER, Kind.CONDITIONAL_LEECH, Kind.CAPPED_SELF_DAMAGE]:
 		return false
-	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES]:
+	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES]:
 		return false
 	if not poison_source_skill_id.is_empty() and not (
 		effect_kind == Kind.POISON_SCALED_DAMAGE
@@ -589,7 +607,7 @@ static func _is_valid_input(
 				and not source_specific
 			)
 		Kind.CONDITIONAL_ARMOR:
-			return role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES] and effect_magnitude > 0 and conditional_amount >= effect_magnitude
+			return role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES] and effect_magnitude > 0 and conditional_amount >= effect_magnitude
 		Kind.OPTIONAL_SELF_MOVE:
 			return (
 				role == TargetRole.ACTOR
