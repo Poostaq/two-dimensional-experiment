@@ -24,7 +24,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.1 Orc roster: 78/78 assertions passed.
+AC9.1 Orc roster: 79/79 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_2_lizardmen_integration.gd ===
@@ -32,7 +32,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.2 Lizardman roster: 47/47 assertions passed.
+AC9.2 Lizardman roster: 48/48 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_3_werewolves_integration.gd ===
@@ -40,7 +40,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.3 Werewolf roster: 42/42 assertions passed.
+AC9.3 Werewolf roster: 43/43 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_4_harpies_integration.gd ===
@@ -48,7 +48,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.4 Harpy roster: 62/62 assertions passed.
+AC9.4 Harpy roster: 63/63 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_5_humans_integration.gd ===
@@ -56,7 +56,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.5 Human roster: 46/46 assertions passed.
+AC9.5 Human roster: 47/47 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_6_elves_integration.gd ===
@@ -64,7 +64,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.6 Elf roster: 43/43 assertions passed.
+AC9.6 Elf roster: 44/44 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_7_dwarves_integration.gd ===
@@ -72,7 +72,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.7 Dwarf roster: 45/45 assertions passed.
+AC9.7 Dwarf roster: 46/46 assertions passed.
 EXIT CODE: 0
 
 === Tests/Save/test_ac9_0_roster_identity_round_trip.gd ===

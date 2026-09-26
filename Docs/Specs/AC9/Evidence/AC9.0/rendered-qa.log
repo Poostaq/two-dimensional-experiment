@@ -5,38 +5,45 @@ Result: PASS
 RUNTIME GATE
 - GodotIQ run: res://Scenes/world_run_start.tscn -> success; runtime attached.
 - GodotIQ verify_project_runs: PASS; project preflight checked 264 scripts with 0 parser errors.
+- Final GodotIQ project gate after adding the faction round-trip probe checked 265 scripts with
+  0 validation errors, 0 parser errors, and 0 orphan project signals.
 - GodotIQ read_debug_console: 0 script errors, 0 runtime errors, 0 unhandled exceptions.
-- GodotIQ UI map: production launcher rendered at 1152x648 with Continue, Start New Run,
-  Settings, and Exit controls present and interactive.
-- GodotIQ project validation: 264 scripts and 22 scenes; 0 errors, 65 warnings, 5 info.
-- GodotIQ signal audit: 43 signals defined, 263 emissions, 179 connections, 0 orphan
-  project signals. Reported missing names are engine-native Control/Window signals referenced by
-  existing tests and do not represent missing project-defined signals.
+- GodotIQ state_inspect: /root/WorldRunStart visible=true, process_mode=0.
 
-CAPTURE COMMAND
-Godot 4.7.2 GUI process, hidden window:
-  --path D:/Projects/two-dimension-exploration
-  --script res://Tests/Battle/capture_ac9_0_evidence.gd
-Exit code: 0
-Capture assertions: 8/8 screenshots saved with exact requested dimensions.
+CAPTURE AND INDEPENDENT COMPARISON
+- Godot 4.7.2 GUI process, hidden window:
+    --path D:/Projects/two-dimension-exploration
+    --script res://Tests/Battle/capture_ac9_0_evidence.gd
+- Two independent consecutive capture processes exited 0.
+- Each process asserted 8/8 screenshots saved at the exact requested dimensions.
+- SHA-256 comparison between the first capture (temporary baseline) and the second capture:
+  8/8 exact matches. Tooltip/hover state is cleared by the capture harness before rendering.
+
+REPRESENTATIVE INTERACTION EVIDENCE
+- Orc: Tests/Battle/test_ac9_1_orcs_integration.gd validates Iron Decree, exact class mechanics, and faction save/reload (79/79).
+- Lizardman: Tests/Battle/test_ac9_2_lizardmen_integration.gd validates Cartographer of Venoms, Poison, and faction save/reload (48/48).
+- Werewolf: Tests/Battle/test_ac9_3_werewolves_integration.gd validates Mark of the Alpha, Leech, and faction save/reload (43/43).
+- Harpy: Tests/Battle/test_ac9_4_harpies_integration.gd validates Open Sky Command, authored movement paths, and faction save/reload (63/63).
+- Human: Tests/Battle/test_ac9_5_humans_integration.gd validates Marshal the Line, its boss party, and faction save/reload (47/47).
+- Elf: Tests/Battle/test_ac9_6_elves_integration.gd validates Moonfall Edict, its boss party, and faction save/reload (44/44).
+- Dwarf: Tests/Battle/test_ac9_7_dwarves_integration.gd validates Stonevein Bulwark, its boss party, and faction save/reload (46/46).
 
 VISUAL REVIEW
-- player-commander-selector-1152x648.png: PASS. New Run commander carousel, Brakka
-  identity/root class, portrait, four skills, seed input, Back, and Begin are readable; no clipping.
-- player-commander-selector-1920x1080.png: PASS. Same content scales cleanly; no overlap or clipping.
-- human-boss-party-1152x648.png: PASS. Marshal Elian Voss and the authored Human party render.
+- player-commander-selector-1152x648.png: PASS. Commander identity, root class, portrait,
+  four skills, seed input, Back, and Begin are readable with no tooltip, overlap, or clipping.
+- player-commander-selector-1920x1080.png: PASS. The same content scales cleanly with no overlap or clipping.
+- human-boss-party-1152x648.png: PASS. Marshal Elian Voss and the authored Human party render clearly.
 - human-boss-party-1920x1080.png: PASS. Full Human party and battle controls remain readable.
-- elf-boss-party-1152x648.png: PASS. Lady Saelith Moonfall and the authored Elf party render.
+- elf-boss-party-1152x648.png: PASS. Lady Saelith Moonfall and the authored Elf party render clearly.
 - elf-boss-party-1920x1080.png: PASS. Full Elf party and battle controls remain readable.
-- dwarf-boss-party-1152x648.png: PASS. Thane Brokk Stonevein and the authored Dwarf party render.
+- dwarf-boss-party-1152x648.png: PASS. Thane Brokk Stonevein and the authored Dwarf party render clearly.
 - dwarf-boss-party-1920x1080.png: PASS. Full Dwarf party and battle controls remain readable.
 
-The eight reviewed images establish the approved AC9.0 golden fixtures. Future comparisons must
-retain the exact dimensions and intentional identity/layout content represented here.
+The following eight images are the approved, reproducible AC9.0 golden fixtures.
 
 SHA-256
-dwarf-boss-party-1152x648.png c3196a1c2c21055c02ecd4975af1454a1d3ae132dea1f7236225ebcf3f2df3b5
-dwarf-boss-party-1920x1080.png d167f786c3141e30c3268ca4d6b5abd98dda97295dff49265e567fd6bd15c9be
+dwarf-boss-party-1152x648.png f1232be9a8a095c6320322f0ed6edd1168cfde6d475c4c52d61adfa96547691c
+dwarf-boss-party-1920x1080.png 7cc735f8003e26e88130310d0e6156d976dcbc27d16c9abf0e44de765bad74eb
 elf-boss-party-1152x648.png b259f3e6c6024998f91f4f2ef0e7ecf4231b0f525cb2f9865a8f669daf0e94d0
 elf-boss-party-1920x1080.png 99378ce690f8b013be233fc140134e13432561b6106105958aa40446b63dab7c
 human-boss-party-1152x648.png 94c04031618d91f778a2182b3122ec6f4c22ef1fd79add245ee1ac68b606590c
