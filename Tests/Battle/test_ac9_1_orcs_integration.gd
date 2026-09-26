@@ -110,6 +110,7 @@ func _run() -> void:
 		_expect(goruk_skills.size() == 4, "Goruk inherits three skills and appends one")
 		if goruk_skills.size() == 4:
 			_expect(goruk_skills[3].skill_id == &"iron_decree", "Goruk appends Iron Decree")
+	_test_save_reload()
 	_finish()
 
 
@@ -150,6 +151,17 @@ func _test_behavioral_contracts(
 	var armor_records: Array[BattleActionRecord] = [BattleActionRecord.new(BattleActionRecord.Kind.SKILL, &"breaker", [target.unit_id], {}, {}, {}, 1, 1, 1, BattleUnitState.Side.PLAYER, &"strip", true, {}, [{&"target_id": target.unit_id, &"kind": BattleKeywordOperation.Kind.ADD_ARMOR, &"value": -3}])]
 	plan = BattleSkillAuthoringResolver.build_plan(siege_actor, siege_actor.skills[1], [target], [siege_actor, target], 1, 0, [], [], armor_records)
 	_expect(is_instance_valid(plan) and plan.damage_operations[0][&"armor_strip"] == 5 and plan.consume_advantage, "Crack Armor consumes Advantage to strip five Armor")
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = ORC_CLASS_IDS.duplicate()
+	identities.append(&"goruk_ironline")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-1-orc-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Orc classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
+
 
 func _expect(condition: bool, message: String) -> void:
 	_assertions += 1

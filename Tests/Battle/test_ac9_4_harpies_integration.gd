@@ -50,6 +50,7 @@ func _run() -> void:
 		_test_open_sky_command(commander)
 	_expect(RunCharacterCatalog.create_by_class_id(&"harpy_unknown") == null, "Harpy catalog rejects unknown IDs")
 	_test_forced_target_movement()
+	_test_save_reload()
 	_finish()
 
 
@@ -172,6 +173,17 @@ func _test_forced_target_movement() -> void:
 		var records: Array[BattleActionRecord] = arena.call("get_action_records")
 		_expect(not records.is_empty() and not records[-1].voluntary_movement, "Forced movement is recorded as hostile movement")
 		arena.free()
+
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = CLASS_IDS.duplicate()
+	identities.append(&"kyris_windscar")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-4-harpy-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Harpy classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

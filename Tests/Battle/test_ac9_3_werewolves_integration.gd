@@ -59,6 +59,7 @@ func _run() -> void:
 		_expect(skills[0].skill_id == &"scent_blood" and skills[3].skill_id == &"mark_of_the_alpha", "Veyra inherits Moonfang and appends signature")
 	_expect(RunCharacterCatalog.create_by_class_id(&"werewolf_unknown") == null, "Werewolf catalog rejects unknown IDs")
 	_test_mark_of_the_alpha(commander)
+	_test_save_reload()
 	_finish()
 
 
@@ -87,6 +88,17 @@ func _test_mark_of_the_alpha(commander: RunCharacter) -> void:
 	if ally.has_method("get_pending_leech_percent"):
 		_expect(ally.call("get_pending_leech_percent", 1) == 15, "Mark of the Alpha fires once per round")
 	arena.free()
+
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = CLASS_IDS.duplicate()
+	identities.append(&"veyra_moontrace")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-3-werewolf-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Werewolf classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

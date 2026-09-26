@@ -46,6 +46,7 @@ func _run() -> void:
 			commander_count += 1
 	_expect(commander_count == 1, "Human boss party contains Elian exactly once")
 	_test_marshal_the_line(commander)
+	_test_save_reload()
 	_finish()
 
 
@@ -95,6 +96,17 @@ func _test_marshal_the_line(commander: RunCharacter) -> void:
 	_expect(lower_ally.get_armor() == 2, "Marshal the Line chooses the lowest-slot adjacent ally")
 	_expect(higher_ally.get_armor() == 0, "Marshal the Line affects only one adjacent ally")
 	arena.free()
+
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = CLASS_IDS.duplicate()
+	identities.append(&"marshal_elian_voss")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-5-human-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Human classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

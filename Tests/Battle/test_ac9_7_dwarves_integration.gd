@@ -48,6 +48,7 @@ func _run() -> void:
 			count += 1
 	_expect(party.size() >= 3 and count == 1, "Dwarf boss party contains Brokk exactly once")
 	_test_stonevein_bulwark(commander)
+	_test_save_reload()
 	_finish()
 
 
@@ -97,6 +98,17 @@ func _test_stonevein_bulwark(commander: RunCharacter) -> void:
 	_expect(brokk.get_armor() == 10, "Stonevein Bulwark respects Armor cap 10")
 	_expect(first_ally.get_armor() == 2 and second_ally.get_armor() == 2, "Stonevein Bulwark protects every active adjacent ally")
 	arena.free()
+
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = CLASS_IDS.duplicate()
+	identities.append(&"thane_brokk_stonevein")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-7-dwarf-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Dwarf classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

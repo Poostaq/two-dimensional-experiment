@@ -72,6 +72,7 @@ func _run() -> void:
 	_expect(RunCharacterCatalog.create_by_class_id(&"lizardman_unknown") == null, "Lizardman catalog rejects unknown IDs")
 	_test_cartographer_of_venoms(commander)
 	_test_antidote_exchange_plan()
+	_test_save_reload()
 	_finish()
 
 
@@ -138,6 +139,17 @@ func _test_cartographer_of_venoms(commander: RunCharacter) -> void:
 	arena.call("_dispatch_passive_reactions", record, 1, deltas)
 	_expect(adjacent.get_poison_stacks(&"power", 1) == 1, "Cartographer cannot chain or repeat in the same round")
 	arena.free()
+
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = CLASS_IDS.duplicate()
+	identities.append(&"sszek_still_mire")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-2-lizardman-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Lizardman classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
 
 
 func _expect(condition: bool, message: String) -> void:

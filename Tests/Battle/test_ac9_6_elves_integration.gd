@@ -45,6 +45,7 @@ func _run() -> void:
 			count += 1
 	_expect(party.size() >= 3 and count == 1, "Elf boss party contains Saelith exactly once")
 	_test_moonfall_edict(commander)
+	_test_save_reload()
 	_finish()
 
 
@@ -93,6 +94,17 @@ func _test_moonfall_edict(commander: RunCharacter) -> void:
 	_expect(not farther.has_advantage(1), "Moonfall Edict does not redirect to another enemy")
 	_expect(saelith.get_effective_speed() == 11, "Moonfall Edict grants round Speed when the target is Snared")
 	arena.free()
+
+
+func _test_save_reload() -> void:
+	var identities: Array[StringName] = CLASS_IDS.duplicate()
+	identities.append(&"lady_saelith_moonfall")
+	var probe: Script = load("res://Tests/Support/ac9_faction_round_trip_probe.gd") as Script
+	var result: Dictionary = probe.verify(identities, "ac9-6-elf-round-trip")
+	_expect(
+		result.get("ok", false) and result.get("checked", 0) == 7,
+		"Elf classes and commander survive save/reload: %s" % result.get("error", ""),
+	)
 
 
 func _expect(condition: bool, message: String) -> void:
