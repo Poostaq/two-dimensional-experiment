@@ -222,7 +222,7 @@ func _run() -> void:
     var separator := launcher.get_node("%CommanderSeedSeparator") as HSeparator
     var seed := launcher.get_node("%SeedInput") as LineEdit
     var begin := launcher.get_node("%BeginButton") as Button
-    _expect(previous.disabled and next.disabled, "single-entry carousel arrows are disabled")
+    _expect(not previous.disabled and not next.disabled, "five-entry carousel arrows are enabled")
     _expect(portrait.texture != null, "portrait uses an embedded placeholder texture")
     _expect(
         String(portrait.texture.resource_path) == "res://Assets/brakka.png",
@@ -261,12 +261,12 @@ func _run() -> void:
             button.get_theme_stylebox("pressed") == button.get_theme_stylebox("normal"),
             "skill square %d uses the same visual style in pressed state" % index
         )
-    var arrow_border := previous.get_theme_stylebox("disabled") as StyleBoxFlat
-    _expect(previous.focus_mode == Control.FOCUS_NONE, "disabled previous arrow rejects keyboard focus")
-    _expect(next.focus_mode == Control.FOCUS_NONE, "disabled next arrow rejects keyboard focus")
+    var arrow_border := previous.get_theme_stylebox("normal") as StyleBoxFlat
+    _expect(previous.focus_mode == Control.FOCUS_ALL, "previous arrow accepts keyboard focus")
+    _expect(next.focus_mode == Control.FOCUS_ALL, "next arrow accepts keyboard focus")
     _expect(
         is_instance_valid(arrow_border) and arrow_border.border_width_left == 2,
-        "disabled carousel arrows retain a two-pixel border"
+        "carousel arrows retain a two-pixel border"
     )
     var active_style := (
         launcher.get_node("%CommanderSkill0").get_theme_stylebox("normal") as StyleBoxFlat
@@ -332,10 +332,17 @@ func _run() -> void:
             viewport_size,
         ]
     )
-    var selected_before: StringName = launcher.call("get_selected_commander_id")
-    previous.emit_signal("pressed")
     next.emit_signal("pressed")
-    _expect(launcher.call("get_selected_commander_id") == selected_before, "disabled arrows do not change selection")
+    await process_frame
+    _expect(launcher.call("get_selected_commander_id") == &"goruk_ironline", "Next advances to Goruk")
+    _expect(summary.text.contains("Goruk Ironline"), "Goruk presentation refreshes")
+    _expect(
+        (launcher.get_node("%CommanderSkill3/SkillTextLabel") as Label).text == "Iron Decree",
+        "Goruk fourth skill refreshes"
+    )
+    previous.emit_signal("pressed")
+    await process_frame
+    _expect(launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Previous returns to Brakka")
     launcher.queue_free()
     await process_frame
     _finish()

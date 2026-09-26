@@ -3,6 +3,20 @@ extends RefCounted
 
 const COMBAT_SCOUT_REWARD_ID := &"combat_recruit_scout"
 const BOSS_CHAMPION_REWARD_ID := &"boss_recruit_champion"
+const PLAYER_COMMANDER_IDS: Array[StringName] = [
+	&"brakka_rustbanner",
+	&"goruk_ironline",
+	&"veyra_moontrace",
+	&"sszek_still_mire",
+	&"kyris_windscar",
+]
+const PLAYER_COMMANDER_PRESENTATION := {
+	&"brakka_rustbanner": {"title": "Packmarshal · Goblin Commander", "root_class_name": "Scrapshield Bruiser"},
+	&"goruk_ironline": {"title": "War-Khan · Orc Commander", "root_class_name": "Iron Tusk Vanguard"},
+	&"veyra_moontrace": {"title": "Hunt Matriarch · Werewolf Commander", "root_class_name": "Moonfang Skirmisher"},
+	&"sszek_still_mire": {"title": "Delta Strategist · Lizardman Commander", "root_class_name": "Venom Saurian"},
+	&"kyris_windscar": {"title": "Sky Matron · Harpy Commander", "root_class_name": "Talon Duelist"},
+}
 const ORC_CLASS_IDS: Array[StringName] = [
 	&"orc_iron_tusk_vanguard",
 	&"orc_bonebreaker_reaver",
@@ -58,6 +72,34 @@ const GOBLIN_CLASS_IDS: Array[StringName] = [
 
 static func get_goblin_class_ids() -> Array[StringName]:
 	return GOBLIN_CLASS_IDS.duplicate()
+
+
+static func get_player_commander_ids() -> Array[StringName]:
+	return PLAYER_COMMANDER_IDS.duplicate()
+
+
+static func get_commander_presentation(commander_id: StringName) -> Dictionary:
+	if not PLAYER_COMMANDER_IDS.has(commander_id):
+		return {}
+	var commander: RunCharacter = create_by_class_id(commander_id)
+	if not is_instance_valid(commander):
+		return {}
+	var metadata: Dictionary = PLAYER_COMMANDER_PRESENTATION[commander_id]
+	return {
+		"commander_id": commander_id,
+		"display_name": commander.display_name,
+		"title": String(metadata["title"]),
+		"root_class_name": String(metadata["root_class_name"]),
+		"root_class_id": commander.class_id,
+		"race_id": commander.race_id,
+		"skills": commander.get_skills().duplicate(),
+		"portrait_label": commander.display_name,
+	}
+
+
+static func get_commander_faction_id(commander_id: StringName) -> StringName:
+	var commander: RunCharacter = create_by_class_id(commander_id)
+	return commander.race_id if is_instance_valid(commander) and PLAYER_COMMANDER_IDS.has(commander_id) else &""
 
 
 static func get_recruitable_class_ids(clan_id: StringName) -> Array[StringName]:

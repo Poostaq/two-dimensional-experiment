@@ -114,7 +114,17 @@ func _run() -> void:
     _expect(has_commander_api, "launcher exposes commander selection API")
     if has_commander_api:
         _expect(blank_launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Brakka selected by default")
-        _expect(blank_launcher.call("get_commander_ids").size() == 1, "launcher exposes one catalog commander")
+        _expect(
+            blank_launcher.call("get_commander_ids") == [
+                &"brakka_rustbanner", &"goruk_ironline", &"veyra_moontrace",
+                &"sszek_still_mire", &"kyris_windscar",
+            ],
+            "launcher exposes exact five selectable monster commanders"
+        )
+        blank_launcher.call("on_next_commander_pressed")
+        _expect(blank_launcher.call("get_selected_commander_id") == &"goruk_ironline", "Next selects Goruk")
+        blank_launcher.call("on_previous_commander_pressed")
+        _expect(blank_launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Previous returns to Brakka")
     _expect(
         int(blank_launcher.call("get_screen")) == int(launcher_script.Screen.MAIN),
         "launcher starts on MAIN"

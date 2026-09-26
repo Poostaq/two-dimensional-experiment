@@ -22,10 +22,11 @@ func start(
     seed_text: String,
     config: Dictionary = {},
     policy: String = RETURN_RESULT,
-    commander_id: StringName = GoblinCommanderCatalog.BRAKKA_ID
+    commander_id: StringName = GoblinCommanderCatalog.BRAKKA_ID,
+    faction_id: StringName = &""
 ) -> Dictionary:
-    var commander: RunCharacter = GoblinCommanderCatalog.create_by_commander_id(commander_id)
-    if not is_instance_valid(commander):
+    var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(commander_id)
+    if not RunCharacterCatalog.get_player_commander_ids().has(commander_id) or not is_instance_valid(commander):
         return {
             "ok": false,
             "plan": null,
@@ -35,6 +36,18 @@ func start(
                 1,
                 "run-start",
                 "invalid_commander_id=%s" % String(commander_id)
+            ),
+        }
+    if not faction_id.is_empty() and commander.race_id != faction_id:
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                1,
+                "run-start",
+                "invalid_commander_faction=%s:%s" % [String(commander_id), String(faction_id)]
             ),
         }
     if policy != RETURN_RESULT:

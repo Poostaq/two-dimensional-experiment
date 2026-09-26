@@ -29,6 +29,18 @@ func _run() -> void:
         _finish()
         return
     var service: RefCounted = service_script.new(Callable(self, "_commit_plan"))
+    var catalog_script := load("res://Scripts/Run/run_character_catalog.gd") as Script
+    _assert_true(catalog_script.has_method("get_player_commander_ids"), "catalog exposes player commander registry")
+    _assert_true(catalog_script.has_method("get_commander_presentation"), "catalog exposes commander presentation")
+    var expected_player_commanders: Array[StringName] = [
+        &"brakka_rustbanner", &"goruk_ironline", &"veyra_moontrace",
+        &"sszek_still_mire", &"kyris_windscar",
+    ]
+    _assert_equal(catalog_script.get_player_commander_ids(), expected_player_commanders, "exact player commander roster")
+    for commander_id: StringName in expected_player_commanders:
+        var presentation: Dictionary = catalog_script.get_commander_presentation(commander_id)
+        _assert_equal(presentation.get("commander_id", &""), commander_id, "presentation identity")
+        _assert_equal(presentation.get("skills", []).size(), 4, "presentation has four skills")
 
     var success: Dictionary = service.call(
         "start",
@@ -73,6 +85,33 @@ func _run() -> void:
         "invalid_commander_id=unknown",
         "invalid commander constraint"
     )
+    var invalid_pair: Dictionary = rejecting_service.call(
+        "start",
+        "golden-alpha",
+        {},
+        "RETURN_RESULT",
+        &"goruk_ironline",
+        &"lizardman"
+    )
+    _assert_true(not invalid_pair.get("ok", true), "mismatched commander faction rejected")
+    _assert_equal(generator_spy.call_count, 0, "mismatched faction does not generate")
+    _assert_equal(
+        invalid_pair["error"].failed_constraint,
+        "invalid_commander_faction=goruk_ironline:lizardman",
+        "mismatched faction constraint"
+    )
+    var orc_commander_service: RefCounted = service_script.new(func(_plan: RefCounted) -> void: pass)
+    var orc_start: Dictionary = orc_commander_service.call(
+        "start",
+        "golden-alpha",
+        {},
+        "RETURN_RESULT",
+        &"goruk_ironline",
+        &"orc"
+    )
+    _assert_true(orc_start.get("ok", false), "matching monster commander starts")
+    if orc_start.get("ok", false):
+        _assert_equal(orc_start["run_state"].formation[1], &"goruk_ironline", "selected commander occupies middle frontline")
 
     var before := {
         "save_bytes": PackedByteArray([1, 2, 3]),

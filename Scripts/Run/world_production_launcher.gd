@@ -40,7 +40,7 @@ var _display_settings: RefCounted
 var _settings_return_screen: Screen = Screen.MAIN
 var _settings_load_status: StringName = &"missing"
 var _pending_seed: String = ""
-var _commander_ids: Array[StringName] = GoblinCommanderCatalog.get_commander_ids()
+var _commander_ids: Array[StringName] = RunCharacterCatalog.get_player_commander_ids()
 var _selected_commander_index: int = 0
 var _pending_commander_id: StringName = &""
 var _failure_overlay: Control
@@ -458,7 +458,9 @@ func _refresh_commander_ui() -> void:
     var can_cycle: bool = _can_cycle_commanders()
     _previous_commander_button.disabled = not can_cycle
     _next_commander_button.disabled = not can_cycle
-    var presentation: Dictionary = GoblinCommanderCatalog.get_presentation(_selected_commander_id())
+    _previous_commander_button.focus_mode = Control.FOCUS_ALL if can_cycle else Control.FOCUS_NONE
+    _next_commander_button.focus_mode = Control.FOCUS_ALL if can_cycle else Control.FOCUS_NONE
+    var presentation: Dictionary = RunCharacterCatalog.get_commander_presentation(_selected_commander_id())
     var valid: bool = not presentation.is_empty()
     _begin_button.disabled = not valid
     if not valid:
