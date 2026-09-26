@@ -30,6 +30,10 @@ enum BonusCondition {
 	ALLIES_BELOW_HALF_AT_LEAST_TWO,
 	SNARED_OR_ADVANTAGE,
 	ALLY_ACTED_BEFORE_ACTOR_THIS_ROUND,
+	ACTOR_MOVED_THIS_ROUND,
+	ALL_SELECTED_SNARED,
+	DECLARED_PATH_CROSSES_OCCUPIED_SLOT,
+	PRIMARY_AND_SECONDARY_ADJACENT,
 	ACTOR_HAS_AT_LEAST_TWO_ARMOR,
 }
 
@@ -204,6 +208,26 @@ static func keyword(
 		effect_duration,
 		arm_snared_follow_up
 	)
+
+
+static func conditional_keyword(
+	role: int,
+	operation_kind: int,
+	effect_magnitude: int,
+	effect_duration: int,
+	bonus_condition_value: int
+) -> RefCounted:
+	if (
+		bonus_condition_value <= BonusCondition.NONE
+		or bonus_condition_value > BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR
+	):
+		return null
+	var definition: RefCounted = keyword(
+		role, operation_kind, effect_magnitude, effect_duration
+	)
+	if is_instance_valid(definition):
+		definition._bonus_condition = bonus_condition_value
+	return definition
 
 
 static func poison(
@@ -607,7 +631,12 @@ static func _is_valid_input(
 				and not source_specific
 			)
 		Kind.CONDITIONAL_ARMOR:
-			return role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES] and effect_magnitude > 0 and conditional_amount >= effect_magnitude
+			return (
+				role in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.SECONDARY, TargetRole.ALL_ACTIVE_ALLIES, TargetRole.ALL_ACTIVE_WOUNDED_ALLIES]
+				and effect_magnitude >= 0
+				and conditional_amount > 0
+				and conditional_amount >= effect_magnitude
+			)
 		Kind.OPTIONAL_SELF_MOVE:
 			return (
 				role == TargetRole.ACTOR

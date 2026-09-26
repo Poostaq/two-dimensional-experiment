@@ -1,3 +1,4 @@
+class_name TestAc96ElvesIntegration
 extends SceneTree
 
 const CLASS_IDS: Array[StringName] = [&"elf_star_archer", &"elf_moon_sage", &"elf_wind_dancer", &"elf_warden_of_the_grove", &"elf_crescent_duelist", &"elf_highborn_mystic"]
@@ -31,6 +32,7 @@ func _run() -> void:
 		for skill: CharacterSkill in character.get_skills():
 			ids.append(skill.skill_id)
 		_expect(ids == expected[4], "Elf skills match: %s" % class_id)
+	_test_authored_elf_skill_contracts()
 	var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(&"lady_saelith_moonfall")
 	_expect(is_instance_valid(commander), "Saelith commander constructs")
 	if is_instance_valid(commander):
@@ -44,6 +46,36 @@ func _run() -> void:
 	_expect(party.size() >= 3 and count == 1, "Elf boss party contains Saelith exactly once")
 	_test_moonfall_edict(commander)
 	_finish()
+
+
+func _test_authored_elf_skill_contracts() -> void:
+	var archer: RunCharacter = RunCharacterCatalog.create_by_class_id(&"elf_star_archer")
+	if is_instance_valid(archer):
+		var skills: Array[CharacterSkill] = archer.get_skills()
+		_expect(skills[1].authored_effects[0].power_percent == 140 and skills[1].authored_effects[0].upgraded_power_percent == 170, "Needle Shot punishes prior movement")
+		_expect(skills[2].authored_effects[0].power_percent == 200 and skills[2].authored_effects[0].upgraded_power_percent == 230 and skills[2].authored_effects[0].consume_bonus_advantage, "Horizon Pierce consumes Advantage for 230 percent")
+	var dancer: RunCharacter = RunCharacterCatalog.create_by_class_id(&"elf_wind_dancer")
+	if is_instance_valid(dancer):
+		var skills: Array[CharacterSkill] = dancer.get_skills()
+		_expect(skills[0].authored_effects[0].magnitude == 2 and skills[0].authored_effects[1].magnitude == 2, "Step Through Wind moves 2 and grants Armor 2")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[0].power_percent == 120 and skills[1].authored_effects[0].advantage_power_percent == 150, "Arc of Escape requires movement and authors exact damage")
+		_expect(skills[2].authored_effects[0].magnitude == 3 and skills[2].authored_effects[1].power_percent == 170 and skills[2].authored_effects[2].bonus_condition != BattleSkillEffectDefinition.BonusCondition.NONE, "Spiral Opening moves 3 and conditionally Snares")
+	var warden: RunCharacter = RunCharacterCatalog.create_by_class_id(&"elf_warden_of_the_grove")
+	if is_instance_valid(warden):
+		var skills: Array[CharacterSkill] = warden.get_skills()
+		_expect(skills[0].authored_effects.size() == 2 and skills[0].authored_effects[0].magnitude == 4, "Rooting Ward grants Armor and conditionally Snares an adjacent enemy")
+		_expect(not skills[1].conditions.is_empty() and skills[1].authored_effects[1].magnitude == 1, "Calm the Ring requires prior movement and forces Move 1")
+		_expect(skills[2].target_profile.maximum_targets == 0 and skills[2].authored_effects[0].conditional_magnitude == 6, "Dawnglass Barrier protects all allies and upgrades during collapse")
+	var duelist: RunCharacter = RunCharacterCatalog.create_by_class_id(&"elf_crescent_duelist")
+	if is_instance_valid(duelist):
+		var skills: Array[CharacterSkill] = duelist.get_skills()
+		_expect(skills[0].authored_effects[0].power_percent == 100 and skills[0].authored_effects[0].upgraded_power_percent == 130 and skills[0].authored_effects[1].magnitude == 2, "Cut the Angle authors Move 2 and movement-punish damage")
+		_expect(skills[1].authored_effects.size() == 2 and skills[1].authored_effects[0].upgraded_power_percent == 180 and skills[1].authored_effects[1].conditional_magnitude == 2, "Short Arc upgrades after movement and grants Armor 2")
+	var mystic: RunCharacter = RunCharacterCatalog.create_by_class_id(&"elf_highborn_mystic")
+	if is_instance_valid(mystic):
+		var final_skill: CharacterSkill = mystic.get_skills()[2]
+		_expect(final_skill.target_profile.maximum_targets == 2 and not final_skill.conditions.is_empty(), "Final Constellation selects up to two enemies with a Snared gate")
+		_expect(final_skill.authored_effects[0].power_percent == 190 and final_skill.authored_effects[0].upgraded_power_percent == 230 and final_skill.authored_effects[1].power_percent == 120, "Final Constellation authors exact primary and secondary damage")
 
 
 func _test_moonfall_edict(commander: RunCharacter) -> void:

@@ -79,7 +79,8 @@ static func build_plan(
 					var advantage_armor_strip: int = int(authored_effect.get("advantage_armor_strip"))
 					var bonus_condition: int = int(authored_effect.get("bonus_condition"))
 					var bonus_met: bool = _damage_bonus_met(
-						bonus_condition, actor, target, units, round_number, action_records
+						bonus_condition, actor, target, units, round_number, action_records,
+						locked_targets, declared_move_path
 					)
 					if target.has_advantage(round_number) and (advantage_percent > 0 or advantage_armor_strip > 0):
 						if advantage_percent > 0:
@@ -261,10 +262,14 @@ static func build_plan(
 							target,
 							units,
 							round_number,
-							action_records
+							action_records,
+							locked_targets,
+							declared_move_path
 						)
 					if armor_bonus_met:
 						amount = int(authored_effect.get("conditional_magnitude"))
+					if amount <= 0:
+						continue
 					var armor_operation: RefCounted = BattleKeywordOperation.create(
 						BattleKeywordOperation.Kind.ADD_ARMOR, target.unit_id, amount
 					)
@@ -275,6 +280,21 @@ static func build_plan(
 				for target: BattleUnitState in targets:
 					var source: RefCounted = null
 					var operation_kind: int = int(authored_effect.get("keyword_kind"))
+					var keyword_bonus_condition: int = int(authored_effect.get("bonus_condition"))
+					if (
+						keyword_bonus_condition != effect_script.BonusCondition.NONE
+						and not _damage_bonus_met(
+							keyword_bonus_condition,
+							actor,
+							target,
+							units,
+							round_number,
+							action_records,
+							locked_targets,
+							declared_move_path
+						)
+					):
+						continue
 					if operation_kind in [
 						BattleKeywordOperation.Kind.APPLY_ADVANTAGE,
 						BattleKeywordOperation.Kind.APPLY_SNARED,
@@ -468,6 +488,14 @@ static func _conditions_met(
 				if locked_targets.is_empty() or not _primary_attacked_actor_or_adjacent_ally(
 					actor, locked_targets[0], units, action_records, round_number
 				):
+					return false
+			condition_script.Kind.ANY_SELECTED_SNARED:
+				var has_selected_snared: bool = false
+				for selected: BattleUnitState in locked_targets:
+					if selected.is_snared(round_number):
+						has_selected_snared = true
+						break
+				if not has_selected_snared:
 					return false
 			condition_script.Kind.PRIMARY_SNARED:
 				if locked_targets.is_empty() or not locked_targets[0].is_snared(round_number):
@@ -680,7 +708,9 @@ static func _damage_bonus_met(
 	target: BattleUnitState,
 	units: Array[BattleUnitState],
 	round_number: int,
-	records: Array[BattleActionRecord]
+	records: Array[BattleActionRecord],
+	locked_targets: Array[BattleUnitState] = [],
+	declared_move_path: Array[int] = []
 ) -> bool:
 	match condition:
 		BattleSkillEffectDefinition.BonusCondition.MOVED_THIS_ROUND:
@@ -708,6 +738,36 @@ static func _damage_bonus_met(
 		BattleSkillEffectDefinition.BonusCondition.ALLY_ACTED_BEFORE_ACTOR_THIS_ROUND:
 			return BattleHistoryQuery.ally_acted_before_this_round(
 				records, actor.side as BattleUnitState.Side, actor.unit_id, round_number
+			)
+		BattleSkillEffectDefinition.BonusCondition.ACTOR_MOVED_THIS_ROUND:
+			return BattleHistoryQuery.moved_this_round(records, actor.unit_id, round_number)
+		BattleSkillEffectDefinition.BonusCondition.ALL_SELECTED_SNARED:
+			if locked_targets.size() < 2:
+				return false
+			for selected: BattleUnitState in locked_targets:
+				if not selected.is_snared(round_number):
+					return false
+			return true
+		BattleSkillEffectDefinition.BonusCondition.DECLARED_PATH_CROSSES_OCCUPIED_SLOT:
+			if declared_move_path.size() < 3:
+				return false
+			for path_index: int in range(1, declared_move_path.size() - 1):
+				for unit: BattleUnitState in units:
+					if (
+						is_instance_valid(unit)
+						and unit.is_active()
+						and unit.unit_id != actor.unit_id
+						and unit.side == actor.side
+						and unit.slot_index == declared_move_path[path_index]
+					):
+						return true
+			return false
+		BattleSkillEffectDefinition.BonusCondition.PRIMARY_AND_SECONDARY_ADJACENT:
+			return (
+				locked_targets.size() > 1
+				and BattleFormationRules.is_move_one(
+					locked_targets[0].slot_index, locked_targets[1].slot_index
+				)
 			)
 		BattleSkillEffectDefinition.BonusCondition.ACTOR_HAS_AT_LEAST_TWO_ARMOR:
 			return actor.get_armor() >= 2
