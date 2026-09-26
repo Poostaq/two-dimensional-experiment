@@ -43,6 +43,7 @@ var _snared_expiry_round: int = 0
 var _snared_follow_up_armed: bool = false
 var _bleed_states: Dictionary[StringName, RefCounted] = {}
 var _poison_states: Dictionary[StringName, Dictionary] = {}
+var _current_round: int = 1
 var _stun_source: RefCounted = null
 var _stun_guard_active: bool = false
 var _pending_leech_percent: int = 0
@@ -121,15 +122,15 @@ func get_effective_speed() -> int:
 	var total := _base_speed
 	for modifier: Dictionary in _speed_modifiers.values():
 		total += int(modifier.get("amount", 0))
-	return max(1, total - get_poison_stacks(&"speed"))
+	return max(1, total - get_poison_stacks(&"speed", _current_round))
 
 
 func get_effective_power() -> int:
-	return max(1, power - get_poison_stacks(&"power"))
+	return max(1, power - get_poison_stacks(&"power", _current_round))
 
 
 func get_effective_defense() -> int:
-	return max(0, defense - get_poison_stacks(&"defense"))
+	return max(0, defense - get_poison_stacks(&"defense", _current_round))
 
 
 func get_skill_cooldown(skill_id: StringName) -> int:
@@ -492,6 +493,9 @@ func reduce_skill_cooldown(skill_id: StringName, amount: int) -> int:
 func clear_round_keywords(completed_round: int) -> void:
 	if completed_round < 1:
 		return
+	_current_round = max(_current_round, completed_round + 1)
+	for axis: StringName in _poison_states.keys():
+		get_poison_stacks(axis, _current_round)
 	if is_instance_valid(_advantage_source) and _advantage_expiry_round <= completed_round:
 		_clear_advantage()
 	if is_instance_valid(_snared_source) and _snared_expiry_round <= completed_round:
@@ -542,6 +546,7 @@ func clear_battle_local_state() -> void:
 	_clear_snared()
 	_bleed_states.clear()
 	_poison_states.clear()
+	_current_round = 1
 	_stun_source = null
 	_stun_guard_active = false
 	_pending_leech_percent = 0

@@ -47,6 +47,10 @@ func _test_poison_contract() -> void:
 	_expect(poisoned.get_effective_defense() == 0, "Defense Poison cannot reduce below zero")
 	_expect(poisoned.apply_poison(source, &"speed", 2, 3), "Speed Poison applies a stat penalty")
 	_expect(poisoned.get_effective_speed() == 3, "Speed Poison reduces effective Speed per stack")
+	poisoned.clear_round_keywords(3)
+	_expect(poisoned.get_effective_power() == 6, "Expired Power Poison no longer affects production stat reads")
+	_expect(poisoned.get_effective_defense() == 3, "Expired Defense Poison no longer affects production stat reads")
+	_expect(poisoned.get_effective_speed() == 5, "Expired Speed Poison no longer affects production stat reads")
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	var poison: RefCounted = effect_script.poison(effect_script.TargetRole.PRIMARY, &"power", 1, 3)
 	_expect(is_instance_valid(poison), "Poison authored effect is valid")
