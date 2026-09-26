@@ -43,7 +43,24 @@ func _run() -> void:
 		if member.class_id == &"marshal_elian_voss":
 			commander_count += 1
 	_expect(commander_count == 1, "Human boss party contains Elian exactly once")
+	_test_marshal_the_line(commander)
 	_finish()
+
+
+func _test_marshal_the_line(commander: RunCharacter) -> void:
+	if not is_instance_valid(commander):
+		return
+	var elian := BattleUnitState.new(commander.character_id, commander.display_name, BattleUnitState.Side.ENEMY, 1, 10, commander.max_hp, commander.get_skills(), commander.power, commander.defense, commander.race_id)
+	var lower_ally := BattleUnitState.new(&"human_lower_ally", "Lower Ally", BattleUnitState.Side.ENEMY, 0, 4, 20)
+	var higher_ally := BattleUnitState.new(&"human_higher_ally", "Higher Ally", BattleUnitState.Side.ENEMY, 2, 4, 20)
+	var opponent := BattleUnitState.new(&"human_test_opponent", "Opponent", BattleUnitState.Side.PLAYER, 1, 3, 20)
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([elian, lower_ally, higher_ally, opponent])
+	_expect(elian.get_armor() == 2, "Marshal the Line grants Elian 2 Armor")
+	_expect(lower_ally.get_armor() == 2, "Marshal the Line chooses the lowest-slot adjacent ally")
+	_expect(higher_ally.get_armor() == 0, "Marshal the Line affects only one adjacent ally")
+	arena.free()
 
 
 func _expect(condition: bool, message: String) -> void:

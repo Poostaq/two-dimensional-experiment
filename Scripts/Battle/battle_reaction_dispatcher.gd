@@ -31,20 +31,24 @@ static func collect_action_start_reactions(
 			round_number
 		):
 			continue
-		var target: BattleUnitState = _resolve_action_start_target(
+		var targets: Array[BattleUnitState] = _resolve_action_start_targets(
 			actor,
 			units,
 			int(definition.get("target_policy"))
 		)
-		if not is_instance_valid(target):
+		var target_ids: Array[StringName] = []
+		for target: BattleUnitState in targets:
+			target_ids.append(target.unit_id)
+		if targets.is_empty():
 			reactions.append({
 				"definition": definition.call("with_owner", actor.unit_id),
 				"owner_id": actor.unit_id,
 				"target_id": &"",
+				"target_ids": target_ids,
 			})
 			continue
 		var operation: RefCounted = definition.get("operation")
-		var resolved_operation: RefCounted = operation.call("with_target", target.unit_id)
+		var resolved_operation: RefCounted = operation.call("with_target", targets[0].unit_id)
 		var resolved_definition: RefCounted = definition.call(
 			"with_owner_and_operation",
 			actor.unit_id,
@@ -55,7 +59,8 @@ static func collect_action_start_reactions(
 		reactions.append({
 			"definition": resolved_definition,
 			"owner_id": actor.unit_id,
-			"target_id": target.unit_id,
+			"target_id": targets[0].unit_id,
+			"target_ids": target_ids,
 		})
 	return reactions
 
@@ -91,15 +96,18 @@ static func collect_action_end_reactions(
 			round_number
 		):
 			continue
-		var target: BattleUnitState = _resolve_action_start_target(
+		var targets: Array[BattleUnitState] = _resolve_action_start_targets(
 			actor,
 			units,
 			int(definition.get("target_policy"))
 		)
-		if not is_instance_valid(target):
+		if targets.is_empty():
 			continue
+		var target_ids: Array[StringName] = []
+		for target: BattleUnitState in targets:
+			target_ids.append(target.unit_id)
 		var operation: RefCounted = definition.get("operation")
-		var resolved_operation: RefCounted = operation.call("with_target", target.unit_id)
+		var resolved_operation: RefCounted = operation.call("with_target", targets[0].unit_id)
 		var resolved_definition: RefCounted = definition.call(
 			"with_owner_and_operation",
 			actor.unit_id,
@@ -110,7 +118,8 @@ static func collect_action_end_reactions(
 		reactions.append({
 			"definition": resolved_definition,
 			"owner_id": actor.unit_id,
-			"target_id": target.unit_id,
+			"target_id": targets[0].unit_id,
+			"target_ids": target_ids,
 		})
 	return reactions
 
@@ -121,20 +130,47 @@ static func is_action_start_target_current(
 	units: Array[BattleUnitState],
 	target_policy: int = BattleReactionDefinition.TargetPolicy.CLOSEST_OPPONENT
 ) -> bool:
-	if target_id.is_empty():
+	return are_action_start_targets_current(owner, [target_id], units, target_policy)
+
+
+static func are_action_start_targets_current(
+	owner: BattleUnitState,
+	target_ids: Array[StringName],
+	units: Array[BattleUnitState],
+	target_policy: int = BattleReactionDefinition.TargetPolicy.CLOSEST_OPPONENT
+) -> bool:
+	if target_ids.is_empty():
 		return false
-	var current: BattleUnitState = _resolve_action_start_target(owner, units, target_policy)
-	return is_instance_valid(current) and current.unit_id == target_id
+	var current_ids: Array[StringName] = []
+	for target: BattleUnitState in _resolve_action_start_targets(owner, units, target_policy):
+		current_ids.append(target.unit_id)
+	return current_ids == target_ids
 
 
-static func _resolve_action_start_target(
+static func _resolve_action_start_targets(
 	owner: BattleUnitState,
 	units: Array[BattleUnitState],
 	target_policy: int
-) -> BattleUnitState:
+) -> Array[BattleUnitState]:
+	var targets: Array[BattleUnitState] = []
+	if target_policy == BattleReactionDefinition.TargetPolicy.CLOSEST_OPPONENT:
+		var opponent: BattleUnitState = BattleFormationRules.closest_active_opponent(owner, units)
+		if is_instance_valid(opponent):
+			targets.append(opponent)
+		return targets
+	var allies: Array[BattleUnitState] = BattleFormationRules.active_adjacent_allies(owner, units)
 	if target_policy == BattleReactionDefinition.TargetPolicy.ADJACENT_ALLY:
-		return BattleFormationRules.closest_active_adjacent_ally(owner, units)
-	return BattleFormationRules.closest_active_opponent(owner, units)
+		if not allies.is_empty():
+			targets.append(allies[0])
+		return targets
+	if allies.is_empty():
+		return targets
+	targets.append(owner)
+	if target_policy == BattleReactionDefinition.TargetPolicy.OWNER_AND_ADJACENT_ALLY:
+		targets.append(allies[0])
+	elif target_policy == BattleReactionDefinition.TargetPolicy.OWNER_AND_ALL_ADJACENT_ALLIES:
+		targets.append_array(allies)
+	return targets
 
 
 static func collect_reactions(

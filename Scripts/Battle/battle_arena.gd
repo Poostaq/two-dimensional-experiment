@@ -1398,7 +1398,6 @@ func _resolve_current_action_start_reactions() -> void:
 
 func _resolve_action_start_candidate(candidate: Dictionary) -> void:
 	var owner_id: StringName = candidate.get("owner_id", &"")
-	var target_id: StringName = candidate.get("target_id", &"")
 	var definition: RefCounted = candidate.get("definition") as RefCounted
 	var owner: BattleUnitState = get_unit_by_id(owner_id)
 	if not is_instance_valid(owner) or not is_instance_valid(definition):
@@ -1408,32 +1407,48 @@ func _resolve_action_start_candidate(candidate: Dictionary) -> void:
 	var passive_skill: CharacterSkill = _find_skill(owner, definition.get("passive_skill_id"))
 	if not is_instance_valid(passive_skill):
 		return
+	var target_ids: Array[StringName] = []
+	target_ids.assign(candidate.get("target_ids", []))
+	if target_ids.is_empty():
+		var legacy_target_id: StringName = candidate.get("target_id", &"")
+		if not legacy_target_id.is_empty():
+			target_ids.append(legacy_target_id)
 	var dispatcher_script: Script = load("res://Scripts/Battle/battle_reaction_dispatcher.gd") as Script
 	if (
-		target_id.is_empty()
-		or not dispatcher_script.call("is_action_start_target_current", owner, target_id, _units)
+		target_ids.is_empty()
+		or not dispatcher_script.call(
+			"are_action_start_targets_current",
+			owner,
+			target_ids,
+			_units,
+			int(definition.get("target_policy"))
+		)
 	):
-		_append_action_start_message("%s found no active enemy." % passive_skill.display_name)
+		_append_action_start_message("%s found no valid target." % passive_skill.display_name)
 		return
-	var operation: RefCounted = definition.get("operation") as RefCounted
+	var base_operation: RefCounted = definition.get("operation") as RefCounted
 	var keyword_deltas: Array[Dictionary] = []
-	if (
-		not is_instance_valid(operation)
-		or int(operation.get("kind")) != BattleKeywordOperation.Kind.APPLY_ADVANTAGE
-		or not _apply_keyword_operation(operation, round_number, keyword_deltas, true)
-	):
-		_append_action_start_message("%s found no active enemy." % passive_skill.display_name)
+	var applied_any: bool = false
+	for target_id: StringName in target_ids:
+		var operation: RefCounted = base_operation.call("with_target", target_id)
+		applied_any = (
+			is_instance_valid(operation)
+			and _apply_keyword_operation(operation, round_number, keyword_deltas, true)
+		) or applied_any
+	if not applied_any:
+		_append_action_start_message("%s found no valid target." % passive_skill.display_name)
 		return
-	var target: BattleUnitState = get_unit_by_id(target_id)
-	if not is_instance_valid(target):
-		_append_action_start_message("%s found no active enemy." % passive_skill.display_name)
-		return
+	var target_names: Array[String] = []
+	for target_id: StringName in target_ids:
+		var target: BattleUnitState = get_unit_by_id(target_id)
+		if is_instance_valid(target):
+			target_names.append(target.display_name)
 	_battle_revision += 1
 	_append_action_start_message(
-		"%s's %s applied Advantage to %s." % [
+		"%s's %s affected %s." % [
 			owner.display_name,
 			passive_skill.display_name,
-			target.display_name,
+			", ".join(target_names),
 		]
 	)
 
@@ -1489,6 +1504,26 @@ func _apply_keyword_operation(
 			applied = target.apply_advantage(operation.get("source") as RefCounted, action_round + max(1, int(operation.get("duration"))) - 1)
 			if applied:
 				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+		BattleKeywordOperation.Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED:
+			var source: RefCounted = operation.get("source") as RefCounted
+			var target_was_snared: bool = target.is_snared(action_round)
+			applied = target.apply_advantage(
+				source,
+				action_round + max(1, int(operation.get("duration"))) - 1
+			)
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
+			if applied and target_was_snared:
+				var owner: BattleUnitState = _unit_for_keyword_source(source)
+				if is_instance_valid(owner):
+					owner.add_speed_modifier(
+					source.get("source_skill_id") as StringName,
+					int(operation.get("magnitude")),
+					BattleUnitState.ModifierExpiry.CURRENT_ROUND,
+					1,
+					action_round
+					)
+					keyword_deltas.append(_keyword_delta(operation, owner.unit_id, int(operation.get("magnitude")), from_reaction))
 		BattleKeywordOperation.Kind.APPLY_SNARED:
 			applied = target.apply_snared(
 				operation.get("source") as RefCounted,
@@ -1582,8 +1617,16 @@ func _dispatch_action_end_reactions(
 		var definition: RefCounted = candidate.get("definition") as RefCounted
 		if not is_instance_valid(definition):
 			continue
-		var operation: RefCounted = definition.get("operation") as RefCounted
-		_apply_keyword_operation(operation, action_round, keyword_deltas, true)
+		var target_ids: Array[StringName] = []
+		target_ids.assign(candidate.get("target_ids", []))
+		if target_ids.is_empty():
+			var legacy_target_id: StringName = candidate.get("target_id", &"")
+			if not legacy_target_id.is_empty():
+				target_ids.append(legacy_target_id)
+		var base_operation: RefCounted = definition.get("operation") as RefCounted
+		for target_id: StringName in target_ids:
+			var operation: RefCounted = base_operation.call("with_target", target_id)
+			_apply_keyword_operation(operation, action_round, keyword_deltas, true)
 
 
 func _dispatch_passive_reactions(

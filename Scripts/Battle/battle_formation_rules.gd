@@ -84,6 +84,31 @@ static func closest_active_adjacent_ally(
 	return winner
 
 
+static func active_adjacent_allies(
+	owner: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> Array[BattleUnitState]:
+	var allies: Array[BattleUnitState] = []
+	if not is_instance_valid(owner) or not owner.is_active() or not is_valid_slot(owner.slot_index):
+		return allies
+	for candidate: BattleUnitState in units:
+		if (
+			not is_instance_valid(candidate)
+			or not candidate.is_active()
+			or candidate.unit_id == owner.unit_id
+			or candidate.side != owner.side
+			or not is_move_one(owner.slot_index, candidate.slot_index)
+		):
+			continue
+		allies.append(candidate)
+	allies.sort_custom(func(first: BattleUnitState, second: BattleUnitState) -> bool:
+		if first.slot_index != second.slot_index:
+			return first.slot_index < second.slot_index
+		return String(first.unit_id) < String(second.unit_id)
+	)
+	return allies
+
+
 static func _opponent_comes_before(
 	actor: BattleUnitState,
 	first: BattleUnitState,

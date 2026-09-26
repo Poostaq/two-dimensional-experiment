@@ -28,6 +28,6 @@ static func get_presentation(commander_id: StringName) -> Dictionary:
 
 static func _moonfall_edict() -> CharacterSkill:
 	var source: RefCounted = BattleKeywordSource.create(COMMANDER_ID, &"moonfall_edict", 4)
-	var operation: RefCounted = BattleKeywordOperation.create(BattleKeywordOperation.Kind.APPLY_ADVANTAGE, COMMANDER_ID, 0, 1, source)
+	var operation: RefCounted = BattleKeywordOperation.create(BattleKeywordOperation.Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED, COMMANDER_ID, 1, 1, source)
 	var reaction: RefCounted = BattleReactionDefinition.create(&"moonfall_edict", BattleReactionDefinition.Trigger.ACTION_START, BattleReactionDefinition.Frequency.ONCE_PER_ROUND, 0, operation, false, &"", BattleReactionDefinition.TargetPolicy.CLOSEST_OPPONENT)
 	return CharacterSkill.create(&"moonfall_edict", "Moonfall Edict", CharacterSkill.Kind.PASSIVE, "Once per round at action start, apply Advantage to the closest enemy; if Snared, Saelith gains 1 Speed this round.", "Closest active enemy.", "Requires an active enemy.", "Once per round.", -1, -1, -1, CharacterSkill.Requirement.NONE, -1, -1, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.NONE, 0, 0, null, [], null, reaction)

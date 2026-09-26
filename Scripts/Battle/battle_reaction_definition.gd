@@ -11,6 +11,8 @@ enum Trigger {
 enum TargetPolicy {
 	CLOSEST_OPPONENT,
 	ADJACENT_ALLY,
+	OWNER_AND_ADJACENT_ALLY,
+	OWNER_AND_ALL_ADJACENT_ALLIES,
 }
 
 enum Frequency {
@@ -181,7 +183,12 @@ static func _is_valid_input(
 	return (
 		not definition_passive_skill_id.is_empty()
 		and definition_trigger in [Trigger.DIRECT_HIT, Trigger.FORCED_MOVEMENT, Trigger.ACTION_START, Trigger.ACTION_END]
-		and definition_target_policy in [TargetPolicy.CLOSEST_OPPONENT, TargetPolicy.ADJACENT_ALLY]
+		and definition_target_policy in [
+			TargetPolicy.CLOSEST_OPPONENT,
+			TargetPolicy.ADJACENT_ALLY,
+			TargetPolicy.OWNER_AND_ADJACENT_ALLY,
+			TargetPolicy.OWNER_AND_ALL_ADJACENT_ALLIES,
+		]
 		and definition_frequency in [Frequency.ONCE_PER_ACTION, Frequency.ONCE_PER_ROUND, Frequency.ONCE_PER_BATTLE]
 		and is_instance_valid(definition_operation)
 		and definition_operation.has_method("is_valid")

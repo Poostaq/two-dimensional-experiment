@@ -42,7 +42,25 @@ func _run() -> void:
 		if member.class_id == &"lady_saelith_moonfall":
 			count += 1
 	_expect(party.size() >= 3 and count == 1, "Elf boss party contains Saelith exactly once")
+	_test_moonfall_edict(commander)
 	_finish()
+
+
+func _test_moonfall_edict(commander: RunCharacter) -> void:
+	if not is_instance_valid(commander):
+		return
+	var saelith := BattleUnitState.new(commander.character_id, commander.display_name, BattleUnitState.Side.ENEMY, 1, 10, commander.max_hp, commander.get_skills(), commander.power, commander.defense, commander.race_id)
+	var closest := BattleUnitState.new(&"elf_closest_enemy", "Closest", BattleUnitState.Side.PLAYER, 0, 3, 20)
+	var farther := BattleUnitState.new(&"elf_farther_enemy", "Farther", BattleUnitState.Side.PLAYER, 2, 3, 20)
+	var snare_source: RefCounted = BattleKeywordSource.create(&"test", &"test_snare", 1)
+	closest.apply_snared(snare_source, 1)
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([saelith, closest, farther])
+	_expect(closest.has_advantage(1), "Moonfall Edict marks the deterministic closest enemy")
+	_expect(not farther.has_advantage(1), "Moonfall Edict does not redirect to another enemy")
+	_expect(saelith.get_effective_speed() == 11, "Moonfall Edict grants round Speed when the target is Snared")
+	arena.free()
 
 
 func _expect(condition: bool, message: String) -> void:

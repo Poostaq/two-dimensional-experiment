@@ -172,7 +172,7 @@ func _test_adjacent_ally_action_end_reaction_contract() -> void:
 	var reactions: Variant = dispatcher_script.call("collect_action_end_reactions", owner, units, 1)
 	_expect(reactions is Array and reactions.size() == 1, "Goruk resolves one action-end passive candidate")
 	if reactions is Array and reactions.size() == 1:
-		_expect(reactions[0].get("target_id") == ally.unit_id, "Goruk resolves Iron Decree to the adjacent ally")
+		_expect(reactions[0].get("target_ids") == [owner.unit_id, ally.unit_id], "Goruk resolves Iron Decree to self and the adjacent ally")
 
 
 func _test_action_end_reaction_requires_contact() -> void:

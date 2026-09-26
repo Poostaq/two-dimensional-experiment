@@ -10,6 +10,7 @@ enum Kind {
 	APPLY_POISON,
 	APPLY_STUN,
 	LEECH,
+	APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED,
 }
 
 var kind: Kind:
@@ -149,6 +150,7 @@ static func _is_valid_input(
 		Kind.APPLY_STUN,
 		Kind.LEECH,
 		Kind.REDUCE_COOLDOWN,
+		Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED,
 	] or operation_target_id.is_empty():
 		return false
 	if arm_snared_follow_up and operation_kind != Kind.APPLY_SNARED:
@@ -158,6 +160,8 @@ static func _is_valid_input(
 			return operation_magnitude > 0 and operation_duration >= 0
 		Kind.APPLY_ADVANTAGE, Kind.APPLY_SNARED, Kind.APPLY_BLEED:
 			return operation_duration > 0 and _is_valid_keyword_source(operation_source)
+		Kind.APPLY_ADVANTAGE_AND_SNARED_OWNER_SPEED:
+			return operation_magnitude > 0 and operation_duration > 0 and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_POISON:
 			return operation_magnitude > 0 and operation_duration > 0 and operation_poison_axis in [&"power", &"defense", &"speed"] and _is_valid_keyword_source(operation_source)
 		Kind.APPLY_STUN:

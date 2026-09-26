@@ -45,7 +45,24 @@ func _run() -> void:
 		if member.class_id == &"thane_brokk_stonevein":
 			count += 1
 	_expect(party.size() >= 3 and count == 1, "Dwarf boss party contains Brokk exactly once")
+	_test_stonevein_bulwark(commander)
 	_finish()
+
+
+func _test_stonevein_bulwark(commander: RunCharacter) -> void:
+	if not is_instance_valid(commander):
+		return
+	var brokk := BattleUnitState.new(commander.character_id, commander.display_name, BattleUnitState.Side.ENEMY, 1, 10, commander.max_hp, commander.get_skills(), commander.power, commander.defense, commander.race_id)
+	var first_ally := BattleUnitState.new(&"dwarf_first_ally", "First Ally", BattleUnitState.Side.ENEMY, 0, 4, 20)
+	var second_ally := BattleUnitState.new(&"dwarf_second_ally", "Second Ally", BattleUnitState.Side.ENEMY, 2, 4, 20)
+	var opponent := BattleUnitState.new(&"dwarf_test_opponent", "Opponent", BattleUnitState.Side.PLAYER, 1, 3, 20)
+	brokk.add_armor(9)
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([brokk, first_ally, second_ally, opponent])
+	_expect(brokk.get_armor() == 10, "Stonevein Bulwark respects Armor cap 10")
+	_expect(first_ally.get_armor() == 2 and second_ally.get_armor() == 2, "Stonevein Bulwark protects every active adjacent ally")
+	arena.free()
 
 
 func _expect(condition: bool, message: String) -> void:
