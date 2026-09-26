@@ -157,7 +157,7 @@ func _test_action_start_reaction_contract() -> void:
 	var has_revalidate: bool = dispatcher_script.has_method("is_action_start_target_current")
 	_expect(has_retarget, "keyword operation exposes immutable retargeting")
 	_expect(
-		definition_script.Trigger.size() == 4 and int(definition_script.Trigger.get("ACTION_START", -1)) == 2 and int(definition_script.Trigger.get("ACTION_END", -1)) == 3,
+		definition_script.Trigger.size() >= 4 and int(definition_script.Trigger.get("ACTION_START", -1)) == 2 and int(definition_script.Trigger.get("ACTION_END", -1)) == 3,
 		"reaction definition preserves ACTION_START and appends ACTION_END"
 	)
 	_expect(has_collect, "dispatcher exposes action-start collection")
@@ -166,7 +166,7 @@ func _test_action_start_reaction_contract() -> void:
 		not has_retarget
 		or not has_collect
 		or not has_revalidate
-		or definition_script.Trigger.size() != 3
+		or definition_script.Trigger.size() < 4
 	):
 		return
 	var retargeted: RefCounted = template.call("with_target", &"enemy")
@@ -224,7 +224,8 @@ func _test_action_start_reaction_contract() -> void:
 	_expect(reactions.size() == 1, "one action-start Passive dispatches")
 	if not reactions.is_empty():
 		var candidate: Dictionary = reactions[0]
-		_expect(candidate.keys().size() == 3, "action-start candidate has exact fields")
+		_expect(candidate.keys().size() == 4, "action-start candidate has exact fields")
+		_expect(candidate.get("target_ids") == [&"enemy_back"], "candidate preserves the deterministic target set")
 		_expect(candidate.get("owner_id") == &"brakka", "candidate binds owner")
 		_expect(candidate.get("target_id") == &"enemy_back", "candidate selects closest enemy")
 		var resolved: RefCounted = candidate.get("definition")

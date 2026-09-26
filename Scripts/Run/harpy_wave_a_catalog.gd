@@ -25,9 +25,9 @@ static func _duelist() -> Array[CharacterSkill]:
 static func _siren() -> Array[CharacterSkill]:
 	var e := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	return [
-		_skill(&"gust_call", "Gust Call", 1, [e.damage(e.TargetRole.PRIMARY, 80)]),
-		_skill(&"crosswind_pull", "Crosswind Pull", 2, [e.damage(e.TargetRole.PRIMARY, 110)]),
-		_skill(&"eye_of_the_storm", "Eye of the Storm", 5, [e.damage(e.TargetRole.ALL_SELECTED, 150)], false, 1, 3),
+		_skill(&"gust_call", "Gust Call", 1, [e.forced_target_move(e.TargetRole.PRIMARY, 1)], true),
+		_skill(&"crosswind_pull", "Crosswind Pull", 3, [e.forced_target_move(e.TargetRole.PRIMARY, 2), e.damage(e.TargetRole.PRIMARY, 100, 130)], true),
+		_skill(&"eye_of_the_storm", "Eye of the Storm", 5, [e.forced_target_move(e.TargetRole.PRIMARY, 3)], true),
 	]
 
 

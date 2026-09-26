@@ -15,6 +15,7 @@ enum TargetPolicy {
 	ADJACENT_ALLY,
 	OWNER_AND_ADJACENT_ALLY,
 	OWNER_AND_ALL_ADJACENT_ALLIES,
+	LOWEST_SLOT_ALLY,
 }
 
 enum Frequency {
@@ -197,6 +198,7 @@ static func _is_valid_input(
 			TargetPolicy.ADJACENT_ALLY,
 			TargetPolicy.OWNER_AND_ADJACENT_ALLY,
 			TargetPolicy.OWNER_AND_ALL_ADJACENT_ALLIES,
+			TargetPolicy.LOWEST_SLOT_ALLY,
 		]
 		and definition_frequency in [Frequency.ONCE_PER_ACTION, Frequency.ONCE_PER_ROUND, Frequency.ONCE_PER_BATTLE]
 		and is_instance_valid(definition_operation)

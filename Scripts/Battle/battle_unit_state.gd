@@ -47,6 +47,7 @@ var _stun_source: RefCounted = null
 var _stun_guard_active: bool = false
 var _pending_leech_percent: int = 0
 var _pending_leech_expiry_round: int = 0
+var _pending_post_hit_move_expiry_round: int = 0
 var _passive_action_guards: Dictionary[StringName, bool] = {}
 var _passive_round_guards: Dictionary[StringName, bool] = {}
 var _passive_battle_guards: Dictionary[StringName, bool] = {}
@@ -284,6 +285,29 @@ func apply_pending_leech(
 	return 0
 
 
+func grant_post_hit_move(expiry_round: int) -> bool:
+	if expiry_round < 1:
+		return false
+	_pending_post_hit_move_expiry_round = max(
+		_pending_post_hit_move_expiry_round, expiry_round
+	)
+	return true
+
+
+func has_pending_post_hit_move(current_round: int) -> bool:
+	if current_round < 1 or _pending_post_hit_move_expiry_round < current_round:
+		_pending_post_hit_move_expiry_round = 0
+		return false
+	return true
+
+
+func consume_pending_post_hit_move(current_round: int) -> bool:
+	if not has_pending_post_hit_move(current_round):
+		return false
+	_pending_post_hit_move_expiry_round = 0
+	return true
+
+
 func apply_advantage(source: RefCounted, expiry_round: int) -> bool:
 	if not _is_valid_keyword_source(source) or expiry_round < 1:
 		return false
@@ -476,6 +500,8 @@ func clear_round_keywords(completed_round: int) -> void:
 	if _pending_leech_expiry_round <= completed_round:
 		_pending_leech_percent = 0
 		_pending_leech_expiry_round = 0
+	if _pending_post_hit_move_expiry_round <= completed_round:
+		_pending_post_hit_move_expiry_round = 0
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 
@@ -520,6 +546,7 @@ func clear_battle_local_state() -> void:
 	_stun_guard_active = false
 	_pending_leech_percent = 0
 	_pending_leech_expiry_round = 0
+	_pending_post_hit_move_expiry_round = 0
 	_passive_action_guards.clear()
 	_passive_round_guards.clear()
 	_passive_battle_guards.clear()

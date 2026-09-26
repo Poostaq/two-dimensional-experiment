@@ -228,6 +228,7 @@ static func _resolve_record_reaction(
 		return null
 	var trigger_kind: int = int(definition.get("trigger"))
 	if owner.unit_id == trigger.actor_id and trigger_kind not in [
+		BattleReactionDefinition.Trigger.FORCED_MOVEMENT,
 		BattleReactionDefinition.Trigger.ENEMY_HP_THRESHOLD_CROSSED,
 		BattleReactionDefinition.Trigger.POISON_REAPPLIED,
 	]:
@@ -235,7 +236,16 @@ static func _resolve_record_reaction(
 	if trigger_kind == BattleReactionDefinition.Trigger.DIRECT_HIT:
 		return definition.call("with_owner", owner.unit_id) if _record_has_direct_hit(trigger) else null
 	if trigger_kind == BattleReactionDefinition.Trigger.FORCED_MOVEMENT:
-		return definition.call("with_owner", owner.unit_id) if _record_has_forced_movement(trigger) else null
+		if not _record_has_forced_movement(trigger):
+			return null
+		if int(definition.get("target_policy")) == BattleReactionDefinition.TargetPolicy.LOWEST_SLOT_ALLY:
+			var ally: BattleUnitState = _lowest_slot_active_ally(owner, units)
+			if not is_instance_valid(ally):
+				return null
+			var move_operation: RefCounted = definition.get("operation")
+			var resolved_move: RefCounted = move_operation.call("with_target", ally.unit_id)
+			return definition.call("with_owner_and_operation", owner.unit_id, resolved_move)
+		return definition.call("with_owner", owner.unit_id)
 	if trigger_kind == BattleReactionDefinition.Trigger.ENEMY_HP_THRESHOLD_CROSSED:
 		if trigger.actor_side != owner.side or not _record_crossed_enemy_half_hp(owner, trigger, units):
 			return null
@@ -309,6 +319,31 @@ static func _find_unit(units: Array[BattleUnitState], unit_id: StringName) -> Ba
 		if is_instance_valid(unit) and unit.unit_id == unit_id:
 			return unit
 	return null
+
+
+static func _lowest_slot_active_ally(
+	owner: BattleUnitState,
+	units: Array[BattleUnitState]
+) -> BattleUnitState:
+	var winner: BattleUnitState = null
+	for unit: BattleUnitState in units:
+		if (
+			not is_instance_valid(unit)
+			or not unit.is_active()
+			or unit.side != owner.side
+			or unit.unit_id == owner.unit_id
+		):
+			continue
+		if (
+			not is_instance_valid(winner)
+			or unit.slot_index < winner.slot_index
+			or (
+				unit.slot_index == winner.slot_index
+				and String(unit.unit_id) < String(winner.unit_id)
+			)
+		):
+			winner = unit
+	return winner
 
 
 static func _record_has_direct_hit(trigger: BattleActionRecord) -> bool:

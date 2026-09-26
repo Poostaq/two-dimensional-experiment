@@ -46,6 +46,8 @@ static func build_plan(
 	var keyword_operations: Array[RefCounted] = []
 	var locked_advantage_source: RefCounted = null
 	var consume_advantage: bool = false
+	var movement_unit_id: StringName = &""
+	var movement_effect_seen: bool = false
 	var effect_script: Script = load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	for authored_effect: RefCounted in skill.authored_effects:
 		var targets: Array[BattleUnitState] = _targets_for_role(
@@ -155,9 +157,32 @@ static func build_plan(
 						"applied_round": round_number,
 					})
 			effect_script.Kind.OPTIONAL_SELF_MOVE:
-				pass
+				if movement_effect_seen:
+					return null
+				movement_effect_seen = true
+				if not declared_move_path.is_empty():
+					if (
+						declared_move_path[0] != actor.slot_index
+						or not BattleFormationRules.is_valid_ring_path(declared_move_path, 3)
+					):
+						return null
+					movement_unit_id = actor.unit_id
+			effect_script.Kind.FORCED_TARGET_MOVE:
+				if movement_effect_seen or targets.size() != 1 or declared_move_path.is_empty():
+					return null
+				movement_effect_seen = true
+				var distance: int = int(authored_effect.get("magnitude"))
+				if (
+					declared_move_path.size() != distance + 1
+					or declared_move_path[0] != targets[0].slot_index
+					or not BattleFormationRules.is_valid_ring_path(declared_move_path, distance)
+				):
+					return null
+				movement_unit_id = targets[0].unit_id
 			_:
 				return null
+	if not declared_move_path.is_empty() and movement_unit_id.is_empty():
+		return null
 
 	return SkillEffectPlan.create(
 		actor.unit_id,
@@ -172,7 +197,7 @@ static func build_plan(
 		locked_advantage_source,
 		null,
 		consume_advantage,
-		actor.unit_id if not declared_move_path.is_empty() else &"",
+		movement_unit_id,
 		declared_move_path
 	)
 

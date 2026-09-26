@@ -8,6 +8,7 @@ enum Kind {
 	OPTIONAL_SELF_MOVE,
 	HISTORY_SCALED_DAMAGE,
 	CONDITIONAL_ARMOR,
+	FORCED_TARGET_MOVE,
 }
 
 enum BonusCondition {
@@ -232,6 +233,17 @@ static func optional_self_move() -> RefCounted:
 	return _create(Kind.OPTIONAL_SELF_MOVE, TargetRole.ACTOR)
 
 
+static func forced_target_move(role: int, distance: int) -> RefCounted:
+	return _create(
+		Kind.FORCED_TARGET_MOVE,
+		role,
+		0,
+		0,
+		BattleKeywordOperation.Kind.ADD_ARMOR,
+		distance
+	)
+
+
 static func history_scaled_damage(
 	role: int,
 	base_percent: int,
@@ -357,7 +369,7 @@ static func _is_valid_input(
 	conditional_amount: int,
 	poison_axis_value: StringName
 ) -> bool:
-	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR]:
+	if effect_kind not in [Kind.DAMAGE, Kind.KEYWORD, Kind.SPEED, Kind.OPTIONAL_SELF_MOVE, Kind.HISTORY_SCALED_DAMAGE, Kind.CONDITIONAL_ARMOR, Kind.FORCED_TARGET_MOVE]:
 		return false
 	if role not in [TargetRole.ACTOR, TargetRole.PRIMARY, TargetRole.ALL_SELECTED, TargetRole.HISTORY_ALLY, TargetRole.SECONDARY]:
 		return false
@@ -418,6 +430,15 @@ static func _is_valid_input(
 				and advantage_percent == 0
 				and percent == 0
 				and effect_magnitude == 0
+				and effect_duration == 0
+			)
+		Kind.FORCED_TARGET_MOVE:
+			return (
+				role in [TargetRole.PRIMARY, TargetRole.SECONDARY]
+				and advantage_percent == 0
+				and percent == 0
+				and effect_magnitude >= 1
+				and effect_magnitude <= 3
 				and effect_duration == 0
 			)
 	return false

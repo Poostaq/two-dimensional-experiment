@@ -45,8 +45,89 @@ func _run() -> void:
 		var skills: Array[CharacterSkill] = commander.get_skills()
 		_expect(commander.race_id == &"harpy" and skills.size() == 4, "Kyris preserves faction and four-skill loadout")
 		_expect(skills[0].skill_id == &"raking_pass" and skills[3].skill_id == &"open_sky_command", "Kyris inherits Talon Duelist and appends signature")
+		_test_open_sky_command(commander)
 	_expect(RunCharacterCatalog.create_by_class_id(&"harpy_unknown") == null, "Harpy catalog rejects unknown IDs")
+	_test_forced_target_movement()
 	_finish()
+
+
+func _test_open_sky_command(commander: RunCharacter) -> void:
+	var kyris := BattleUnitState.new(commander.character_id, commander.display_name, BattleUnitState.Side.PLAYER, 2, 10, commander.max_hp, commander.get_skills(), commander.power, commander.defense, commander.race_id)
+	var ally_character: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_talon_duelist")
+	var ally := BattleUnitState.new(&"open_sky_ally", "Open Sky Ally", BattleUnitState.Side.PLAYER, 0, 10, ally_character.max_hp, ally_character.get_skills(), ally_character.power, ally_character.defense, ally_character.race_id)
+	var enemy := BattleUnitState.new(&"open_sky_enemy", "Open Sky Enemy", BattleUnitState.Side.ENEMY, 0, 1, 20)
+	var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+	root.add_child(arena)
+	arena.configure_units([kyris, ally, enemy])
+	var record := BattleActionRecord.new(
+		BattleActionRecord.Kind.SKILL, kyris.unit_id, [enemy.unit_id], {},
+		{enemy.unit_id: 0}, {enemy.unit_id: 1}, 1, 1, 1, kyris.side,
+		&"gust_command", false
+	)
+	var deltas: Array[Dictionary] = []
+	arena.call("_dispatch_passive_reactions", record, 1, deltas)
+	_expect(ally.has_method("has_pending_post_hit_move"), "Open Sky Command uses typed pending post-hit movement")
+	if ally.has_method("has_pending_post_hit_move"):
+		_expect(ally.call("has_pending_post_hit_move", 1), "Open Sky Command arms the deterministic lowest-slot ally")
+		var damage_operation := {
+			&"target_id": enemy.unit_id,
+			&"base_damage": 1,
+			&"combo_bonus_damage": 0,
+			&"total_requested_damage": 1,
+		}
+		var targets: Array[StringName] = [enemy.unit_id]
+		var damages: Array[Dictionary] = [damage_operation]
+		var plan: SkillEffectPlan = SkillEffectPlan.create(
+			ally.unit_id, ally.skills[0].skill_id, targets, damages, [], 0, true, 0
+		)
+		arena.set("_battle_revision", 0)
+		var transaction: BattleSkillTransaction = arena.get("_skill_transaction")
+		transaction.actor_id = ally.unit_id
+		transaction.skill_id = ally.skills[0].skill_id
+		var committed: bool = arena.call("_commit_skill_effect_plan", plan)
+		_expect(committed and ally.slot_index == 1, "Armed ally moves 1 after its next direct hit")
+		_expect(not ally.call("has_pending_post_hit_move", 1), "Post-hit movement is consumed by the direct hit")
+	arena.free()
+
+
+func _test_forced_target_movement() -> void:
+	var has_effect_kind: bool = BattleSkillEffectDefinition.Kind.has("FORCED_TARGET_MOVE")
+	_expect(has_effect_kind, "Harpy control skills expose typed forced target movement")
+	if not has_effect_kind:
+		return
+	var siren: RunCharacter = RunCharacterCatalog.create_by_class_id(&"harpy_storm_siren")
+	if not is_instance_valid(siren):
+		return
+	var gust_call: CharacterSkill = siren.get_skills()[0]
+	var has_forced_move: bool = false
+	for effect: RefCounted in gust_call.authored_effects:
+		has_forced_move = has_forced_move or int(effect.kind) == int(BattleSkillEffectDefinition.Kind.get("FORCED_TARGET_MOVE"))
+	_expect(has_forced_move, "Gust Call authors forced enemy Move 1")
+	var actor := BattleUnitState.new(&"siren_actor", "Siren", BattleUnitState.Side.PLAYER, 0, 8, 17, siren.get_skills(), siren.power, siren.defense, siren.race_id)
+	var target := BattleUnitState.new(&"forced_target", "Target", BattleUnitState.Side.ENEMY, 0, 1, 20)
+	var units: Array[BattleUnitState] = [actor, target]
+	var validation: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor, gust_call, units, actor.unit_id, false, 1, [target.unit_id], 0, 0, [], [0, 1]
+	)
+	_expect(validation.accepted, "Gust Call accepts a legal declared target path")
+	var stale: SkillConfirmationValidation = BattleSkillRules.validate_confirmation(
+		actor, gust_call, units, actor.unit_id, false, 1, [target.unit_id], 0, 1, [], [0, 1]
+	)
+	_expect(not stale.accepted and target.slot_index == 0, "Stale forced movement rejects without mutation")
+	if validation.accepted:
+		_expect(validation.effect_plan.movement_unit_id == target.unit_id, "Forced movement plan owns the hostile target")
+		var arena: BattleArena = load("res://Scenes/battle_arena.tscn").instantiate()
+		root.add_child(arena)
+		arena.configure_units(units)
+		arena.set("_battle_revision", 0)
+		var transaction: BattleSkillTransaction = arena.get("_skill_transaction")
+		transaction.actor_id = actor.unit_id
+		transaction.skill_id = gust_call.skill_id
+		var committed: bool = arena.call("_commit_skill_effect_plan", validation.effect_plan)
+		_expect(committed and target.slot_index == 1, "Forced movement commits to the enemy formation slot")
+		var records: Array[BattleActionRecord] = arena.call("get_action_records")
+		_expect(not records.is_empty() and not records[-1].voluntary_movement, "Forced movement is recorded as hostile movement")
+		arena.free()
 
 
 func _expect(condition: bool, message: String) -> void:

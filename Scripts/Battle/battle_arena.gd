@@ -975,6 +975,14 @@ func _is_valid_move_actor(actor: BattleUnitState, destination_slot: int) -> bool
 
 
 func _is_valid_move_path_actor(actor: BattleUnitState, path: Array[int]) -> bool:
+	return _is_valid_plan_movement(actor, actor, path)
+
+
+func _is_valid_plan_movement(
+	actor: BattleUnitState,
+	movement_unit: BattleUnitState,
+	path: Array[int]
+) -> bool:
 	var current: BattleUnitState = get_current_unit()
 	return (
 		not is_battle_complete()
@@ -983,10 +991,19 @@ func _is_valid_move_path_actor(actor: BattleUnitState, path: Array[int]) -> bool
 		and actor.side == BattleUnitState.Side.PLAYER
 		and is_instance_valid(current)
 		and current.unit_id == actor.unit_id
+		and is_instance_valid(movement_unit)
+		and movement_unit.is_active()
 		and not path.is_empty()
-		and path[0] == actor.slot_index
+		and path[0] == movement_unit.slot_index
 		and BattleFormationRules.is_valid_ring_path(path, 3)
 	)
+
+
+func _deterministic_move_one_slot(from_slot: int) -> int:
+	for candidate: int in BattleFormationRules.SLOT_COUNT:
+		if BattleFormationRules.is_move_one(from_slot, candidate):
+			return candidate
+	return -1
 
 
 func _allied_occupant_at(
@@ -1209,14 +1226,15 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		var target: BattleUnitState = get_unit_by_id(operation.get("target_id"))
 		if not is_instance_valid(target) or not target.is_active():
 			return false
+	var movement_unit: BattleUnitState = null
 	var movement_occupant: BattleUnitState = null
 	if not plan.movement_path.is_empty():
-		if (
-			plan.movement_unit_id != actor.unit_id
-			or not _is_valid_move_path_actor(actor, plan.movement_path)
-		):
+		movement_unit = get_unit_by_id(plan.movement_unit_id)
+		if not _is_valid_plan_movement(actor, movement_unit, plan.movement_path):
 			return false
-		movement_occupant = _allied_occupant_at(actor.side, plan.movement_path[-1], actor.unit_id)
+		movement_occupant = _allied_occupant_at(
+			movement_unit.side, plan.movement_path[-1], movement_unit.unit_id
+		)
 	_action_in_progress = true
 	_refresh_character_info()
 	var action_round: int = round_number
@@ -1282,13 +1300,36 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 	var slot_before: Dictionary[StringName, int] = {}
 	var slot_after: Dictionary[StringName, int] = {}
 	if not plan.movement_path.is_empty():
-		slot_before[actor.unit_id] = actor.slot_index
-		slot_after[actor.unit_id] = plan.movement_path[-1]
+		slot_before[movement_unit.unit_id] = movement_unit.slot_index
+		slot_after[movement_unit.unit_id] = plan.movement_path[-1]
 		if is_instance_valid(movement_occupant):
 			slot_before[movement_occupant.unit_id] = movement_occupant.slot_index
-			slot_after[movement_occupant.unit_id] = actor.slot_index
-			movement_occupant.slot_index = actor.slot_index
-		actor.slot_index = plan.movement_path[-1]
+			slot_after[movement_occupant.unit_id] = movement_unit.slot_index
+			movement_occupant.slot_index = movement_unit.slot_index
+		movement_unit.slot_index = plan.movement_path[-1]
+	var post_hit_moved: bool = false
+	var actor_scored_direct_hit: bool = false
+	for result: BattleDamageResult in action_damage_results:
+		if result.attacker_id == actor.unit_id and result.was_direct_hit and result.applied_damage > 0:
+			actor_scored_direct_hit = true
+			break
+	if actor_scored_direct_hit and actor.has_pending_post_hit_move(action_round):
+		var post_hit_destination: int = _deterministic_move_one_slot(actor.slot_index)
+		if post_hit_destination >= 0:
+			var actor_slot_before_post_hit: int = actor.slot_index
+			var post_hit_occupant: BattleUnitState = _allied_occupant_at(
+				actor.side, post_hit_destination, actor.unit_id
+			)
+			if not slot_before.has(actor.unit_id):
+				slot_before[actor.unit_id] = actor.slot_index
+			slot_after[actor.unit_id] = post_hit_destination
+			if is_instance_valid(post_hit_occupant):
+				if not slot_before.has(post_hit_occupant.unit_id):
+					slot_before[post_hit_occupant.unit_id] = post_hit_occupant.slot_index
+				slot_after[post_hit_occupant.unit_id] = actor_slot_before_post_hit
+				post_hit_occupant.slot_index = actor_slot_before_post_hit
+			actor.slot_index = post_hit_destination
+			post_hit_moved = actor.consume_pending_post_hit_move(action_round)
 	var new_actor_speed_sources: Array[StringName] = []
 	for operation: Dictionary in plan.speed_operations:
 		var target: BattleUnitState = get_unit_by_id(operation["target_id"])
@@ -1345,7 +1386,10 @@ func _commit_skill_effect_plan(plan: SkillEffectPlan) -> bool:
 		next_revision,
 		actor.side,
 		plan.skill_id,
-		not plan.movement_path.is_empty(),
+		(
+			(not plan.movement_path.is_empty() and plan.movement_unit_id == actor.unit_id)
+			or post_hit_moved
+		),
 		direct_hit_by_target,
 		keyword_deltas,
 		advantage_consumed,
@@ -1437,7 +1481,7 @@ func _resolve_action_start_candidate(candidate: Dictionary) -> void:
 			int(definition.get("target_policy"))
 		)
 	):
-		_append_action_start_message("%s found no valid target." % passive_skill.display_name)
+		_append_action_start_message(_action_start_no_result_message(passive_skill))
 		return
 	var base_operation: RefCounted = definition.get("operation") as RefCounted
 	var keyword_deltas: Array[Dictionary] = []
@@ -1449,7 +1493,7 @@ func _resolve_action_start_candidate(candidate: Dictionary) -> void:
 			and _apply_keyword_operation(operation, round_number, keyword_deltas, true)
 		) or applied_any
 	if not applied_any:
-		_append_action_start_message("%s found no valid target." % passive_skill.display_name)
+		_append_action_start_message(_action_start_no_result_message(passive_skill))
 		return
 	var target_names: Array[String] = []
 	for target_id: StringName in target_ids:
@@ -1457,6 +1501,14 @@ func _resolve_action_start_candidate(candidate: Dictionary) -> void:
 		if is_instance_valid(target):
 			target_names.append(target.display_name)
 	_battle_revision += 1
+	if passive_skill.skill_id == &"banner_holder" and target_names.size() == 1:
+		_append_action_start_message(
+			"%s's Banner Holder applied Advantage to %s." % [
+				owner.display_name,
+				target_names[0],
+			]
+		)
+		return
 	_append_action_start_message(
 		"%s's %s affected %s." % [
 			owner.display_name,
@@ -1464,6 +1516,12 @@ func _resolve_action_start_candidate(candidate: Dictionary) -> void:
 			", ".join(target_names),
 		]
 	)
+
+
+func _action_start_no_result_message(passive_skill: CharacterSkill) -> String:
+	if passive_skill.skill_id == &"banner_holder":
+		return "Banner Holder found no active enemy."
+	return "%s found no valid target." % passive_skill.display_name
 
 
 func _append_action_start_message(message_text: String) -> void:
@@ -1553,6 +1611,12 @@ func _apply_keyword_operation(
 				if applied:
 					keyword_deltas.append(_keyword_delta(operation, alpha_owner.unit_id, 1, from_reaction))
 					keyword_deltas.append(_keyword_delta(operation, target.unit_id, int(operation.get("magnitude")), from_reaction))
+		BattleKeywordOperation.Kind.ARM_POST_HIT_MOVE_ONE:
+			applied = target.grant_post_hit_move(
+				action_round + max(1, int(operation.get("duration"))) - 1
+			)
+			if applied:
+				keyword_deltas.append(_keyword_delta(operation, target.unit_id, 1, from_reaction))
 		BattleKeywordOperation.Kind.APPLY_SNARED:
 			applied = target.apply_snared(
 				operation.get("source") as RefCounted,

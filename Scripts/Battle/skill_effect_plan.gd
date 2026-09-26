@@ -177,7 +177,10 @@ static func _valid_input(
 		return false
 	if plan_movement_path.is_empty():
 		return plan_movement_unit_id.is_empty()
-	return plan_movement_unit_id == plan_actor_id and BattleFormationRules.is_valid_ring_path(plan_movement_path, 3)
+	return (
+		(plan_movement_unit_id == plan_actor_id or plan_target_ids.has(plan_movement_unit_id))
+		and BattleFormationRules.is_valid_ring_path(plan_movement_path, 3)
+	)
 
 
 static func _valid_damage_operations(
