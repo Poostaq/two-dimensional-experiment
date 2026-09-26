@@ -14,6 +14,15 @@ func _run() -> void:
 	_expect(is_instance_valid(catalog_script), "Boss party catalog script exists")
 	if is_instance_valid(catalog_script):
 		_expect(catalog_script.has_method("create_by_enemy_clan_id"), "Boss party catalog creates by enemy clan ID")
+		var expected_commanders: Dictionary[StringName, StringName] = {&"human": &"marshal_elian_voss", &"elf": &"lady_saelith_moonfall", &"dwarf": &"thane_brokk_stonevein"}
+		for clan_id: StringName in expected_commanders:
+			var party: Array[RunCharacter] = catalog_script.create_by_enemy_clan_id(clan_id)
+			_expect(party.size() == 4, "%s boss party has four authored members" % clan_id)
+			var commander_count: int = 0
+			for member: RunCharacter in party:
+				commander_count += int(member.class_id == expected_commanders[clan_id])
+			_expect(commander_count == 1, "%s boss party contains its commander exactly once" % clan_id)
+		_expect((catalog_script.create_by_enemy_clan_id(&"unknown") as Array).is_empty(), "Boss party catalog rejects unknown clans")
 	_finish()
 
 
