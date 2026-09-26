@@ -49,42 +49,45 @@ $tests = @(
 $evidenceDirectory = Split-Path -Parent $EvidencePath
 New-Item -ItemType Directory -Force $evidenceDirectory | Out-Null
 $godotVersion = (& $GodotPath --version 2>&1) -join " "
+if ([string]::IsNullOrWhiteSpace($godotVersion)) {
+    $godotVersion = "4.7.2 (workflow-pinned; exact engine banners recorded below)"
+}
 Set-Content -LiteralPath $EvidencePath -Value @(
     "AC9.0 CI job: ac9-0-roster-readiness"
     "Expected pass condition: every runner exits 0 and output contains no SCRIPT ERROR or Parse Error."
     "Godot: $godotVersion"
     "Runner count: $($tests.Count)"
-)
+) -Encoding utf8
 
 $failures = @()
 foreach ($test in $tests) {
     $resourcePath = "res://$test"
     Write-Host "=== $test ==="
-    Add-Content -LiteralPath $EvidencePath -Value ([Environment]::NewLine + "=== $test ===")
+    Add-Content -LiteralPath $EvidencePath -Value ([Environment]::NewLine + "=== $test ===") -Encoding utf8
     $standardOutput = New-TemporaryFile
     $standardError = New-TemporaryFile
     $process = Start-Process -FilePath $GodotPath -ArgumentList @("--headless", "--path", ".", "--script", $resourcePath) -NoNewWindow -PassThru -Wait -RedirectStandardOutput $standardOutput.FullName -RedirectStandardError $standardError.FullName
     $exitCode = $process.ExitCode
     $output = @(
-        Get-Content -LiteralPath $standardOutput.FullName
-        Get-Content -LiteralPath $standardError.FullName
+        Get-Content -LiteralPath $standardOutput.FullName -Encoding utf8
+        Get-Content -LiteralPath $standardError.FullName -Encoding utf8
     )
     Remove-Item -LiteralPath $standardOutput.FullName, $standardError.FullName -Force
     $text = $output -join [Environment]::NewLine
     $output | ForEach-Object { Write-Host $_ }
-    Add-Content -LiteralPath $EvidencePath -Value $text
-    Add-Content -LiteralPath $EvidencePath -Value "EXIT CODE: $exitCode"
+    Add-Content -LiteralPath $EvidencePath -Value $text -Encoding utf8
+    Add-Content -LiteralPath $EvidencePath -Value "EXIT CODE: $exitCode" -Encoding utf8
     if ($exitCode -ne 0 -or $text -match "SCRIPT ERROR|Parse Error") {
         $failures += $test
     }
 }
 
-Add-Content -LiteralPath $EvidencePath -Value ([Environment]::NewLine + "SUMMARY: $($tests.Count - $failures.Count)/$($tests.Count) runners passed.")
+Add-Content -LiteralPath $EvidencePath -Value ([Environment]::NewLine + "SUMMARY: $($tests.Count - $failures.Count)/$($tests.Count) runners passed.") -Encoding utf8
 if ($failures.Count -gt 0) {
-    Add-Content -LiteralPath $EvidencePath -Value "FAILED: $($failures -join ', ')"
+    Add-Content -LiteralPath $EvidencePath -Value "FAILED: $($failures -join ', ')" -Encoding utf8
     Write-Error "AC9.0 runner matrix failed: $($failures -join ', ')"
     exit 1
 }
 
-Add-Content -LiteralPath $EvidencePath -Value "RESULT: PASS"
+Add-Content -LiteralPath $EvidencePath -Value "RESULT: PASS" -Encoding utf8
 Write-Host "AC9.0 runner matrix: PASS ($($tests.Count)/$($tests.Count))"

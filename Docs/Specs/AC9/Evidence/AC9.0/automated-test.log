@@ -1,0 +1,361 @@
+﻿AC9.0 CI job: ac9-0-roster-readiness
+Expected pass condition: every runner exits 0 and output contains no SCRIPT ERROR or Parse Error.
+Godot: 4.7.2 (workflow-pinned; exact engine banners recorded below)
+Runner count: 38
+
+=== Tests/Battle/test_ac9_0_shared_mechanics.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.0 shared mechanics: 65/65 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_0_boss_party_catalog.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.0 boss party catalog: 30/30 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_1_orcs_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.1 Orc roster: 52/52 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_2_lizardmen_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.2 Lizardman roster: 35/35 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_3_werewolves_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.3 Werewolf roster: 35/35 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_4_harpies_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.4 Harpy roster: 42/42 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_5_humans_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.5 Human roster: 32/32 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_6_elves_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.6 Elf roster: 31/31 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac9_7_dwarves_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.7 Dwarf roster: 31/31 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Save/test_ac9_0_roster_identity_round_trip.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC9.0 roster identity: 339/339 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac6_1_combat_foundation.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC6.1 combat foundation: PASS (40/40)
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac6_2_keyword_reactions.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC6.2 keyword reactions: PASS (113/113)
+ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:73)
+       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:95)
+       [2] _test_keyword_operation_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:475)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:26)
+ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:73)
+       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:95)
+       [2] _test_keyword_operation_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:476)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:26)
+ERROR: CharacterSkill keyword operations must be valid typed operations.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:205)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_keyword_skill_and_plan_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:412)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:27)
+ERROR: SkillEffectPlan requires valid targets and effect operations.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/skill_effect_plan.gd:77)
+       [1] create (res://Scripts/Battle/skill_effect_plan.gd:120)
+       [2] _test_keyword_skill_and_plan_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:457)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:27)
+ERROR: SkillEffectPlan requires valid targets and effect operations.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/skill_effect_plan.gd:77)
+       [1] create (res://Scripts/Battle/skill_effect_plan.gd:120)
+       [2] _test_keyword_skill_and_plan_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:459)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:27)
+ERROR: BattleReactionDefinition requires valid passive, trigger, frequency, and operation data.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/battle_reaction_definition.gd:79)
+       [1] create (res://Scripts/Battle/battle_reaction_definition.gd:101)
+       [2] _test_passive_reaction_dispatch_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:182)
+       [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:29)
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac6_3_goblin_wave_a.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC6.3 Goblin wave A: 119/119 assertions passed.
+ERROR: CharacterSkill requires valid typed authored targeting, conditions, and effects.
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://Scripts/Battle/character_skill.gd:233)
+       [1] create (res://Scripts/Battle/character_skill.gd:322)
+       [2] _test_character_skill_authoring (res://Tests/Battle/test_ac6_3_goblin_wave_a.gd:183)
+       [3] _run (res://Tests/Battle/test_ac6_3_goblin_wave_a.gd:21)
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac6_4_goblin_wave_b.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC6.4 Goblin wave B: 93/93 assertions passed.
+EXIT CODE: 0
+
+=== Tests/Battle/test_ac6_5_brakka.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC6.5 Brakka: PASS (71/71)
+EXIT CODE: 0
+
+=== Tests/Battle/test_goblin_encounter_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+Goblin encounter integration: PASS
+EXIT CODE: 0
+
+=== Tests/Run/test_ac8_economy.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_economy
+EXIT CODE: 0
+
+=== Tests/Run/test_ac8_2_battle_settlement_rules.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_2_battle_settlement_rules
+EXIT CODE: 0
+
+=== Tests/Run/test_ac8_2_run_settlement_state.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_2_run_settlement_state
+EXIT CODE: 0
+
+=== Tests/Run/test_ac8_3_reward_acknowledgement.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_3_reward_acknowledgement
+EXIT CODE: 0
+
+=== Tests/Run/test_ac8_5_recruitment_rules.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_5_recruitment_rules
+EXIT CODE: 0
+
+=== Tests/Run/test_ac8_6_roster_eligibility.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS AC8.6 roster eligibility/removal (40 checks)
+EXIT CODE: 0
+
+=== Tests/UI/test_ac8_gold_reward.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_gold_reward
+EXIT CODE: 0
+
+=== Tests/UI/test_ac8_5_town_recruitment_panel.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC8.5 recruitment UI: PASS (37 assertions)
+EXIT CODE: 0
+
+=== Tests/UI/test_ac8_6_party_dismissal.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC8.6 dismissal UI: PASS
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_1_gold_runtime.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_1_gold_runtime
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_2_victory_settlement.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_2_victory_settlement
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_2_defeat_ends_run.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_2_defeat_ends_run
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_3_reward_presentation.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_3_reward_presentation
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_4_habitat_rules.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_4_habitat_rules cells=217 towns=7
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_4_town_ownership.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_4_town_ownership
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_4_world_debug_integration.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_ac8_4_world_debug_integration
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_ac8_town_recruitment.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+AC8.7 town integration checks: 1000; failures: 0
+PASS test_ac8_town_recruitment
+EXIT CODE: 0
+
+=== Tests/WorldMap/test_cleared_battle_hex_revisit.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_cleared_battle_hex_revisit
+EXIT CODE: 0
+
+=== Tests/Run/test_world_run_start_service.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_start_service
+EXIT CODE: 0
+
+=== Tests/Run/test_world_production_launcher.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_production_launcher
+EXIT CODE: 0
+
+=== Tests/UI/test_world_run_start_scene.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_start_scene
+EXIT CODE: 0
+
+=== Tests/Save/test_world_run_save_codec_v5.gd ===
+Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
+
+[GodotIQ] Runtime _ready() — debugger active: false
+[GodotIQ] Debugger not active, freeing runtime
+PASS test_world_run_save_codec_v5
+EXIT CODE: 0
+
+SUMMARY: 38/38 runners passed.
+RESULT: PASS

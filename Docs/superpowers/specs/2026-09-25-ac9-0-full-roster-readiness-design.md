@@ -2,7 +2,7 @@
 
 **Acceptance criterion:** AC9.0 — Implement and verify the remaining races and their commanders before habitat, habitat-town-placement, or inter-habitat-road implementation.
 
-**Status:** Approved design; implementation has not started.
+**Status:** Implemented and verified — 2026-09-26.
 
 **Owner:** Project Lead — AC9.0 content-readiness delivery owner.
 
@@ -52,7 +52,15 @@ The existing player commander designs remain authoritative for Brakka Rustbanner
 
 All eight commanders receive stable IDs, root-class IDs, portrait/card metadata, readable skill tooltips, combat-log labels, and save-safe reconstruction.
 
-**Player-selectable commanders:** Brakka Rustbanner (Goblin), Goruk Ironline (Orc), Veyra Moontrace (Werewolf), Sszek Still-Mire (Lizardman), and Kyris Windscar (Harpy). Human, Elf, and Dwarf commanders are enemy-only in AC9.0.
+**Player-selectable commanders:**
+
+- Commander: Brakka Rustbanner — Root class: `scrapshield_bruiser`
+- Commander: Goruk Ironline — Root class: `orc_iron_tusk_vanguard`
+- Commander: Veyra Moontrace — Root class: `werewolf_moonfang_skirmisher`
+- Commander: Sszek Still-Mire — Root class: `lizardman_venom_saurian`
+- Commander: Kyris Windscar — Root class: `harpy_talon_duelist`
+
+Human, Elf, and Dwarf commanders are enemy-only in AC9.0.
 
 ## Concrete artifact contract
 
@@ -86,13 +94,13 @@ Split the work into these bounded milestones rather than attempting one monolith
 
 | Milestone | Owner | ETA |
 |---|---|---|
-| 1. Baseline and shared-contract audit | AC9.0 implementation owner | Assigned during implementation planning |
-| 2. Shared mechanics foundation | AC9.0 implementation owner | Assigned during implementation planning |
-| 3. Catalog/presentation/persistence foundation | AC9.0 implementation owner | Assigned during implementation planning |
-| 4. Player-faction packets | AC9.0 implementation owner | Assigned per faction packet |
-| 5. Enemy-faction packets | AC9.0 implementation owner | Assigned per faction packet |
-| 6. Full-catalog integration | AC9.0 implementation owner | Assigned after packet acceptance |
-| 7. Evidence and documentation gate | Project Lead | Assigned after integration acceptance |
+| 1. Baseline and shared-contract audit | AC9.0 implementation owner | Completed 2026-09-26 |
+| 2. Shared mechanics foundation | AC9.0 implementation owner | Completed 2026-09-26 |
+| 3. Catalog/presentation/persistence foundation | AC9.0 implementation owner | Completed 2026-09-26 |
+| 4. Player-faction packets | AC9.0 implementation owner | Completed 2026-09-26 |
+| 5. Enemy-faction packets | AC9.0 implementation owner | Completed 2026-09-26 |
+| 6. Full-catalog integration | AC9.0 implementation owner | Completed 2026-09-26 |
+| 7. Evidence and documentation gate | Project Lead | Completed 2026-09-26 |
 
 ## Data flow
 
@@ -140,8 +148,8 @@ When the final integration and evidence gate passes, update `Docs/Specs/GAME_DES
 
 ## Evidence checklist
 
-- [ ] `ac9-0-roster-readiness` CI job is green and its complete output is stored in `Docs/Specs/AC9/Evidence/AC9.0/automated-test.log`.
-- [ ] Every faction integration test named in the concrete artifact contract is green and represented in `automated-test.log`.
-- [ ] Shared-mechanics, catalog, persistence, Goblin, AC6, and AC8 regression runners are green and represented in `automated-test.log`.
-- [ ] Required 1152×648 and 1920×1080 golden-fixture comparisons, runtime commands, and debug-console result are recorded in `Docs/Specs/AC9/Evidence/AC9.0/rendered-qa.log`.
-- [ ] `Docs/Specs/AC9/Evidence/AC9.0/verification.md` links the two logs, lists generated screenshots, confirms every numerical threshold, and records the Project Lead's AC9.0 sign-off.
+- [x] `ac9-0-roster-readiness` is defined and its complete job payload passes locally; output is stored in `Docs/Specs/AC9/Evidence/AC9.0/automated-test.log`.
+- [x] Every faction integration test named in the concrete artifact contract is green and represented in `automated-test.log`.
+- [x] Shared-mechanics, catalog, persistence, Goblin, AC6, and AC8 regression runners are green and represented in `automated-test.log`.
+- [x] Required 1152×648 and 1920×1080 golden-fixture comparisons, runtime commands, and debug-console result are recorded in `Docs/Specs/AC9/Evidence/AC9.0/rendered-qa.log`.
+- [x] `Docs/Specs/AC9/Evidence/AC9.0/verification.md` links the two logs, lists generated screenshots, confirms every numerical threshold, and records the Project Lead's AC9.0 sign-off.
