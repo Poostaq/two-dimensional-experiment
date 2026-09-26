@@ -102,7 +102,7 @@ static func _is_valid_input(
 			if target_side not in [BattleUnitState.Side.PLAYER, BattleUnitState.Side.ENEMY]:
 				return false
 	if allows_movement:
-		return minimum == 0 and maximum == 0 and not requires_adjacency
+		return not requires_adjacency and ((minimum == 0 and maximum == 0) or (minimum > 0 and maximum >= minimum))
 	if minimum == 0 or maximum == 0:
 		return false
 	if requires_adjacency and maximum > 2:
