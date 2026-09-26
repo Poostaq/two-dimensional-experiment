@@ -17,6 +17,7 @@ static func create_by_commander_id(commander_id: StringName) -> RunCharacter:
 	skills.append(_marshal_the_line())
 	var commander := RunCharacter.new(COMMANDER_ID, "Marshal Elian Voss", root.base_speed, root.max_hp, skills, root.power, root.defense, &"human")
 	commander.class_id = COMMANDER_ID
+	commander.root_class_id = ROOT_CLASS_ID
 	return commander
 
 

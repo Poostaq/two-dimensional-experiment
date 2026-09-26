@@ -90,7 +90,7 @@ static func get_commander_presentation(commander_id: StringName) -> Dictionary:
 		"display_name": commander.display_name,
 		"title": String(metadata["title"]),
 		"root_class_name": String(metadata["root_class_name"]),
-		"root_class_id": commander.class_id,
+		"root_class_id": commander.root_class_id,
 		"race_id": commander.race_id,
 		"skills": commander.get_skills().duplicate(),
 		"portrait_label": commander.display_name,

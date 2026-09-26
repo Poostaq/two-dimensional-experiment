@@ -3,6 +3,16 @@ extends SceneTree
 
 const FACTION_IDS: Array[StringName] = [&"goblin", &"orc", &"lizardman", &"werewolf", &"harpy", &"human", &"elf", &"dwarf"]
 const COMMANDER_IDS: Array[StringName] = [&"brakka_rustbanner", &"goruk_ironline", &"sszek_still_mire", &"veyra_moontrace", &"kyris_windscar", &"marshal_elian_voss", &"lady_saelith_moonfall", &"thane_brokk_stonevein"]
+const COMMANDER_ROOT_IDS: Dictionary[StringName, StringName] = {
+	&"brakka_rustbanner": &"scrapshield_bruiser",
+	&"goruk_ironline": &"orc_iron_tusk_vanguard",
+	&"sszek_still_mire": &"lizardman_venom_saurian",
+	&"veyra_moontrace": &"werewolf_moonfang_skirmisher",
+	&"kyris_windscar": &"harpy_talon_duelist",
+	&"marshal_elian_voss": &"human_vanguard",
+	&"lady_saelith_moonfall": &"elf_highborn_mystic",
+	&"thane_brokk_stonevein": &"dwarf_forgewarden",
+}
 
 var _assertions: int = 0
 var _failures: Array[String] = []
@@ -35,7 +45,10 @@ func _run() -> void:
 		if not is_instance_valid(character):
 			continue
 		var expected_skill_count: int = 4 if COMMANDER_IDS.has(identity) else 3
+		var expected_root_id: StringName = COMMANDER_ROOT_IDS.get(identity, identity)
 		_expect(character.get_skills().size() == expected_skill_count, "Roster identity has expected skill count: %s" % identity)
+		_expect(character.class_id == identity, "Roster identity remains distinct from root identity: %s" % identity)
+		_expect(character.root_class_id == expected_root_id, "Roster identity resolves approved root class: %s" % identity)
 		var state_data: Dictionary = source_state.to_dictionary()
 		state_data.formation = [String(identity), "", "", "", "", ""]
 		state_data.character_hp = {String(identity): character.max_hp}
@@ -53,6 +66,7 @@ func _run() -> void:
 		_expect(restored_id == identity and is_instance_valid(restored), "Roster identity survives save/reload: %s" % identity)
 		if is_instance_valid(restored):
 			_expect(restored.class_id == character.class_id and restored.race_id == character.race_id and restored.display_name == character.display_name, "Roster metadata resolves without drift: %s" % identity)
+			_expect(restored.root_class_id == expected_root_id, "Roster root class resolves without drift: %s" % identity)
 	_finish()
 
 

@@ -3,6 +3,7 @@ extends RefCounted
 
 var character_id: StringName
 var class_id: StringName = &""
+var root_class_id: StringName = &""
 var display_name: String
 var base_speed: int
 var max_hp: int
@@ -24,6 +25,8 @@ func _init(
 	unit_race_id: StringName = &"unknown"
 ) -> void:
 	character_id = id
+	class_id = id
+	root_class_id = id
 	display_name = name
 	base_speed = speed
 	max_hp = maximum_hp

@@ -31,7 +31,7 @@ static func create_by_commander_id(commander_id: StringName) -> RunCharacter:
 	if not is_instance_valid(banner_holder):
 		return null
 	skills.append(banner_holder)
-	return RunCharacter.new(
+	var commander := RunCharacter.new(
 		BRAKKA_ID,
 		"Brakka Rustbanner",
 		root.base_speed,
@@ -41,6 +41,8 @@ static func create_by_commander_id(commander_id: StringName) -> RunCharacter:
 		root.defense,
 		&"goblin"
 	)
+	commander.root_class_id = SCRAPSHIELD_BRUISER_ID
+	return commander
 
 
 static func get_presentation(commander_id: StringName) -> Dictionary:

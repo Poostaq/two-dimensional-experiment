@@ -17,6 +17,7 @@ static func create_by_commander_id(commander_id: StringName) -> RunCharacter:
 	skills.append(_mark_of_the_alpha())
 	var commander := RunCharacter.new(COMMANDER_ID, "Veyra Moontrace", root.base_speed, root.max_hp, skills, root.power, root.defense, &"werewolf")
 	commander.class_id = COMMANDER_ID
+	commander.root_class_id = ROOT_CLASS_ID
 	return commander
 
 
