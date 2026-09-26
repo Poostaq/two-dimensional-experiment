@@ -57,6 +57,8 @@ func _run() -> void:
 	var drummer: RunCharacter = RunCharacterCatalog.create_by_class_id(&"orc_war_drummer")
 	var marching_beat: CharacterSkill = drummer.get_skills()[0]
 	_expect(marching_beat.authored_effects.size() == 1 and marching_beat.authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.PRIMARY and marching_beat.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.APPLY_ADVANTAGE, "Marching Beat grants Advantage to one ally")
+	var crushing_cadence: CharacterSkill = drummer.get_skills()[1]
+	_expect(crushing_cadence.authored_effects.size() == 1 and crushing_cadence.authored_effects[0].advantage_power_percent == 150, "Crushing Cadence has its 150 percent Advantage rider")
 	var war_tempo: CharacterSkill = drummer.get_skills()[2]
 	_expect(war_tempo.authored_effects.size() == 1 and war_tempo.authored_effects[0].target_role == BattleSkillEffectDefinition.TargetRole.ALL_SELECTED and war_tempo.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and war_tempo.authored_effects[0].magnitude == 3, "War Tempo grants three Armor to all selected allies")
 	var last_standard: CharacterSkill = captain.get_skills()[2]
