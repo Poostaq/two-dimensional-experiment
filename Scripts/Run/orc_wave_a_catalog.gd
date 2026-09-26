@@ -18,7 +18,7 @@ static func create_by_class_id(class_id: StringName) -> RunCharacter:
 static func _skills(prefix: StringName) -> Array[CharacterSkill]:
 	var effect_script := load("res://Scripts/Battle/battle_skill_effect_definition.gd") as Script
 	if prefix == &"iron_tusk":
-		return [_brace_line(effect_script), _active_skill(&"shield_ram", "Shield Ram", 100, 2, effect_script), _active_skill(&"hold_the_gap", "Hold the Gap", 150, 4, effect_script)]
+		return [_brace_line(effect_script), _active_skill(&"shield_ram", "Shield Ram", 100, 2, effect_script), _hold_the_gap(effect_script)]
 	var ids: Array = {
 	&"iron_tusk": [&"brace_line", &"shield_ram", &"hold_the_gap"],
 	&"bonebreaker": [&"crushing_entry", &"break_formation", &"execution_swing"],
@@ -37,6 +37,12 @@ static func _brace_line(effect_script: Script) -> CharacterSkill:
 	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
 	var profile: RefCounted = profile_script.create(1, 1, BattleUnitState.Side.PLAYER, true, false)
 	return CharacterSkill.create(&"brace_line", "Brace Line", CharacterSkill.Kind.ACTIVE, "You and a neighboring ally each gain 4 Armor.", "One active adjacent ally.", "Requires a legal adjacent ally.", "CD1", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 1, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.ACTOR, BattleKeywordOperation.Kind.ADD_ARMOR, 4), effect_script.keyword(effect_script.TargetRole.PRIMARY, BattleKeywordOperation.Kind.ADD_ARMOR, 4)])
+
+
+static func _hold_the_gap(effect_script: Script) -> CharacterSkill:
+	var profile_script := load("res://Scripts/Battle/battle_skill_target_profile.gd") as Script
+	var profile: RefCounted = profile_script.create(2, 2, BattleUnitState.Side.PLAYER, false, false)
+	return CharacterSkill.create(&"hold_the_gap", "Hold the Gap", CharacterSkill.Kind.ACTIVE, "You and both neighboring allies each gain 5 Armor.", "Two active adjacent allies.", "Requires two legal adjacent allies able to gain Armor.", "CD4", CharacterSkill.TargetingMode.FREE, CharacterSkill.TargetSide.ALLY, CharacterSkill.TargetRule.SELECT_ONE, CharacterSkill.Requirement.NONE, CharacterSkill.Effect.NONE, 0, 0, CharacterSkill.EffectDuration.NONE, CharacterSkill.CooldownMode.POST_USE_ACTIONS, 4, 0, null, [], null, null, profile, [], [effect_script.keyword(effect_script.TargetRole.ACTOR, BattleKeywordOperation.Kind.ADD_ARMOR, 5), effect_script.keyword(effect_script.TargetRole.PRIMARY, BattleKeywordOperation.Kind.ADD_ARMOR, 5), effect_script.keyword(effect_script.TargetRole.ALL_SELECTED, BattleKeywordOperation.Kind.ADD_ARMOR, 5)])
 
 
 static func _active_skill(id: StringName, name: String, percent: int, cooldown: int, effect_script: Script) -> CharacterSkill:

@@ -46,6 +46,10 @@ func _run() -> void:
 	var brace: CharacterSkill = vanguard.get_skills()[0]
 	_expect(brace.authored_effects.size() == 2, "Brace Line grants Armor to actor and selected ally")
 	_expect(brace.authored_effects[0].keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and brace.authored_effects[0].magnitude == 4, "Brace Line grants four Armor")
+	var hold_the_gap: CharacterSkill = vanguard.get_skills()[2]
+	_expect(hold_the_gap.authored_effects.size() == 3, "Hold the Gap grants Armor to the Vanguard and both adjacent allies")
+	for effect: RefCounted in hold_the_gap.authored_effects:
+		_expect(effect.keyword_kind == BattleKeywordOperation.Kind.ADD_ARMOR and effect.magnitude == 5, "Hold the Gap grants five Armor per target")
 	var goruk: RunCharacter = RunCharacterCatalog.create_by_class_id(&"goruk_ironline")
 	_expect(is_instance_valid(goruk), "Goruk commander constructs")
 	if is_instance_valid(goruk):
