@@ -8,7 +8,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.0 shared mechanics: 65/65 assertions passed.
+AC9.0 shared mechanics: 75/75 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_0_boss_party_catalog.gd ===
@@ -24,7 +24,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.1 Orc roster: 52/52 assertions passed.
+AC9.1 Orc roster: 78/78 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_2_lizardmen_integration.gd ===
@@ -32,7 +32,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.2 Lizardman roster: 35/35 assertions passed.
+AC9.2 Lizardman roster: 47/47 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_3_werewolves_integration.gd ===
@@ -40,7 +40,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.3 Werewolf roster: 35/35 assertions passed.
+AC9.3 Werewolf roster: 42/42 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_4_harpies_integration.gd ===
@@ -48,7 +48,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.4 Harpy roster: 42/42 assertions passed.
+AC9.4 Harpy roster: 62/62 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_5_humans_integration.gd ===
@@ -56,7 +56,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.5 Human roster: 32/32 assertions passed.
+AC9.5 Human roster: 46/46 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_6_elves_integration.gd ===
@@ -64,7 +64,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.6 Elf roster: 31/31 assertions passed.
+AC9.6 Elf roster: 43/43 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac9_7_dwarves_integration.gd ===
@@ -72,7 +72,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.7 Dwarf roster: 31/31 assertions passed.
+AC9.7 Dwarf roster: 45/45 assertions passed.
 EXIT CODE: 0
 
 === Tests/Save/test_ac9_0_roster_identity_round_trip.gd ===
@@ -80,7 +80,7 @@ Godot Engine v4.7.2.stable.steam.ed1daf0bf - https://godotengine.org
 
 [GodotIQ] Runtime _ready() — debugger active: false
 [GodotIQ] Debugger not active, freeing runtime
-AC9.0 roster identity: 339/339 assertions passed.
+AC9.0 roster identity: 507/507 assertions passed.
 EXIT CODE: 0
 
 === Tests/Battle/test_ac6_1_combat_foundation.gd ===
@@ -100,15 +100,15 @@ AC6.2 keyword reactions: PASS (113/113)
 ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.
    at: push_error (core/variant/variant_utility.cpp:1023)
    GDScript backtrace (most recent call first):
-       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:73)
-       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:95)
+       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:76)
+       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:98)
        [2] _test_keyword_operation_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:475)
        [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:26)
 ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data.
    at: push_error (core/variant/variant_utility.cpp:1023)
    GDScript backtrace (most recent call first):
-       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:73)
-       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:95)
+       [0] _init (res://Scripts/Battle/battle_keyword_operation.gd:76)
+       [1] create (res://Scripts/Battle/battle_keyword_operation.gd:98)
        [2] _test_keyword_operation_contract (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:476)
        [3] _run (res://Tests/Battle/test_ac6_2_keyword_reactions.gd:26)
 ERROR: CharacterSkill keyword operations must be valid typed operations.

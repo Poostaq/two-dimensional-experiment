@@ -46,6 +46,34 @@ $tests = @(
     "Tests/Save/test_world_run_save_codec_v5.gd"
 )
 
+$expectedErrorLines = @{
+    "Tests/Battle/test_ac6_2_keyword_reactions.gd" = @(
+        "ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data."
+        "ERROR: BattleKeywordOperation requires valid kind, target, magnitude, duration, and source data."
+        "ERROR: CharacterSkill keyword operations must be valid typed operations."
+        "ERROR: SkillEffectPlan requires valid targets and effect operations."
+        "ERROR: SkillEffectPlan requires valid targets and effect operations."
+        "ERROR: BattleReactionDefinition requires valid passive, trigger, frequency, and operation data."
+    )
+    "Tests/Battle/test_ac6_3_goblin_wave_a.gd" = @(
+        "ERROR: CharacterSkill requires valid typed authored targeting, conditions, and effects."
+    )
+}
+
+$requiredArtifacts = @(
+    "Docs/Specs/AC9/Evidence/AC9.0/automated-test.log"
+    "Docs/Specs/AC9/Evidence/AC9.0/rendered-qa.log"
+    "Docs/Specs/AC9/Evidence/AC9.0/verification.md"
+    "Docs/Specs/AC9/Evidence/AC9.0/player-commander-selector-1152x648.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/player-commander-selector-1920x1080.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/human-boss-party-1152x648.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/human-boss-party-1920x1080.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/elf-boss-party-1152x648.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/elf-boss-party-1920x1080.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/dwarf-boss-party-1152x648.png"
+    "Docs/Specs/AC9/Evidence/AC9.0/dwarf-boss-party-1920x1080.png"
+)
+
 $evidenceDirectory = Split-Path -Parent $EvidencePath
 New-Item -ItemType Directory -Force $evidenceDirectory | Out-Null
 $godotVersion = (& $GodotPath --version 2>&1) -join " "
@@ -77,12 +105,41 @@ foreach ($test in $tests) {
     $output | ForEach-Object { Write-Host $_ }
     Add-Content -LiteralPath $EvidencePath -Value $text -Encoding utf8
     Add-Content -LiteralPath $EvidencePath -Value "EXIT CODE: $exitCode" -Encoding utf8
-    if ($exitCode -ne 0 -or $text -match "SCRIPT ERROR|Parse Error") {
+    $actualErrorLines = @($output | Where-Object { $_ -match "^ERROR:" })
+    $allowedErrorLines = @()
+    if ($expectedErrorLines.ContainsKey($test)) {
+        $allowedErrorLines = @($expectedErrorLines[$test])
+    }
+    $errorContractMatches = $actualErrorLines.Count -eq $allowedErrorLines.Count
+    if ($errorContractMatches) {
+        for ($index = 0; $index -lt $actualErrorLines.Count; $index++) {
+            if ($actualErrorLines[$index] -ne $allowedErrorLines[$index]) {
+                $errorContractMatches = $false
+                break
+            }
+        }
+    }
+    if (-not $errorContractMatches) {
+        $diagnostic = "ERROR CONTRACT MISMATCH: expected [$($allowedErrorLines -join ' | ')], actual [$($actualErrorLines -join ' | ')]"
+        Write-Host $diagnostic
+        Add-Content -LiteralPath $EvidencePath -Value $diagnostic -Encoding utf8
+    }
+    if (
+        $exitCode -ne 0 -or
+        $text -match "SCRIPT ERROR|Parse Error|Unhandled exception" -or
+        -not $errorContractMatches
+    ) {
         $failures += $test
     }
 }
 
 Add-Content -LiteralPath $EvidencePath -Value ([Environment]::NewLine + "SUMMARY: $($tests.Count - $failures.Count)/$($tests.Count) runners passed.") -Encoding utf8
+$missingArtifacts = @($requiredArtifacts | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) })
+if ($missingArtifacts.Count -gt 0) {
+    Add-Content -LiteralPath $EvidencePath -Value "MISSING ARTIFACTS: $($missingArtifacts -join ', ')" -Encoding utf8
+    Write-Error "AC9.0 required artifacts missing: $($missingArtifacts -join ', ')"
+    exit 1
+}
 if ($failures.Count -gt 0) {
     Add-Content -LiteralPath $EvidencePath -Value "FAILED: $($failures -join ', ')" -Encoding utf8
     Write-Error "AC9.0 runner matrix failed: $($failures -join ', ')"

@@ -224,10 +224,14 @@ static func create_starters() -> Array[RunCharacter]:
 
 
 static func create_for_reward(reward_id: StringName) -> RunCharacter:
+	var reward: RunCharacter = null
 	match reward_id:
 		COMBAT_SCOUT_REWARD_ID:
-			return RunCharacter.new(&"scout", "Scout", 7, 20, [])
+			reward = RunCharacter.new(&"scout", "Scout", 7, 20, [])
 		BOSS_CHAMPION_REWARD_ID:
-			return RunCharacter.new(&"champion", "Champion", 9, 24, [])
+			reward = RunCharacter.new(&"champion", "Champion", 9, 24, [])
 		_:
 			return null
+	reward.class_id = &""
+	reward.root_class_id = &""
+	return reward
