@@ -78,6 +78,18 @@ static func get_player_commander_ids() -> Array[StringName]:
 	return PLAYER_COMMANDER_IDS.duplicate()
 
 
+static func get_playable_clans() -> Array[StringName]:
+	return [&"goblin", &"orc", &"werewolf", &"lizardman", &"harpy"]
+
+
+static func get_player_commander_ids_for_clan(clan_id: StringName) -> Array[StringName]:
+	var commander_ids: Array[StringName] = []
+	for commander_id: StringName in PLAYER_COMMANDER_IDS:
+		if get_commander_faction_id(commander_id) == clan_id:
+			commander_ids.append(commander_id)
+	return commander_ids
+
+
 static func get_commander_presentation(commander_id: StringName) -> Dictionary:
 	if not PLAYER_COMMANDER_IDS.has(commander_id):
 		return {}
