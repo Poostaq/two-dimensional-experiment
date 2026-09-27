@@ -23,7 +23,8 @@ func start(
     config: Dictionary = {},
     policy: String = RETURN_RESULT,
     commander_id: StringName = GoblinCommanderCatalog.BRAKKA_ID,
-    faction_id: StringName = &""
+    faction_id: StringName = &"",
+    selection: RunClanSelection = null
 ) -> Dictionary:
     var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(commander_id)
     if not RunCharacterCatalog.get_player_commander_ids().has(commander_id) or not is_instance_valid(commander):
@@ -50,6 +51,26 @@ func start(
                 "invalid_commander_faction=%s:%s" % [String(commander_id), String(faction_id)]
             ),
         }
+    var resolved_selection: RunClanSelection = selection
+    if not is_instance_valid(resolved_selection):
+        var selection_result: Dictionary = RunClanSelection.create(
+            commander.race_id if faction_id.is_empty() else faction_id,
+            commander_id,
+            seed_text
+        )
+        if not bool(selection_result.get("ok", false)):
+            return {
+                "ok": false,
+                "plan": null,
+                "error": ERROR_SCRIPT.new(
+                    ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                    PRIORITY_SCRIPT.seed_hex(seed_text),
+                    1,
+                    "run-start",
+                    "invalid_clan_selection"
+                ),
+            }
+        resolved_selection = selection_result["value"] as RunClanSelection
     if policy != RETURN_RESULT:
         return {
             "ok": false,
@@ -137,5 +158,6 @@ func start(
         "plan": plan,
         "resolved_seed": seed_text,
         "run_state": run_state,
+        "selection": resolved_selection,
         "error": null,
     }

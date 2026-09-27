@@ -9,7 +9,6 @@ enum Screen {
     MAIN,
     NEW_RUN,
     SETTINGS,
-    OVERWRITE_CONFIRM,
 }
 
 const TOOLTIP_WIDTH: float = 340.0
@@ -19,7 +18,7 @@ const TOOLTIP_VIEWPORT_MARGIN: float = 8.0
 static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
 static var EXIT_ADAPTER_SCRIPT: GDScript = load("res://Scripts/Run/world_exit_adapter.gd")
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v6.gd")
 static var DISPLAY_SETTINGS_SCRIPT: GDScript = load(
     "res://Scripts/Settings/display_settings_service.gd"
 )
@@ -39,10 +38,11 @@ var _world_factory: PackedScene
 var _display_settings: RefCounted
 var _settings_return_screen: Screen = Screen.MAIN
 var _settings_load_status: StringName = &"missing"
-var _pending_seed: String = ""
-var _commander_ids: Array[StringName] = RunCharacterCatalog.get_player_commander_ids()
+var _clan_ids: Array[StringName] = RunCharacterCatalog.get_playable_clans()
+var _selected_clan_index: int = 0
+var _commander_ids: Array[StringName] = RunCharacterCatalog.get_player_commander_ids_for_clan(&"goblin")
 var _selected_commander_index: int = 0
-var _pending_commander_id: StringName = &""
+var _start_in_flight: bool = false
 var _failure_overlay: Control
 var _presented_commander_skills: Array[CharacterSkill] = []
 var _active_tooltip_target: Control
@@ -54,9 +54,6 @@ var _hovered_tooltip_target: Control
 @onready var _settings_center: CenterContainer = $SettingsCenter
 @onready var _main_screen: Control = %MainScreen
 @onready var _new_run_screen: Control = %NewRunScreen
-@onready var _overwrite_screen: Control = %OverwriteScreen
-@onready var _overwrite_dimmer: ColorRect = $OverwriteDimmer
-@onready var _overwrite_center: CenterContainer = $OverwriteCenter
 @onready var _continue_button: Button = %ContinueButton
 @onready var _start_new_run_button: Button = %StartNewRunButton
 @onready var _settings_button: Button = %SettingsButton
@@ -67,6 +64,7 @@ var _hovered_tooltip_target: Control
 @onready var _apply_settings_button: Button = %ApplySettingsButton
 @onready var _back_settings_button: Button = %BackSettingsButton
 @onready var _settings_status_label: Label = %SettingsStatusLabel
+@onready var _clan_option: OptionButton = %ClanOption
 @onready var _seed_input: LineEdit = %SeedInput
 @onready var _begin_button: Button = %BeginButton
 @onready var _back_button: Button = %BackButton
@@ -83,8 +81,6 @@ var _hovered_tooltip_target: Control
 @onready var _commander_skill_tooltip: PanelContainer = %CommanderSkillTooltip
 @onready var _commander_skill_tooltip_name: Label = %CommanderSkillTooltipName
 @onready var _commander_skill_tooltip_body: Label = %CommanderSkillTooltipBody
-@onready var _overwrite_confirm_button: Button = %OverwriteConfirmButton
-@onready var _overwrite_cancel_button: Button = %OverwriteCancelButton
 @onready var _failure_host: Control = %FailureHost
 @onready var _world_host: Control = %WorldHost
 
@@ -124,6 +120,8 @@ func _ready() -> void:
     _exit_button.pressed.connect(on_exit_pressed)
     _apply_settings_button.pressed.connect(on_apply_settings_pressed)
     _back_settings_button.pressed.connect(on_back_settings_pressed)
+    _clan_option.item_selected.connect(_on_clan_selected)
+    _populate_clan_options()
     _begin_button.pressed.connect(on_start_pressed)
     _back_button.pressed.connect(on_back_pressed)
     _previous_commander_button.pressed.connect(on_previous_commander_pressed)
@@ -141,8 +139,6 @@ func _ready() -> void:
         (child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
     _commander_skill_tooltip_name.add_theme_font_size_override("font_size", 18)
     _commander_skill_tooltip_body.add_theme_font_size_override("font_size", 16)
-    _overwrite_confirm_button.pressed.connect(on_overwrite_confirm_pressed)
-    _overwrite_cancel_button.pressed.connect(on_overwrite_cancel_pressed)
     screen_changed.connect(_show_screen)
     session_ready.connect(_on_session_ready)
     launch_failed.connect(_on_launch_failed)
@@ -169,15 +165,11 @@ func open_new_run() -> void:
 
 
 func back_to_main() -> void:
-    _pending_seed = ""
-    _pending_commander_id = &""
     _selected_commander_index = 0
     _set_screen(Screen.MAIN)
 
 
 func open_settings() -> void:
-    if _screen == Screen.OVERWRITE_CONFIRM:
-        return
     _settings_return_screen = _screen
     _set_screen(Screen.SETTINGS)
 
@@ -205,6 +197,8 @@ func get_selected_commander_id() -> StringName:
 
 
 func request_start(seed_text: String, commander_id: StringName = &"") -> Dictionary:
+    if _start_in_flight:
+        return {"ok": false, "value": null, "error": null}
     if not _can_replace_session():
         return {"ok": false, "value": null, "error": null}
     var resolved_commander_id: StringName = (
@@ -223,41 +217,23 @@ func request_start(seed_text: String, commander_id: StringName = &"") -> Diction
             ),
         }
     var resolved_seed := _resolve_seed(seed_text)
-    var needs_confirmation: bool = has_saved_run()
-    if needs_confirmation and _repository.has_method("inspect_slot"):
-        var inspected: Dictionary = _repository.call("inspect_slot")
-        if inspected.get("ok", false):
-            var inspected_state: RefCounted = inspected.get("value", {}).get("run_state") as RefCounted
-            if is_instance_valid(inspected_state) and not inspected_state.is_playable():
-                needs_confirmation = false
-    if needs_confirmation:
-        _pending_seed = resolved_seed
-        _pending_commander_id = resolved_commander_id
-        _set_screen(Screen.OVERWRITE_CONFIRM)
-        return {
-            "ok": false,
-            "confirmation_required": true,
-            "error": null,
-        }
-    return _create_and_persist(resolved_seed, resolved_commander_id)
-
-
-func confirm_overwrite() -> Dictionary:
-    if not _can_replace_session():
-        return {"ok": false, "value": null, "error": null}
-    if _screen != Screen.OVERWRITE_CONFIRM or _pending_seed.is_empty():
-        return {"ok": false, "confirmation_required": false, "error": null}
-    var resolved_seed := _pending_seed
-    var commander_id := _pending_commander_id
-    _pending_seed = ""
-    _pending_commander_id = &""
-    return _create_and_persist(resolved_seed, commander_id)
-
-
-func cancel_overwrite() -> void:
-    _pending_seed = ""
-    _pending_commander_id = &""
-    _set_screen(Screen.NEW_RUN)
+    var selection_result: Dictionary = RunClanSelection.create(
+        RunCharacterCatalog.get_commander_faction_id(resolved_commander_id),
+        resolved_commander_id,
+        resolved_seed
+    )
+    if not bool(selection_result.get("ok", false)):
+        return {"ok": false, "confirmation_required": false, "error": selection_result.get("error")}
+    _start_in_flight = true
+    if is_instance_valid(_begin_button):
+        _begin_button.disabled = true
+    var start_result: Dictionary = _create_and_persist(
+        resolved_seed, resolved_commander_id, selection_result["value"] as RunClanSelection
+    )
+    _start_in_flight = false
+    if is_instance_valid(_begin_button):
+        _begin_button.disabled = false
+    return start_result
 
 
 func continue_saved_run() -> Dictionary:
@@ -345,21 +321,26 @@ func on_next_commander_pressed() -> void:
     _refresh_commander_ui()
 
 
-func on_overwrite_confirm_pressed() -> void:
-    confirm_overwrite()
-
-
-func on_overwrite_cancel_pressed() -> void:
-    cancel_overwrite()
-
-
-func _create_and_persist(resolved_seed: String, commander_id: StringName) -> Dictionary:
+func _create_and_persist(
+    resolved_seed: String,
+    commander_id: StringName,
+    selection: RunClanSelection = null
+) -> Dictionary:
+    if not is_instance_valid(selection):
+        var selection_result: Dictionary = RunClanSelection.create(
+            RunCharacterCatalog.get_commander_faction_id(commander_id), commander_id, resolved_seed
+        )
+        if not bool(selection_result.get("ok", false)):
+            return {"ok": false, "value": null, "error": selection_result.get("error")}
+        selection = selection_result["value"] as RunClanSelection
     var started: Dictionary = _start_service.call(
         "start",
         resolved_seed,
         {},
         "RETURN_RESULT",
-        commander_id
+        commander_id,
+        selection.main_clan_id,
+        selection
     )
     if not bool(started.get("ok", false)):
         _emit_failure(started.get("error") as RefCounted)
@@ -368,7 +349,8 @@ func _create_and_persist(resolved_seed: String, commander_id: StringName) -> Dic
     var bytes: PackedByteArray = SAVE_CODEC_SCRIPT.encode(
         started.get("plan") as RefCounted,
         String(started.get("resolved_seed", resolved_seed)),
-        started.get("run_state") as RefCounted
+        started.get("run_state") as RefCounted,
+        selection
     )
     if bytes.is_empty():
         var encode_error: RefCounted = load("res://Scripts/Save/world_save_error.gd").new("SAVE_ENVELOPE_INVALID", "new_run_encoding")
@@ -379,10 +361,11 @@ func _create_and_persist(resolved_seed: String, commander_id: StringName) -> Dic
         _emit_failure(saved.get("error") as RefCounted)
         _set_screen(Screen.NEW_RUN)
         return saved
-    var session := {
+    var session: Dictionary = {
         "plan": started.get("plan"),
         "resolved_seed": String(started.get("resolved_seed", resolved_seed)),
         "run_state": started.get("run_state"),
+        "selection": selection,
     }
     session_ready.emit(session)
     return {"ok": true, "value": session, "error": null}
@@ -393,10 +376,6 @@ func _show_screen(screen: int) -> void:
     _new_run_screen.visible = screen == int(Screen.NEW_RUN)
     _settings_center.visible = screen == int(Screen.SETTINGS)
     _settings_screen.visible = screen == int(Screen.SETTINGS)
-    var show_overwrite := screen == int(Screen.OVERWRITE_CONFIRM)
-    _overwrite_screen.visible = show_overwrite
-    _overwrite_dimmer.visible = show_overwrite
-    _overwrite_center.visible = show_overwrite
     if screen == int(Screen.MAIN):
         _refresh_continue_button()
         _settings_button.grab_focus()
@@ -450,6 +429,20 @@ func _sync_settings_controls() -> void:
         )
     elif not _settings_status_label.text.begins_with("Display changed"):
         _settings_status_label.text = ""
+
+
+func _populate_clan_options() -> void:
+    _clan_option.clear()
+    for clan_id: StringName in _clan_ids:
+        _clan_option.add_item(String(clan_id).capitalize())
+    _clan_option.select(_selected_clan_index)
+
+
+func _on_clan_selected(index: int) -> void:
+    _selected_clan_index = index
+    _commander_ids = RunCharacterCatalog.get_player_commander_ids_for_clan(_clan_ids[index])
+    _selected_commander_index = 0
+    _refresh_commander_ui()
 
 
 func _refresh_commander_ui() -> void:
@@ -636,9 +629,6 @@ func _set_launcher_surface_visible(value: bool) -> void:
     _main_center.visible = value
     _new_run_center.visible = value
     _settings_center.visible = value and _screen == Screen.SETTINGS
-    if not value:
-        _overwrite_dimmer.hide()
-        _overwrite_center.hide()
 
 
 func _emit_world_open_failure(session: Dictionary, constraint: String) -> void:

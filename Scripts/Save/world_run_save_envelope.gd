@@ -11,10 +11,18 @@ static var PLAN_CODEC_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 
-static func encode(plan: RefCounted, resolved_seed: String, run_state: RefCounted, save_version: int) -> PackedByteArray:
+static func encode(
+    plan: RefCounted,
+    resolved_seed: String,
+    run_state: RefCounted,
+    save_version: int,
+    selection: RunClanSelection = null
+) -> PackedByteArray:
     if not is_instance_valid(plan) or not is_instance_valid(run_state):
         return PackedByteArray()
-    if save_version not in [2, 3, 4, 5] or not run_state.is_valid(plan):
+    if save_version not in [2, 3, 4, 5, 6] or not run_state.is_valid(plan):
+        return PackedByteArray()
+    if save_version == 6 and not is_instance_valid(selection):
         return PackedByteArray()
     var state_data: Dictionary = run_state.to_dictionary()
     if save_version < 5:
@@ -29,7 +37,7 @@ static func encode(plan: RefCounted, resolved_seed: String, run_state: RefCounte
     if save_version == 2:
         state_data.erase("gold")
     var plan_bytes: PackedByteArray = PLAN_CODEC_SCRIPT.serialize(plan)
-    var root := {
+    var root: Dictionary = {
         "schema": SCHEMA,
         "save_version": save_version,
         "starter_roster_version": STARTER_ROSTER_VERSION,
@@ -42,6 +50,9 @@ static func encode(plan: RefCounted, resolved_seed: String, run_state: RefCounte
             "run_state": state_data,
         },
     }
+    if save_version == 6:
+        root["world"]["main_clan_id"] = String(selection.main_clan_id)
+        root["world"]["commander_id"] = String(selection.commander_id)
     return (JSON.stringify(root) + "\n").to_utf8_buffer()
 
 
@@ -50,7 +61,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     var version: Variant = root.get("save_version")
     if not (version is int or version is float) or version != expected_version:
         return _save_failure("root_schema")
-    if expected_version not in [2, 3, 4, 5] or root.get("schema") != SCHEMA:
+    if expected_version not in [2, 3, 4, 5, 6] or root.get("schema") != SCHEMA:
         return _save_failure("root_schema")
     if expected_version >= 4 and not _valid_current_shape(root, expected_version):
         return _save_failure("v%d_shape" % expected_version)
@@ -93,6 +104,16 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
         return _save_failure("run_seed_utf8_hex")
     if not world.get("resolved_seed") is String or not world.get("run_state") is Dictionary:
         return _save_failure("runtime_fields")
+    var selection: RunClanSelection = null
+    if expected_version == 6:
+        var selection_result: Dictionary = RunClanSelection.create(
+            StringName(world.get("main_clan_id", "")),
+            StringName(world.get("commander_id", "")),
+            String(world.get("resolved_seed", ""))
+        )
+        if not bool(selection_result.get("ok", false)):
+            return _save_failure("clan_selection")
+        selection = selection_result["value"] as RunClanSelection
     var state_data: Dictionary = world["run_state"].duplicate(true)
     if expected_version < 5:
         if state_data.has("pending_reward_battle_id"):
@@ -116,6 +137,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
             "plan": plan,
             "resolved_seed": String(world["resolved_seed"]),
             "run_state": state_result["value"],
+            "selection": selection,
         },
         "error": null,
     }
@@ -190,17 +212,21 @@ static func _valid_current_shape(root: Dictionary, version: int) -> bool:
     if not _integer(root.starter_roster_version, 1, 1):
         return false
     var world: Variant = root.world
-    if not _keys_match(world, ["generator_version", "run_seed_utf8_hex", "resolved_seed", "canonical_plan_utf8", "canonical_plan_sha256", "run_state"]):
+    var world_keys: Array[String] = ["generator_version", "run_seed_utf8_hex", "resolved_seed", "canonical_plan_utf8", "canonical_plan_sha256", "run_state"]
+    if version == 6:
+        world_keys.append("main_clan_id")
+        world_keys.append("commander_id")
+    if not _keys_match(world, world_keys):
         return false
     if not _integer(world.generator_version, 1, 1) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
         return false
     var state: Variant = world.run_state
     var keys: Array[String] = ["player_coord", "boss_coord", "move_count", "gold", "boss_active", "boss_engaged", "consumed_encounters", "formation", "character_hp", "cache_move_progress", "cache_ready", "battle_preparation", "run_status", "battle_settlements"]
-    if version == 5:
+    if version >= 5:
         keys.append("pending_reward_battle_id")
     if not _keys_match(state, keys):
         return false
-    if version == 5 and not state.pending_reward_battle_id is String:
+    if version >= 5 and not state.pending_reward_battle_id is String:
         return false
     if not _coord(state.player_coord) or not _coord(state.boss_coord):
         return false
