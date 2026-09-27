@@ -60,6 +60,8 @@ Selection follows this fixed contract:
 
 The selector computes the hash only with `WorldPriority.fnv1a32_ascii(payload)`, rather than `RandomNumberGenerator`, shuffle state, or mutable call order. Pair selection is therefore reproducible across preview, retry, and restart boundaries. Changing the payload contract requires a new version and namespace rather than silently changing V1 outcomes.
 
+The focused selector suite locks this exact golden vector: main clan `goblin`, resolved seed `ac9-vector-1`, and payload `twde-ac9|v=1|seed=6163392d766563746f722d31|ns=ac9-allied-clans-v1|main=goblin`. `WorldPriority.fnv1a32_ascii` returns `3448136874`; the six canonical Goblin candidate pairs place `[orc, werewolf]` at index `0`, so `3448136874 % 6` must select `[orc, werewolf]`. This test guards payload bytes, catalog ordering, hash selection, and modulo behavior together.
+
 Enumerating valid pairs before selection avoids the bias of first selecting a guaranteed synergy partner and then selecting a second ally. Two synergistic allies are valid. An empty valid-pair set is a typed failure; the selector never duplicates a clan or relaxes the synergy constraint.
 
 ## New-run data flow
@@ -100,6 +102,8 @@ Selection returns the established `WorldGenerationError` result shape. Every sel
 Selection failure occurs before world generation and before any save mutation. V7 encoding rejects inconsistent or invalid identity metadata with no partial bytes. Decode rejects missing, malformed, duplicate, unknown, main-repeated, or out-of-order ally fields and applies the shared synergy validation. Generation, encoding, store, or replacement failure preserves the prior save byte-for-byte under AC9.1's atomic transaction.
 
 ## File responsibilities
+
+The following files are intentionally absent before AC9.2 implementation; they are delivery artifacts, not unresolved baseline dependencies. AC9.1's merged V6 files are the implementation baseline.
 
 - Modify `Scripts/Run/run_character_catalog.gd`: `PLAYABLE_CLAN_IDS`, canonical `get_playable_clan_ids()` API, AC9.1 compatibility wrapper, explicit directed synergy map, and defensive-copy query APIs.
 - Create `Scripts/Run/run_clan_coalition.gd`: shared immutable coalition validation and typed accessors.
