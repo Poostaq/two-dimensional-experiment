@@ -30,6 +30,15 @@ When starting code work, agents must first update the default integration branch
 6. **Multi-file refactor:** `impact_check` BEFORE changing; `validate(target="project")` baseline before/after; then `check_errors(scope="project")` and `signal_map(find="orphans")`.
 7. **Testing/debugging:** `run(action="play")` → `verify_project_runs()` → `read_debug_console()` for errors → `state_inspect` for values (cheap, preferred) → `verify_motion` for movement → `screenshot(scale=0.25, quality=0.3)` only when visuals changed (expensive) → `run(action="stop")`.
 
+## Runtime Verification Context
+
+- **Do not use `exec(context="editor")` to validate runtime behavior or class-level static dependencies.** The GodotIQ editor sandbox can leave declarations such as `static var DEPENDENCY: GDScript = load(...)` uninitialized and report false `Nil` failures even though the same scripts initialize correctly in the game process.
+- Use editor-context execution only for editor APIs and editor-only diagnostics. It is not a substitute for Play mode, a SceneTree test process, or game-context execution.
+- For runtime regressions, start the project with `run(action="play")`, exercise behavior through `input` or `exec(context="game")`, and inspect `read_debug_console()`. Prove the affected path itself, not only project startup.
+- `check_errors` and `validate` establish parse/convention health; they do not prove runtime initialization.
+- If a failure appears only in editor context, compare the same dependency and behavior in game context before changing production code. Treat it as a harness artifact unless normal Play reproduces it.
+- For this project specifically, `HexWorldGeneratorV1.GEOMETRY_SCRIPT` and `WorldRunState.PREPARATION_RECORD_SCRIPT` were observed as `Nil` in editor-context execution while both were initialized and functional in normal Play. Do not add per-instance dependency workarounds based on that editor-only result.
+
 ## Token Efficiency
 
 - Default to `detail="brief"`; full payloads can emit 50k–140k chars and crash the session.
