@@ -17,6 +17,16 @@ const PLAYER_COMMANDER_PRESENTATION := {
 	&"sszek_still_mire": {"title": "Delta Strategist · Lizardman Commander", "root_class_name": "Venom Saurian"},
 	&"kyris_windscar": {"title": "Sky Matron · Harpy Commander", "root_class_name": "Talon Duelist"},
 }
+const PLAYABLE_CLAN_IDS: Array[StringName] = [
+	&"goblin", &"orc", &"werewolf", &"lizardman", &"harpy",
+]
+const MAIN_CLAN_SYNERGY_IDS := {
+	&"goblin": [&"orc", &"werewolf", &"lizardman"],
+	&"orc": [&"goblin", &"lizardman", &"harpy"],
+	&"werewolf": [&"goblin", &"lizardman", &"harpy"],
+	&"lizardman": [&"goblin", &"orc", &"werewolf"],
+	&"harpy": [&"goblin", &"orc", &"werewolf"],
+}
 const ORC_CLASS_IDS: Array[StringName] = [
 	&"orc_iron_tusk_vanguard",
 	&"orc_bonebreaker_reaver",
@@ -78,8 +88,24 @@ static func get_player_commander_ids() -> Array[StringName]:
 	return PLAYER_COMMANDER_IDS.duplicate()
 
 
+static func get_playable_clan_ids() -> Array[StringName]:
+	return PLAYABLE_CLAN_IDS.duplicate()
+
+
 static func get_playable_clans() -> Array[StringName]:
-	return [&"goblin", &"orc", &"werewolf", &"lizardman", &"harpy"]
+	return get_playable_clan_ids()
+
+
+static func get_synergistic_clan_ids(main_clan_id: StringName) -> Array[StringName]:
+	var values: Array = MAIN_CLAN_SYNERGY_IDS.get(main_clan_id, [])
+	var result: Array[StringName] = []
+	for value: Variant in values:
+		result.append(StringName(value))
+	return result
+
+
+static func has_main_clan_synergy(main_clan_id: StringName, partner_clan_id: StringName) -> bool:
+	return get_synergistic_clan_ids(main_clan_id).has(partner_clan_id)
 
 
 static func get_player_commander_ids_for_clan(clan_id: StringName) -> Array[StringName]:

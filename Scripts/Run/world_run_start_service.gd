@@ -24,7 +24,8 @@ func start(
     policy: String = RETURN_RESULT,
     commander_id: StringName = GoblinCommanderCatalog.BRAKKA_ID,
     faction_id: StringName = &"",
-    selection: RunClanSelection = null
+    selection: RunClanSelection = null,
+    coalition: RunClanCoalition = null
 ) -> Dictionary:
     var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(commander_id)
     if not RunCharacterCatalog.get_player_commander_ids().has(commander_id) or not is_instance_valid(commander):
@@ -71,6 +72,31 @@ func start(
                 ),
             }
         resolved_selection = selection_result["value"] as RunClanSelection
+    var resolved_coalition: RunClanCoalition = coalition
+    if not is_instance_valid(resolved_coalition):
+        var coalition_result: Dictionary = RunAlliedClanSelector.select(
+            resolved_selection.main_clan_id,
+            seed_text
+        )
+        if not bool(coalition_result.get("ok", false)):
+            return {
+                "ok": false,
+                "plan": null,
+                "error": coalition_result.get("error"),
+            }
+        resolved_coalition = coalition_result["value"] as RunClanCoalition
+    if resolved_coalition.main_clan_id != resolved_selection.main_clan_id:
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                1,
+                "run-start",
+                "allied_coalition_main_clan_mismatch"
+            ),
+        }
     if policy != RETURN_RESULT:
         return {
             "ok": false,
@@ -159,5 +185,6 @@ func start(
         "resolved_seed": seed_text,
         "run_state": run_state,
         "selection": resolved_selection,
+        "coalition": resolved_coalition,
         "error": null,
     }

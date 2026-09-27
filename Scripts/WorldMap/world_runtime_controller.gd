@@ -130,7 +130,11 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 	if not is_instance_valid(target_repository):
 		target_repository = REPOSITORY_SCRIPT.new()
 	if not configure_persistence(
-		String(session.get("resolved_seed")), run_state, target_repository
+		String(session.get("resolved_seed")),
+		run_state,
+		target_repository,
+		session.get("selection") as RunClanSelection,
+		session.get("coalition") as RunClanCoalition
 	):
 		return false
 	_session_applied = true
@@ -179,7 +183,9 @@ func configure_runtime(plan: WorldPlan) -> bool:
 func configure_persistence(
 	resolved_seed: String,
 	run_state: RefCounted,
-	repository: RefCounted
+	repository: RefCounted,
+	selection: RunClanSelection = null,
+	coalition: RunClanCoalition = null
 ) -> bool:
 	_queue_debug_refresh()
 	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward() or not is_instance_valid(run_state) or not run_state.is_playable():
@@ -192,7 +198,13 @@ func configure_persistence(
 		return false
 	_save_coordinator = SAVE_COORDINATOR_SCRIPT.new()
 	if not _save_coordinator.call(
-		"configure", _runtime_plan, resolved_seed, run_state, repository
+		"configure",
+		_runtime_plan,
+		resolved_seed,
+		run_state,
+		repository,
+		selection,
+		coalition
 	):
 		_save_coordinator = null
 		return false

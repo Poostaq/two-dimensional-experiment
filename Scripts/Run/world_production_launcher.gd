@@ -18,7 +18,7 @@ const TOOLTIP_VIEWPORT_MARGIN: float = 8.0
 static var START_SERVICE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_start_service.gd")
 static var REPOSITORY_SCRIPT: GDScript = load("res://Scripts/Run/world_single_slot_repository.gd")
 static var EXIT_ADAPTER_SCRIPT: GDScript = load("res://Scripts/Run/world_exit_adapter.gd")
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v6.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v7.gd")
 static var DISPLAY_SETTINGS_SCRIPT: GDScript = load(
     "res://Scripts/Settings/display_settings_service.gd"
 )
@@ -350,7 +350,8 @@ func _create_and_persist(
         started.get("plan") as RefCounted,
         String(started.get("resolved_seed", resolved_seed)),
         started.get("run_state") as RefCounted,
-        selection
+        selection,
+        started.get("coalition") as RunClanCoalition
     )
     if bytes.is_empty():
         var encode_error: RefCounted = load("res://Scripts/Save/world_save_error.gd").new("SAVE_ENVELOPE_INVALID", "new_run_encoding")
@@ -366,6 +367,7 @@ func _create_and_persist(
         "resolved_seed": String(started.get("resolved_seed", resolved_seed)),
         "run_state": started.get("run_state"),
         "selection": selection,
+        "coalition": started.get("coalition"),
     }
     session_ready.emit(session)
     return {"ok": true, "value": session, "error": null}

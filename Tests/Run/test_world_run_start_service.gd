@@ -90,6 +90,10 @@ func _run() -> void:
     if _committed_plan != null:
         _assert_equal(_committed_plan.get_cells().size(), 217, "committed cell count")
     if success.get("ok", false):
+        _assert_true(success.has("coalition"), "new run returns allied coalition")
+        if success.has("coalition"):
+            _assert_equal(success["coalition"].main_clan_id, &"goblin", "coalition keeps selected main clan")
+            _assert_equal(success["coalition"].allied_clan_ids.size(), 2, "coalition has two allies")
         _assert_equal(success["run_state"].get("gold"), 100, "new run wallet initialized")
         _assert_true(success["run_state"].has_character_hp_snapshot(), "fresh run persists explicit health")
         _assert_equal(success["run_state"].get_character_hp_snapshot().size(), 3, "fresh health includes three starters")

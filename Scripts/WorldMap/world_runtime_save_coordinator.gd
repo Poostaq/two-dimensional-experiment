@@ -1,12 +1,16 @@
 class_name WorldRuntimeSaveCoordinator
 extends RefCounted
 
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v7.gd")
+static var V6_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v6.gd")
+static var V5_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 
 var _plan: WorldPlan
 var _resolved_seed: String = ""
 var _repository: RefCounted
+var _selection: RunClanSelection
+var _coalition: RunClanCoalition
 var _durable_state: RefCounted
 var _pending_state: RefCounted
 var _pending_bytes: PackedByteArray
@@ -20,7 +24,9 @@ func configure(
     plan: WorldPlan,
     resolved_seed: String,
     durable_state: RefCounted,
-    repository: RefCounted
+    repository: RefCounted,
+    selection: RunClanSelection = null,
+    coalition: RunClanCoalition = null
 ) -> bool:
     if _writing or _input_blocked:
         return false
@@ -30,11 +36,18 @@ func configure(
         or not is_instance_valid(durable_state)
         or not durable_state.call("is_valid", plan)
         or not is_instance_valid(repository)
+        or (is_instance_valid(coalition) and not is_instance_valid(selection))
+        or (
+            is_instance_valid(coalition)
+            and coalition.main_clan_id != selection.main_clan_id
+        )
     ):
         return false
     _plan = plan
     _resolved_seed = resolved_seed
     _repository = repository
+    _selection = selection
+    _coalition = coalition
     _durable_state = _clone_state(durable_state)
     _clear_pending()
     return is_instance_valid(_durable_state)
@@ -55,11 +68,7 @@ func commit_candidate(
     ):
         return {"ok": false, "value": null, "error": null}
     var candidate_copy: RefCounted = _clone_state(candidate_state)
-    var bytes: PackedByteArray = SAVE_CODEC_SCRIPT.encode(
-        _plan,
-        _resolved_seed,
-        candidate_copy
-    )
+    var bytes: PackedByteArray = _encode_candidate(candidate_copy)
     if bytes.is_empty():
         return {"ok": false, "value": null, "error": null}
     _pending_state = candidate_copy
@@ -110,6 +119,20 @@ func is_input_blocked() -> bool:
 
 func get_durable_state() -> RefCounted:
     return _clone_state(_durable_state)
+
+
+func _encode_candidate(state: RefCounted) -> PackedByteArray:
+    if is_instance_valid(_coalition):
+        return SAVE_CODEC_SCRIPT.encode(
+            _plan,
+            _resolved_seed,
+            state,
+            _selection,
+            _coalition
+        )
+    if is_instance_valid(_selection):
+        return V6_CODEC_SCRIPT.encode(_plan, _resolved_seed, state, _selection)
+    return V5_CODEC_SCRIPT.encode(_plan, _resolved_seed, state)
 
 
 func _clone_state(state: RefCounted) -> RefCounted:

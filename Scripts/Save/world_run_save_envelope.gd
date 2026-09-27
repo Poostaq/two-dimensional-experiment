@@ -16,13 +16,18 @@ static func encode(
     resolved_seed: String,
     run_state: RefCounted,
     save_version: int,
-    selection: RunClanSelection = null
+    selection: RunClanSelection = null,
+    coalition: RunClanCoalition = null
 ) -> PackedByteArray:
     if not is_instance_valid(plan) or not is_instance_valid(run_state):
         return PackedByteArray()
-    if save_version not in [2, 3, 4, 5, 6] or not run_state.is_valid(plan):
+    if save_version not in [2, 3, 4, 5, 6, 7] or not run_state.is_valid(plan):
         return PackedByteArray()
-    if save_version == 6 and not is_instance_valid(selection):
+    if save_version in [6, 7] and not is_instance_valid(selection):
+        return PackedByteArray()
+    if save_version == 7 and not is_instance_valid(coalition):
+        return PackedByteArray()
+    if save_version == 7 and coalition.main_clan_id != selection.main_clan_id:
         return PackedByteArray()
     var state_data: Dictionary = run_state.to_dictionary()
     if save_version < 5:
@@ -50,9 +55,13 @@ static func encode(
             "run_state": state_data,
         },
     }
-    if save_version == 6:
+    if save_version in [6, 7]:
         root["world"]["main_clan_id"] = String(selection.main_clan_id)
         root["world"]["commander_id"] = String(selection.commander_id)
+    if save_version == 7:
+        root["world"]["allied_clan_ids"] = coalition.allied_clan_ids.map(
+            func(clan_id: StringName) -> String: return String(clan_id)
+        )
     return (JSON.stringify(root) + "\n").to_utf8_buffer()
 
 
@@ -61,7 +70,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     var version: Variant = root.get("save_version")
     if not (version is int or version is float) or version != expected_version:
         return _save_failure("root_schema")
-    if expected_version not in [2, 3, 4, 5, 6] or root.get("schema") != SCHEMA:
+    if expected_version not in [2, 3, 4, 5, 6, 7] or root.get("schema") != SCHEMA:
         return _save_failure("root_schema")
     if expected_version >= 4 and not _valid_current_shape(root, expected_version):
         return _save_failure("v%d_shape" % expected_version)
@@ -105,7 +114,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     if not world.get("resolved_seed") is String or not world.get("run_state") is Dictionary:
         return _save_failure("runtime_fields")
     var selection: RunClanSelection = null
-    if expected_version == 6:
+    if expected_version in [6, 7]:
         var selection_result: Dictionary = RunClanSelection.create(
             StringName(world.get("main_clan_id", "")),
             StringName(world.get("commander_id", "")),
@@ -114,6 +123,23 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
         if not bool(selection_result.get("ok", false)):
             return _save_failure("clan_selection")
         selection = selection_result["value"] as RunClanSelection
+    var coalition: RunClanCoalition = null
+    if expected_version == 7:
+        var allied_values: Variant = world.get("allied_clan_ids")
+        if not allied_values is Array:
+            return _save_failure("allied_clan_ids")
+        var allied_clan_ids: Array[StringName] = []
+        for value: Variant in allied_values:
+            if not value is String:
+                return _save_failure("allied_clan_ids")
+            allied_clan_ids.append(StringName(value))
+        var coalition_result: Dictionary = RunClanCoalition.create(
+            selection.main_clan_id,
+            allied_clan_ids
+        )
+        if not bool(coalition_result.get("ok", false)):
+            return _save_failure("allied_clan_ids")
+        coalition = coalition_result["value"] as RunClanCoalition
     var state_data: Dictionary = world["run_state"].duplicate(true)
     if expected_version < 5:
         if state_data.has("pending_reward_battle_id"):
@@ -138,6 +164,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
             "resolved_seed": String(world["resolved_seed"]),
             "run_state": state_result["value"],
             "selection": selection,
+            "coalition": coalition,
         },
         "error": null,
     }
@@ -213,9 +240,11 @@ static func _valid_current_shape(root: Dictionary, version: int) -> bool:
         return false
     var world: Variant = root.world
     var world_keys: Array[String] = ["generator_version", "run_seed_utf8_hex", "resolved_seed", "canonical_plan_utf8", "canonical_plan_sha256", "run_state"]
-    if version == 6:
+    if version in [6, 7]:
         world_keys.append("main_clan_id")
         world_keys.append("commander_id")
+    if version == 7:
+        world_keys.append("allied_clan_ids")
     if not _keys_match(world, world_keys):
         return false
     if not _integer(world.generator_version, 1, 1) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
