@@ -8,14 +8,27 @@ static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generatio
 static var PRIORITY_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_priority.gd")
 static var ECONOMY_RULES_SCRIPT: GDScript = load("res://Scripts/Run/run_economy_rules.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
+static var ENEMY_CLAN_SELECTOR_SCRIPT: GDScript = load(
+    "res://Scripts/Run/run_enemy_clan_selector.gd"
+)
 
 var _commit_callback: Callable
 var _generator: RefCounted
+var _enemy_clan_selector: Callable
 
 
-func _init(commit_callback: Callable, generator: RefCounted = null) -> void:
+func _init(
+    commit_callback: Callable,
+    generator: RefCounted = null,
+    enemy_clan_selector: Callable = Callable()
+) -> void:
     _commit_callback = commit_callback
     _generator = generator if generator != null else GENERATOR_SCRIPT.new()
+    _enemy_clan_selector = (
+        enemy_clan_selector
+        if enemy_clan_selector.is_valid()
+        else Callable(ENEMY_CLAN_SELECTOR_SCRIPT, "select")
+    )
 
 
 func start(
@@ -25,7 +38,8 @@ func start(
     commander_id: StringName = GoblinCommanderCatalog.BRAKKA_ID,
     faction_id: StringName = &"",
     selection: RunClanSelection = null,
-    coalition: RunClanCoalition = null
+    coalition: RunClanCoalition = null,
+    enemy_boss_selection: RefCounted = null
 ) -> Dictionary:
     var commander: RunCharacter = RunCharacterCatalog.create_by_class_id(commander_id)
     if not RunCharacterCatalog.get_player_commander_ids().has(commander_id) or not is_instance_valid(commander):
@@ -95,6 +109,28 @@ func start(
                 1,
                 "run-start",
                 "allied_coalition_main_clan_mismatch"
+            ),
+        }
+    var resolved_enemy_boss_selection: RefCounted = enemy_boss_selection
+    if not is_instance_valid(resolved_enemy_boss_selection):
+        var enemy_selection_result: Dictionary = _enemy_clan_selector.call(seed_text)
+        if not bool(enemy_selection_result.get("ok", false)):
+            return {
+                "ok": false,
+                "plan": null,
+                "error": enemy_selection_result.get("error"),
+            }
+        resolved_enemy_boss_selection = enemy_selection_result.get("value") as RefCounted
+    if not is_instance_valid(resolved_enemy_boss_selection):
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                1,
+                "run-start",
+                "enemy_boss_selection_invalid"
             ),
         }
     if policy != RETURN_RESULT:
@@ -186,5 +222,6 @@ func start(
         "run_state": run_state,
         "selection": resolved_selection,
         "coalition": resolved_coalition,
+        "enemy_boss_selection": resolved_enemy_boss_selection,
         "error": null,
     }
