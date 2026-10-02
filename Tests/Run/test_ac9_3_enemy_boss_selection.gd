@@ -48,6 +48,25 @@ func _run() -> void:
         RunCharacterCatalog.get_enemy_clan_ids() == [&"human", &"elf", &"dwarf"],
         "Enemy clan order is canonical"
     )
+    var selector_script: GDScript = load("res://Scripts/Run/run_enemy_clan_selector.gd")
+    var golden_result: Dictionary = selector_script.select("ac9-enemy-vector-1")
+    _expect(bool(golden_result.get("ok", false)), "Golden seed resolves an enemy boss selection")
+    var golden: Variant = golden_result.get("value")
+    _expect(is_instance_valid(golden), "Golden seed returns a selection value")
+    if is_instance_valid(golden):
+        _expect(golden.resolved_seed == "ac9-enemy-vector-1", "Selection preserves resolved seed")
+        _expect(golden.enemy_clan_id == &"dwarf", "Golden seed resolves the dwarf clan")
+        _expect(golden.boss_party_id == &"dwarf_stonevein_forge_v1", "Golden seed resolves Stonevein")
+        var repeated_result: Dictionary = selector_script.select("ac9-enemy-vector-1")
+        var repeated: Variant = repeated_result.get("value")
+        _expect(is_instance_valid(repeated), "Repeated seed returns a selection")
+        if is_instance_valid(repeated):
+            _expect(repeated != golden, "Repeated selection is independent")
+            _expect(
+                repeated.enemy_clan_id == golden.enemy_clan_id
+                and repeated.boss_party_id == golden.boss_party_id,
+                "Repeated seed resolves identically"
+            )
     for clan_id: StringName in EXPECTED_PARTIES:
         var expected: Dictionary = EXPECTED_PARTIES[clan_id]
         var definition: EnemyBossPartyDefinition = (
