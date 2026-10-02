@@ -20,6 +20,7 @@ const PLAYER_COMMANDER_PRESENTATION := {
 const PLAYABLE_CLAN_IDS: Array[StringName] = [
 	&"goblin", &"orc", &"werewolf", &"lizardman", &"harpy",
 ]
+const ENEMY_CLAN_IDS: Array[StringName] = [&"human", &"elf", &"dwarf"]
 const MAIN_CLAN_SYNERGY_IDS := {
 	&"goblin": [&"orc", &"werewolf", &"lizardman"],
 	&"orc": [&"goblin", &"lizardman", &"harpy"],
@@ -90,6 +91,10 @@ static func get_player_commander_ids() -> Array[StringName]:
 
 static func get_playable_clan_ids() -> Array[StringName]:
 	return PLAYABLE_CLAN_IDS.duplicate()
+
+
+static func get_enemy_clan_ids() -> Array[StringName]:
+	return ENEMY_CLAN_IDS.duplicate()
 
 
 static func get_playable_clans() -> Array[StringName]:
