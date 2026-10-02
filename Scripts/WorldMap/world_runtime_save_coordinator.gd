@@ -1,7 +1,8 @@
 class_name WorldRuntimeSaveCoordinator
 extends RefCounted
 
-static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v7.gd")
+static var SAVE_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v8.gd")
+static var V7_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v7.gd")
 static var V6_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v6.gd")
 static var V5_CODEC_SCRIPT: GDScript = load("res://Scripts/Save/world_run_save_codec_v5.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
@@ -11,6 +12,7 @@ var _resolved_seed: String = ""
 var _repository: RefCounted
 var _selection: RunClanSelection
 var _coalition: RunClanCoalition
+var _enemy_boss_selection: RefCounted
 var _durable_state: RefCounted
 var _pending_state: RefCounted
 var _pending_bytes: PackedByteArray
@@ -26,7 +28,8 @@ func configure(
     durable_state: RefCounted,
     repository: RefCounted,
     selection: RunClanSelection = null,
-    coalition: RunClanCoalition = null
+    coalition: RunClanCoalition = null,
+    enemy_boss_selection: RefCounted = null
 ) -> bool:
     if _writing or _input_blocked:
         return false
@@ -37,6 +40,7 @@ func configure(
         or not durable_state.call("is_valid", plan)
         or not is_instance_valid(repository)
         or (is_instance_valid(coalition) and not is_instance_valid(selection))
+        or (is_instance_valid(enemy_boss_selection) and not is_instance_valid(coalition))
         or (
             is_instance_valid(coalition)
             and coalition.main_clan_id != selection.main_clan_id
@@ -48,6 +52,7 @@ func configure(
     _repository = repository
     _selection = selection
     _coalition = coalition
+    _enemy_boss_selection = enemy_boss_selection
     _durable_state = _clone_state(durable_state)
     _clear_pending()
     return is_instance_valid(_durable_state)
@@ -122,13 +127,21 @@ func get_durable_state() -> RefCounted:
 
 
 func _encode_candidate(state: RefCounted) -> PackedByteArray:
-    if is_instance_valid(_coalition):
+    if is_instance_valid(_enemy_boss_selection):
         return SAVE_CODEC_SCRIPT.encode(
             _plan,
             _resolved_seed,
             state,
             _selection,
-            _coalition
+            _coalition,
+            _enemy_boss_selection
+        )
+    if is_instance_valid(_coalition):
+        return V7_CODEC_SCRIPT.encode(
+            _plan,
+            _resolved_seed,
+            state,
+            _selection
         )
     if is_instance_valid(_selection):
         return V6_CODEC_SCRIPT.encode(_plan, _resolved_seed, state, _selection)

@@ -134,7 +134,8 @@ func apply_session(session: Dictionary, repository: RefCounted = null) -> bool:
 		run_state,
 		target_repository,
 		session.get("selection") as RunClanSelection,
-		session.get("coalition") as RunClanCoalition
+		session.get("coalition") as RunClanCoalition,
+		session.get("enemy_boss_selection") as RefCounted
 	):
 		return false
 	_session_applied = true
@@ -185,7 +186,8 @@ func configure_persistence(
 	run_state: RefCounted,
 	repository: RefCounted,
 	selection: RunClanSelection = null,
-	coalition: RunClanCoalition = null
+	coalition: RunClanCoalition = null,
+	enemy_boss_selection: RefCounted = null
 ) -> bool:
 	_queue_debug_refresh()
 	if _terminal_phase != TerminalPhase.PLAYING or is_autosave_blocked() or has_pending_gold_reward() or not is_instance_valid(run_state) or not run_state.is_playable():
@@ -204,7 +206,8 @@ func configure_persistence(
 		run_state,
 		repository,
 		selection,
-		coalition
+		coalition,
+		enemy_boss_selection
 	):
 		_save_coordinator = null
 		return false

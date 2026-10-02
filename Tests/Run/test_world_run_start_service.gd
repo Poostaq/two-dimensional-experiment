@@ -94,6 +94,32 @@ func _run() -> void:
         if success.has("coalition"):
             _assert_equal(success["coalition"].main_clan_id, &"goblin", "coalition keeps selected main clan")
             _assert_equal(success["coalition"].allied_clan_ids.size(), 2, "coalition has two allies")
+        _assert_true(success.has("enemy_boss_selection"), "new run returns enemy boss selection")
+        if success.has("enemy_boss_selection"):
+            var enemy_boss_selection: Variant = success["enemy_boss_selection"]
+            _assert_true(
+                is_instance_valid(enemy_boss_selection),
+                "new run resolves a valid enemy boss selection"
+            )
+            if is_instance_valid(enemy_boss_selection):
+                _assert_equal(
+                    enemy_boss_selection.resolved_seed,
+                    "golden-alpha",
+                    "enemy boss selection uses the resolved run seed"
+                )
+                var enemy_definition: EnemyBossPartyDefinition = (
+                    BossPartyCatalog.get_definition_by_party_id(enemy_boss_selection.boss_party_id)
+                )
+                _assert_true(
+                    is_instance_valid(enemy_definition),
+                    "enemy boss selection resolves an authored party"
+                )
+                if is_instance_valid(enemy_definition):
+                    _assert_equal(
+                        enemy_definition.enemy_clan_id,
+                        enemy_boss_selection.enemy_clan_id,
+                        "enemy boss party belongs to the selected enemy clan"
+                    )
         _assert_equal(success["run_state"].get("gold"), 100, "new run wallet initialized")
         _assert_true(success["run_state"].has_character_hp_snapshot(), "fresh run persists explicit health")
         _assert_equal(success["run_state"].get_character_hp_snapshot().size(), 3, "fresh health includes three starters")
