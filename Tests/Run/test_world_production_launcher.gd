@@ -7,6 +7,8 @@ const REPOSITORY_PATH := "res://Scripts/Run/world_single_slot_repository.gd"
 const START_SERVICE_PATH := "res://Scripts/Run/world_run_start_service.gd"
 
 var _failures: int = 0
+var _failure_messages: Array[String] = []
+var _finished: bool = false
 var _sessions: Array[Dictionary] = []
 
 
@@ -115,14 +117,11 @@ func _run() -> void:
     if has_commander_api:
         _expect(blank_launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Brakka selected by default")
         _expect(
-            blank_launcher.call("get_commander_ids") == [
-                &"brakka_rustbanner", &"goruk_ironline", &"veyra_moontrace",
-                &"sszek_still_mire", &"kyris_windscar",
-            ],
-            "launcher exposes exact five selectable monster commanders"
+            blank_launcher.call("get_commander_ids") == [&"brakka_rustbanner"],
+            "launcher exposes commanders for the selected Goblin clan"
         )
         blank_launcher.call("on_next_commander_pressed")
-        _expect(blank_launcher.call("get_selected_commander_id") == &"goruk_ironline", "Next selects Goruk")
+        _expect(blank_launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "single Goblin commander does not cycle")
         blank_launcher.call("on_previous_commander_pressed")
         _expect(blank_launcher.call("get_selected_commander_id") == &"brakka_rustbanner", "Previous returns to Brakka")
     _expect(
@@ -205,7 +204,8 @@ func _run() -> void:
 
     var saved_before_cancel := _read_bytes(explicit_path)
     var wallet_root: Dictionary = JSON.parse_string(saved_before_cancel.get_string_from_utf8())
-    _expect(wallet_root.get("save_version") == 5, "new run persists V5")
+    _expect(wallet_root.get("save_version") == 8, "new run persists V8")
+    _expect(wallet_root["world"].get("generator_version") == 3, "new run persists generator V3")
     _expect(wallet_root["world"]["run_state"].get("gold") == 100, "new run persists 100g")
     if has_commander_api:
         var calls_before_invalid: int = service.call_count
@@ -214,18 +214,9 @@ func _run() -> void:
         _expect(service.call_count == calls_before_invalid, "unknown commander is rejected before start service")
         _expect(_read_bytes(explicit_path) == saved_before_cancel, "unknown commander performs zero writes")
     launcher.call("open_new_run")
-    var overwrite_result: Dictionary = launcher.call("request_start", "replacement")
-    _expect(bool(overwrite_result.get("confirmation_required", false)), "existing save requests confirmation")
-    _expect(
-        int(launcher.call("get_screen")) == int(launcher_script.Screen.OVERWRITE_CONFIRM),
-        "overwrite confirmation screen opens"
-    )
-    launcher.call("cancel_overwrite")
-    _expect(
-        int(launcher.call("get_screen")) == int(launcher_script.Screen.NEW_RUN),
-        "overwrite cancellation returns to NEW_RUN"
-    )
-    _expect(_read_bytes(explicit_path) == saved_before_cancel, "overwrite cancellation performs zero writes")
+    var replacement_result: Dictionary = launcher.call("request_start", "replacement")
+    _expect(bool(replacement_result.get("ok", false)), "existing save replaces without confirmation")
+    _expect(_read_bytes(explicit_path) != saved_before_cancel, "replacement publishes new bytes")
 
     _sessions.clear()
     launcher.call("back_to_main")
@@ -242,11 +233,10 @@ func _run() -> void:
 
     _sessions.clear()
     launcher.call("open_new_run")
-    launcher.call("request_start", "confirmed-replacement")
-    var confirmed: Dictionary = launcher.call("confirm_overwrite")
-    _expect(bool(confirmed.get("ok", false)), "overwrite confirmation replaces the saved run")
-    _expect(service.commander_id == &"brakka_rustbanner", "overwrite confirmation preserves pending commander")
-    _expect(_read_bytes(explicit_path) != saved_before_cancel, "confirmed overwrite publishes new bytes")
+    var confirmed: Dictionary = launcher.call("request_start", "confirmed-replacement")
+    _expect(bool(confirmed.get("ok", false)), "subsequent start replaces the saved run directly")
+    _expect(service.commander_id == &"brakka_rustbanner", "replacement preserves selected commander")
+    _expect(_read_bytes(explicit_path) != saved_before_cancel, "subsequent replacement publishes new bytes")
     _expect(
         not _sessions.is_empty()
         and String(_sessions.back().get("resolved_seed", "")) == "confirmed-replacement",
@@ -262,8 +252,15 @@ func _run() -> void:
     var boss: Vector2i = lost_session.plan.get_boss_coord()
     lost_state.run_status = "lost"
     lost_state.battle_settlements = [{"battle_id":"boss","encounter_type":"boss","encounter_coord":[boss.x,boss.y],"outcome":"defeat","enemy_ids":["enemy_1"],"defeated_enemy_ids":[],"terminal_player_health":[{"character_id":"player_1","final_hp":0,"max_hp":14}],"earned_gold":0}]
-    var terminal_codec: Script = load("res://Scripts/Save/world_run_save_codec_v4.gd")
-    repository.replace_atomic(terminal_codec.encode(lost_session.plan, lost_session.resolved_seed, lost_state))
+    var terminal_codec: Script = load("res://Scripts/Save/world_run_save_codec_v8.gd")
+    repository.replace_atomic(terminal_codec.encode(
+        lost_session.plan,
+        lost_session.resolved_seed,
+        lost_state,
+        lost_session.selection,
+        lost_session.coalition,
+        lost_session.enemy_boss_selection
+    ))
     _sessions.clear()
     _expect(not launcher.call("continue_saved_run").get("ok", true), "lost Continue rejected")
     _expect(_sessions.is_empty(), "lost Continue emits no session")
@@ -321,10 +318,12 @@ func _expect(condition: bool, message: String) -> void:
 
 func _fail(message: String) -> void:
     _failures += 1
+    _failure_messages.append(message)
     push_error(message)
 
 
 func _finish() -> void:
+    _finished = true
     if _failures == 0:
         print("PASS test_world_production_launcher")
     quit(1 if _failures > 0 else 0)

@@ -169,7 +169,7 @@ func _test_facade_failures(plan: RefCounted) -> void:
         )
         _assert_equal(generic_error.feature_namespace, "codec", "facade generic RefCounted namespace")
         _assert_equal(generic_error.failed_constraint, "world_version", "facade generic RefCounted constraint")
-    var unsupported_plan: RefCounted = _copy_plan(plan, {"version": 3})
+    var unsupported_plan: RefCounted = _copy_plan(plan, {"version": 4})
     _assert_equal(
         _codec_script.serialize(unsupported_plan),
         PackedByteArray(),
@@ -187,7 +187,7 @@ func _test_facade_failures(plan: RefCounted) -> void:
     _assert_true(null_error != null, "facade null validation is typed error")
     var malformed: PackedByteArray = "TWDE-WORLD,+2\n".to_utf8_buffer()
     _assert_rejected(_codec_script.parse(malformed), "facade malformed version")
-    var unsupported: PackedByteArray = "TWDE-WORLD,3\n".to_utf8_buffer()
+    var unsupported: PackedByteArray = "TWDE-WORLD,4\n".to_utf8_buffer()
     var result: Dictionary = _codec_script.parse(unsupported)
     _assert_rejected(result, "facade unsupported version")
     if result.get("error") != null:
