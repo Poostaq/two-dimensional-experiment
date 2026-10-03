@@ -12,6 +12,9 @@ static var PLAN_SCRIPT: GDScript = load(
 static var ROAD_RULES_SCRIPT: GDScript = load(
     "res://Scripts/WorldMap/habitat_road_rules_v3.gd"
 )
+static var CODEC_V3_SCRIPT: GDScript = load(
+    "res://Scripts/WorldMap/world_plan_codec_v3.gd"
+)
 static var ERROR_SCRIPT: GDScript = load(
     "res://Scripts/WorldMap/world_generation_error.gd"
 )
@@ -50,6 +53,9 @@ func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
         v2_plan.get_habitats(),
         v2_plan.get_towns()
     )
+    var validation: Variant = CODEC_V3_SCRIPT.validate(plan)
+    if validation != null:
+        return {"ok": false, "plan": null, "error": validation}
     return {"ok": true, "plan": plan, "error": null}
 
 

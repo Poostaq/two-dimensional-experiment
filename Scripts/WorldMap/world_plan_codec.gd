@@ -7,6 +7,9 @@ static var CODEC_V1_SCRIPT: GDScript = load(
 static var CODEC_V2_SCRIPT: GDScript = load(
     "res://Scripts/WorldMap/world_plan_codec_v2.gd"
 )
+static var CODEC_V3_SCRIPT: GDScript = load(
+    "res://Scripts/WorldMap/world_plan_codec_v3.gd"
+)
 static var ERROR_SCRIPT: GDScript = load(
     "res://Scripts/WorldMap/world_generation_error.gd"
 )
@@ -28,6 +31,8 @@ static func serialize(plan: Variant) -> PackedByteArray:
 			return CODEC_V1_SCRIPT.serialize(plan)
 		2:
 			return CODEC_V2_SCRIPT.serialize(plan)
+		3:
+			return CODEC_V3_SCRIPT.serialize(plan)
 		_:
 			return PackedByteArray()
 
@@ -53,6 +58,8 @@ static func parse(bytes: PackedByteArray) -> Dictionary:
 			return CODEC_V1_SCRIPT.parse(bytes)
 		"TWDE-WORLD,2":
 			return CODEC_V2_SCRIPT.parse(bytes)
+		"TWDE-WORLD,3":
+			return CODEC_V3_SCRIPT.parse(bytes)
 		_:
 			var version := _header_version(header)
 			if version >= 0:
@@ -87,6 +94,8 @@ static func validate(plan: Variant) -> Variant:
 			return CODEC_V1_SCRIPT.validate(plan)
 		2:
 			return CODEC_V2_SCRIPT.validate(plan)
+		3:
+			return CODEC_V3_SCRIPT.validate(plan)
 		_:
 			return ERROR_SCRIPT.new(
 				ERROR_SCRIPT.WORLD_VERSION_UNSUPPORTED,
