@@ -8,6 +8,8 @@ var _boss_coord: Vector2i
 var _cells: Dictionary
 var _roads: Array
 var _forest_clusters: Array
+var _habitats: Array
+var _towns: Array
 
 
 func _init(
@@ -17,7 +19,9 @@ func _init(
     boss_coord: Vector2i,
     cells: Dictionary,
     roads: Array,
-    forest_clusters: Array
+    forest_clusters: Array,
+    habitats: Array = [],
+    towns: Array = []
 ) -> void:
     _version = version
     _seed_hex = seed_hex
@@ -26,6 +30,8 @@ func _init(
     _cells = cells.duplicate(true)
     _roads = roads.duplicate(true)
     _forest_clusters = forest_clusters.duplicate(true)
+    _habitats = habitats.duplicate(true)
+    _towns = towns.duplicate(true)
 
 
 func get_version() -> int:
@@ -54,3 +60,32 @@ func get_roads() -> Array:
 
 func get_forest_clusters() -> Array:
     return _forest_clusters.duplicate(true)
+
+
+func get_habitats() -> Array:
+    return _habitats.duplicate(true)
+
+
+func get_towns() -> Array:
+    return _towns.duplicate(true)
+
+
+func get_habitat_cells(habitat_id: String) -> Array[Vector2i]:
+    if habitat_id.is_empty():
+        return []
+    var coords: Array[Vector2i] = []
+    for coord_value: Variant in _cells:
+        if not coord_value is Vector2i:
+            continue
+        var coord: Vector2i = coord_value
+        var cell_value: Variant = _cells[coord]
+        if not cell_value is Dictionary:
+            continue
+        var cell: Dictionary = cell_value
+        if String(cell.get("habitat_id", "")) == habitat_id:
+            coords.append(coord)
+    coords.sort_custom(
+        func(a: Vector2i, b: Vector2i) -> bool:
+            return a.x < b.x or (a.x == b.x and a.y < b.y)
+    )
+    return coords

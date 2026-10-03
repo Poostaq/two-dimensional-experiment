@@ -11,6 +11,32 @@ const NEIGHBOR_OFFSETS: Array[Vector2i] = [
 ]
 
 
+static func rendered_horizontal_key(coord: Vector2i) -> int:
+    return coord.x * 2 + coord.y
+
+
+static func get_visual_extrema(coords: Array[Vector2i]) -> Dictionary:
+    if coords.is_empty():
+        return {}
+    var west: Vector2i = coords[0]
+    var east: Vector2i = coords[0]
+    for coord: Vector2i in coords:
+        var key := rendered_horizontal_key(coord)
+        var west_key := rendered_horizontal_key(west)
+        var east_key := rendered_horizontal_key(east)
+        if key < west_key or (
+            key == west_key
+            and (coord.x < west.x or (coord.x == west.x and coord.y < west.y))
+        ):
+            west = coord
+        if key > east_key or (
+            key == east_key
+            and (coord.x > east.x or (coord.x == east.x and coord.y > east.y))
+        ):
+            east = coord
+    return {"west": west, "east": east}
+
+
 static func get_canonical_coords(radius: int = 8) -> Array[Vector2i]:
     assert(radius >= 0, "Hex world radius must be non-negative")
     var coords: Array[Vector2i] = []
