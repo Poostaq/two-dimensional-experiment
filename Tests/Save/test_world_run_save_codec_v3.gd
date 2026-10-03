@@ -16,7 +16,10 @@ func _run() -> void:
 		return
 	var codec: GDScript = load(path)
 	var legacy: GDScript = load("res://Scripts/Save/world_run_save_codec_v2.gd")
-	var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(func(_plan: RefCounted) -> void: pass)
+	var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(
+		func(_plan: RefCounted) -> void: pass,
+		load("res://Scripts/WorldMap/hex_world_generator_v1.gd").new()
+	)
 	var session: Dictionary = service.start("golden-alpha")
 	var state: RefCounted = session["run_state"]
 	var plan: RefCounted = session["plan"]

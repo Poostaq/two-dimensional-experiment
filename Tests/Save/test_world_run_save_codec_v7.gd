@@ -13,7 +13,8 @@ func _init() -> void:
 
 func _run() -> void:
     var started: Dictionary = load(START_SERVICE_PATH).new(
-        func(_plan: RefCounted) -> void: pass
+        func(_plan: RefCounted) -> void: pass,
+        load("res://Scripts/WorldMap/hex_world_generator_v1.gd").new()
     ).start("ac9-vector-1")
     _expect(started.get("ok", false), "fixture run starts")
     if not started.get("ok", false):

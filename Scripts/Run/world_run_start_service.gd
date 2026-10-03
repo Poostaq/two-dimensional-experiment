@@ -3,13 +3,16 @@ extends RefCounted
 
 const RETURN_RESULT := "RETURN_RESULT"
 
-static var GENERATOR_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_generator_v1.gd")
+static var GENERATOR_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_generator_v2.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
 static var PRIORITY_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_priority.gd")
 static var ECONOMY_RULES_SCRIPT: GDScript = load("res://Scripts/Run/run_economy_rules.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 static var ENEMY_CLAN_SELECTOR_SCRIPT: GDScript = load(
     "res://Scripts/Run/run_enemy_clan_selector.gd"
+)
+static var ENEMY_BOSS_SELECTION_SCRIPT: GDScript = load(
+    "res://Scripts/Run/run_enemy_boss_selection.gd"
 )
 
 var _commit_callback: Callable
@@ -49,7 +52,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                1,
+                2,
                 "run-start",
                 "invalid_commander_id=%s" % String(commander_id)
             ),
@@ -61,7 +64,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                1,
+                2,
                 "run-start",
                 "invalid_commander_faction=%s:%s" % [String(commander_id), String(faction_id)]
             ),
@@ -80,12 +83,34 @@ func start(
                 "error": ERROR_SCRIPT.new(
                     ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                     PRIORITY_SCRIPT.seed_hex(seed_text),
-                    1,
+                    2,
                     "run-start",
                     "invalid_clan_selection"
                 ),
             }
         resolved_selection = selection_result["value"] as RunClanSelection
+    var selection_validation: Dictionary = RunClanSelection.create(
+        resolved_selection.main_clan_id,
+        resolved_selection.commander_id,
+        resolved_selection.seed_text
+    )
+    if (
+        not bool(selection_validation.get("ok", false))
+        or resolved_selection.main_clan_id != commander.race_id
+        or resolved_selection.commander_id != commander_id
+        or resolved_selection.seed_text != seed_text.strip_edges()
+    ):
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                2,
+                "run-start",
+                "invalid_clan_selection"
+            ),
+        }
     var resolved_coalition: RunClanCoalition = coalition
     if not is_instance_valid(resolved_coalition):
         var coalition_result: Dictionary = RunAlliedClanSelector.select(
@@ -106,9 +131,25 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                1,
+                2,
                 "run-start",
                 "allied_coalition_main_clan_mismatch"
+            ),
+        }
+    var coalition_validation: Dictionary = RunClanCoalition.create(
+        resolved_coalition.main_clan_id,
+        resolved_coalition.allied_clan_ids
+    )
+    if not bool(coalition_validation.get("ok", false)):
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                2,
+                "run-start",
+                "invalid_allied_coalition"
             ),
         }
     var resolved_enemy_boss_selection: RefCounted = enemy_boss_selection
@@ -128,7 +169,32 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                1,
+                2,
+                "run-start",
+                "enemy_boss_selection_invalid"
+            ),
+        }
+    var enemy_selection_valid: bool = (
+        resolved_enemy_boss_selection.get_script() == ENEMY_BOSS_SELECTION_SCRIPT
+    )
+    if enemy_selection_valid:
+        var enemy_selection_validation: Dictionary = ENEMY_BOSS_SELECTION_SCRIPT.create(
+            resolved_enemy_boss_selection.resolved_seed,
+            resolved_enemy_boss_selection.enemy_clan_id,
+            resolved_enemy_boss_selection.boss_party_id
+        )
+        enemy_selection_valid = (
+            bool(enemy_selection_validation.get("ok", false))
+            and resolved_enemy_boss_selection.resolved_seed == seed_text.strip_edges()
+        )
+    if not enemy_selection_valid:
+        return {
+            "ok": false,
+            "plan": null,
+            "error": ERROR_SCRIPT.new(
+                ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
+                PRIORITY_SCRIPT.seed_hex(seed_text),
+                2,
                 "run-start",
                 "enemy_boss_selection_invalid"
             ),
@@ -140,12 +206,16 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                1,
+                2,
                 "run-start",
                 "unsupported_failure_policy=%s" % policy
             ),
         }
-    var generated: Dictionary = _generator.generate(seed_text, config)
+    var generation_config: Dictionary = config.duplicate(true)
+    generation_config["main_clan_id"] = resolved_selection.main_clan_id
+    generation_config["allied_clan_ids"] = resolved_coalition.allied_clan_ids.duplicate()
+    generation_config["enemy_clan_id"] = resolved_enemy_boss_selection.enemy_clan_id
+    var generated: Dictionary = _generator.generate(seed_text, generation_config)
     if not generated.get("ok", false):
         return {
             "ok": false,

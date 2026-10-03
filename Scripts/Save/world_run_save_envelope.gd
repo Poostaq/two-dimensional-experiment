@@ -3,11 +3,12 @@ extends RefCounted
 
 const SCHEMA := "twde-run-save"
 const GENERATOR_VERSION := 1
+const GENERATOR_VERSION_V2 := 2
 const STARTER_ROSTER_VERSION := 1
 
 static var SAVE_ERROR_SCRIPT: GDScript = load("res://Scripts/Save/world_save_error.gd")
 static var WORLD_ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
-static var PLAN_CODEC_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan_codec_v1.gd")
+static var PLAN_CODEC_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan_codec.gd")
 static var RUN_STATE_SCRIPT: GDScript = load("res://Scripts/Run/world_run_state.gd")
 static var ENEMY_BOSS_SELECTION_SCRIPT: GDScript = load(
     "res://Scripts/Run/run_enemy_boss_selection.gd"
@@ -27,6 +28,11 @@ static func encode(
         return PackedByteArray()
     if save_version not in [2, 3, 4, 5, 6, 7, 8] or not run_state.is_valid(plan):
         return PackedByteArray()
+    var generator_version: int = plan.get_version()
+    if save_version < 8 and generator_version != GENERATOR_VERSION:
+        return PackedByteArray()
+    if save_version == 8 and generator_version not in [GENERATOR_VERSION, GENERATOR_VERSION_V2]:
+        return PackedByteArray()
     if save_version in [6, 7, 8] and not is_instance_valid(selection):
         return PackedByteArray()
     if save_version in [7, 8] and not is_instance_valid(coalition):
@@ -38,6 +44,17 @@ static func encode(
         and (
             not is_instance_valid(enemy_boss_selection)
             or enemy_boss_selection.resolved_seed != resolved_seed
+        )
+    ):
+        return PackedByteArray()
+    if (
+        save_version == 8
+        and generator_version == GENERATOR_VERSION_V2
+        and not _v2_identities_match(
+            plan,
+            selection,
+            coalition,
+            enemy_boss_selection
         )
     ):
         return PackedByteArray()
@@ -54,6 +71,8 @@ static func encode(
     if save_version == 2:
         state_data.erase("gold")
     var plan_bytes: PackedByteArray = PLAN_CODEC_SCRIPT.serialize(plan)
+    if plan_bytes.is_empty():
+        return PackedByteArray()
     var root: Dictionary = {
         "schema": SCHEMA,
         "save_version": save_version,
@@ -107,7 +126,14 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
         if not world.has(field):
             return _save_failure("missing_%s" % field)
     var generator_version := int(world.get("generator_version", -1))
-    if generator_version != GENERATOR_VERSION:
+    var generator_supported: bool = (
+        generator_version == GENERATOR_VERSION
+        or (
+            expected_version == 8
+            and generator_version == GENERATOR_VERSION_V2
+        )
+    )
+    if not generator_supported:
         return _world_failure(
             WORLD_ERROR_SCRIPT.WORLD_VERSION_UNSUPPORTED,
             String(world.get("run_seed_utf8_hex", "")),
@@ -118,13 +144,19 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     if not world.get("canonical_plan_utf8") is String or not world.get("canonical_plan_sha256") is String:
         return _save_failure("plan_fields")
     var plan_bytes := String(world["canonical_plan_utf8"]).to_utf8_buffer()
+    if plan_bytes.is_empty():
+        return _save_failure("canonical_plan")
     if _sha256(plan_bytes) != String(world["canonical_plan_sha256"]):
         return _save_failure("canonical_plan_sha256")
     var plan_result: Dictionary = PLAN_CODEC_SCRIPT.parse(plan_bytes)
     if not bool(plan_result.get("ok", false)):
         return _save_failure("canonical_plan")
     var plan := plan_result.get("plan") as RefCounted
-    if not is_instance_valid(plan) or plan.get_seed_hex() != String(world.get("run_seed_utf8_hex", "")):
+    if not is_instance_valid(plan):
+        return _save_failure("canonical_plan")
+    if plan.get_version() != generator_version:
+        return _save_failure("generator_version")
+    if plan.get_seed_hex() != String(world.get("run_seed_utf8_hex", "")):
         return _save_failure("run_seed_utf8_hex")
     if not world.get("resolved_seed") is String or not world.get("run_state") is Dictionary:
         return _save_failure("runtime_fields")
@@ -165,6 +197,16 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
         if not bool(enemy_selection_result.get("ok", false)):
             return _save_failure("enemy_boss_selection")
         enemy_boss_selection = enemy_selection_result.get("value") as RefCounted
+    if (
+        generator_version == GENERATOR_VERSION_V2
+        and not _v2_identities_match(
+            plan,
+            selection,
+            coalition,
+            enemy_boss_selection
+        )
+    ):
+        return _save_failure("generated_plan_identities")
     var state_data: Dictionary = world["run_state"].duplicate(true)
     if expected_version < 5:
         if state_data.has("pending_reward_battle_id"):
@@ -194,6 +236,40 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
         },
         "error": null,
     }
+
+
+static func _v2_identities_match(
+    plan: RefCounted,
+    selection: RunClanSelection,
+    coalition: RunClanCoalition,
+    enemy_boss_selection: RefCounted
+) -> bool:
+    if (
+        not is_instance_valid(selection)
+        or not is_instance_valid(coalition)
+        or not is_instance_valid(enemy_boss_selection)
+        or enemy_boss_selection.get_script() != ENEMY_BOSS_SELECTION_SCRIPT
+        or coalition.allied_clan_ids.size() != 2
+    ):
+        return false
+    var habitats: Array = plan.get_habitats()
+    var expected_ids: Array[String] = ["main", "ally_0", "ally_1", "enemy"]
+    if habitats.size() != expected_ids.size():
+        return false
+    for index: int in expected_ids.size():
+        var habitat_value: Variant = habitats[index]
+        if (
+            not habitat_value is Dictionary
+            or String(habitat_value.get("habitat_id", "")) != expected_ids[index]
+        ):
+            return false
+    return (
+        StringName(habitats[0].get("clan_id", "")) == selection.main_clan_id
+        and StringName(habitats[1].get("clan_id", "")) == coalition.allied_clan_ids[0]
+        and StringName(habitats[2].get("clan_id", "")) == coalition.allied_clan_ids[1]
+        and StringName(habitats[3].get("clan_id", ""))
+        == enemy_boss_selection.enemy_clan_id
+    )
 
 
 static func _migrate_legacy_starter_health(state: RefCounted) -> bool:
@@ -276,7 +352,10 @@ static func _valid_current_shape(root: Dictionary, version: int) -> bool:
         world_keys.append("boss_party_id")
     if not _keys_match(world, world_keys):
         return false
-    if not _integer(world.generator_version, 1, 1) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
+    var maximum_generator_version := (
+        GENERATOR_VERSION_V2 if version == 8 else GENERATOR_VERSION
+    )
+    if not _integer(world.generator_version, 1, maximum_generator_version) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
         return false
     var state: Variant = world.run_state
     var keys: Array[String] = ["player_coord", "boss_coord", "move_count", "gold", "boss_active", "boss_engaged", "consumed_encounters", "formation", "character_hp", "cache_move_progress", "cache_ready", "battle_preparation", "run_status", "battle_settlements"]

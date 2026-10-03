@@ -171,7 +171,10 @@ func _run() -> void:
 
 
 func _test_reward_pending(plan: WorldPlan) -> void:
-    var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(func(_p: RefCounted) -> void: pass).start("golden-alpha")
+    var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(
+        func(_p: RefCounted) -> void: pass,
+        (load(GENERATOR_PATH) as GDScript).new()
+    ).start("golden-alpha")
     var state: RefCounted = session.run_state
     var coord: Vector2i = plan.get_boss_coord()
     state.player_coord = coord

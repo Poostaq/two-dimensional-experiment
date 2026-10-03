@@ -141,7 +141,8 @@ func _encode_candidate(state: RefCounted) -> PackedByteArray:
             _plan,
             _resolved_seed,
             state,
-            _selection
+            _selection,
+            _coalition
         )
     if is_instance_valid(_selection):
         return V6_CODEC_SCRIPT.encode(_plan, _resolved_seed, state, _selection)

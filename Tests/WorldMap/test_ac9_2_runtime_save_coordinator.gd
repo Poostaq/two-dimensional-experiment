@@ -2,6 +2,7 @@ extends SceneTree
 
 const COORDINATOR_PATH := "res://Scripts/WorldMap/world_runtime_save_coordinator.gd"
 const START_SERVICE_PATH := "res://Scripts/Run/world_run_start_service.gd"
+const GENERATOR_PATH := "res://Scripts/WorldMap/hex_world_generator_v1.gd"
 const STATE_PATH := "res://Scripts/Run/world_run_state.gd"
 const V7_CODEC_PATH := "res://Scripts/Save/world_run_save_codec_v7.gd"
 
@@ -25,7 +26,8 @@ func _init() -> void:
 
 func _run() -> void:
     var started: Dictionary = load(START_SERVICE_PATH).new(
-        func(_plan: RefCounted) -> void: pass
+        func(_plan: RefCounted) -> void: pass,
+        (load(GENERATOR_PATH) as GDScript).new()
     ).start("ac9-vector-1")
     _expect(started.get("ok", false), "fixture run starts")
     if not started.get("ok", false):

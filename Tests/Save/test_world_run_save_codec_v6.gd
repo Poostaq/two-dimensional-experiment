@@ -14,7 +14,10 @@ func _run() -> void:
     _expect(is_instance_valid(codec), "V6 codec exists")
     if is_instance_valid(codec):
         _expect_equal(codec.get("SAVE_VERSION"), 6, "V6 writer version")
-        var service: WorldRunStartService = WorldRunStartService.new(func(_plan: RefCounted) -> void: pass)
+        var service: WorldRunStartService = WorldRunStartService.new(
+            func(_plan: RefCounted) -> void: pass,
+            load("res://Scripts/WorldMap/hex_world_generator_v1.gd").new()
+        )
         var selection_result: Dictionary = RunClanSelection.create(&"orc", &"goruk_ironline", "v6-selection")
         _expect(selection_result.get("ok", false), "valid selection constructs")
         if selection_result.get("ok", false):

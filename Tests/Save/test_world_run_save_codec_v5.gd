@@ -13,7 +13,10 @@ func _run() -> void:
 		quit(1)
 		return
 	var codec: Script = load(path)
-	var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(func(_p: RefCounted) -> void: pass)
+	var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(
+		func(_p: RefCounted) -> void: pass,
+		load("res://Scripts/WorldMap/hex_world_generator_v1.gd").new()
+	)
 	var session: Dictionary = service.start("golden-alpha")
 	var plan: WorldPlan = session.plan
 	var state: RefCounted = session.run_state
