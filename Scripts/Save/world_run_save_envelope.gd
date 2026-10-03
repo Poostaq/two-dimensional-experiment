@@ -4,6 +4,8 @@ extends RefCounted
 const SCHEMA := "twde-run-save"
 const GENERATOR_VERSION := 1
 const GENERATOR_VERSION_V2 := 2
+const GENERATOR_VERSION_V3 := 3
+const GENERATED_GENERATOR_VERSIONS: Array[int] = [GENERATOR_VERSION_V2, GENERATOR_VERSION_V3]
 const STARTER_ROSTER_VERSION := 1
 
 static var SAVE_ERROR_SCRIPT: GDScript = load("res://Scripts/Save/world_save_error.gd")
@@ -31,7 +33,7 @@ static func encode(
     var generator_version: int = plan.get_version()
     if save_version < 8 and generator_version != GENERATOR_VERSION:
         return PackedByteArray()
-    if save_version == 8 and generator_version not in [GENERATOR_VERSION, GENERATOR_VERSION_V2]:
+    if save_version == 8 and generator_version != GENERATOR_VERSION and generator_version not in GENERATED_GENERATOR_VERSIONS:
         return PackedByteArray()
     if save_version in [6, 7, 8] and not is_instance_valid(selection):
         return PackedByteArray()
@@ -49,8 +51,8 @@ static func encode(
         return PackedByteArray()
     if (
         save_version == 8
-        and generator_version == GENERATOR_VERSION_V2
-        and not _v2_identities_match(
+        and generator_version in GENERATED_GENERATOR_VERSIONS
+        and not _generated_identities_match(
             plan,
             selection,
             coalition,
@@ -130,7 +132,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
         generator_version == GENERATOR_VERSION
         or (
             expected_version == 8
-            and generator_version == GENERATOR_VERSION_V2
+            and generator_version in GENERATED_GENERATOR_VERSIONS
         )
     )
     if not generator_supported:
@@ -198,8 +200,8 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
             return _save_failure("enemy_boss_selection")
         enemy_boss_selection = enemy_selection_result.get("value") as RefCounted
     if (
-        generator_version == GENERATOR_VERSION_V2
-        and not _v2_identities_match(
+        generator_version in GENERATED_GENERATOR_VERSIONS
+        and not _generated_identities_match(
             plan,
             selection,
             coalition,
@@ -238,7 +240,7 @@ static func decode(root: Dictionary, expected_version: int) -> Dictionary:
     }
 
 
-static func _v2_identities_match(
+static func _generated_identities_match(
     plan: RefCounted,
     selection: RunClanSelection,
     coalition: RunClanCoalition,
@@ -353,7 +355,7 @@ static func _valid_current_shape(root: Dictionary, version: int) -> bool:
     if not _keys_match(world, world_keys):
         return false
     var maximum_generator_version := (
-        GENERATOR_VERSION_V2 if version == 8 else GENERATOR_VERSION
+        GENERATOR_VERSION_V3 if version == 8 else GENERATOR_VERSION
     )
     if not _integer(world.generator_version, 1, maximum_generator_version) or not world.run_seed_utf8_hex is String or not world.resolved_seed is String or world.resolved_seed.is_empty():
         return false

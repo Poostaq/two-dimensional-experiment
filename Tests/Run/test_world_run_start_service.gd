@@ -2,6 +2,7 @@ extends SceneTree
 
 const SERVICE_PATH := "res://Scripts/Run/world_run_start_service.gd"
 const GENERATOR_V2_PATH := "res://Scripts/WorldMap/hex_world_generator_v2.gd"
+const GENERATOR_V3_PATH := "res://Scripts/WorldMap/hex_world_generator_v3.gd"
 
 var _failures: int = 0
 var _commit_count: int = 0
@@ -43,7 +44,8 @@ func _run() -> void:
         _fail("WorldRunStartService script is missing")
         _finish()
         return
-    _test_default_v2_success(service_script)
+    _test_default_v3_success(service_script)
+    _test_explicit_v2_generator_compatibility(service_script)
     _test_race_starters(service_script)
     _test_reserved_config_injection(service_script)
     _test_pre_generation_validation(service_script)
@@ -52,7 +54,7 @@ func _run() -> void:
     _finish()
 
 
-func _test_default_v2_success(service_script: GDScript) -> void:
+func _test_default_v3_success(service_script: GDScript) -> void:
     _reset_commits()
     var service: RefCounted = service_script.new(Callable(self, "_commit_plan"))
     var success: Dictionary = service.call(
@@ -68,12 +70,12 @@ func _test_default_v2_success(service_script: GDScript) -> void:
     if not success.get("ok", false):
         return
     var plan: RefCounted = success["plan"]
-    _assert_equal(plan.get_version(), 2, "default generator produces V2")
+    _assert_equal(plan.get_version(), 3, "default generator produces V3")
     _assert_equal(plan.get_start_coord(), Vector2i(8, 0), "player starts at east extreme")
     _assert_equal(plan.get_boss_coord(), Vector2i(-8, 0), "boss starts at west extreme")
-    _assert_equal(plan.get_habitats().size(), 4, "V2 plan has four habitats")
-    _assert_equal(plan.get_towns().size(), 9, "V2 plan has nine towns")
-    _assert_equal(plan.get_roads(), [], "V2 plan keeps roads empty")
+    _assert_equal(plan.get_habitats().size(), 4, "V3 plan has four habitats")
+    _assert_equal(plan.get_towns().size(), 9, "V3 plan has nine towns")
+    _assert_equal(plan.get_roads().size(), 9, "V3 plan has nine internal roads")
     _assert_equal(success["run_state"].player_coord, plan.get_start_coord(), "state starts east")
     _assert_equal(success["run_state"].boss_coord, plan.get_boss_coord(), "state boss is west")
     _assert_true(success.has("coalition"), "new run returns allied coalition")
@@ -92,6 +94,20 @@ func _test_default_v2_success(service_script: GDScript) -> void:
     _assert_equal(formation[0], &"wirefang_skirmisher", "Goblin left starter is fixed")
     _assert_equal(formation[1], &"brakka_rustbanner", "Brakka occupies middle frontline")
     _assert_equal(formation[2], &"snarewright", "Goblin right starter is fixed")
+
+
+func _test_explicit_v2_generator_compatibility(service_script: GDScript) -> void:
+    _reset_commits()
+    var generator_v2: RefCounted = load(GENERATOR_V2_PATH).new()
+    var service: RefCounted = service_script.new(Callable(self, "_commit_plan"), generator_v2)
+    var started: Dictionary = service.start("explicit-v2-compatibility")
+    _assert_true(started.get("ok", false), "explicit V2 generator remains supported")
+    _assert_equal(_commit_count, 1, "explicit V2 start commits once")
+    if not started.get("ok", false):
+        return
+    var plan: RefCounted = started["plan"]
+    _assert_equal(plan.get_version(), 2, "explicit generator preserves V2 plan")
+    _assert_equal(plan.get_roads(), [], "explicit V2 plan keeps roads empty")
 
 
 func _test_race_starters(service_script: GDScript) -> void:
@@ -133,7 +149,7 @@ func _test_reserved_config_injection(service_script: GDScript) -> void:
     var selection: RunClanSelection = _selection(seed_text)
     var coalition: RunClanCoalition = _coalition()
     var enemy_selection: RefCounted = _enemy_selection(seed_text)
-    var generator_spy := GeneratorSpy.new(load(GENERATOR_V2_PATH).new())
+    var generator_spy := GeneratorSpy.new(load(GENERATOR_V3_PATH).new())
     var service: RefCounted = service_script.new(Callable(self, "_commit_plan"), generator_spy)
     var caller_config := {
         "main_clan_id": &"forged_main",
@@ -178,7 +194,7 @@ func _test_reserved_config_injection(service_script: GDScript) -> void:
 
 func _test_pre_generation_validation(service_script: GDScript) -> void:
     _reset_commits()
-    var spy := GeneratorSpy.new(load(GENERATOR_V2_PATH).new())
+    var spy := GeneratorSpy.new(load(GENERATOR_V3_PATH).new())
     var service: RefCounted = service_script.new(Callable(self, "_commit_plan"), spy)
     var cases: Array[Dictionary] = []
 
@@ -237,8 +253,8 @@ func _test_pre_generation_validation(service_script: GDScript) -> void:
         if result.get("error") != null:
             _assert_equal(
                 result["error"].generator_version,
-                2,
-                "%s reports V2 generator version" % case["label"]
+                3,
+                "%s reports V3 generator version" % case["label"]
             )
 
 
@@ -252,7 +268,7 @@ func _test_generation_failure_is_atomic(service_script: GDScript) -> void:
         "error": error_script.new(
             error_script.WORLD_CONSTRAINT_UNSATISFIABLE,
             "00",
-            2,
+            3,
             "test",
             "forced"
         ),
@@ -278,13 +294,13 @@ func _test_fixed_config_failure_is_atomic(service_script: GDScript) -> void:
         "noncanonical-run-start",
         {"radius": 9, "forest_count": 0}
     )
-    _assert_true(not result.get("ok", true), "noncanonical V2 config is rejected")
-    _assert_equal(result.get("plan"), null, "noncanonical V2 config publishes no plan")
-    _assert_equal(result.get("run_state"), null, "noncanonical V2 config builds no run state")
-    _assert_equal(_commit_count, 0, "noncanonical V2 config does not commit")
-    _assert_true(result.get("error") != null, "noncanonical V2 config returns typed error")
+    _assert_true(not result.get("ok", true), "noncanonical V3 config is rejected")
+    _assert_equal(result.get("plan"), null, "noncanonical V3 config publishes no plan")
+    _assert_equal(result.get("run_state"), null, "noncanonical V3 config builds no run state")
+    _assert_equal(_commit_count, 0, "noncanonical V3 config does not commit")
+    _assert_true(result.get("error") != null, "noncanonical V3 config returns typed error")
     if result.get("error") != null:
-        _assert_equal(result["error"].generator_version, 2, "config failure reports V2")
+        _assert_equal(result["error"].generator_version, 3, "config failure reports V3")
         _assert_equal(result["error"].feature_namespace, "habitat", "config failure namespace")
         _assert_equal(result["error"].failed_constraint, "fixed_radius=8", "config failure constraint")
 

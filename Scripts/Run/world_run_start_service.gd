@@ -2,8 +2,9 @@ class_name WorldRunStartService
 extends RefCounted
 
 const RETURN_RESULT := "RETURN_RESULT"
+const GENERATOR_VERSION := 3
 
-static var GENERATOR_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_generator_v2.gd")
+static var GENERATOR_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_generator_v3.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
 static var PRIORITY_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_priority.gd")
 static var ECONOMY_RULES_SCRIPT: GDScript = load("res://Scripts/Run/run_economy_rules.gd")
@@ -52,7 +53,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "invalid_commander_id=%s" % String(commander_id)
             ),
@@ -64,7 +65,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "invalid_commander_faction=%s:%s" % [String(commander_id), String(faction_id)]
             ),
@@ -106,7 +107,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "invalid_clan_selection"
             ),
@@ -131,7 +132,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "allied_coalition_main_clan_mismatch"
             ),
@@ -147,7 +148,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "invalid_allied_coalition"
             ),
@@ -169,7 +170,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "enemy_boss_selection_invalid"
             ),
@@ -194,7 +195,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "enemy_boss_selection_invalid"
             ),
@@ -206,7 +207,7 @@ func start(
             "error": ERROR_SCRIPT.new(
                 ERROR_SCRIPT.WORLD_GENERATION_INTERNAL_ERROR,
                 PRIORITY_SCRIPT.seed_hex(seed_text),
-                2,
+                GENERATOR_VERSION,
                 "run-start",
                 "unsupported_failure_policy=%s" % policy
             ),
