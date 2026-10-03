@@ -38,6 +38,41 @@ func _run() -> void:
             occupied[coord] = true
     _assert_equal(sizes, [3, 5, 7, 6, 5, 5, 5, 6, 7, 3], "empty-seed forest sizes")
 
+    var omitted_v1: Dictionary = solver.solve_forests(
+        "version-default",
+        coords,
+        towns,
+        Vector2i(-8, 0),
+        Vector2i(8, 0),
+        1
+    )
+    var explicit_v1: Dictionary = solver.solve_forests(
+        "version-default",
+        coords,
+        towns,
+        Vector2i(-8, 0),
+        Vector2i(8, 0),
+        1,
+        1
+    )
+    _assert_true(omitted_v1.get("ok", false), "omitted V1 forest solve succeeds")
+    _assert_true(explicit_v1.get("ok", false), "explicit V1 forest solve succeeds")
+    if omitted_v1.get("ok", false) and explicit_v1.get("ok", false):
+        _assert_equal(explicit_v1["clusters"], omitted_v1["clusters"], "omitted forest version preserves V1 output")
+
+    var no_towns: Array[Vector2i] = []
+    var impossible_forests: Dictionary = solver.solve_forests(
+        "impossible-forest",
+        geometry_script.get_canonical_coords(1),
+        no_towns,
+        Vector2i(-1, 0),
+        Vector2i(1, 0),
+        10
+    )
+    _assert_true(not impossible_forests.get("ok", true), "impossible omitted-version forests fail")
+    if not impossible_forests.get("ok", true):
+        _assert_equal(impossible_forests["error"].generator_version, 1, "omitted forest version reports V1")
+
     var impossible_coords: Array[Vector2i] = geometry_script.get_canonical_coords(2)
     var failed: Dictionary = solver.solve_towns("impossible", impossible_coords, Vector2i(-2, 0), Vector2i(2, 0), 7, 4)
     _assert_true(not failed.get("ok", true), "impossible towns fail")

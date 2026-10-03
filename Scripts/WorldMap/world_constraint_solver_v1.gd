@@ -44,7 +44,8 @@ func solve_forests(
     towns: Array[Vector2i],
     start_coord: Vector2i,
     boss_coord: Vector2i,
-    cluster_count: int = 10
+    cluster_count: int = 10,
+    generator_version: int = VERSION
 ) -> Dictionary:
     var unavailable: Dictionary = {start_coord: true, boss_coord: true}
     for town: Vector2i in towns:
@@ -55,10 +56,11 @@ func solve_forests(
         unavailable,
         0,
         cluster_count,
-        []
+        [],
+        generator_version
     )
     if clusters.size() != cluster_count:
-        return _failure(seed_text, "forest", "cluster_count=%d" % cluster_count)
+        return _failure(seed_text, "forest", "cluster_count=%d" % cluster_count, generator_version)
     return {"ok": true, "clusters": clusters, "error": null}
 
 
@@ -102,12 +104,13 @@ func _solve_forest_index(
     unavailable: Dictionary,
     cluster_index: int,
     cluster_count: int,
-    selected_clusters: Array
+    selected_clusters: Array,
+    generator_version: int
 ) -> Array:
     if cluster_index == cluster_count:
         return selected_clusters
     var size_hash: int = PRIORITY_SCRIPT.fnv1a32_ascii(
-        PRIORITY_SCRIPT.payload(VERSION, seed_text, "forest-size", cluster_index, Vector2i.ZERO)
+        PRIORITY_SCRIPT.payload(generator_version, seed_text, "forest-size", cluster_index, Vector2i.ZERO)
     )
     var target_size: int = 3 + size_hash % 5
     var available: Array[Vector2i] = []
@@ -116,7 +119,7 @@ func _solve_forest_index(
             available.append(coord)
     var roots: Array[Vector2i] = PRIORITY_SCRIPT.rank_coords(
         available,
-        VERSION,
+        generator_version,
         seed_text,
         "forest-frontier",
         cluster_index
@@ -128,7 +131,8 @@ func _solve_forest_index(
             target_size,
             [root],
             unavailable,
-            coords
+            coords,
+            generator_version
         )
         if cluster.size() != target_size:
             continue
@@ -143,7 +147,8 @@ func _solve_forest_index(
             next_unavailable,
             cluster_index + 1,
             cluster_count,
-            next_clusters
+            next_clusters,
+            generator_version
         )
         if solved.size() == cluster_count:
             return solved
@@ -156,7 +161,8 @@ func _grow_first_cluster(
     target_size: int,
     selected: Array[Vector2i],
     unavailable: Dictionary,
-    coords: Array[Vector2i]
+    coords: Array[Vector2i],
+    generator_version: int
 ) -> Array[Vector2i]:
     if selected.size() == target_size:
         return selected
@@ -173,7 +179,7 @@ func _grow_first_cluster(
         frontier.append(coord_value)
     frontier = PRIORITY_SCRIPT.rank_coords(
         frontier,
-        VERSION,
+        generator_version,
         seed_text,
         "forest-frontier",
         cluster_index
@@ -187,14 +193,20 @@ func _grow_first_cluster(
             target_size,
             next_selected,
             unavailable,
-            coords
+            coords,
+            generator_version
         )
         if solved.size() == target_size:
             return solved
     return []
 
 
-func _failure(seed_text: String, feature_namespace: String, constraint: String) -> Dictionary:
+func _failure(
+    seed_text: String,
+    feature_namespace: String,
+    constraint: String,
+    generator_version: int = VERSION
+) -> Dictionary:
     return {
         "ok": false,
         "towns": [],
@@ -202,7 +214,7 @@ func _failure(seed_text: String, feature_namespace: String, constraint: String) 
         "error": ERROR_SCRIPT.new(
             ERROR_SCRIPT.WORLD_CONSTRAINT_UNSATISFIABLE,
             PRIORITY_SCRIPT.seed_hex(seed_text),
-            VERSION,
+            generator_version,
             feature_namespace,
             constraint
         ),
