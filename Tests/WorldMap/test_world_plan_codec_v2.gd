@@ -399,7 +399,8 @@ func _test_generator_validation_gate() -> void:
     var result: Dictionary = _generate("codec-gate", config)
     _assert_rejected(result, "production generator rejects codec-invalid final plan")
     if result.get("error") != null:
-        _assert_equal(result["error"].feature_namespace, "validation", "generator propagates codec validation error")
+        _assert_equal(result["error"].feature_namespace, "habitat", "generator rejects fixed config before solving")
+        _assert_equal(result["error"].failed_constraint, "forest_cluster_count=10", "generator reports fixed forest count")
 
 
 func _copy_plan(plan: RefCounted, overrides: Dictionary) -> RefCounted:

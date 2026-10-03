@@ -20,9 +20,13 @@ func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
         return _internal_failure(seed_text, "identity_context_invalid")
 
     var radius_value: Variant = config.get("radius", DEFAULT_RADIUS)
-    if not radius_value is int or int(radius_value) < 0:
-        return _internal_failure(seed_text, "visual_extrema_invalid")
-    var radius: int = radius_value
+    if not radius_value is int or int(radius_value) != DEFAULT_RADIUS:
+        return _internal_failure(seed_text, "fixed_radius=8")
+    var forest_count_value: Variant = config.get("forest_count", DEFAULT_FOREST_COUNT)
+    if not forest_count_value is int or int(forest_count_value) != DEFAULT_FOREST_COUNT:
+        return _internal_failure(seed_text, "forest_cluster_count=10")
+    var radius: int = DEFAULT_RADIUS
+    var forest_count: int = DEFAULT_FOREST_COUNT
     var coords: Array[Vector2i] = GEOMETRY_SCRIPT.get_canonical_coords(radius)
     var extrema: Dictionary = GEOMETRY_SCRIPT.get_visual_extrema(coords)
     if not _valid_visual_extrema(extrema, coords):
@@ -48,10 +52,6 @@ func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
         var town: Dictionary = town_value
         town_coords.append(town["coord"])
 
-    var forest_count_value: Variant = config.get("forest_count", DEFAULT_FOREST_COUNT)
-    if not forest_count_value is int or int(forest_count_value) < 0:
-        return _internal_failure(seed_text, "identity_context_invalid")
-    var forest_count: int = forest_count_value
     var constraint_solver: RefCounted = CONSTRAINT_SOLVER_SCRIPT.new()
     var forest_result: Dictionary = constraint_solver.solve_forests(
         seed_text,
@@ -105,14 +105,9 @@ func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
         habitats,
         towns
     )
-    if (
-        radius == DEFAULT_RADIUS
-        and start_coord == CODEC_V2_SCRIPT.START_COORD
-        and enemy_coord == CODEC_V2_SCRIPT.BOSS_COORD
-    ):
-        var validation: Variant = CODEC_V2_SCRIPT.validate(plan)
-        if validation != null:
-            return {"ok": false, "plan": null, "error": validation}
+    var validation: Variant = CODEC_V2_SCRIPT.validate(plan)
+    if validation != null:
+        return {"ok": false, "plan": null, "error": validation}
     return {"ok": true, "plan": plan, "error": null}
 
 

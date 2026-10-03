@@ -27,6 +27,7 @@ func _run() -> void:
     var bytes: PackedByteArray = _encode(codec_script, started)
     _test_v2_round_trip(codec_script, started, bytes)
     _test_encode_identity_rejections(codec_script, started)
+    _test_invalid_plan_encode_rejection(codec_script, started)
     _test_decode_identity_rejections(codec_script, bytes)
     _test_version_and_integrity_rejections(codec_script, bytes)
     _test_v1_round_trip(codec_script)
@@ -228,6 +229,24 @@ func _test_encode_identity_rejections(codec_script: GDScript, started: Dictionar
     )
 
 
+func _test_invalid_plan_encode_rejection(
+    codec_script: GDScript,
+    started: Dictionary
+) -> void:
+    var invalid_plan: RefCounted = _copy_plan_with_forests(started.plan, [])
+    _expect(
+        codec_script.encode(
+            invalid_plan,
+            started.resolved_seed,
+            started.run_state,
+            started.selection,
+            started.coalition,
+            started.enemy_boss_selection
+        ).is_empty(),
+        "V8 encode rejects structurally invalid V2 plan before serialization"
+    )
+
+
 func _test_decode_identity_rejections(codec_script: GDScript, bytes: PackedByteArray) -> void:
     var original: Dictionary = JSON.parse_string(bytes.get_string_from_utf8())
 
@@ -374,6 +393,20 @@ func _coalition_copy(source: RunClanCoalition) -> RunClanCoalition:
     copy.main_clan_id = source.main_clan_id
     copy.allied_clan_ids = source.allied_clan_ids.duplicate()
     return copy
+
+
+func _copy_plan_with_forests(plan: RefCounted, forests: Array) -> RefCounted:
+    return load(WORLD_PLAN_PATH).new(
+        plan.get_version(),
+        plan.get_seed_hex(),
+        plan.get_start_coord(),
+        plan.get_boss_coord(),
+        plan.get_cells(),
+        plan.get_roads(),
+        forests,
+        plan.get_habitats(),
+        plan.get_towns()
+    )
 
 
 func _copy_plan_with_version(plan: RefCounted, version: int) -> RefCounted:

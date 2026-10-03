@@ -32,8 +32,7 @@ func _run() -> void:
     _test_determinism()
     _test_playable_clan_corpus()
     _test_identity_failures()
-    _test_visual_extrema_failure()
-    _test_finite_search_failure()
+    _test_fixed_config_contract()
     _test_forest_versioning()
     _finish()
 
@@ -217,31 +216,36 @@ func _test_identity_failures() -> void:
         )
 
 
-func _test_visual_extrema_failure() -> void:
-    var config: Dictionary = _golden_config()
-    config["radius"] = 0
-    var result: Dictionary = _generate("invalid-extrema", config)
+func _test_fixed_config_contract() -> void:
+    var noncanonical: Dictionary = _golden_config()
+    noncanonical["radius"] = 9
+    noncanonical["forest_count"] = 0
     _assert_exact_failure(
-        result,
-        "invalid-extrema",
+        _generate("noncanonical-shape", noncanonical),
+        "noncanonical-shape",
         "WORLD_GENERATION_INTERNAL_ERROR",
         "habitat",
-        "visual_extrema_invalid",
-        "radius-zero visual extrema"
+        "fixed_radius=8",
+        "noncanonical feasible radius"
     )
 
-
-func _test_finite_search_failure() -> void:
-    var config: Dictionary = _golden_config()
-    config["radius"] = 1
-    var result: Dictionary = _generate("small-unsat", config)
+    var forest_override: Dictionary = _golden_config()
+    forest_override["forest_count"] = 0
     _assert_exact_failure(
-        result,
-        "small-unsat",
-        "WORLD_CONSTRAINT_UNSATISFIABLE",
+        _generate("noncanonical-forests", forest_override),
+        "noncanonical-forests",
+        "WORLD_GENERATION_INTERNAL_ERROR",
         "habitat",
-        "connected_partition_with_town_capacity",
-        "finite anchor search unsatisfiable"
+        "forest_cluster_count=10",
+        "noncanonical forest count"
+    )
+
+    var explicit_canonical: Dictionary = _golden_config()
+    explicit_canonical["radius"] = DEFAULT_RADIUS
+    explicit_canonical["forest_count"] = 10
+    _assert_true(
+        _generate("explicit-canonical", explicit_canonical).get("ok", false),
+        "explicit canonical fixed config remains accepted"
     )
 
 

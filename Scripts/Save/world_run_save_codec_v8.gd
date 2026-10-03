@@ -5,6 +5,7 @@ const SAVE_VERSION: int = 8
 
 static var ENVELOPE_SCRIPT: Script = load("res://Scripts/Save/world_run_save_envelope.gd")
 static var V7_SCRIPT: Script = load("res://Scripts/Save/world_run_save_codec_v7.gd")
+static var PLAN_CODEC_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan_codec.gd")
 
 
 static func encode(
@@ -15,6 +16,8 @@ static func encode(
     coalition: RunClanCoalition,
     enemy_boss_selection: RefCounted
 ) -> PackedByteArray:
+    if PLAN_CODEC_SCRIPT.validate(plan) != null:
+        return PackedByteArray()
     return ENVELOPE_SCRIPT.encode(
         plan, resolved_seed, run_state, SAVE_VERSION, selection, coalition, enemy_boss_selection
     )

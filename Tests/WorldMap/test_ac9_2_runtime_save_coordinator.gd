@@ -5,18 +5,22 @@ const START_SERVICE_PATH := "res://Scripts/Run/world_run_start_service.gd"
 const GENERATOR_PATH := "res://Scripts/WorldMap/hex_world_generator_v1.gd"
 const STATE_PATH := "res://Scripts/Run/world_run_state.gd"
 const V7_CODEC_PATH := "res://Scripts/Save/world_run_save_codec_v7.gd"
+const WORLD_PLAN_PATH := "res://Scripts/WorldMap/world_plan.gd"
 
 var _failures: int = 0
+var _publish_count: int = 0
 
 
 class FakeRepository:
     extends RefCounted
 
     var writes: Array[PackedByteArray] = []
+    var durable_bytes: PackedByteArray = "durable-sentinel".to_utf8_buffer()
 
 
     func replace_atomic(bytes: PackedByteArray) -> Dictionary:
         writes.append(bytes.duplicate())
+        durable_bytes = bytes.duplicate()
         return {"ok": true, "value": null, "error": null}
 
 
@@ -121,7 +125,59 @@ func _run() -> void:
                 not v6_root.world.has("allied_clan_ids"),
                 "selection-only autosave does not invent allies"
             )
+    _test_invalid_v2_plan_does_not_replace_save()
     _finish()
+
+
+func _test_invalid_v2_plan_does_not_replace_save() -> void:
+    var started: Dictionary = load(START_SERVICE_PATH).new(
+        func(_plan: RefCounted) -> void: pass
+    ).start("invalid-v2-save")
+    _expect(started.get("ok", false), "V2 save fixture starts")
+    if not started.get("ok", false):
+        return
+    var source_plan: RefCounted = started.plan
+    var invalid_plan: WorldPlan = load(WORLD_PLAN_PATH).new(
+        source_plan.get_version(),
+        source_plan.get_seed_hex(),
+        source_plan.get_start_coord(),
+        source_plan.get_boss_coord(),
+        source_plan.get_cells(),
+        source_plan.get_roads(),
+        [],
+        source_plan.get_habitats(),
+        source_plan.get_towns()
+    )
+    var repository := FakeRepository.new()
+    var durable_before: PackedByteArray = repository.durable_bytes.duplicate()
+    var coordinator: RefCounted = load(COORDINATOR_PATH).new()
+    _expect(
+        coordinator.configure(
+            invalid_plan,
+            started.resolved_seed,
+            started.run_state,
+            repository,
+            started.selection,
+            started.coalition,
+            started.enemy_boss_selection
+        ),
+        "coordinator accepts state before serialization gate"
+    )
+    _publish_count = 0
+    var result: Dictionary = coordinator.commit_candidate(
+        started.run_state,
+        Callable(self, "_capture_publish"),
+        "invalid-v2-plan"
+    )
+    _expect(not result.get("ok", true), "invalid V2 plan is not committed")
+    _expect(repository.writes.is_empty(), "invalid V2 plan performs no replacement write")
+    _expect(repository.durable_bytes == durable_before, "invalid V2 plan preserves durable bytes")
+    _expect(_publish_count == 0, "invalid V2 plan is never published")
+    _expect(not coordinator.is_input_blocked(), "serialization rejection leaves input unblocked")
+
+
+func _capture_publish(_state: RefCounted) -> void:
+    _publish_count += 1
 
 
 func _expect(condition: bool, message: String) -> void:

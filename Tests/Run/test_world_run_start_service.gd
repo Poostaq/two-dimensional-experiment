@@ -48,6 +48,7 @@ func _run() -> void:
     _test_reserved_config_injection(service_script)
     _test_pre_generation_validation(service_script)
     _test_generation_failure_is_atomic(service_script)
+    _test_fixed_config_failure_is_atomic(service_script)
     _finish()
 
 
@@ -268,6 +269,24 @@ func _test_generation_failure_is_atomic(service_script: GDScript) -> void:
         "WORLD_CONSTRAINT_UNSATISFIABLE",
         "generator failure preserves typed error"
     )
+
+
+func _test_fixed_config_failure_is_atomic(service_script: GDScript) -> void:
+    _reset_commits()
+    var service: RefCounted = service_script.new(Callable(self, "_commit_plan"))
+    var result: Dictionary = service.start(
+        "noncanonical-run-start",
+        {"radius": 9, "forest_count": 0}
+    )
+    _assert_true(not result.get("ok", true), "noncanonical V2 config is rejected")
+    _assert_equal(result.get("plan"), null, "noncanonical V2 config publishes no plan")
+    _assert_equal(result.get("run_state"), null, "noncanonical V2 config builds no run state")
+    _assert_equal(_commit_count, 0, "noncanonical V2 config does not commit")
+    _assert_true(result.get("error") != null, "noncanonical V2 config returns typed error")
+    if result.get("error") != null:
+        _assert_equal(result["error"].generator_version, 2, "config failure reports V2")
+        _assert_equal(result["error"].feature_namespace, "habitat", "config failure namespace")
+        _assert_equal(result["error"].failed_constraint, "fixed_radius=8", "config failure constraint")
 
 
 func _selection(seed_text: String) -> RunClanSelection:
