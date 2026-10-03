@@ -3,13 +3,18 @@ extends RefCounted
 
 const PRE_HABITAT_WORLD_VERSION: int = 1
 const GENERATED_HABITAT_WORLD_VERSION: int = 2
+const INTERNAL_ROADS_WORLD_VERSION: int = 3
 const GOBLIN_CLAN_ID: StringName = &"goblin"
 
 static func resolve(plan: WorldPlan, coord: Vector2i) -> Dictionary:
     if not is_instance_valid(plan):
         return _failure(&"invalid_plan")
     var version: int = plan.get_version()
-    if version != PRE_HABITAT_WORLD_VERSION and version != GENERATED_HABITAT_WORLD_VERSION:
+    if version not in [
+        PRE_HABITAT_WORLD_VERSION,
+        GENERATED_HABITAT_WORLD_VERSION,
+        INTERNAL_ROADS_WORLD_VERSION,
+    ]:
         return _failure(&"unsupported_world_version")
     var cells: Dictionary = plan.get_cells()
     if not cells.has(coord):

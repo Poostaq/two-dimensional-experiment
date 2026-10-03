@@ -1,7 +1,7 @@
 class_name WorldRuntimeModelContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 77
+const EXPECTED_TEST_COUNT := 81
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -60,6 +60,7 @@ func _run() -> void:
     _expect(model.call("get_valid_destinations").is_empty(), "failed reconfiguration leaves no usable destinations")
     _expect(bool(model.call("get_snapshot").get("input_blocked")), "failed reconfiguration blocks runtime input")
     _run_v2_contract(model_path)
+    _run_v3_contract(model_path)
     _finish()
 
 
@@ -97,6 +98,33 @@ func _run_v2_contract(model_path: String) -> void:
     )
     _expect(not load(model_path).new().configure(unsupported), "unsupported plan rejects")
     _expect(plan.get_cells() == cells_before, "v2 runtime queries do not mutate plan")
+
+func _run_v3_contract(model_path: String) -> void:
+    var generated: Dictionary = load("res://Scripts/WorldMap/hex_world_generator_v3.gd").new().generate(
+        "runtime-model-v3",
+        {
+            "main_clan_id": &"goblin",
+            "allied_clan_ids": [&"orc", &"werewolf"],
+            "enemy_clan_id": &"human",
+        }
+    )
+    _expect(generated.get("ok", false), "v3 plan generates for runtime")
+    if not generated.get("ok", false):
+        return
+    var plan: WorldPlan = generated.plan
+    var model: RefCounted = load(model_path).new()
+    _expect(model.configure(plan), "v3 plan configures runtime")
+    var habitat: Dictionary = model.get_habitat(plan.get_start_coord())
+    _expect(
+        habitat.get("ok", false) and habitat.get("habitat_id", &"") == &"main",
+        "v3 runtime exposes generated habitat"
+    )
+    var town: Dictionary = plan.get_towns()[0]
+    var owner: Dictionary = model.get_town_ownership(town.coord)
+    _expect(
+        owner.get("ok", false) and not StringName(owner.get("clan_id", &"")).is_empty(),
+        "v3 runtime exposes generated town ownership"
+    )
 
 func _run_transaction_contract(model: RefCounted, initial_key: String) -> void:
     _expect(model.has_method("get_valid_destinations"), "runtime exposes valid destinations")
