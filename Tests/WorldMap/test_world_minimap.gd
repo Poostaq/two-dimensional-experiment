@@ -2,7 +2,7 @@ class_name WorldMinimapTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_minimap.tscn"
-const EXPECTED_TEST_COUNT := 29
+const EXPECTED_TEST_COUNT := 39
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -75,6 +75,36 @@ func _run() -> void:
 		< (minimap.call("project_axial", Vector2i(8, 0)) as Vector2).x,
 		"axial projection preserves west-to-east board orientation"
 	)
+
+	var generated_v2: Dictionary = HexWorldGeneratorV2.new().generate(
+		"minimap-v2",
+		{
+			"main_clan_id": &"goblin",
+			"allied_clan_ids": [&"orc", &"werewolf"],
+			"enemy_clan_id": &"human",
+		}
+	)
+	_expect(generated_v2.get("ok", false), "v2 minimap plan generates")
+	var plan_v2: WorldPlan = generated_v2.get("plan")
+	var bytes_v2: PackedByteArray = WorldPlanCodec.serialize(plan_v2)
+	_expect(bool(minimap.call("configure", plan_v2, plan_v2.get_start_coord(), plan_v2.get_boss_coord())),
+		"v2 plan configures minimap")
+	_expect(int(minimap.call("get_cell_count")) == 217, "v2 minimap contains 217 cells")
+	_expect(int(minimap.call("get_town_count")) == 9, "v2 minimap contains nine towns")
+	_expect(minimap.call("get_player_coord") == Vector2i(8, 0), "v2 minimap player starts east")
+	_expect(minimap.call("get_boss_coord") == Vector2i(-8, 0), "v2 minimap boss starts west")
+	_expect(int(minimap.call("get_plan_instance_id")) == plan_v2.get_instance_id(),
+		"v2 minimap retains plan instance")
+	_expect(WorldPlanCodec.serialize(plan_v2) == bytes_v2, "v2 minimap does not mutate plan")
+	_expect(not bool(minimap.call("configure", null, Vector2i.ZERO, Vector2i.ZERO)),
+		"invalid plan rejects")
+	var unsupported: WorldPlan = load("res://Scripts/WorldMap/world_plan.gd").new(
+		99, plan_v2.get_seed_hex(), plan_v2.get_start_coord(), plan_v2.get_boss_coord(),
+		plan_v2.get_cells(), plan_v2.get_roads(), plan_v2.get_forest_clusters(),
+		plan_v2.get_habitats(), plan_v2.get_towns()
+	)
+	_expect(not bool(minimap.call("configure", unsupported, unsupported.get_start_coord(),
+		unsupported.get_boss_coord())), "unsupported plan rejects")
 
 	minimap.queue_free()
 	await process_frame

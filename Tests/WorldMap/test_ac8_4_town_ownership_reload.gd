@@ -18,7 +18,9 @@ func _run() -> void:
     var current_codec: Script = load("res://Scripts/Save/world_run_save_codec_v5.gd")
     for seed_text: String in ["golden-alpha", "ac8-town-beta", "ac8-town-gamma"]:
         var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(
-            func(_plan: RefCounted) -> void: pass)
+            func(_plan: RefCounted) -> void: pass,
+            HexWorldGeneratorV1.new()
+        )
         var session: Dictionary = service.start(seed_text)
         _expect(session.get("ok", false), "new run starts")
         if not session.get("ok", false):
@@ -57,9 +59,57 @@ func _run() -> void:
                 "towns roads and spawns preserved")
         _expect(session.run_state.to_dictionary() == original_state, "live state unchanged")
         _expect(plan_codec.serialize(plan) == before, "live map unchanged")
+    _test_v2_reload(model_script)
     if failures == 0:
         print("PASS test_ac8_4_town_ownership_reload")
     quit(0 if failures == 0 else 1)
+
+func _test_v2_reload(model_script: Script) -> void:
+    var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(
+        func(_plan: RefCounted) -> void: pass
+    ).start("ac8-town-v2-reload")
+    _expect(session.get("ok", false), "v2 run starts")
+    if not session.get("ok", false):
+        return
+    var plan: WorldPlan = session.plan
+    var before: PackedByteArray = WorldPlanCodec.serialize(plan)
+    var habitats_before: Array = plan.get_habitats()
+    var towns_before: Array = plan.get_towns()
+    var cells_before: Dictionary = plan.get_cells()
+    var model: RefCounted = model_script.new()
+    _expect(model.configure(plan), "v2 runtime configures")
+    _expect(model.restore_run_state(session.run_state), "v2 runtime restores")
+    var expected: Dictionary = _owners_v2(model, plan)
+    _expect(expected.size() == 9, "nine v2 owners")
+    var bytes: PackedByteArray = WorldRunSaveCodecV8.encode(
+        plan, session.resolved_seed, session.run_state, session.selection,
+        session.coalition, session.enemy_boss_selection
+    )
+    var decoded: Dictionary = WorldRunSaveCodecV8.decode_any(bytes)
+    _expect(decoded.get("ok", false), "v2 save decodes")
+    if decoded.get("ok", false):
+        var restored_plan: WorldPlan = decoded.value.plan
+        var restored: RefCounted = model_script.new()
+        _expect(restored.configure(restored_plan), "v2 restored runtime configures")
+        _expect(restored.restore_run_state(decoded.value.run_state), "v2 restored state valid")
+        _expect(_owners_v2(restored, restored_plan) == expected, "v2 owners survive reload")
+        _expect(WorldPlanCodec.serialize(restored_plan) == before, "v2 canonical bytes unchanged")
+    _expect(WorldPlanCodec.serialize(plan) == before and plan.get_habitats() == habitats_before and
+        plan.get_towns() == towns_before and plan.get_cells() == cells_before,
+        "v2 reload ownership queries do not mutate live plan")
+
+func _owners_v2(model: RefCounted, plan: WorldPlan) -> Dictionary:
+    var result: Dictionary = {}
+    for town_value: Variant in plan.get_towns():
+        var town: Dictionary = town_value
+        var owner: Dictionary = model.get_town_ownership(town.coord)
+        _expect(owner.get("ok", false), "v2 restored owner resolves")
+        _expect(owner.get("town_id", &"") == StringName(town.town_id) and
+            owner.get("local_index", -1) == town.local_index and
+            owner.get("habitat_id", &"") == StringName(town.habitat_id),
+            "v2 restored owner identity exact")
+        result[town.coord] = owner
+    return result
 
 func _owners(model: RefCounted, plan: WorldPlan) -> Dictionary:
     var result: Dictionary = {}

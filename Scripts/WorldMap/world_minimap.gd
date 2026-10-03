@@ -32,7 +32,7 @@ var _boss_coord: Vector2i
 
 
 func configure(plan: WorldPlan, player_coord: Vector2i, boss_coord: Vector2i) -> bool:
-	if not is_instance_valid(plan) or WorldPlanCodecV1.validate(plan) != null:
+	if not is_instance_valid(plan) or WorldPlanCodec.validate(plan) != null:
 		return false
 	var cells := plan.get_cells()
 	if cells.size() != 217 or not cells.has(player_coord) or not cells.has(boss_coord):

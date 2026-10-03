@@ -1426,10 +1426,7 @@ func get_town_recruitment_context() -> Dictionary:
 	var ownership: Dictionary = _model.get_town_ownership(coord)
 	if not ownership.ok:
 		return _town_failure(ownership.error, coord)
-	# Ownership support alone must never enable services in a new world version.
-	if _runtime_plan.get_version() != 1:
-		return _town_failure(&"unsupported_world_version", coord)
-	if ownership.clan_id != &"goblin":
+	if RunCharacterCatalog.get_recruitable_class_ids(ownership.clan_id).is_empty():
 		return _town_failure(&"unsupported_town_owner", coord)
 	var snapshot: WorldRuntimeSnapshot = _model.get_snapshot()
 	var matching_party: bool = is_instance_valid(_town_party) and _active_party == _town_party

@@ -48,7 +48,7 @@ func _run() -> void:
     _expect(rules.resolve(null, start) == _failure(&"invalid_plan"), "null plan fails explicitly")
     _expect(rules.resolve(plan, Vector2i(999, 999)) == _failure(&"invalid_coordinate"),
         "off-map fails explicitly")
-    for version: int in [0, 2, 99]:
+    for version: int in [0, 3, 99]:
         var unknown: WorldPlan = _copy_plan(plan, version, cells)
         _expect(rules.resolve(unknown, start) == _failure(&"unsupported_world_version"),
             "unknown versions never inherit legacy rule")
@@ -81,9 +81,47 @@ func _run() -> void:
         _expect(model.call("get_habitat", start) == _success(), "query results are independent")
     _expect(codec.serialize(plan) == bytes and plan.get_cells() == cells,
         "queries preserve canonical bytes and topology")
+    _test_v2_habitats(rules)
     if failures == 0:
         print("PASS test_ac8_4_habitat_rules cells=%d towns=%d" % [cells.size(), towns])
     quit(0 if failures == 0 else 1)
+
+func _test_v2_habitats(rules: Script) -> void:
+    var generated: Dictionary = load("res://Scripts/WorldMap/hex_world_generator_v2.gd").new().generate(
+        "ac8-4-v2-habitats",
+        {
+            "main_clan_id": &"goblin",
+            "allied_clan_ids": [&"orc", &"werewolf"],
+            "enemy_clan_id": &"human",
+        }
+    )
+    _expect(generated.get("ok", false), "v2 plan generates")
+    if not generated.get("ok", false):
+        return
+    var plan: WorldPlan = generated.plan
+    var habitats_before: Array = plan.get_habitats()
+    var towns_before: Array = plan.get_towns()
+    var cells_before: Dictionary = plan.get_cells()
+    var expected_roles: Array[String] = ["main", "ally", "ally", "enemy"]
+    var expected_clans: Array[StringName] = [&"goblin", &"orc", &"werewolf", &"human"]
+    for index: int in range(habitats_before.size()):
+        var record: Dictionary = habitats_before[index]
+        var habitat_id := String(record.habitat_id)
+        var result: Dictionary = rules.resolve(plan, record.anchor)
+        _expect(result.get("ok", false), "v2 habitat %s resolves" % habitat_id)
+        _expect(result.get("habitat_id", &"") == StringName(habitat_id), "v2 habitat id is exact")
+        _expect(result.get("role", "") == expected_roles[index], "v2 habitat role is exact")
+        _expect(result.get("clan_id", &"") == expected_clans[index], "v2 habitat clan is exact")
+        _expect(result.get("anchor", Vector2i.ZERO) == record.anchor, "v2 habitat anchor is exact")
+        _expect(result.get("cell_count", 0) == plan.get_habitat_cells(habitat_id).size(),
+            "v2 habitat cell count is exact")
+        _expect(result.get("display_name", "") == habitat_id.replace("_", " ").capitalize(),
+            "v2 display name derives from stable id")
+        _expect(result.get("source", "") == "Generated world v2" and result.get("error", &"") == &"",
+            "v2 habitat source is explicit")
+        result.anchor = Vector2i(999, 999)
+    _expect(plan.get_habitats() == habitats_before and plan.get_towns() == towns_before and
+        plan.get_cells() == cells_before, "v2 habitat queries do not mutate the plan")
 
 func _success() -> Dictionary:
     return {"ok": true, "clan_id": &"goblin", "display_name": "Goblin",

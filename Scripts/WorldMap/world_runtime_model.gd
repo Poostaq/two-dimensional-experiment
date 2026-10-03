@@ -22,7 +22,7 @@ var _defeated_combat_coords: Array[Vector2i] = []
 
 
 func configure(plan: WorldPlan) -> bool:
-    if not is_instance_valid(plan) or WorldPlanCodecV1.validate(plan) != null:
+    if not is_instance_valid(plan) or WorldPlanCodec.validate(plan) != null:
         _invalidate()
         return false
     _plan = plan

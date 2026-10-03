@@ -2,7 +2,7 @@ class_name WorldPresentationSceneTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_preview.tscn"
-const EXPECTED_TEST_COUNT := 57
+const EXPECTED_TEST_COUNT := 66
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -132,6 +132,32 @@ func _run() -> void:
 			highlighted_count += 1
 	_expect(highlighted_count == 0, "empty destinations clear all cell highlights")
 	_expect(not preview.has_method("request_move"), "presentation adapter does not own movement requests")
+
+	var generated_v2: Dictionary = HexWorldGeneratorV2.new().generate(
+		"presentation-v2",
+		{
+			"main_clan_id": &"goblin",
+			"allied_clan_ids": [&"orc", &"werewolf"],
+			"enemy_clan_id": &"human",
+		}
+	)
+	_expect(generated_v2.get("ok", false), "v2 presentation plan generates")
+	var plan_v2: WorldPlan = generated_v2.get("plan")
+	_expect(bool(preview.call("present_plan", plan_v2)), "v2 plan presents")
+	_expect(int(preview.call("get_main_cell_count")) == 217, "v2 presents 217 cells")
+	_expect(int(preview.call("get_town_count")) == 9, "v2 presents nine towns")
+	_expect(int(preview.call("get_road_count")) == 0, "v2 presents zero roads")
+	_expect(preview.call("get_player_coord") == Vector2i(8, 0), "v2 player marker starts east")
+	_expect(preview.call("get_boss_coord") == Vector2i(-8, 0), "v2 boss marker starts west")
+	_expect(int(preview.call("get_plan_instance_id")) == plan_v2.get_instance_id() and
+		int(minimap.call("get_plan_instance_id")) == plan_v2.get_instance_id(),
+		"v2 presentation and minimap retain the same plan instance")
+	var unsupported: WorldPlan = load("res://Scripts/WorldMap/world_plan.gd").new(
+		99, plan_v2.get_seed_hex(), plan_v2.get_start_coord(), plan_v2.get_boss_coord(),
+		plan_v2.get_cells(), plan_v2.get_roads(), plan_v2.get_forest_clusters(),
+		plan_v2.get_habitats(), plan_v2.get_towns()
+	)
+	_expect(not bool(preview.call("present_plan", unsupported)), "unsupported plan rejects")
 
 	var before_count := int(preview.call("get_main_cell_count"))
 	_expect(not bool(preview.call("present_plan", null)), "invalid plan is rejected")

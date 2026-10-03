@@ -1,7 +1,7 @@
 class_name WorldRuntimeModelContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 68
+const EXPECTED_TEST_COUNT := 77
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -59,8 +59,44 @@ func _run() -> void:
     _expect(not bool(model.call("configure", null)), "null plan is rejected")
     _expect(model.call("get_valid_destinations").is_empty(), "failed reconfiguration leaves no usable destinations")
     _expect(bool(model.call("get_snapshot").get("input_blocked")), "failed reconfiguration blocks runtime input")
+    _run_v2_contract(model_path)
     _finish()
 
+
+func _run_v2_contract(model_path: String) -> void:
+    var generated: Dictionary = load("res://Scripts/WorldMap/hex_world_generator_v2.gd").new().generate(
+        "runtime-model-v2",
+        {
+            "main_clan_id": &"goblin",
+            "allied_clan_ids": [&"orc", &"werewolf"],
+            "enemy_clan_id": &"human",
+        }
+    )
+    _expect(generated.get("ok", false), "v2 plan generates for runtime")
+    if not generated.get("ok", false):
+        return
+    var plan: WorldPlan = generated.plan
+    var cells_before: Dictionary = plan.get_cells()
+    var model: RefCounted = load(model_path).new()
+    _expect(model.configure(plan), "v2 plan configures runtime")
+    var snapshot: WorldRuntimeSnapshot = model.get_snapshot()
+    _expect(snapshot.player_coord == Vector2i(8, 0), "v2 player starts east")
+    _expect(snapshot.boss_coord == Vector2i(-8, 0), "v2 boss starts west")
+    var habitat: Dictionary = model.get_habitat(plan.get_start_coord())
+    _expect(habitat.get("ok", false) and habitat.get("habitat_id", &"") == &"main",
+        "v2 runtime exposes generated habitat")
+    var towns: Array = plan.get_towns()
+    _expect(towns.size() == 9, "v2 runtime plan contains nine towns")
+    var owner: Dictionary = model.get_town_ownership(towns[0].coord)
+    _expect(owner.get("ok", false) and owner.get("clan_id", &"") == &"goblin",
+        "v2 runtime exposes generated town ownership")
+    var unsupported: WorldPlan = load("res://Scripts/WorldMap/world_plan.gd").new(
+        99, plan.get_seed_hex(), plan.get_start_coord(), plan.get_boss_coord(),
+        plan.get_cells(), plan.get_roads(), plan.get_forest_clusters(),
+        plan.get_habitats(), plan.get_towns()
+    )
+    _expect(not load(model_path).new().configure(unsupported), "unsupported plan rejects")
+    _expect(plan.get_cells() == cells_before, "v2 runtime queries do not mutate plan")
 
 func _run_transaction_contract(model: RefCounted, initial_key: String) -> void:
     _expect(model.has_method("get_valid_destinations"), "runtime exposes valid destinations")

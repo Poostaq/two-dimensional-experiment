@@ -39,6 +39,8 @@ func _run() -> void:
 	await _retry_case(false)
 	await _retry_case(true)
 	await _availability_case()
+	await _v2_recruitment_case()
+	await _empty_catalog_recruitment_case()
 	await _contract_case()
 	await _replacement_case()
 	await _arrival_case()
@@ -67,7 +69,10 @@ func _run() -> void:
 	quit(0 if failures == 0 else 1)
 
 func _session(gold: int) -> Dictionary:
-	var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(func(_p: RefCounted) -> void: pass).start("golden-alpha")
+	var session: Dictionary = load("res://Scripts/Run/world_run_start_service.gd").new(
+		func(_p: RefCounted) -> void: pass,
+		HexWorldGeneratorV1.new()
+	).start("golden-alpha")
 	var plan: WorldPlan = session.plan
 	for coord: Vector2i in plan.get_cells():
 		if plan.get_cells()[coord].town_index >= 0 and coord != plan.get_boss_coord():
@@ -122,7 +127,7 @@ func _purchase_case(gold: int) -> void:
 		expected.character_hp["scrapbroker"] = RunCharacterCatalog.create_by_class_id(&"scrapbroker").max_hp
 		_expect(after == expected, "purchase changes only gold formation and recruit HP")
 		_expect(not world.call("get_town_recruitment_context").class_ids.has(&"scrapbroker"), "offers refresh")
-		var loaded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(repo.writes.back())
+		var loaded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(repo.writes.back())
 		_expect(loaded.ok, "purchase bytes decode")
 		world.free()
 		await process_frame
@@ -184,6 +189,265 @@ func _availability_case() -> void:
 	world.free()
 	await process_frame
 
+func _v2_recruitment_case() -> void:
+	var cases: Array[Dictionary] = [
+		{
+			"seed": "town-v2-a",
+			"main_clan_id": &"goblin",
+			"commander_id": &"brakka_rustbanner",
+			"allied_clan_ids": [&"orc", &"werewolf"],
+		},
+		{
+			"seed": "town-v2-b",
+			"main_clan_id": &"lizardman",
+			"commander_id": &"sszek_still_mire",
+			"allied_clan_ids": [&"goblin", &"harpy"],
+		},
+	]
+	var covered: Dictionary = {}
+	var transaction_session: Dictionary = {}
+	for case: Dictionary in cases:
+		var allied_clan_ids: Array[StringName] = []
+		for allied_clan_id: Variant in case.allied_clan_ids:
+			allied_clan_ids.append(StringName(allied_clan_id))
+		var coalition_result: Dictionary = RunClanCoalition.create(
+			case.main_clan_id, allied_clan_ids
+		)
+		_expect(coalition_result.get("ok", false), "v2 recruitment coalition is valid")
+		if not coalition_result.get("ok", false):
+			continue
+		var session: Dictionary = WorldRunStartService.new(
+			func(_p: RefCounted) -> void: pass
+		).start(
+			case.seed, {}, WorldRunStartService.RETURN_RESULT, case.commander_id,
+			case.main_clan_id, null, coalition_result.value
+		)
+		_expect(session.get("ok", false), "identity-consistent v2 recruitment session starts")
+		if not session.get("ok", false):
+			continue
+		var plan: WorldPlan = session.plan
+		if case.main_clan_id == &"goblin":
+			transaction_session = session
+		var bytes_before: PackedByteArray = WorldPlanCodec.serialize(plan)
+		var habitats_before: Array = plan.get_habitats()
+		var towns_before: Array = plan.get_towns()
+		var cells_before: Dictionary = plan.get_cells()
+		_expect_session_plan_identities(session)
+		for town_value: Variant in plan.get_towns():
+			var town: Dictionary = town_value
+			var owner: Dictionary = TownOwnershipRules.resolve(plan, town.coord)
+			var clan_id: StringName = owner.get("clan_id", &"")
+			if covered.has(clan_id):
+				continue
+			session.run_state.player_coord = town.coord
+			var repo := Repository.new()
+			var world := await _open(session, repo)
+			var context: Dictionary = world.get_town_recruitment_context()
+			var catalog: Array[StringName] = RunCharacterCatalog.get_recruitable_class_ids(clan_id)
+			var options_valid: bool = not context.get("class_ids", []).is_empty()
+			for class_id: StringName in context.get("class_ids", []):
+				options_valid = options_valid and catalog.has(class_id)
+			_expect(context.get("ok", false) and context.get("clan_id", &"") == clan_id,
+				"v2 allied town resolves recruitment owner")
+			_expect(not catalog.is_empty() and options_valid,
+				"v2 offers are nonempty and belong to owning clan")
+			_expect(world.open_town_recruitment(), "v2 allied town opens recruitment")
+			world.close_town_recruitment()
+			world.free()
+			await process_frame
+			covered[clan_id] = true
+		_expect(WorldPlanCodec.serialize(plan) == bytes_before and
+			plan.get_habitats() == habitats_before and plan.get_towns() == towns_before and
+			plan.get_cells() == cells_before,
+			"v2 recruitment query and open do not mutate plan")
+	for clan_id: StringName in [&"goblin", &"orc", &"werewolf", &"lizardman", &"harpy"]:
+		_expect(covered.has(clan_id), "v2 recruitment covers %s catalog" % String(clan_id))
+	_expect(not transaction_session.is_empty(),
+		"v2 non-Goblin transaction reuses a real identity-consistent session")
+	if not transaction_session.is_empty():
+		await _v2_non_goblin_transaction_case(transaction_session)
+
+func _v2_non_goblin_transaction_case(session: Dictionary) -> void:
+	var plan: WorldPlan = session.plan
+	var town_coord: Vector2i = Vector2i(999, 999)
+	for town_value: Variant in plan.get_towns():
+		var town: Dictionary = town_value
+		var ownership: Dictionary = TownOwnershipRules.resolve(plan, town.coord)
+		if ownership.get("clan_id", &"") == &"orc":
+			town_coord = town.coord
+			break
+	_expect(plan.get_cells().has(town_coord), "v2 Orc transaction has a generated town")
+	if not plan.get_cells().has(town_coord):
+		return
+	session.run_state.player_coord = town_coord
+	session.run_state.gold = 500
+	var before: Dictionary = session.run_state.to_dictionary()
+	_expect(before.gold == 500 and String(before.formation[5]).is_empty(),
+		"v2 Orc transaction fixture has exact wallet and empty placement slot")
+	var plan_bytes_before: PackedByteArray = WorldPlanCodec.serialize(plan)
+	var repo := Repository.new()
+	var world := await _open(session, repo)
+	var context: Dictionary = world.get_town_recruitment_context()
+	_expect(context.get("ok", false) and context.get("clan_id", &"") == &"orc",
+		"v2 Orc town exposes recruitment context")
+	var class_ids: Array = context.get("class_ids", [])
+	_expect(not class_ids.is_empty(), "v2 Orc town offers a recruit")
+	if class_ids.is_empty():
+		world.free()
+		await process_frame
+		return
+	var recruit_id: StringName = StringName(class_ids[0])
+	var recruit: RunCharacter = RunCharacterCatalog.create_by_class_id(recruit_id)
+	_expect(is_instance_valid(recruit) and recruit.race_id == &"orc",
+		"v2 offered recruit belongs to Orc town owner")
+	_expect(world.open_town_recruitment(), "v2 Orc transaction opens town service")
+	_expect(world.request_town_recruitment(recruit_id).get("ok", false),
+		"v2 Orc offer opens real placement flow")
+	var party: PartyManagement = world.get("_active_party")
+	var live_roster: RunRoster = world.get("_roster")
+	repo.fail_next = true
+	party.request_placement(5, recruit_id)
+	_expect(repo.writes.size() == 1 and repo.successful_writes == 0,
+		"v2 failed commit captures one V8 candidate without publishing")
+	if repo.writes.is_empty():
+		world.free()
+		await process_frame
+		return
+	var candidate_bytes: PackedByteArray = repo.writes[0].duplicate()
+	_expect(world.is_autosave_blocked() and
+		world.get_town_recruitment_context().get("error", &"") == &"service_blocked",
+		"v2 failed commit blocks world and town input")
+	_expect(world.get_durable_run_state().to_dictionary() == before and
+		world.get("_roster") == live_roster and not live_roster.has_character(recruit_id),
+		"v2 failed commit does not prematurely publish runtime or durable state")
+	var expected: Dictionary = before.duplicate(true)
+	expected.gold = 0
+	expected.formation[5] = String(recruit_id)
+	expected.character_hp[String(recruit_id)] = recruit.max_hp
+	var candidate: Dictionary = load(
+		"res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(candidate_bytes)
+	_expect(candidate.get("ok", false) and
+		candidate.value.plan.get_version() == 2 and
+		candidate.value.run_state.to_dictionary() == expected,
+		"v2 failed candidate bytes contain complete pending transaction")
+	if candidate.get("ok", false):
+		_expect_session_plan_identities(candidate.value)
+	_expect(world.retry_autosave().get("ok", false), "v2 failed commit retries successfully")
+	_expect(repo.writes.size() == 2 and repo.writes[0] == repo.writes[1] and
+		repo.checkpoint == candidate_bytes and repo.successful_writes == 1,
+		"v2 retry writes byte-identical V8 candidate exactly once")
+	_expect(world.get_durable_run_state().to_dictionary() == expected and
+		(world.get("_roster") as RunRoster).has_character(recruit_id),
+		"v2 retry publishes recruited member and durable formation")
+	var decoded: Dictionary = load(
+		"res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(repo.checkpoint)
+	_expect(decoded.get("ok", false) and decoded.value.plan.get_version() == 2 and
+		decoded.value.run_state.to_dictionary() == expected,
+		"v2 successful checkpoint decodes with recruited formation")
+	if decoded.get("ok", false):
+		_expect_session_plan_identities(decoded.value)
+		var decoded_owner: Dictionary = TownOwnershipRules.resolve(
+			decoded.value.plan, decoded.value.run_state.player_coord)
+		_expect(decoded_owner.get("ok", false) and decoded_owner.get("clan_id", &"") == &"orc",
+			"v2 decoded checkpoint preserves Orc town ownership")
+	world.free()
+	await process_frame
+	if not decoded.get("ok", false):
+		return
+	var reload_repo := Repository.new()
+	world = await _open(decoded.value, reload_repo)
+	var reload_context: Dictionary = world.get_town_recruitment_context()
+	var reloaded_recruit: RunCharacter = (world.get("_roster") as RunRoster).get_character_at(5)
+	_expect(reload_context.get("ok", false) and
+		reload_context.get("clan_id", &"") == &"orc" and
+		not reload_context.get("class_ids", []).has(recruit_id),
+		"v2 reload retains Orc owner and excludes recruited offer")
+	_expect(is_instance_valid(reloaded_recruit) and reloaded_recruit.race_id == &"orc" and
+		world.get_durable_run_state().formation[5] == recruit_id,
+		"v2 reload reconstructs Orc recruit in durable formation")
+	_expect(WorldPlanCodec.serialize(plan) == plan_bytes_before,
+		"v2 non-Goblin transaction never mutates generated plan")
+	world.free()
+	await process_frame
+
+func _empty_catalog_recruitment_case() -> void:
+	_expect(RunCharacterCatalog.get_recruitable_class_ids(&"empty_clan").is_empty(),
+		"empty-clan fixture has no recruitable catalog")
+	var allies: Array[StringName] = [&"orc", &"werewolf"]
+	var coalition_result: Dictionary = RunClanCoalition.create(&"goblin", allies)
+	_expect(coalition_result.get("ok", false), "empty-catalog base coalition is valid")
+	if not coalition_result.get("ok", false):
+		return
+	var session: Dictionary = WorldRunStartService.new(
+		func(_p: RefCounted) -> void: pass
+	).start(
+		"town-v2-empty-catalog", {}, WorldRunStartService.RETURN_RESULT,
+		&"brakka_rustbanner", &"goblin", null, coalition_result.value
+	)
+	_expect(session.get("ok", false), "empty-catalog base session starts")
+	if not session.get("ok", false):
+		return
+	_expect_session_plan_identities(session)
+	var base_plan: WorldPlan = session.plan
+	var habitats: Array = base_plan.get_habitats()
+	for habitat_value: Variant in habitats:
+		var habitat: Dictionary = habitat_value
+		if String(habitat.get("habitat_id", "")) == "ally_0":
+			habitat.clan_id = &"empty_clan"
+	var empty_plan: WorldPlan = WorldPlan.new(
+		2, base_plan.get_seed_hex(), base_plan.get_start_coord(), base_plan.get_boss_coord(),
+		base_plan.get_cells(), base_plan.get_roads(), base_plan.get_forest_clusters(),
+		habitats, base_plan.get_towns()
+	)
+	_expect(WorldPlanCodec.validate(empty_plan) == null,
+		"empty-clan plan remains structurally valid v2")
+	var empty_town_coord: Vector2i = Vector2i(999, 999)
+	for town_value: Variant in empty_plan.get_towns():
+		var town: Dictionary = town_value
+		if String(town.get("habitat_id", "")) == "ally_0":
+			empty_town_coord = town.coord
+			break
+	_expect(empty_plan.get_cells().has(empty_town_coord),
+		"empty-clan allied town is present")
+	var bytes_before: PackedByteArray = WorldPlanCodec.serialize(empty_plan)
+	var habitats_before: Array = empty_plan.get_habitats()
+	var towns_before: Array = empty_plan.get_towns()
+	var cells_before: Dictionary = empty_plan.get_cells()
+	var repo := Repository.new()
+	var world := await _open(session, repo)
+	# Exercise the existing runtime configuration seam so the durable session remains real
+	# while the ownership/catalog boundary receives the synthetic, codec-valid plan.
+	_expect(world.configure_runtime(empty_plan), "empty-clan plan configures real runtime")
+	world.get_durable_run_state().player_coord = empty_town_coord
+	var context: Dictionary = world.get_town_recruitment_context()
+	_expect(not context.get("ok", false) and
+		context.get("error", &"") == &"unsupported_town_owner",
+		"empty recruitable catalog rejects town context")
+	_expect(context.get("class_ids", []).is_empty() and context.get("clan_id", &"") == &"",
+		"empty recruitable catalog exposes no options or owner")
+	_expect(not world.open_town_recruitment(),
+		"empty recruitable catalog cannot open recruitment")
+	_expect(WorldPlanCodec.serialize(empty_plan) == bytes_before and
+		empty_plan.get_habitats() == habitats_before and
+		empty_plan.get_towns() == towns_before and empty_plan.get_cells() == cells_before,
+		"empty-catalog context query does not mutate plan")
+	world.free()
+	await process_frame
+
+func _expect_session_plan_identities(session: Dictionary) -> void:
+	var habitats: Array = session.plan.get_habitats()
+	var allies: Array[StringName] = session.coalition.allied_clan_ids
+	_expect(habitats.size() == 4, "v2 session plan has four identity habitats")
+	if habitats.size() != 4:
+		return
+	_expect(StringName(habitats[0].clan_id) == session.selection.main_clan_id,
+		"v2 plan main clan matches durable selection")
+	_expect(allies.size() == 2 and StringName(habitats[1].clan_id) == allies[0] and
+		StringName(habitats[2].clan_id) == allies[1],
+		"v2 plan allies match durable ordered coalition")
+	_expect(StringName(habitats[3].clan_id) == session.enemy_boss_selection.enemy_clan_id,
+		"v2 plan enemy matches durable boss selection")
+
 func _expect(condition: bool, message: String) -> void:
 	checks += 1
 	if not condition:
@@ -208,8 +472,11 @@ func _contract_case() -> void:
 		_expect(context.ok and context.clan_id == &"goblin", "every v1 town available")
 		var expected_offers: Array[StringName] = [&"scrapbroker", &"shivrunner", &"mobcaller"]
 		_expect(context.class_ids == expected_offers, "every town excludes present classes from fixed Brakka race roster")
-		var save_codec: Script = load("res://Scripts/Save/world_run_save_codec_v5.gd")
-		var town_save: PackedByteArray = save_codec.encode(plan, session.resolved_seed, world.get_durable_run_state())
+		var save_codec: Script = load("res://Scripts/Save/world_run_save_codec_v8.gd")
+		var town_save: PackedByteArray = save_codec.encode(
+			plan, session.resolved_seed, world.get_durable_run_state(), session.selection,
+			session.coalition, session.enemy_boss_selection
+		)
 		var continued: Dictionary = save_codec.decode_any(town_save)
 		_expect(continued.ok and world.apply_session(continued.value, repo), "every town Continues")
 		_expect(world.get_town_recruitment_context().class_ids == expected_offers, "every town retains filtered offers after Continue")
@@ -236,7 +503,7 @@ func _contract_case() -> void:
 	battle.free()
 	var model: WorldRuntimeModel = world.get("_model")
 	var coord: Vector2i = world.get_durable_run_state().player_coord
-	for version: int in [0, 2, 99]:
+	for version: int in [0, 3, 99]:
 		var unsupported: WorldPlan = load("res://Scripts/WorldMap/world_plan.gd").new(version, plan.get_seed_hex(), plan.get_start_coord(), plan.get_boss_coord(), plan.get_cells(), plan.get_roads(), plan.get_forest_clusters())
 		model.set("_plan", unsupported)
 		world.set("_runtime_plan", unsupported)
@@ -346,7 +613,7 @@ func _dismissal_case() -> void:
 	_expect(world.open_town_recruitment(), "reopen after dismissal")
 	_expect(world.get_town_recruitment_context().class_ids.has(&"wirefang_skirmisher"), "dismissal refreshes class")
 	world.close_town_recruitment()
-	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(repo.writes.back())
+	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(repo.writes.back())
 	_expect(decoded.ok, "dismissal save decodes")
 	_expect(world.apply_session(decoded.value, repo), "dismissal reload applies")
 	_expect(world.get_town_recruitment_context().class_ids.has(&"wirefang_skirmisher"), "dismissal eligibility survives reload")
@@ -424,7 +691,7 @@ func _eligibility_matrix_case() -> void:
 	_expect(world.call("request_party_dismissal", 0, &"player_0").ok, "remove one representative")
 	world.call("_on_party_close_requested")
 	_expect(not world.get_town_recruitment_context().class_ids.has(&"scrapshield_bruiser"), "remaining representative excludes class")
-	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(repo.writes.back())
+	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(repo.writes.back())
 	_expect(decoded.ok and world.apply_session(decoded.value, repo), "duplicate-class identity restores")
 	_expect(not world.get_town_recruitment_context().class_ids.has(&"scrapshield_bruiser"), "restored remaining representative excludes")
 	world.open_party_management()
@@ -605,7 +872,7 @@ func _placement_matrix_case(replace: bool, slot: int, gold: int) -> void:
 		for index: int in 6:
 			if index != slot:
 				_expect(current[index] == identities[index], "AC8.7 survivor live identity preserved")
-		var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(repo.checkpoint)
+		var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(repo.checkpoint)
 		_expect(decoded.ok and decoded.value.run_state.to_dictionary() == expected, "AC8.7 durable checkpoint exact")
 	world.free()
 	await process_frame
@@ -673,7 +940,10 @@ func _repeated_failure_case(replace: bool, discard: bool) -> void:
 	var session: Dictionary = _matrix_session(replace, 5, 750)
 	var world := await _open(session, repo)
 	var before: Dictionary = world.get_durable_run_state().to_dictionary()
-	var checkpoint: PackedByteArray = load("res://Scripts/Save/world_run_save_codec_v5.gd").encode(session.plan, session.resolved_seed, world.get_durable_run_state())
+	var checkpoint: PackedByteArray = load("res://Scripts/Save/world_run_save_codec_v8.gd").encode(
+		session.plan, session.resolved_seed, world.get_durable_run_state(), session.selection,
+		session.coalition, session.enemy_boss_selection
+	)
 	repo.checkpoint = checkpoint.duplicate()
 	var roster: RunRoster = world.get("_roster")
 	var identities: Array[RunCharacter] = roster.get_slot_snapshot()
@@ -738,7 +1008,7 @@ func _expect_live_formation(world: WorldRuntimeController, expected: Dictionary)
 	_expect(roster.size() == occupied and occupied == 6 - expected.formation.count(""), "AC8.7 live roster count matches occupied expected slots")
 
 func _expect_checkpoint(bytes: PackedByteArray, expected: Dictionary, message: String) -> void:
-	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(bytes)
+	var decoded: Dictionary = load("res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(bytes)
 	_expect(decoded.ok and decoded.value.run_state.to_dictionary() == expected, message)
 
 func _last_empty_slot_case(slot: int) -> void:

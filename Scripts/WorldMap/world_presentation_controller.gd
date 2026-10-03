@@ -32,7 +32,7 @@ func _ready() -> void:
 
 
 func present_plan(plan: WorldPlan) -> bool:
-	if not is_instance_valid(plan) or WorldPlanCodecV1.validate(plan) != null:
+	if not is_instance_valid(plan) or WorldPlanCodec.validate(plan) != null:
 		return false
 	var cells := plan.get_cells()
 	if cells.size() != 217:
