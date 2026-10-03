@@ -11,8 +11,9 @@ This document governs the overall AC9 sequence and the relationships between cla
 The approved [AC9.4 and AC9.5 seeded habitats and towns design](../specs/2026-10-03-ac9-4-ac9-5-seeded-habitats-and-towns-design.md) fixes the following version split:
 
 - Generator V2 implements AC9.4 and AC9.5: east/west spawns, four habitats, nine allied towns, and no roads.
-- AC9.6 and AC9.7 retain every internal and cross-habitat road requirement below, but will implement them in generator V3 rather than changing V2 output.
-- V1 and V2 saves remain immutable compatibility contracts. V3 must not reinterpret or regenerate either topology.
+- Generator V3 implements AC9.6 internal all-pairs roads from the frozen V2 topology.
+- Generator V4 is reserved for AC9.7 closest tied cross-habitat roads.
+- V1, V2 and V3 saves remain immutable compatibility contracts. Later versions must not reinterpret or regenerate their topology.
 
 This split changes delivery and version ownership only. It does not remove or weaken AC9.6, AC9.7, or AC9.10.
 
@@ -38,12 +39,12 @@ This split changes delivery and version ownership only. It does not remove or we
 - Town recruits belong to that town's owning clan.
 - Town offers exclude every class already present in the current player roster, as defined by AC8.
 - In V3 under AC9.6, each allied habitat's three towns receive all three internal pair connections.
-- In V3 under AC9.7, every pair of allied habitats receives connections for every cross-habitat town pair tied at the minimum distance.
+- In V4 under AC9.7, every pair of allied habitats receives connections for every cross-habitat town pair tied at the minimum distance.
 - Starting a new run never asks for save-overwrite confirmation. Generation/save failure must preserve the previous durable save.
 
 ## Explicit implementation proposals
 
-- **Confirmed version split:** V2 contains habitats and nine towns with an empty road array. V3 implements AC9.6 and AC9.7 from the frozen V2 ownership and town requirements without changing V2 canonical output.
+- **Confirmed version split:** V2 contains habitats and nine towns with an empty road array. V3 adds only AC9.6 internal all-pairs roads. V4 is reserved for AC9.7 cross-habitat roads. Each version derives from the prior frozen topology without changing earlier canonical output.
 - **Proposed habitat layout:** retain the current radius-8 board provisionally; reserve the enemy radius-2 footprint, then partition remaining cells into three connected allied regions using seeded region anchors and a deterministic multi-source flood fill. Main-clan region must contain the chosen player start. Define membership for every cell and avoid overlapping habitat ownership.
 - **Proposed distance metric:** shortest traversable hex-step distance, with roads initially cosmetic and no movement-cost discount. Under the current all-traversable board this equals ordinary hex distance. For a selected endpoint pair, draw one canonically tie-broken shortest route, not every possible route permutation.
 - **Proposed playable scope:** monster clans (Goblins, Orcs, Lizardmen, Harpies, Werewolves); Human/Elven/Dwarven clans remain the enemy pool. Content readiness must be explicit: most existing production commander support is Goblin-specific. Do not expose a selectable clan or commander until its actual playable catalog is ready.
@@ -75,12 +76,12 @@ Complete the remaining race/commander implementation stage before habitat work: 
 5. Construct connected allied habitats with sufficient legal capacity for three towns each and the selected player start.
 6. Place three distinct towns in each allied habitat using seeded ordering and finite deterministic constraint search. Exclude party starting cells. Do not inherit v1's global seven-town/four-hex-spacing constraints without a feasibility check.
 7. Validate V2 region connectivity, town counts/ownership, spawn exclusion, forest exclusions and the required empty road array; publish only a complete valid V2 plan.
-8. In V3, add all three internal town endpoint pairs for each habitat.
-9. In V3, for each distinct habitat pair A/B, compute `d_min = min(distance(a,b))` over their town pairs, then add every pair with distance `d_min`.
-10. In V3, resolve one shortest traversable route per endpoint pair using a fixed neighbour order; deduplicate shared road segments. Routes cannot leave the board.
-11. Validate the complete V3 habitat, town and road topology before publication.
+8. In V3, add all three internal town endpoint pairs for each habitat, resolve one deterministic shortest route per pair, and validate the complete V3 topology before publication.
+9. In V4, for each distinct habitat pair A/B, compute `d_min = min(distance(a,b))` over their town pairs, then add every pair with distance `d_min`.
+10. In V4, resolve one shortest traversable route per selected cross-habitat endpoint pair using a fixed neighbour order; deduplicate shared road segments. Routes cannot leave the board.
+11. Validate the complete V4 habitat, town and road topology before publication.
 
-Use explicit immutable generator versions and fixtures. V2 freezes AC9.4/AC9.5 habitat and town output with no roads; V3 freezes AC9.6/AC9.7 road output. Preserve existing V1 and V2 fixtures unchanged. Run identity includes normalized seed, generator version and selected player configuration; same inputs reproduce every feature owned by that version. Mutable siege/ruin state belongs in run saves, not in the generated plan.
+Use explicit immutable generator versions and fixtures. V2 freezes AC9.4/AC9.5 habitat and town output with no roads; V3 freezes AC9.6 internal-road output; V4 will freeze AC9.7 cross-habitat-road output. Preserve existing V1, V2 and V3 fixtures unchanged after publication. Run identity includes normalized seed, generator version and selected player configuration; same inputs reproduce every feature owned by that version. Mutable siege/ruin state belongs in run saves, not in the generated plan.
 
 ## Ownership and file map
 
@@ -94,7 +95,7 @@ Existing integration points:
 - `Scripts/WorldMap/world_presentation_controller.gd`, `world_cell_view.gd`, `world_minimap.gd`: habitat/town presentation and road rendering from generated data.
 - `Scripts/Save/world_run_save_codec_v5.gd` and existing versioned codecs: inspect current production codec routing and preserve explicit schema dispatch rather than reinterpreting old data.
 
-Proposed topology files are split by version: `Scripts/WorldMap/hex_world_generator_v2.gd` and `world_plan_codec_v2.gd` own AC9.4/AC9.5; later `hex_world_generator_v3.gd`, `world_plan_codec_v3.gd`, and `habitat_road_rules.gd` own AC9.6/AC9.7. Focused tests likewise separate habitat/town fixtures from road fixtures. Earlier AC9.1-AC9.3 file proposals have been superseded by their approved detailed designs and implementations.
+Topology files are split by immutable version: `Scripts/WorldMap/hex_world_generator_v2.gd` and `world_plan_codec_v2.gd` own AC9.4/AC9.5; `hex_world_generator_v3.gd`, `world_plan_codec_v3.gd`, and `habitat_road_rules_v3.gd` own AC9.6. Future V4 generator, codec and cross-habitat road rules will own AC9.7. Focused tests likewise separate habitat/town, internal-road and cross-habitat-road fixtures. Earlier AC9.1-AC9.3 file proposals have been superseded by their approved detailed designs and implementations.
 
 ## Implementation sequence
 
@@ -102,11 +103,12 @@ Proposed topology files are split by version: `Scripts/WorldMap/hex_world_genera
 - [ ] Task 1 (AC9.1, AC9.2, AC9.4, AC9.5): After the content prerequisite passes, add explicit clan/synergy data and selection fixtures before UI integration; enforce eastern player start and town-free western enemy territory as part of the habitat-enabled world version.
 - [ ] Task 2 (AC9.1-AC9.3, AC9.8): Test seeded pair selection: three distinct allies total, guaranteed synergy, all eligible enemy clans reachable across a seed corpus, stable replay, invalid commander rejection and no selection on Continue.
 - [ ] Task 3 (AC9.4, AC9.5, AC9.8): Implement generator V2 and versioned fixtures for habitats and nine allied towns with an explicitly empty road array. Include finite-search failures and independent expected geometry checks. Follow the approved AC9.4/AC9.5 design.
-- [ ] Task 4 (AC9.6, AC9.7): Implement generator V3 and test internal all-pairs roads plus every tied closest cross-habitat town pair. Add cases with one minimum pair and multiple equal minima. Preserve V2 fixtures and saved topology unchanged.
+- [x] Task 4 (AC9.6): Implement generator V3 and test the three internal town pairs in each allied habitat. Preserve V1/V2 fixtures and saved topology unchanged. ([verification](../../Specs/AC9/Evidence/AC9.6/verification.md))
+- [ ] Task 4a (AC9.7): Implement generator V4 and test every tied closest cross-habitat town pair, including cases with one minimum pair and multiple equal minima. Preserve V1/V2/V3 fixtures and saved topology unchanged.
 - [ ] Task 5 (AC9.0, AC9.3): Integrate the already completed race/commander/recruit/boss catalogs into generated runs. Boss victory requires defeating the commander-led party, rather than merely reaching its origin hex. Missing prerequisite content blocks this stage; do not substitute a debug team.
 - [ ] Task 6 (AC9.1, AC9.9): Connect clan/commander selection, resolved seed and Start without confirmation. Preserve current save until candidate generation and persistence both succeed; prevent duplicate Start submissions.
 - [ ] Task 7 (AC9.8, AC9.10): Preserve generator-version dispatch in shared saves for AC8–AC10. Keep old worlds readable through their existing version; new rules apply only to newly generated runs. Never regenerate a saved V1 or V2 map through a later generator.
-- [ ] Task 8 (AC9.10): After V3 roads exist, add the complete habitat/town/road player-facing presentation via authored Godot scene components and the existing world presentation. AC9.4/AC9.5 provide marker placement, town rendering and read-only debug diagnostics only; test full territory and road presentation under AC9.10.
+- [ ] Task 8 (AC9.10): After V4 roads exist, add the complete habitat/town/road player-facing presentation via authored Godot scene components and the existing world presentation. AC9.4/AC9.5 provide marker placement, town rendering and read-only debug diagnostics only; test full territory and road presentation under AC9.10.
 - [ ] Task 9 (AC9.9): Update design-spec criteria and mark the overwrite-confirmation portion of the deferred AC5.1 documents superseded by AC9. AC9 does not reactivate unrelated deferred meta-progression work.
 
 ## Acceptance and verification
@@ -123,8 +125,8 @@ Proposed topology files are split by version: `Scripts/WorldMap/hex_world_genera
 - Existing save + Start goes straight to generation; no overwrite-confirmation screen. Failed generation/save retains the old save; successful start replaces it once.
 - Continue restores saved clan identities and topology rather than drawing again.
 
-Run the new SceneTree tests with `godot.windows.opt.tools.64.exe --headless --path . --script res://Tests/<test-path>.gd`, plus existing geometry, world-start, repository, save and production-scene regressions. Require exit code 0 and no parser/runtime errors. V2 visual verification inspects map direction, party markers, habitats and nine towns; V3 and AC9.10 verification add roads and complete topology presentation. No tests were run for this planning-only change.
+Run the new SceneTree tests with `godot.windows.opt.tools.64.exe --headless --path . --script res://Tests/<test-path>.gd`, plus existing geometry, world-start, repository, save and production-scene regressions. Require exit code 0 and no parser/runtime errors. V2 visual verification inspects map direction, party markers, habitats and nine towns; V3 verifies internal road topology, V4 verifies cross-habitat topology, and AC9.10 adds complete presentation verification.
 
 ## Dependencies
 
-Delivery order: AC8 gold and recruitment on existing towns treated as Goblin habitat; remaining race and commander implementation/verification; AC9.4/AC9.5 V2 habitat and clan-owned town generation; AC9.6/AC9.7 V3 roads; AC9.10 presentation; then AC10 siege/pursuit integration. AC8 does not depend on generated habitats. The remaining races and commanders are a hard prerequisite for habitat work. AC10 depends on the V3 town graph, commander party and save schema. Preserve V1, V2 and later versions explicitly rather than silently remapping saved topology.
+Delivery order: AC8 gold and recruitment on existing towns treated as Goblin habitat; remaining race and commander implementation/verification; AC9.4/AC9.5 V2 habitat and clan-owned town generation; AC9.6 V3 internal roads; AC9.7 V4 cross-habitat roads; AC9.10 presentation; then AC10 siege/pursuit integration. AC8 does not depend on generated habitats. The remaining races and commanders are a hard prerequisite for habitat work. AC10 depends on the completed V4 town graph, commander party and save schema. Preserve V1, V2, V3 and later versions explicitly rather than silently remapping saved topology.
