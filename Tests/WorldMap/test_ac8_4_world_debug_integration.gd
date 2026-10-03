@@ -18,7 +18,7 @@ class MemoryRepository:
         return {"ok": true, "error": null}
 
     func load_validated() -> Dictionary:
-        return load("res://Scripts/Save/world_run_save_codec_v5.gd").decode_any(bytes)
+        return load("res://Scripts/Save/world_run_save_codec_v8.gd").decode_any(bytes)
 
 func _init() -> void:
     call_deferred("_run")
@@ -32,8 +32,9 @@ func _run() -> void:
         _expect(false, "controller exposes get_debug_snapshot")
         _finish()
         return
+    var v1_generator: RefCounted = load("res://Scripts/WorldMap/hex_world_generator_v1.gd").new()
     var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(
-        func(_plan: RefCounted) -> void: pass)
+        func(_plan: RefCounted) -> void: pass, v1_generator)
     var session: Dictionary = service.start("golden-alpha")
     _expect(session.get("ok", false), "new session starts")
     if not session.get("ok", false):
@@ -65,9 +66,17 @@ func _run() -> void:
         "gold", "session_applied", "input_blocked", "active_encounter", "active_battle",
         "active_party", "autosave_blocked", "integration_failed", "pending_reward_battle_id",
         "preparation_state", "cache_progress", "cache_ready", "neighbors", "destinations",
-        "road_links", "forest_clusters"]
+        "road_links", "forest_clusters", "generated_player_start", "generated_enemy_start",
+        "habitat_cell_counts", "habitat_town_counts", "enemy_footprint_count",
+        "generated_town_count", "generated_road_count"]
     for field: String in fields:
         _expect(initial.has(field), "snapshot includes " + field)
+    for unavailable: String in [
+        "generated_player_start", "generated_enemy_start", "habitat_cell_counts",
+        "habitat_town_counts", "enemy_footprint_count", "generated_town_count",
+        "generated_road_count",
+    ]:
+        _expect(initial[unavailable] == null, "V1 generated topology unavailable: " + unavailable)
     _check_habitat(world)
     _expect(not drawer.call("is_open") and handle.visible, "fresh drawer collapsed and available")
     var state_before: Dictionary = world.get_durable_run_state().to_dictionary()
@@ -158,7 +167,147 @@ func _run() -> void:
         world.free()
     await process_frame
     await _check_data_fixtures(session)
+    await _check_v2_topology_diagnostics()
     _finish()
+
+func _check_v2_topology_diagnostics() -> void:
+    var service: RefCounted = load("res://Scripts/Run/world_run_start_service.gd").new(
+        func(_plan: RefCounted) -> void: pass)
+    var session: Dictionary = service.start("golden-ac9")
+    _expect(session.get("ok", false), "real V2 identity-consistent session starts")
+    if not session.get("ok", false):
+        return
+    var plan: WorldPlan = session.plan
+    _expect(plan.get_version() == 2, "V2 diagnostics use a V2 plan")
+    var habitats: Array = plan.get_habitats()
+    var habitat_by_id: Dictionary = {}
+    for habitat_value: Variant in habitats:
+        if habitat_value is Dictionary:
+            habitat_by_id[String(habitat_value.get("habitat_id", ""))] = habitat_value
+    _expect(String(habitat_by_id.get("main", {}).get("clan_id", "")) == String(session.selection.main_clan_id),
+        "main habitat matches selected clan identity")
+    _expect(String(habitat_by_id.get("ally_0", {}).get("clan_id", "")) == String(session.coalition.allied_clan_ids[0]),
+        "ally_0 habitat matches coalition identity")
+    _expect(String(habitat_by_id.get("ally_1", {}).get("clan_id", "")) == String(session.coalition.allied_clan_ids[1]),
+        "ally_1 habitat matches coalition identity")
+    _expect(String(habitat_by_id.get("enemy", {}).get("clan_id", "")) == String(session.enemy_boss_selection.enemy_clan_id),
+        "enemy habitat matches boss identity")
+    var repository: MemoryRepository = MemoryRepository.new()
+    var world: WorldRuntimeController = await _open(session, repository)
+    if not is_instance_valid(world):
+        return
+    var expected_cell_counts: Dictionary = _habitat_cell_counts(plan)
+    var expected_town_counts: Dictionary = _habitat_town_counts(plan)
+    var start_view: Dictionary = world.get_debug_snapshot()
+    _expect(start_view.player_coord == plan.get_start_coord(), "V2 runtime begins at generated player start")
+    _expect(session.run_state.boss_coord == plan.get_boss_coord()
+        and start_view.boss_coord == plan.get_boss_coord(),
+        "fresh V2 run state and debug snapshot begin at generated enemy start")
+    _expect(start_view.generated_player_start == plan.get_start_coord(), "V2 generated player start exposed")
+    _expect(start_view.generated_enemy_start == plan.get_boss_coord(), "V2 generated enemy start exposed")
+    _expect(start_view.habitat.habitat_id == &"main" and start_view.habitat.role == "main",
+        "V2 start habitat identity exposed")
+    _expect(start_view.habitat.clan_id == session.selection.main_clan_id,
+        "V2 start habitat clan exposed")
+    _expect(start_view.habitat.anchor == plan.get_start_coord(), "V2 start habitat anchor exposed")
+    _expect(start_view.habitat.source == "Generated world v2", "V2 habitat source exposed")
+    _expect(start_view.habitat.cell_count == expected_cell_counts.main,
+        "V2 start habitat cell count exposed")
+    _expect(start_view.ownership.error == &"not_a_town", "V2 start is explicitly not a town")
+    _expect(start_view.habitat_cell_counts == expected_cell_counts, "stable V2 habitat cell counts exposed")
+    _expect(start_view.habitat_town_counts == expected_town_counts, "stable V2 habitat town counts exposed")
+    _expect(start_view.enemy_footprint_count == 9, "V2 enemy footprint count exposed")
+    _expect(start_view.generated_town_count == 9, "V2 generated town total exposed")
+    _expect(start_view.generated_road_count == 0, "V2 generated road total exposed")
+    _expect(expected_town_counts == {"main": 3, "ally_0": 3, "ally_1": 3, "enemy": 0},
+        "V2 town summary matches topology contract")
+    var allied_town: Dictionary = _first_allied_town(plan)
+    _expect(not allied_town.is_empty(), "real V2 allied town exists")
+    if allied_town.is_empty():
+        world.free()
+        await process_frame
+        return
+    var town_coord: Vector2i = allied_town.coord
+    var state_data: Dictionary = session.run_state.to_dictionary()
+    state_data["player_coord"] = [town_coord.x, town_coord.y]
+    state_data["boss_coord"] = [plan.get_start_coord().x, plan.get_start_coord().y]
+    state_data["boss_active"] = true
+    state_data["move_count"] = 30
+    var built: Dictionary = load("res://Scripts/Run/world_run_state.gd").from_dictionary(state_data, plan)
+    _expect(built.get("ok", false), "V2 allied-town runtime fixture validates")
+    if not built.get("ok", false):
+        world.free()
+        await process_frame
+        return
+    var town_session: Dictionary = session.duplicate()
+    town_session.run_state = built.value
+    _expect(world.apply_session(town_session, repository), "same V2 plan reapplies at allied town")
+    var town_view: Dictionary = world.get_debug_snapshot()
+    _expect(town_view.player_coord == town_coord and town_view.coord == town_coord,
+        "runtime player coordinate reports allied town")
+    _expect(town_view.generated_player_start == plan.get_start_coord() and town_view.player_coord != town_view.generated_player_start,
+        "runtime player coordinate remains distinct from generated start")
+    _expect(town_view.boss_coord == plan.get_start_coord() and town_view.generated_enemy_start == plan.get_boss_coord(),
+        "runtime boss coordinate remains distinct from generated enemy start")
+    _expect(town_view.ownership.town_id == allied_town.town_id,
+        "allied town ID exposed")
+    _expect(town_view.ownership.local_index == allied_town.local_index,
+        "allied town local index exposed")
+    _expect(town_view.ownership.habitat_id == allied_town.habitat_id,
+        "allied town owning habitat exposed")
+    _expect(town_view.ownership.role == "ally", "allied town owner role exposed")
+    _expect(town_view.ownership.clan_id == town_view.habitat.clan_id,
+        "allied town clan matches current habitat")
+    var plan_bytes_before: PackedByteArray = load("res://Scripts/WorldMap/world_plan_codec_v2.gd").serialize(plan)
+    var cells_before: Dictionary = plan.get_cells()
+    var habitats_before: Array = plan.get_habitats()
+    var towns_before: Array = plan.get_towns()
+    var roads_before: Array = plan.get_roads()
+    var start_before: Vector2i = plan.get_start_coord()
+    var boss_before: Vector2i = plan.get_boss_coord()
+    var state_before: Dictionary = world.get_durable_run_state().to_dictionary()
+    var presenter: Script = load("res://Scripts/UI/world_debug_presenter.gd")
+    for repeat: int in 3:
+        var repeated_view: Dictionary = world.get_debug_snapshot()
+        var sections: Dictionary = presenter.call("format_sections", repeated_view)
+        _expect(sections.habitat.contains("Town ID: " + String(allied_town.town_id)),
+            "V2 allied town presenter output is stable")
+        _expect(sections.map.contains("Enemy footprint: 9"),
+            "V2 topology presenter output is stable")
+    _expect(load("res://Scripts/WorldMap/world_plan_codec_v2.gd").serialize(plan) == plan_bytes_before,
+        "repeated diagnostics preserve canonical V2 plan bytes")
+    _expect(plan.get_cells() == cells_before and plan.get_habitats() == habitats_before,
+        "repeated diagnostics preserve V2 cells and habitats")
+    _expect(plan.get_towns() == towns_before and plan.get_roads() == roads_before,
+        "repeated diagnostics preserve V2 towns and roads")
+    _expect(plan.get_start_coord() == start_before and plan.get_boss_coord() == boss_before,
+        "repeated diagnostics preserve V2 generated starts")
+    _expect(world.get_durable_run_state().to_dictionary() == state_before,
+        "repeated snapshot and formatting preserve V2 runtime state")
+    world.free()
+    await process_frame
+
+func _habitat_cell_counts(plan: WorldPlan) -> Dictionary:
+    var counts: Dictionary = {}
+    for habitat_id: String in ["main", "ally_0", "ally_1", "enemy"]:
+        counts[habitat_id] = plan.get_habitat_cells(habitat_id).size()
+    return counts
+
+func _habitat_town_counts(plan: WorldPlan) -> Dictionary:
+    var counts: Dictionary = {"main": 0, "ally_0": 0, "ally_1": 0, "enemy": 0}
+    for town_value: Variant in plan.get_towns():
+        if not town_value is Dictionary:
+            continue
+        var habitat_id: String = String(town_value.get("habitat_id", ""))
+        if counts.has(habitat_id):
+            counts[habitat_id] = int(counts[habitat_id]) + 1
+    return counts
+
+func _first_allied_town(plan: WorldPlan) -> Dictionary:
+    for town_value: Variant in plan.get_towns():
+        if town_value is Dictionary and String(town_value.get("habitat_id", "")) in ["ally_0", "ally_1"]:
+            return town_value.duplicate(true)
+    return {}
 
 func _open(session: Dictionary, repository: MemoryRepository) -> WorldRuntimeController:
     var packed: PackedScene = load("res://Scenes/world_map_runtime.tscn")

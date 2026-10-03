@@ -1318,6 +1318,13 @@ func _exit_tree() -> void:
 func get_debug_snapshot() -> Dictionary:
 	var snapshot: WorldRuntimeSnapshot = _model.get_snapshot()
 	var view: Dictionary = {
+		"generated_player_start": null,
+		"generated_enemy_start": null,
+		"habitat_cell_counts": null,
+		"habitat_town_counts": null,
+		"enemy_footprint_count": null,
+		"generated_town_count": null,
+		"generated_road_count": null,
 		"session_applied": _session_applied,
 		"input_blocked": snapshot.input_blocked,
 		"active_encounter": has_active_encounter(),
@@ -1335,8 +1342,9 @@ func get_debug_snapshot() -> Dictionary:
 	for neighbor: Vector2i in HexWorldGeometry.get_neighbors(coord):
 		if cells.has(neighbor):
 			neighbors.append(neighbor)
+	var roads: Array = _runtime_plan.get_roads()
 	var links: Array = []
-	for road: Dictionary in _runtime_plan.get_roads():
+	for road: Dictionary in roads:
 		if road.get("a") == coord or road.get("b") == coord:
 			links.append(road.duplicate(true))
 	var forests: Array[int] = []
@@ -1364,6 +1372,28 @@ func get_debug_snapshot() -> Dictionary:
 		"boss_active": snapshot.sudden_death_active,
 		"boss_engaged": snapshot.boss_encounter_open,
 	})
+	if _runtime_plan.get_version() == 2:
+		var habitat_cell_counts: Dictionary = {}
+		var habitat_town_counts: Dictionary = {}
+		for habitat_id: String in ["main", "ally_0", "ally_1", "enemy"]:
+			habitat_cell_counts[habitat_id] = _runtime_plan.get_habitat_cells(habitat_id).size()
+			habitat_town_counts[habitat_id] = 0
+		var towns: Array = _runtime_plan.get_towns()
+		for town_value: Variant in towns:
+			if not town_value is Dictionary:
+				continue
+			var habitat_id: String = String(town_value.get("habitat_id", ""))
+			if habitat_town_counts.has(habitat_id):
+				habitat_town_counts[habitat_id] = int(habitat_town_counts[habitat_id]) + 1
+		view.merge({
+			"generated_player_start": _runtime_plan.get_start_coord(),
+			"generated_enemy_start": _runtime_plan.get_boss_coord(),
+			"habitat_cell_counts": habitat_cell_counts,
+			"habitat_town_counts": habitat_town_counts,
+			"enemy_footprint_count": int(habitat_cell_counts["enemy"]),
+			"generated_town_count": towns.size(),
+			"generated_road_count": roads.size(),
+		}, true)
 	if is_instance_valid(_durable_run_state):
 		var state: Dictionary = _durable_run_state.to_dictionary()
 		var defeated: bool = false

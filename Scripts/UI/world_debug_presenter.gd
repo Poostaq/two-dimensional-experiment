@@ -14,12 +14,15 @@ static func format_sections(view: Dictionary) -> Dictionary:
 	var reward_text: String = "None" if pending_reward is String and pending_reward.is_empty() else _value(pending_reward)
 	var habitat: Dictionary = _dictionary(view.get("habitat"))
 	var ownership: Dictionary = _dictionary(view.get("ownership"))
+	var habitat_cell_counts: Dictionary = _dictionary(view.get("habitat_cell_counts"))
+	var habitat_town_counts: Dictionary = _dictionary(view.get("habitat_town_counts"))
 	var habitat_ok: bool = habitat.get("ok") == true
 	var habitat_id: String = _value(habitat.get("habitat_id")) if habitat_ok else UNAVAILABLE
 	if habitat_ok and habitat.get("habitat_id") == "":
 		habitat_id = "Not generated"
+	var ownership_ok: bool = ownership.get("ok") == true
 	var owner: String = UNAVAILABLE
-	if ownership.get("ok") == true:
+	if ownership_ok:
 		owner = _value(ownership.get("clan_id"))
 	elif ownership.get("error") == "not_a_town":
 		owner = "Not a town"
@@ -29,6 +32,14 @@ static func format_sections(view: Dictionary) -> Dictionary:
 		"Habitat source: " + (_value(habitat.get("source")) if habitat_ok else UNAVAILABLE),
 		"Habitat ID: " + habitat_id,
 		"Town owner: " + owner,
+		"Habitat role: " + (_value(habitat.get("role")) if habitat_ok else UNAVAILABLE),
+		"Habitat anchor: " + (_value(habitat.get("anchor")) if habitat_ok else UNAVAILABLE),
+		"Habitat cell count: " + (_integer(habitat.get("cell_count")) if habitat_ok else UNAVAILABLE),
+		"Town ID: " + (_value(ownership.get("town_id")) if ownership_ok else UNAVAILABLE),
+		"Town local index: " + (_integer(ownership.get("local_index")) if ownership_ok else UNAVAILABLE),
+		"Town habitat ID: " + (_value(ownership.get("habitat_id")) if ownership_ok else UNAVAILABLE),
+		"Town role: " + (_value(ownership.get("role")) if ownership_ok else UNAVAILABLE),
+		"Town clan: " + (_value(ownership.get("clan_id")) if ownership_ok else UNAVAILABLE),
 	]
 	if habitat.get("ok") == false:
 		habitat_lines.append("Habitat error: " + _value(habitat.get("error")))
@@ -48,6 +59,19 @@ static func format_sections(view: Dictionary) -> Dictionary:
 			"Forest clusters: " + _array(view.get("forest_clusters")),
 			"World seed: " + _value(view.get("seed")),
 			"World version: " + _value(view.get("version")),
+			"Generated player start: " + _value(view.get("generated_player_start")),
+			"Generated enemy start: " + _value(view.get("generated_enemy_start")),
+			"Habitat cells main: " + _integer(habitat_cell_counts.get("main")),
+			"Habitat cells ally_0: " + _integer(habitat_cell_counts.get("ally_0")),
+			"Habitat cells ally_1: " + _integer(habitat_cell_counts.get("ally_1")),
+			"Habitat cells enemy: " + _integer(habitat_cell_counts.get("enemy")),
+			"Habitat towns main: " + _integer(habitat_town_counts.get("main")),
+			"Habitat towns ally_0: " + _integer(habitat_town_counts.get("ally_0")),
+			"Habitat towns ally_1: " + _integer(habitat_town_counts.get("ally_1")),
+			"Habitat towns enemy: " + _integer(habitat_town_counts.get("enemy")),
+			"Enemy footprint: " + _integer(view.get("enemy_footprint_count")),
+			"Generated towns: " + _integer(view.get("generated_town_count")),
+			"Generated roads: " + _integer(view.get("generated_road_count")),
 		]),
 		"run": _lines(view, {
 			"Player coordinate": "player_coord", "Boss coordinate": "boss_coord",
@@ -85,6 +109,10 @@ static func _value(value: Variant) -> String:
 	if value is int:
 		return str(value)
 	return UNAVAILABLE
+
+
+static func _integer(value: Variant) -> String:
+	return str(value) if value is int else UNAVAILABLE
 
 
 static func _dictionary(value: Variant) -> Dictionary:
