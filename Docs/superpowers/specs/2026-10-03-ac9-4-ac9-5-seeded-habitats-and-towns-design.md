@@ -14,6 +14,10 @@ This delivery introduces generator version 2, four stable habitat identities, ni
 
 It builds on the merged AC9.1 player selection, AC9.2 allied coalition, and AC9.3 enemy boss selection. It does not implement habitat coloring, final town art, internal habitat roads, cross-habitat roads, enemy campaign movement, sieges, pursuit, or mutable town destruction. AC9.6 and AC9.7 will introduce the next generator version with their final road contract; V2 plans contain no roads. AC9.10 owns full player-facing habitat and topology presentation.
 
+## Planning authority
+
+This document is the governing design for AC9.4 and AC9.5. It supersedes the older aggregate AC9 roadmap wherever that roadmap implied one generator version for habitats, towns, and roads. The aggregate roadmap continues to govern the remaining AC9 sequence and has been reconciled to reserve generator V3 for AC9.6 and AC9.7. The road acceptance criteria remain unchanged; only their delivery version is separated from roadless V2.
+
 ## Chosen approach
 
 Add `HexWorldGeneratorV2` rather than changing V1 output. V2 receives the already validated run identities through the established generator configuration seam, constructs a complete habitat-and-town plan, validates it through a V2 codec, and returns it only after every invariant passes. `WorldRunStartService` overwrites reserved generation-context keys from the validated `RunClanSelection`, `RunClanCoalition`, and `RunEnemyBossSelection`; callers cannot forge different identities through the public configuration dictionary.
