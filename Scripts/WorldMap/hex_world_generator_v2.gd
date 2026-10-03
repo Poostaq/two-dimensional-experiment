@@ -11,6 +11,7 @@ static var PLAN_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
 static var HABITAT_SOLVER_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_habitat_solver_v2.gd")
 static var CONSTRAINT_SOLVER_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_constraint_solver_v1.gd")
+static var CODEC_V2_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan_codec_v2.gd")
 
 
 func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
@@ -104,6 +105,14 @@ func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
         habitats,
         towns
     )
+    if (
+        radius == DEFAULT_RADIUS
+        and start_coord == CODEC_V2_SCRIPT.START_COORD
+        and enemy_coord == CODEC_V2_SCRIPT.BOSS_COORD
+    ):
+        var validation: Variant = CODEC_V2_SCRIPT.validate(plan)
+        if validation != null:
+            return {"ok": false, "plan": null, "error": validation}
     return {"ok": true, "plan": plan, "error": null}
 
 
@@ -168,12 +177,12 @@ func _is_string_value(value: Variant) -> bool:
 
 
 func _is_valid_stable_id(value: String) -> bool:
-    if value.is_empty():
+    if value.is_empty() or value.begins_with("_") or value.ends_with("_"):
         return false
     for byte: int in value.to_ascii_buffer():
         var is_lowercase: bool = byte >= 97 and byte <= 122
         var is_digit: bool = byte >= 48 and byte <= 57
-        if not is_lowercase and not is_digit and byte != 95 and byte != 45:
+        if not is_lowercase and not is_digit and byte != 95:
             return false
     return true
 
