@@ -2,11 +2,11 @@
 
 **Acceptance criteria:** AC9.4 and AC9.5.
 
-**Status:** Approved for implementation planning on 2026-10-03.
+**Status:** Approved for implementation planning on 2026-10-03; spawn orientation corrected on 2026-10-04 by the [AC9.6 spawn and habitat display correction](2026-10-04-ac9-6-spawn-and-habitat-display-correction-design.md).
 
 ## Goal
 
-Create a new deterministic world topology in which the enemy begins on the visible western edge inside an exact clipped radius-two enemy habitat, the player begins on the visible eastern edge inside the selected main clan's habitat, and the remaining board is divided between the main clan and its two selected allies. Each allied habitat contains exactly three owned towns; the enemy habitat contains none.
+Create a new deterministic world topology in which the player begins on the visible western edge inside the selected main clan's habitat, the enemy begins on the visible eastern edge inside an exact clipped radius-two enemy habitat, and the remaining board is divided between the main clan and its two selected allies. Each allied habitat contains exactly three owned towns; the enemy habitat contains none.
 
 ## Scope
 
@@ -16,7 +16,7 @@ It builds on the merged AC9.1 player selection, AC9.2 allied coalition, and AC9.
 
 ## Planning authority
 
-This document is the governing design for AC9.4 and AC9.5. It supersedes the older aggregate AC9 roadmap wherever that roadmap implied one generator version for habitats, towns, and roads. The aggregate roadmap continues to govern the remaining AC9 sequence and has been reconciled to reserve generator V3 for AC9.6 and AC9.7. The road acceptance criteria remain unchanged; only their delivery version is separated from roadless V2.
+This document is the governing design for AC9.4 and AC9.5. It supersedes the older aggregate AC9 roadmap wherever that roadmap implied one generator version for habitats, towns, and roads. The aggregate roadmap continues to govern the remaining AC9 sequence and has been reconciled to reserve generator V3 for AC9.6 and AC9.7. The road acceptance criteria remain unchanged; only their delivery version is separated from roadless V2. The approved 2026-10-04 correction is authoritative for orientation and habitat display; the user explicitly authorized replacing the V2/V3 fixture contracts and deleting existing local saves rather than introducing another generator version.
 
 ## Chosen approach
 
@@ -52,8 +52,8 @@ The current world and minimap projections place an axial coordinate horizontally
 
 For the radius-8 board this produces:
 
-- enemy spawn: `Vector2i(-8, 0)`, the unique westernmost coordinate;
-- player spawn: `Vector2i(8, 0)`, the unique easternmost coordinate.
+- player spawn: `Vector2i(-8, 0)`, the unique westernmost coordinate;
+- enemy spawn: `Vector2i(8, 0)`, the unique easternmost coordinate.
 
 Tests independently compare the geometry key against the projection formulas used by the world view and minimap. Generator code does not assume that minimum or maximum `q` alone defines visible west or east.
 
@@ -62,9 +62,9 @@ Tests independently compare the geometry key against the projection formulas use
 The enemy habitat contains exactly every canonical board coordinate whose hex distance from the enemy spawn is at most two. The board boundary clips the footprint naturally. On the radius-8 board the exact footprint contains these nine coordinates:
 
 ```text
-(-8, 0), (-8, 1), (-8, 2),
-(-7, -1), (-7, 0), (-7, 1),
-(-6, -2), (-6, -1), (-6, 0)
+(6, 0), (6, 1), (6, 2),
+(7, -1), (7, 0), (7, 1),
+(8, -2), (8, -1), (8, 0)
 ```
 
 The enemy spawn is the `enemy` anchor. No enemy-habitat cell may contain a town. The boss encounter remains on the enemy spawn, and the existing run state initializes its mutable boss coordinate from that plan coordinate.
@@ -202,7 +202,7 @@ The generator returns no partial plan. Start-service failure occurs before the c
 - Retain V8/V1 and V2-V7 decode plus schema-appropriate autosave regressions.
 - Recruit from generated towns belonging to each playable allied clan and reject non-town or unsupported ownership.
 - Verify the debug snapshot and presenter expose V2 topology, retain V1 legacy text, handle unavailable data safely, and never mutate the plan.
-- Run the production world and capture one visual verification showing the player marker on the east and enemy marker on the west, with nine towns and no roads.
+- Run the production world and capture one visual verification showing the player marker on the west and enemy marker on the east, with nine towns and no roads.
 
 ## File responsibilities
 

@@ -8,12 +8,12 @@
 
 This document governs the overall AC9 sequence and the relationships between clan selection, habitats, towns, roads, presentation, and persistence. Once an acceptance-criterion slice has an approved detailed design, that design is authoritative for the slice.
 
-The approved [AC9.4 and AC9.5 seeded habitats and towns design](../specs/2026-10-03-ac9-4-ac9-5-seeded-habitats-and-towns-design.md) fixes the following version split:
+The approved [AC9.4 and AC9.5 seeded habitats and towns design](../specs/2026-10-03-ac9-4-ac9-5-seeded-habitats-and-towns-design.md), as corrected by the [AC9.6 spawn and habitat display correction](../specs/2026-10-04-ac9-6-spawn-and-habitat-display-correction-design.md), fixes the following version split:
 
-- Generator V2 implements AC9.4 and AC9.5: east/west spawns, four habitats, nine allied towns, and no roads.
-- Generator V3 implements AC9.6 internal all-pairs roads from the frozen V2 topology.
+- Generator V2 implements AC9.4 and AC9.5: player-west/enemy-east spawns, four habitats, nine allied towns, and no roads.
+- Generator V3 implements AC9.6 internal all-pairs roads from the corrected, relocked V2 topology.
 - Generator V4 is reserved for AC9.7 closest tied cross-habitat roads.
-- V1, V2 and V3 saves remain immutable compatibility contracts. Later versions must not reinterpret or regenerate their topology.
+- V1 remains an immutable compatibility contract. With explicit user approval, the 2026-10-04 correction replaced the V2/V3 spawn and fixture contracts in place and deleted existing local saves; later versions must not reinterpret or regenerate the corrected topology.
 
 This split changes delivery and version ownership only. It does not remove or weaken AC9.6, AC9.7, or AC9.10.
 
@@ -32,8 +32,8 @@ This split changes delivery and version ownership only. It does not remove or we
 - Choose exactly two distinct other allied clans randomly. At least one must be synergistic with the main clan. Together with the main clan, there are three player-allied habitats.
 - After clan/commander and seed are resolved, select the main enemy clan from Human, Elven and Dwarven using the seed.
 - The main enemy party contains its clan's commander and is the run's boss party.
-- Spawn the enemy on the furthest western hex. Its habitat contains every on-map hex within hex distance 2 of that spawn, extending in every available map direction and clipped at the map boundary.
-- Spawn the player on the easternmost hex. Place the main player clan's habitat so that it contains that starting hex.
+- Spawn the player on the furthest western hex. Place the main player clan's habitat so that it contains that starting hex.
+- Spawn the enemy on the easternmost hex. Its habitat contains every on-map hex within hex distance 2 of that spawn, extending in every available map direction and clipped at the map boundary.
 - Each allied habitat contains exactly three randomly placed towns: nine allied towns in total.
 - Only allied habitats contain towns and participate in the town-road network. The enemy habitat has no towns and requires no road connection.
 - Town recruits belong to that town's owning clan.
@@ -71,7 +71,7 @@ Complete the remaining race/commander implementation stage before habitat work: 
 
 1. Validate the player clan/commander pair and normalize or generate the seed once. Display and persist the resolved seed.
 2. Select the allied pair and main enemy clan with independent seed namespaces; UI preview calls must not consume selection state.
-3. Create canonical board cells and resolve western enemy spawn from the actual rendered axial orientation. Test that it is visually west rather than assuming minimum q always identifies a unique western tip.
+3. Create canonical board cells and resolve the western player spawn and eastern enemy spawn from the actual rendered axial orientation. Test the rendered orientation rather than assuming minimum or maximum `q` alone identifies the visible tips.
 4. Reserve the enemy habitat as `hex_distance(cell, enemy_spawn) <= 2`, clipped to the board.
 5. Construct connected allied habitats with sufficient legal capacity for three towns each and the selected player start.
 6. Place three distinct towns in each allied habitat using seeded ordering and finite deterministic constraint search. Exclude party starting cells. Do not inherit v1's global seven-town/four-hex-spacing constraints without a feasibility check.
@@ -100,7 +100,7 @@ Topology files are split by immutable version: `Scripts/WorldMap/hex_world_gener
 ## Implementation sequence
 
 - [ ] Prerequisite (AC9.0): Implement and verify the remaining races and their commanders, including their approved classes/skills, playable or enemy-party integration and durable identities. Record content verification before beginning habitat, habitat-town or inter-habitat-road implementation. AC8 uses existing Goblin towns throughout this stage.
-- [ ] Task 1 (AC9.1, AC9.2, AC9.4, AC9.5): After the content prerequisite passes, add explicit clan/synergy data and selection fixtures before UI integration; enforce eastern player start and town-free western enemy territory as part of the habitat-enabled world version.
+- [ ] Task 1 (AC9.1, AC9.2, AC9.4, AC9.5): After the content prerequisite passes, add explicit clan/synergy data and selection fixtures before UI integration; enforce western player start and town-free eastern enemy territory as part of the habitat-enabled world version.
 - [ ] Task 2 (AC9.1-AC9.3, AC9.8): Test seeded pair selection: three distinct allies total, guaranteed synergy, all eligible enemy clans reachable across a seed corpus, stable replay, invalid commander rejection and no selection on Continue.
 - [ ] Task 3 (AC9.4, AC9.5, AC9.8): Implement generator V2 and versioned fixtures for habitats and nine allied towns with an explicitly empty road array. Include finite-search failures and independent expected geometry checks. Follow the approved AC9.4/AC9.5 design.
 - [x] Task 4 (AC9.6): Implement generator V3 and test the three internal town pairs in each allied habitat. Preserve V1/V2 fixtures and saved topology unchanged. ([verification](../../Specs/AC9/Evidence/AC9.6/verification.md))
@@ -118,8 +118,8 @@ Topology files are split by immutable version: `Scripts/WorldMap/hex_world_gener
 - Same resolved seed, player setup and generator version reproduce every feature owned by that version after restart: V2 reproduces selections, habitats, towns and initial party identities with no roads; V3 additionally reproduces the final road graph.
 - Player setup produces one main clan plus two distinct allies, with at least one main-clan synergy partner.
 - Exactly three towns belong to each allied habitat. No town or allied region overlaps the reserved enemy territory.
-- Enemy starts at the visible westernmost hex. Its habitat is exactly the on-map distance-2 footprint.
-- Player starts at the visible easternmost hex inside the main clan's habitat. The enemy habitat has zero towns and is excluded from town-road endpoint pairing.
+- Player starts at the visible westernmost hex inside the main clan's habitat.
+- Enemy starts at the visible easternmost hex. Its habitat is exactly the on-map distance-2 footprint, has zero towns, and is excluded from town-road endpoint pairing.
 - V3 gives each habitat's three towns all three internal pair connections. Every habitat pair includes all equal-minimum cross-town endpoint connections, with shared segments represented once.
 - All V2 town hexes and all later V3 roads are valid/reachable. Unsatisfiable generation returns a clear failure without partial world/save mutation.
 - Existing save + Start goes straight to generation; no overwrite-confirmation screen. Failed generation/save retains the old save; successful start replaces it once.

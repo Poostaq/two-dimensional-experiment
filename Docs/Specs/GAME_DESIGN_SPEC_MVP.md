@@ -9,7 +9,7 @@
 
 ## 1. GAME OVERVIEW
 
-The player selects a main clan and its commander, then begins a seeded hex-world run with 100g. Two distinct allied clans are selected randomly, with at least one synergistic with the main clan. Each of the three allied habitats contains three towns. The player starts on the easternmost hex inside their main clan's habitat; a seeded Human, Elven or Dwarven commander-led enemy party starts on the westernmost hex.
+The player selects a main clan and its commander, then begins a seeded hex-world run with 100g. Two distinct allied clans are selected randomly, with at least one synergistic with the main clan. Each of the three allied habitats contains three towns. The player starts on the westernmost hex inside their main clan's habitat; a seeded Human, Elven or Dwarven commander-led enemy party starts on the easternmost hex.
 
 Win battles to earn 50g per defeated enemy, then recruit at allied towns for 500g per character, up to a six-character roster. Each town offers its own clan's classes that are absent from the current roster. The enemy party targets and besieges allied towns, leaving traversable ruins without services. After all nine allied towns are burned, it pursues the player. Defeating the commander-led enemy party wins the run; losing the player's entire party in battle loses the run.
 
@@ -19,7 +19,7 @@ Implementation status reviewed on 2026-09-20: AC8.1-AC8.7 are implemented and ve
 
 ## 2. CORE MECHANICS
 
-- **World Map Traversal** - Explore a seeded hex world with three allied habitats, nine towns and roads; start in the east while the enemy commander party advances from the west
+- **World Map Traversal** - Explore a seeded hex world with three allied habitats, nine towns and roads; start in the west while the enemy commander party advances from the east
 - **Turn-Based Combat (Player-Controlled)** — Battles take place on a 6-slot player side and 6-slot enemy side; units act in speed order; players choose each unit action; skills may have positional requirements, condition requirements, and either pre-use cooldowns or cooldowns applied after use
 - **Unit Recruitment** - Spend 500g in an intact allied town to recruit a class from its clan absent from the current roster; retain the six-character cap and placement/replacement flow
 - **Party Management** — Player can freely rearrange the active 6-character lineup before and after fights through a party-management UI for tactical preparation
@@ -43,7 +43,7 @@ Implementation status reviewed on 2026-09-20: AC8.1-AC8.7 are implemented and ve
 
 | Decision | Choice | Rationale |
 |----------|--------|-----------|
-| **Map Layout** | Three allied habitats with three towns each; western enemy habitat extends two hexes from its spawn | Seeded territory and town-road planning under AC9; retain the current radius-8 board provisionally, subject to generation feasibility |
+| **Map Layout** | Three allied habitats with three towns each; eastern enemy habitat extends two hexes from its spawn | Seeded territory and town-road planning under AC9; retain the current radius-8 board provisionally, subject to generation feasibility |
 | **Campaign Pressure** | Siege and burn every allied town, then pursue the player | AC10 replaces move-count-based Sudden Death |
 | **Boss Party** | Main enemy clan commander and supporting party; balance through playtesting | No inherited Sudden Death activation or automatic empowerment |
 | **Permadeath** | Units revive after victory; a lost fight ends the run | Individual knockouts do not permanently remove units; full-party defeat requires a new run |
@@ -265,7 +265,7 @@ Plan: [AC9 implementation plan](../superpowers/plans/2026-09-18-ac9-clans-and-ha
 - [x] AC9.1 — The player selects a main clan and a commander belonging to it before the new world is created; invalid clan/commander combinations are rejected. ([verification](AC9/Evidence/AC9.1/verification.md))
 - [ ] AC9.2 — Select exactly two distinct other allied clans randomly from the eligible clan pool, with at least one synergistic with the main clan. All three allied clan identities are distinct; selection uses explicit catalog synergy data and the resolved run seed.
 - [ ] AC9.3 — After player setup and seed resolution, select one main enemy clan from Human, Elven or Dwarven using the seed. Its commander-led party is the main enemy/boss party, with authored clan-appropriate content.
-- [ ] AC9.4 — The player starts on the easternmost map hex inside the main clan's habitat. The enemy starts on the westernmost hex. Enemy habitat covers every on-map hex within distance two of that spawn, clipped at the map boundary.
+- [ ] AC9.4 — The player starts on the westernmost map hex inside the main clan's habitat. The enemy starts on the easternmost hex. Enemy habitat covers every on-map hex within distance two of that spawn, clipped at the map boundary.
 - [ ] AC9.5 — Each of the three allied clans has its own habitat containing exactly three seeded, distinct town placements: nine allied towns total. The enemy habitat contains no towns and is excluded from town-road endpoint pairing.
 - [x] AC9.6 — Within each allied habitat, each of its three towns has a road connection to both others: all three town pairs are connected. ([verification](AC9/Evidence/AC9.6/verification.md))
 - [ ] AC9.7 — Every pair of allied habitats has road connections between its closest cross-habitat town pair(s). Include every endpoint pair tied at the minimum distance, rather than selecting just one of the ties. One deterministic shortest road route per selected pair suffices; shared segments are deduplicated.
@@ -335,7 +335,7 @@ Rows for superseded milestones describe historical checks. Use AC8-AC10 rows for
 | `AC8.8` | Cross-flow durability and burned-town acceptance pending | Complete integrated reward/recruitment duplication and actual ruins rejection matrices. AC8.7 targeted retry/reload evidence does not confer AC8.8 acceptance. |
 | `AC9.0` | Complete — all acceptance thresholds pass | [AC9.0 evidence](AC9/Evidence/AC9.0/verification.md) records 38/38 green runners, exact authored mechanics, 48 regular classes, 8 commanders, 56 durable identities, clean runtime output, and 8 reproducible golden fixtures. AC9.1 and later topology work remain separately scoped. |
 | `AC9.1-AC9.3` | Planned catalog and seeded selection checks | Add `Tests/Run/test_ac9_clan_selection.gd`. Verify valid clan/commander pairs, three distinct allied clans, at least one main-clan synergy, deterministic selection and reachability of each enemy clan across a seed corpus, and an authored commander-led boss party for every eligible enemy clan. |
-| `AC9.4-AC9.5, AC9.7` | Remaining geometry and cross-habitat road acceptance | Preserve the frozen V2/V3 fixtures. Complete the outstanding habitat evidence and add V4 coverage for every habitat pair, all equal-minimum endpoint ties and valid deterministic cross-habitat routes. |
+| `AC9.4-AC9.5, AC9.7` | Remaining geometry and cross-habitat road acceptance | Preserve the corrected, relocked V2/V3 fixtures. Complete the outstanding habitat evidence and add V4 coverage for every habitat pair, all equal-minimum endpoint ties and valid deterministic cross-habitat routes. |
 | `AC9.6` | Complete — V3 internal habitat roads | [AC9.6 evidence](AC9/Evidence/AC9.6/verification.md) records all three town pairs in each allied habitat, exactly nine deterministic internal roads, canonical V3 bytes, V1/V2 compatibility, V8 persistence and clean Play-mode runtime validation. AC9.7 cross-habitat roads remain reserved for V4. |
 | `AC9.8-AC9.10` | Planned generation/save/launcher and visual checks | Add `Tests/Run/test_ac9_start_without_confirmation.gd`; extend versioned world/save fixtures and existing repository/start tests. Verify byte-stable regeneration, no reroll on Continue, no overwrite prompt, failed generation/save preservation, single successful replacement, explicit version handling and readable habitat/town/road/party presentation. |
 | `AC10.1-AC10.3` | Planned targeting and siege timing checks | Add `Tests/WorldMap/test_ac10_enemy_campaign.gd`. Verify closest-town selection, seeded equal-distance ties, target locking, one action per accepted world turn, no UI/battle/rejected-move ticking, siege on arrival and an interception opportunity before destruction. |
@@ -382,7 +382,7 @@ Prioritize the linked AC8-AC10 plans: implement gold and class-filtered recruitm
 ## APPENDIX A: Worked Example
 
 1. Select Goblins and a Goblin commander. Resolve the seed, two distinct allied clans (at least one synergistic with Goblins), and one Human, Elven or Dwarven main enemy clan.
-2. Start on the easternmost hex inside the Goblin habitat with 100g. Each of the three allied habitats has three towns; the commander-led enemy party starts in its town-free western habitat.
+2. Start on the westernmost hex inside the Goblin habitat with 100g. Each of the three allied habitats has three towns; the commander-led enemy party starts in its town-free eastern habitat. The top bar identifies the currently occupied habitat by its owning race, for example `Habitat: Goblin`.
 3. Win a fight against two enemies. The reward screen shows a money icon and 100g received, bringing the balance to 200g. No recruitment/item/rest choice appears; normal battle recovery still applies.
 4. After eight defeated enemies across won fights, the balance is 500g. Visit an intact Goblin town: it offers Goblin classes absent from the current roster. Recruit one for 500g through placement/replacement; balance becomes 0g and that class disappears from offers.
 5. Meanwhile, the enemy locks its nearest intact allied town, choosing randomly among equal-distance targets. Arrival begins a siege; interception can force the boss-party battle before the town burns.
