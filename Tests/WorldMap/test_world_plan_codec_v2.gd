@@ -8,7 +8,7 @@ const CODEC_V1_PATH := "res://Scripts/WorldMap/world_plan_codec_v1.gd"
 const GEOMETRY_PATH := "res://Scripts/WorldMap/hex_world_geometry.gd"
 const FIXTURE_PATH := "res://Tests/Fixtures/WorldMap/GeneratorV2/golden-ac9.world"
 const V1_FIXTURE_DIR := "res://Tests/Fixtures/WorldMap/GeneratorV1"
-const EXPECTED_GOLDEN_SHA256 := "87562bfb206610d2d28567d5e366768f365af47f76c634e612ca00022456eaaa"
+const EXPECTED_GOLDEN_SHA256 := "3b342cb2402d05d794196989cdb326b9f887dc739f88c6022ab60aaf173edc46"
 
 var _failures: int = 0
 var _generator_script: GDScript
@@ -56,6 +56,7 @@ func _run() -> void:
     _test_generator_identity_grammar()
     _test_byte_mutations(plan)
     _test_plan_mutations(plan)
+    _test_corrected_topology_mutations(plan)
     _test_generator_validation_gate()
     _finish()
 
@@ -393,6 +394,91 @@ func _test_plan_mutations(plan: RefCounted) -> void:
         )
 
 
+func _test_corrected_topology_mutations(plan: RefCounted) -> void:
+    var allied_counts: Dictionary = {}
+    for habitat_id: String in ["main", "ally_0", "ally_1"]:
+        allied_counts[habitat_id] = plan.get_habitat_cells(habitat_id).size()
+
+    var unbalanced_source: String = ""
+    var unbalanced_target: String = ""
+    var unbalanced_coord := Vector2i(999, 999)
+    for source_id: String in allied_counts:
+        if int(allied_counts[source_id]) != 69:
+            continue
+        for target_id: String in allied_counts:
+            if source_id == target_id:
+                continue
+            var candidate: Vector2i = _find_transfer_coord(plan, source_id, target_id)
+            if candidate != Vector2i(999, 999):
+                unbalanced_source = source_id
+                unbalanced_target = target_id
+                unbalanced_coord = candidate
+                break
+        if unbalanced_coord != Vector2i(999, 999):
+            break
+    _assert_true(unbalanced_coord != Vector2i(999, 999), "unbalanced transfer coordinate found")
+    if unbalanced_coord != Vector2i(999, 999):
+        var unbalanced_cells: Dictionary = plan.get_cells()
+        unbalanced_cells[unbalanced_coord]["habitat_id"] = unbalanced_target
+        _assert_serialized_plan_rejected(
+            _copy_plan(plan, {"cells": unbalanced_cells}),
+            "unbalanced allied habitats from %s to %s" % [
+                unbalanced_source,
+                unbalanced_target,
+            ]
+        )
+
+    var bonus_source: String = ""
+    for habitat_id: String in allied_counts:
+        if int(allied_counts[habitat_id]) == 70:
+            bonus_source = habitat_id
+            break
+    var bonus_target: String = ""
+    var bonus_coord := Vector2i(999, 999)
+    for target_id: String in allied_counts:
+        if target_id == bonus_source:
+            continue
+        var candidate: Vector2i = _find_transfer_coord(plan, bonus_source, target_id)
+        if candidate != Vector2i(999, 999):
+            bonus_target = target_id
+            bonus_coord = candidate
+            break
+    _assert_true(bonus_coord != Vector2i(999, 999), "seeded bonus transfer coordinate found")
+    if bonus_coord != Vector2i(999, 999):
+        var bonus_cells: Dictionary = plan.get_cells()
+        bonus_cells[bonus_coord]["habitat_id"] = bonus_target
+        _assert_serialized_plan_rejected(
+            _copy_plan(plan, {"cells": bonus_cells}),
+            "wrong seeded 70-cell habitat"
+        )
+
+    var towns: Array = plan.get_towns()
+    var first_town: Dictionary = towns[0]
+    var spawn_adjacent: Vector2i = _find_plain_town_replacement(
+        plan,
+        String(first_town["habitat_id"]),
+        true
+    )
+    _assert_true(spawn_adjacent != Vector2i(999, 999), "spawn-adjacent town coordinate found")
+    if spawn_adjacent != Vector2i(999, 999):
+        _assert_serialized_plan_rejected(
+            _move_town(plan, 0, spawn_adjacent),
+            "town inside player spawn clearance"
+        )
+
+    var noncanonical: Vector2i = _find_plain_town_replacement(
+        plan,
+        String(first_town["habitat_id"]),
+        false
+    )
+    _assert_true(noncanonical != Vector2i(999, 999), "noncanonical town coordinate found")
+    if noncanonical != Vector2i(999, 999):
+        _assert_serialized_plan_rejected(
+            _move_town(plan, 0, noncanonical),
+            "noncanonical eligible town"
+        )
+
+
 func _test_generator_validation_gate() -> void:
     var config: Dictionary = _golden_config()
     config["forest_count"] = 0
@@ -429,6 +515,102 @@ func _assert_validation_error(plan: RefCounted, label: String) -> void:
         _assert_equal(error.code, "WORLD_GENERATION_INTERNAL_ERROR", "%s error code" % label)
         _assert_equal(error.generator_version, 2, "%s error version" % label)
         _assert_equal(error.feature_namespace, "validation", "%s error namespace" % label)
+
+
+func _find_transfer_coord(
+    plan: RefCounted,
+    source_id: String,
+    target_id: String
+) -> Vector2i:
+    var target_lookup: Dictionary = {}
+    for coord: Vector2i in plan.get_habitat_cells(target_id):
+        target_lookup[coord] = true
+    var protected: Dictionary = {}
+    for habitat_value: Variant in plan.get_habitats():
+        var habitat: Dictionary = habitat_value
+        protected[habitat["anchor"]] = true
+    for town_value: Variant in plan.get_towns():
+        var town: Dictionary = town_value
+        protected[town["coord"]] = true
+
+    var source_members: Array[Vector2i] = plan.get_habitat_cells(source_id)
+    for candidate: Vector2i in source_members:
+        if protected.has(candidate):
+            continue
+        var touches_target: bool = false
+        for offset: Vector2i in _geometry_script.NEIGHBOR_OFFSETS:
+            if target_lookup.has(candidate + offset):
+                touches_target = true
+                break
+        if not touches_target:
+            continue
+        var remaining: Array[Vector2i] = source_members.duplicate()
+        remaining.erase(candidate)
+        if _coords_are_connected(remaining):
+            return candidate
+    return Vector2i(999, 999)
+
+
+func _find_plain_town_replacement(
+    plan: RefCounted,
+    habitat_id: String,
+    require_player_adjacent: bool
+) -> Vector2i:
+    var town_lookup: Dictionary = {}
+    for town_value: Variant in plan.get_towns():
+        var town: Dictionary = town_value
+        town_lookup[town["coord"]] = true
+    var cells: Dictionary = plan.get_cells()
+    for coord: Vector2i in plan.get_habitat_cells(habitat_id):
+        if town_lookup.has(coord):
+            continue
+        if String(cells[coord]["terrain"]) != "plain":
+            continue
+        var player_distance: int = _geometry_script.get_hex_distance(
+            coord,
+            plan.get_start_coord()
+        )
+        var enemy_distance: int = _geometry_script.get_hex_distance(
+            coord,
+            plan.get_boss_coord()
+        )
+        if require_player_adjacent:
+            if player_distance == 1:
+                return coord
+        elif player_distance >= 2 and enemy_distance >= 2:
+            return coord
+    return Vector2i(999, 999)
+
+
+func _move_town(plan: RefCounted, town_index: int, new_coord: Vector2i) -> RefCounted:
+    var cells: Dictionary = plan.get_cells()
+    var towns: Array = plan.get_towns()
+    var old_coord: Vector2i = towns[town_index]["coord"]
+    cells[old_coord]["town_index"] = -1
+    cells[new_coord]["town_index"] = town_index
+    cells[new_coord]["encounter"] = "safe"
+    towns[town_index]["coord"] = new_coord
+    return _copy_plan(plan, {"cells": cells, "towns": towns})
+
+
+func _coords_are_connected(coords: Array[Vector2i]) -> bool:
+    if coords.is_empty():
+        return false
+    var members: Dictionary = {}
+    for coord: Vector2i in coords:
+        members[coord] = true
+    var visited: Dictionary = {coords[0]: true}
+    var queue: Array[Vector2i] = [coords[0]]
+    var cursor: int = 0
+    while cursor < queue.size():
+        var current: Vector2i = queue[cursor]
+        cursor += 1
+        for offset: Vector2i in _geometry_script.NEIGHBOR_OFFSETS:
+            var neighbor: Vector2i = current + offset
+            if members.has(neighbor) and not visited.has(neighbor):
+                visited[neighbor] = true
+                queue.append(neighbor)
+    return visited.size() == coords.size()
 
 
 func _find_isolated_foreign_coord(plan: RefCounted, source_id: String, target_id: String) -> Vector2i:

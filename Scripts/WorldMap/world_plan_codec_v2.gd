@@ -16,6 +16,10 @@ const TERRAINS: Array[String] = ["plain", "forest"]
 static var PLAN_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_plan.gd")
 static var ERROR_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_generation_error.gd")
 static var GEOMETRY_SCRIPT: GDScript = load("res://Scripts/WorldMap/hex_world_geometry.gd")
+static var PRIORITY_SCRIPT: GDScript = load("res://Scripts/WorldMap/world_priority.gd")
+static var TOWN_SOLVER_SCRIPT: GDScript = load(
+    "res://Scripts/WorldMap/world_town_placement_solver_v2.gd"
+)
 
 
 static func serialize(plan: RefCounted) -> PackedByteArray:
@@ -316,6 +320,8 @@ static func validate(plan: RefCounted) -> Variant:
         )
     if not _is_lower_hex(plan.get_seed_hex()):
         return _validation_error(plan, "seed_hex")
+    if _seed_text_from_hex(plan.get_seed_hex()).is_empty():
+        return _validation_error(plan, "seed_utf8")
     if (
         plan.get_start_coord() != START_COORD
         or plan.get_boss_coord() != BOSS_COORD
@@ -451,6 +457,38 @@ static func _validate_habitats(
     if enemy_members != expected_enemy:
         return "enemy_footprint"
 
+    var allied_counts: Dictionary = {}
+    var sorted_counts: Array[int] = []
+    var allied_anchors: Array[Vector2i] = []
+    for allied_index: int in range(ALLIED_HABITAT_IDS.size()):
+        var allied_id: String = ALLIED_HABITAT_IDS[allied_index]
+        var count: int = 0
+        for coord: Vector2i in canonical_coords:
+            if String(cells[coord]["habitat_id"]) == allied_id:
+                count += 1
+        allied_counts[allied_id] = count
+        sorted_counts.append(count)
+        allied_anchors.append(habitats[allied_index]["anchor"])
+    sorted_counts.sort()
+    var expected_counts: Array[int] = [69, 69, 70]
+    if sorted_counts != expected_counts:
+        return "allied_habitat_balance"
+
+    var seed_text: String = _seed_text_from_hex(plan.get_seed_hex())
+    var ranked_anchors: Array[Vector2i] = PRIORITY_SCRIPT.rank_coords(
+        allied_anchors,
+        VERSION,
+        seed_text,
+        "habitat-quota-v2"
+    )
+    var bonus_habitat_id: String = ""
+    for allied_index: int in range(allied_anchors.size()):
+        if allied_anchors[allied_index] == ranked_anchors[0]:
+            bonus_habitat_id = ALLIED_HABITAT_IDS[allied_index]
+            break
+    if bonus_habitat_id.is_empty() or int(allied_counts[bonus_habitat_id]) != 70:
+        return "allied_habitat_bonus_quota"
+
     for habitat_id: String in HABITAT_IDS:
         var members: Array[Vector2i] = []
         for coord: Vector2i in canonical_coords:
@@ -517,6 +555,11 @@ static func _validate_towns(
             or seen_coords.has(coord)
         ):
             return "town_coord"
+        if (
+            GEOMETRY_SCRIPT.get_hex_distance(coord, plan.get_start_coord()) < 2
+            or GEOMETRY_SCRIPT.get_hex_distance(coord, plan.get_boss_coord()) < 2
+        ):
+            return "town_spawn_clearance"
         seen_coords[coord] = true
         town_lookup[coord] = global_index
         if (
@@ -542,6 +585,22 @@ static func _validate_towns(
             boss_count += 1
     if boss_count != 1:
         return "sole_boss"
+
+    var habitat_by_coord: Dictionary = {}
+    for coord: Vector2i in canonical_coords:
+        habitat_by_coord[coord] = String(cells[coord]["habitat_id"])
+    var canonical_towns: Dictionary = TOWN_SOLVER_SCRIPT.new().solve(
+        _seed_text_from_hex(plan.get_seed_hex()),
+        canonical_coords,
+        habitat_by_coord,
+        plan.get_start_coord(),
+        plan.get_boss_coord()
+    )
+    if (
+        not canonical_towns.get("ok", false)
+        or canonical_towns.get("towns", []) != towns
+    ):
+        return "noncanonical_town_placement"
     return ""
 
 
@@ -680,6 +739,14 @@ static func _canonical_int(value: String) -> bool:
         if character not in "0123456789":
             return false
     return true
+
+
+static func _seed_text_from_hex(seed_hex: String) -> String:
+    var bytes: PackedByteArray = seed_hex.hex_decode()
+    var seed_text: String = bytes.get_string_from_utf8()
+    if seed_text.to_utf8_buffer().hex_encode() != seed_hex:
+        return ""
+    return seed_text
 
 
 static func _is_lower_hex(value: String) -> bool:
