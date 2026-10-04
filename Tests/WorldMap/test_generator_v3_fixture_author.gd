@@ -5,7 +5,7 @@ const GENERATOR_PATH := "res://Scripts/WorldMap/hex_world_generator_v3.gd"
 const CODEC_PATH := "res://Scripts/WorldMap/world_plan_codec_v3.gd"
 const FIXTURE_DIR := "res://Tests/Fixtures/WorldMap/GeneratorV3"
 const FIXTURE_PATH := FIXTURE_DIR + "/golden-ac9.world"
-const EXPECTED_SHA256 := "994a8daa5324785d35e4a9f2f04c025f85dba16c85060cd5f0994892ec4eca55"
+const EXPECTED_SHA256 := "8f6d33613442749ce31c209ba3ddf93bd260addb66cfce74594804ae0285ad30"
 
 var _failures: int = 0
 
@@ -37,7 +37,9 @@ func _run() -> void:
         _finish()
         return
     var bytes: PackedByteArray = codec_script.serialize(plan)
-    if _sha256(bytes) != EXPECTED_SHA256:
+    var production_sha256: String = _sha256(bytes)
+    print("V3_PRODUCTION_SHA256=%s" % production_sha256)
+    if production_sha256 != EXPECTED_SHA256:
         _fail("production V3 bytes do not match the approved hash")
         _finish()
         return

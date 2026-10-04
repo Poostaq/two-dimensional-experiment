@@ -4,6 +4,7 @@ extends SceneTree
 const GENERATOR_V2_PATH := "res://Scripts/WorldMap/hex_world_generator_v2.gd"
 const GENERATOR_V3_PATH := "res://Scripts/WorldMap/hex_world_generator_v3.gd"
 const ROAD_RULES_PATH := "res://Scripts/WorldMap/habitat_road_rules_v3.gd"
+const GEOMETRY_PATH := "res://Scripts/WorldMap/hex_world_geometry.gd"
 const SEEDS: Array[String] = ["golden-ac9", "ac9-roads-alpha", "ac9-roads-beta"]
 const CONFIG := {
     "main_clan_id": &"goblin",
@@ -12,6 +13,7 @@ const CONFIG := {
 }
 
 var _failures: int = 0
+var _geometry_script: GDScript
 
 
 func _init() -> void:
@@ -22,8 +24,14 @@ func _run() -> void:
     var v2_script: GDScript = load(GENERATOR_V2_PATH)
     var v3_script: GDScript = load(GENERATOR_V3_PATH)
     var rules_script: GDScript = load(ROAD_RULES_PATH)
-    if v2_script == null or v3_script == null or rules_script == null:
-        _fail("V2, V3, and road-rules scripts must exist")
+    _geometry_script = load(GEOMETRY_PATH)
+    if (
+        v2_script == null
+        or v3_script == null
+        or rules_script == null
+        or _geometry_script == null
+    ):
+        _fail("V2, V3, road-rules, and geometry scripts must exist")
         _finish()
         return
     _test_v2_equivalence(v2_script, v3_script, rules_script)
@@ -59,6 +67,7 @@ func _test_v2_equivalence(
             v2_plan.get_forest_clusters(),
             "%s forests" % seed_text
         )
+        _assert_balanced_spacing(v3_plan, seed_text)
         _expect_equal(v2_plan.get_roads(), [], "%s V2 roads remain empty" % seed_text)
         var expected: Dictionary = rules_script.build(
             v3_plan.get_towns(),
@@ -95,6 +104,40 @@ func _test_failure_promotion(v3_script: GDScript) -> void:
         }
     )
     _expect_failure(identity_failure, "identity_context_invalid", "invalid identity")
+
+
+func _assert_balanced_spacing(plan: RefCounted, label: String) -> void:
+    var allied_counts: Array[int] = [
+        plan.get_habitat_cells("main").size(),
+        plan.get_habitat_cells("ally_0").size(),
+        plan.get_habitat_cells("ally_1").size(),
+    ]
+    allied_counts.sort()
+    var expected_counts: Array[int] = [69, 69, 70]
+    _expect_equal(allied_counts, expected_counts, "%s allied habitat balance" % label)
+    _expect_equal(plan.get_habitat_cells("enemy").size(), 9, "%s enemy footprint" % label)
+
+    var towns: Array = plan.get_towns()
+    for town_value: Variant in towns:
+        var town: Dictionary = town_value
+        var coord: Vector2i = town["coord"]
+        _expect(
+            _geometry_script.get_hex_distance(coord, plan.get_start_coord()) >= 2,
+            "%s town clears player start" % label
+        )
+        _expect(
+            _geometry_script.get_hex_distance(coord, plan.get_boss_coord()) >= 2,
+            "%s town clears enemy start" % label
+        )
+    var adjacent_pairs: int = 0
+    for first_index: int in range(towns.size()):
+        for second_index: int in range(first_index + 1, towns.size()):
+            if _geometry_script.get_hex_distance(
+                towns[first_index]["coord"],
+                towns[second_index]["coord"]
+            ) < 2:
+                adjacent_pairs += 1
+    _expect_equal(adjacent_pairs, 0, "%s global town spacing" % label)
 
 
 func _assert_internal_pairs(plan: RefCounted, label: String) -> void:
