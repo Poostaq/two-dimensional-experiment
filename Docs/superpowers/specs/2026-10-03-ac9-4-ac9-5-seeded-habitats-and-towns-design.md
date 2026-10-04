@@ -2,7 +2,7 @@
 
 **Acceptance criteria:** AC9.4 and AC9.5.
 
-**Status:** Approved for implementation planning on 2026-10-03; spawn orientation corrected on 2026-10-04 by the [AC9.6 spawn and habitat display correction](2026-10-04-ac9-6-spawn-and-habitat-display-correction-design.md).
+**Status:** Approved for implementation planning on 2026-10-03; spawn orientation and habitat display were corrected by the [AC9.6 correction](2026-10-04-ac9-6-spawn-and-habitat-display-correction-design.md), and allied-area balance plus town spacing were corrected by the [AC9 town spacing and balanced habitats design](2026-10-04-ac9-town-spacing-and-balanced-habitats-design.md).
 
 ## Goal
 
@@ -16,7 +16,7 @@ It builds on the merged AC9.1 player selection, AC9.2 allied coalition, and AC9.
 
 ## Planning authority
 
-This document is the governing design for AC9.4 and AC9.5. It supersedes the older aggregate AC9 roadmap wherever that roadmap implied one generator version for habitats, towns, and roads. The aggregate roadmap continues to govern the remaining AC9 sequence and has been reconciled to reserve generator V3 for AC9.6 and AC9.7. The road acceptance criteria remain unchanged; only their delivery version is separated from roadless V2. The approved 2026-10-04 correction is authoritative for orientation and habitat display; the user explicitly authorized replacing the V2/V3 fixture contracts and deleting existing local saves rather than introducing another generator version.
+This document is the governing design for AC9.4 and AC9.5. It supersedes the older aggregate AC9 roadmap wherever that roadmap implied one generator version for habitats, towns, and roads. The aggregate roadmap continues to govern the remaining AC9 sequence and has been reconciled to reserve generator V3 for AC9.6 and AC9.7. The road acceptance criteria remain unchanged; only their delivery version is separated from roadless V2. The approved 2026-10-04 corrections are authoritative for orientation, habitat display, exact allied-area quotas, spawn clearance, and global town spacing. The user explicitly authorized replacing the V2/V3 fixture contracts and deleting existing local saves rather than introducing another generator version.
 
 ## Chosen approach
 
@@ -73,22 +73,15 @@ The enemy spawn is the `enemy` anchor. No enemy-habitat cell may contain a town.
 
 Remove the enemy footprint from the canonical board. The player spawn is the fixed `main` anchor. Rank every other allied coordinate with world-priority version 2 and namespace `habitat-anchor-v2`, then enumerate candidate pairs in ranked order for `ally_0` and `ally_1`.
 
-For each pair, run deterministic multi-source breadth-first assignment over traversable allied cells. Initialize the frontier in stable habitat order `main`, `ally_0`, `ally_1`; visit neighbors in `HexWorldGeometry.NEIGHBOR_OFFSETS` order. First arrival owns the cell, so equal-distance ties follow stable habitat order without relying on dictionary iteration.
+For each pair, assign seeded quotas to the three anchors with world-priority namespace `habitat-quota-v2`. The 208 non-enemy cells are divided exactly as 69, 69, and 70; the first ranked anchor receives the 70-cell quota. Deterministic per-habitat frontier growth claims canonical neighbors only while that habitat remains below quota. Every claim extends an existing region, so each accepted allied habitat is connected to its anchor.
 
-Accept the first partition in which:
-
-- every non-enemy cell belongs to exactly one allied habitat;
-- all three allied habitats are connected;
-- `main` contains the player spawn and at least three additional cells for towns; and
-- both allied habitats contain at least three cells for towns.
-
-If no candidate pair satisfies those constraints, generation fails with `WORLD_CONSTRAINT_UNSATISFIABLE`, generator version 2, namespace `habitat`, and constraint `connected_partition_with_town_capacity`.
+Accept only a partition that covers every non-enemy cell exactly once, reaches all three exact quotas, retains anchor ownership, and supports three spawn-cleared towns per allied habitat. If no candidate pair satisfies those constraints, generation fails atomically with `WORLD_CONSTRAINT_UNSATISFIABLE`, generator version 2, namespace `habitat`, and constraint `balanced_partition_with_town_capacity`.
 
 ## Seeded town placement
 
-For each allied habitat in stable order, collect its member cells and exclude both party spawns. Rank the remaining coordinates with world-priority version 2, namespace `habitat-town-v2`, and the habitat's stable index. Select the first three coordinates. No additional spacing rule is imposed because AC9.5 requires seeded distinct placements, not a minimum distance, and the final partition capacity already guarantees feasibility.
+For each allied habitat in stable order, collect its member cells and exclude every coordinate less than hex distance two from either party start. Rank the remaining coordinates with world-priority version 2, namespace `habitat-town-v2`, and the habitat's stable index. A deterministic global search selects exactly three towns per habitat and first seeks a layout in which every pair among all nine towns is at least distance two.
 
-Assign local town indices in ranked selection order and global indices in habitat order. Mark every town cell safe. Towns are therefore reproducible, distinct, inside their owning habitat, absent from the enemy habitat, and independent of mutable RNG or call order.
+Only when exhaustive search proves full separation impossible may the solver fall back to the layout with the fewest adjacent pairs, then the greatest total pairwise distance, with stable partition and candidate order resolving remaining ties. Assign local town indices in ranked selection order and global indices in habitat order. Mark every town cell safe. Towns are reproducible, distinct, inside their owning habitat, absent from the enemy habitat, clear of both starts, and independent of mutable RNG or call order.
 
 ## Encounters forests and roads
 
@@ -167,8 +160,7 @@ Identity and structural-input failures use `WORLD_GENERATION_INTERNAL_ERROR`. Fi
 
 - `identity_context_invalid`;
 - `visual_extrema_invalid`;
-- `connected_partition_with_town_capacity`;
-- `habitat_town_capacity`;
+- `balanced_partition_with_town_capacity`;
 - `forest_cluster_count=10`; and
 - codec-specific canonical or invariant constraints.
 

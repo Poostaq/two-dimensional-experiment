@@ -1,3 +1,4 @@
+class_name TestWorldTownPlacementSolverV2
 extends SceneTree
 
 const SOLVER_PATH := "res://Scripts/WorldMap/world_town_placement_solver_v2.gd"

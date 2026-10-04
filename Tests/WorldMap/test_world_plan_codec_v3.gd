@@ -9,7 +9,7 @@ const CODEC_V2_PATH := "res://Scripts/WorldMap/world_plan_codec_v2.gd"
 const CODEC_V3_PATH := "res://Scripts/WorldMap/world_plan_codec_v3.gd"
 const FACADE_PATH := "res://Scripts/WorldMap/world_plan_codec.gd"
 const PLAN_PATH := "res://Scripts/WorldMap/world_plan.gd"
-const EXPECTED_GOLDEN_SHA256 := "994a8daa5324785d35e4a9f2f04c025f85dba16c85060cd5f0994892ec4eca55"
+const EXPECTED_GOLDEN_SHA256 := "8f6d33613442749ce31c209ba3ddf93bd260addb66cfce74594804ae0285ad30"
 const CONFIG := {
     "main_clan_id": &"goblin",
     "allied_clan_ids": [&"orc", &"werewolf"],
