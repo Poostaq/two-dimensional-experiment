@@ -37,7 +37,7 @@ func _run() -> void:
     _expect(town_count == 7, "all seven v1 towns tested")
     _expect(rules.resolve(null, first_town).error == &"invalid_plan", "null rejects")
     _expect(rules.resolve(plan, Vector2i(999, 999)).error == &"invalid_coordinate", "off-map rejects")
-    for version: int in [0, 3, 99]:
+    for version: int in [0, 4, 99]:
         var future: WorldPlan = _copy_plan(plan, version, cells)
         var rejected: Dictionary = rules.resolve(future, first_town)
         _expect(not rejected.ok and rejected.clan_id == &"" and

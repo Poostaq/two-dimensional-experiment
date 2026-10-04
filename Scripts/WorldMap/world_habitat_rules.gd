@@ -61,14 +61,16 @@ static func _resolve_generated(plan: WorldPlan, cell: Dictionary) -> Dictionary:
         or not anchor_value is Vector2i
     ):
         return _failure(&"invalid_habitat_record")
+    var clan_id := String(clan_id_value)
+    var display_name: String = clan_id.replace("_", " ").capitalize()
     var cell_count: int = plan.get_habitat_cells(habitat_id).size()
     if cell_count <= 0:
         return _failure(&"invalid_habitat_record")
     return {
         "ok": true,
-        "clan_id": StringName(clan_id_value),
-        "display_name": habitat_id.replace("_", " ").capitalize(),
-        "source": "Generated world v2",
+        "clan_id": StringName(clan_id),
+        "display_name": display_name,
+        "source": "Generated world v%d" % plan.get_version(),
         "habitat_id": StringName(habitat_id),
         "role": String(role_value),
         "anchor": anchor_value,

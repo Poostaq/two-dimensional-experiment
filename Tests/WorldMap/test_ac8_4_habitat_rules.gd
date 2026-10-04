@@ -48,7 +48,7 @@ func _run() -> void:
     _expect(rules.resolve(null, start) == _failure(&"invalid_plan"), "null plan fails explicitly")
     _expect(rules.resolve(plan, Vector2i(999, 999)) == _failure(&"invalid_coordinate"),
         "off-map fails explicitly")
-    for version: int in [0, 3, 99]:
+    for version: int in [0, 4, 99]:
         var unknown: WorldPlan = _copy_plan(plan, version, cells)
         _expect(rules.resolve(unknown, start) == _failure(&"unsupported_world_version"),
             "unknown versions never inherit legacy rule")
@@ -115,8 +115,8 @@ func _test_v2_habitats(rules: Script) -> void:
         _expect(result.get("anchor", Vector2i.ZERO) == record.anchor, "v2 habitat anchor is exact")
         _expect(result.get("cell_count", 0) == plan.get_habitat_cells(habitat_id).size(),
             "v2 habitat cell count is exact")
-        _expect(result.get("display_name", "") == habitat_id.replace("_", " ").capitalize(),
-            "v2 display name derives from stable id")
+        _expect(result.get("display_name", "") == String(record.clan_id).replace("_", " ").capitalize(),
+            "v2 display name derives from owning clan")
         _expect(result.get("source", "") == "Generated world v2" and result.get("error", &"") == &"",
             "v2 habitat source is explicit")
         result.anchor = Vector2i(999, 999)

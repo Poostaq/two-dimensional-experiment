@@ -9,7 +9,7 @@ const CODEC_V2_PATH := "res://Scripts/WorldMap/world_plan_codec_v2.gd"
 const CODEC_V3_PATH := "res://Scripts/WorldMap/world_plan_codec_v3.gd"
 const FACADE_PATH := "res://Scripts/WorldMap/world_plan_codec.gd"
 const PLAN_PATH := "res://Scripts/WorldMap/world_plan.gd"
-const EXPECTED_GOLDEN_SHA256 := "0ffe96dff287d96deb4889ba6556f1adf4aad27ff9646333f48434191824672d"
+const EXPECTED_GOLDEN_SHA256 := "994a8daa5324785d35e4a9f2f04c025f85dba16c85060cd5f0994892ec4eca55"
 const CONFIG := {
     "main_clan_id": &"goblin",
     "allied_clan_ids": [&"orc", &"werewolf"],
@@ -41,7 +41,7 @@ func _run() -> void:
     var plan: RefCounted = generated["plan"]
     var bytes: PackedByteArray = codec_v3.serialize(plan)
     _test_canonical_round_trip(codec_v3, facade, plan, bytes)
-    _test_parse_rejections(codec_v3, bytes)
+    _test_parse_rejections(codec_v3, plan, bytes)
     _test_serialize_rejections(codec_v3, plan)
     _test_legacy_dispatch(facade)
     _finish()
@@ -70,8 +70,12 @@ func _test_canonical_round_trip(
     _expect_equal(facade.validate(plan), null, "facade validates V3")
 
 
-func _test_parse_rejections(codec_v3: GDScript, bytes: PackedByteArray) -> void:
-    var text := bytes.get_string_from_utf8()
+func _test_parse_rejections(
+    codec_v3: GDScript,
+    plan: RefCounted,
+    bytes: PackedByteArray
+) -> void:
+    var text: String = bytes.get_string_from_utf8()
     _expect_rejected(codec_v3, text.replace("TWDE-WORLD,3", "TWDE-WORLD,2"), "V2 header")
     _expect_rejected(codec_v3, text.replace("TWDE-WORLD,3", "TWDE-WORLD,4"), "V4 header")
     _expect_rejected_bytes(codec_v3, PackedByteArray([0xef, 0xbb, 0xbf]) + bytes, "BOM")
@@ -80,6 +84,22 @@ func _test_parse_rejections(codec_v3: GDScript, bytes: PackedByteArray) -> void:
     _expect_rejected(codec_v3, text + "\n", "double final LF")
 
     var lines: PackedStringArray = text.trim_suffix("\n").split("\n", false)
+    var first_road_fields: PackedStringArray = lines[ROAD_INDEX].split(",", false)
+    var first_start: Vector2i = Vector2i(int(first_road_fields[1]), int(first_road_fields[2]))
+    var first_end: Vector2i = Vector2i(int(first_road_fields[3]), int(first_road_fields[4]))
+    var first_habitat_id: String = ""
+    for town_value: Variant in plan.get_towns():
+        var town: Dictionary = town_value
+        if town.get("coord", Vector2i.ZERO) == first_start:
+            first_habitat_id = String(town.get("habitat_id", ""))
+            break
+    var cross_habitat_coord: Vector2i = first_end
+    for town_value: Variant in plan.get_towns():
+        var town: Dictionary = town_value
+        if String(town.get("habitat_id", "")) != first_habitat_id:
+            cross_habitat_coord = town.get("coord", Vector2i.ZERO)
+            break
+
     var missing: PackedStringArray = lines.duplicate()
     missing.remove_at(ROAD_INDEX)
     _expect_rejected(codec_v3, _text(missing), "missing road")
@@ -89,13 +109,18 @@ func _test_parse_rejections(codec_v3: GDScript, bytes: PackedByteArray) -> void:
     _expect_rejected(codec_v3, _text(extra), "extra road")
 
     var reordered: PackedStringArray = lines.duplicate()
-    var first_road := reordered[ROAD_INDEX]
+    var first_road: String = reordered[ROAD_INDEX]
     reordered[ROAD_INDEX] = reordered[ROAD_INDEX + 1]
     reordered[ROAD_INDEX + 1] = first_road
     _expect_rejected(codec_v3, _text(reordered), "reordered roads")
 
     var reversed: PackedStringArray = lines.duplicate()
-    reversed[ROAD_INDEX] = "road,8,-6,5,0"
+    reversed[ROAD_INDEX] = "road,%s,%s,%s,%s" % [
+        first_road_fields[3],
+        first_road_fields[4],
+        first_road_fields[1],
+        first_road_fields[2],
+    ]
     _expect_rejected(codec_v3, _text(reversed), "reversed road")
 
     var duplicate: PackedStringArray = lines.duplicate()
@@ -103,19 +128,40 @@ func _test_parse_rejections(codec_v3: GDScript, bytes: PackedByteArray) -> void:
     _expect_rejected(codec_v3, _text(duplicate), "duplicate road")
 
     var self_edge: PackedStringArray = lines.duplicate()
-    self_edge[ROAD_INDEX] = "road,5,0,5,0"
+    self_edge[ROAD_INDEX] = "road,%d,%d,%d,%d" % [
+        first_start.x,
+        first_start.y,
+        first_start.x,
+        first_start.y,
+    ]
     _expect_rejected(codec_v3, _text(self_edge), "self edge")
 
     var non_town: PackedStringArray = lines.duplicate()
-    non_town[ROAD_INDEX] = "road,0,0,8,-6"
+    var non_town_coord: Vector2i = plan.get_start_coord()
+    non_town[ROAD_INDEX] = "road,%d,%d,%d,%d" % [
+        non_town_coord.x,
+        non_town_coord.y,
+        first_end.x,
+        first_end.y,
+    ]
     _expect_rejected(codec_v3, _text(non_town), "non-town endpoint")
 
     var cross_habitat: PackedStringArray = lines.duplicate()
-    cross_habitat[ROAD_INDEX] = "road,5,0,-1,5"
+    cross_habitat[ROAD_INDEX] = "road,%d,%d,%d,%d" % [
+        first_start.x,
+        first_start.y,
+        cross_habitat_coord.x,
+        cross_habitat_coord.y,
+    ]
     _expect_rejected(codec_v3, _text(cross_habitat), "cross-habitat edge")
 
     var noncanonical_int: PackedStringArray = lines.duplicate()
-    noncanonical_int[ROAD_INDEX] = "road,05,0,8,-6"
+    noncanonical_int[ROAD_INDEX] = "road,+%s,%s,%s,%s" % [
+        first_road_fields[1],
+        first_road_fields[2],
+        first_road_fields[3],
+        first_road_fields[4],
+    ]
     _expect_rejected(codec_v3, _text(noncanonical_int), "noncanonical integer")
 
     var extra_field: PackedStringArray = lines.duplicate()
@@ -123,7 +169,7 @@ func _test_parse_rejections(codec_v3: GDScript, bytes: PackedByteArray) -> void:
     _expect_rejected(codec_v3, _text(extra_field), "extra road field")
 
     var late_road: PackedStringArray = lines.duplicate()
-    var moved := late_road[ROAD_INDEX]
+    var moved: String = late_road[ROAD_INDEX]
     late_road.remove_at(ROAD_INDEX)
     late_road.append(moved)
     _expect_rejected(codec_v3, _text(late_road), "road after forests")

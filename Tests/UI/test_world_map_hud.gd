@@ -2,7 +2,7 @@ class_name WorldMapHudTests
 extends SceneTree
 
 const SCENE_PATH := "res://Scenes/world_map_hud.tscn"
-const EXPECTED_TEST_COUNT := 59
+const EXPECTED_TEST_COUNT := 60
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -123,6 +123,9 @@ func _run() -> void:
 	_expect(is_instance_valid(habitat), "habitat label exists")
 	hud.call("set_habitat", {"ok": true, "display_name": "Goblin"})
 	_expect(habitat.text == "Habitat: Goblin", "current habitat is readable")
+	hud.call("set_habitat", {"ok": true, "display_name": "Lizardmen"})
+	_expect(habitat.text == "Habitat: Lizardmen", "race habitat name remains capitalized")
+	hud.call("set_habitat", {"ok": true, "display_name": "Goblin"})
 	hud.call("set_context", "combat", terrain_tags, true)
 	_expect(habitat.text == "Habitat: Goblin", "hover context does not replace current habitat")
 	await process_frame

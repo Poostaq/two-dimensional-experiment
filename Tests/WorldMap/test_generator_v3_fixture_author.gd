@@ -5,7 +5,7 @@ const GENERATOR_PATH := "res://Scripts/WorldMap/hex_world_generator_v3.gd"
 const CODEC_PATH := "res://Scripts/WorldMap/world_plan_codec_v3.gd"
 const FIXTURE_DIR := "res://Tests/Fixtures/WorldMap/GeneratorV3"
 const FIXTURE_PATH := FIXTURE_DIR + "/golden-ac9.world"
-const EXPECTED_SHA256 := "0ffe96dff287d96deb4889ba6556f1adf4aad27ff9646333f48434191824672d"
+const EXPECTED_SHA256 := "994a8daa5324785d35e4a9f2f04c025f85dba16c85060cd5f0994892ec4eca55"
 
 var _failures: int = 0
 

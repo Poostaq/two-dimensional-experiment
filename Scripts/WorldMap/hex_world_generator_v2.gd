@@ -31,8 +31,8 @@ func generate(seed_text: String, config: Dictionary = {}) -> Dictionary:
     var extrema: Dictionary = GEOMETRY_SCRIPT.get_visual_extrema(coords)
     if not _valid_visual_extrema(extrema, coords):
         return _internal_failure(seed_text, "visual_extrema_invalid")
-    var start_coord: Vector2i = extrema["east"]
-    var enemy_coord: Vector2i = extrema["west"]
+    var start_coord: Vector2i = extrema["west"]
+    var enemy_coord: Vector2i = extrema["east"]
 
     var habitat_solver: RefCounted = HABITAT_SOLVER_SCRIPT.new()
     var topology: Dictionary = habitat_solver.solve(

@@ -8,7 +8,7 @@ const CODEC_V1_PATH := "res://Scripts/WorldMap/world_plan_codec_v1.gd"
 const GEOMETRY_PATH := "res://Scripts/WorldMap/hex_world_geometry.gd"
 const FIXTURE_PATH := "res://Tests/Fixtures/WorldMap/GeneratorV2/golden-ac9.world"
 const V1_FIXTURE_DIR := "res://Tests/Fixtures/WorldMap/GeneratorV1"
-const EXPECTED_GOLDEN_SHA256 := "6e11941a374cb6cc0e6bc5e9ba07b9943454a0b7ff117ab5e2b4d58793da75ec"
+const EXPECTED_GOLDEN_SHA256 := "87562bfb206610d2d28567d5e366768f365af47f76c634e612ca00022456eaaa"
 
 var _failures: int = 0
 var _generator_script: GDScript
@@ -67,7 +67,7 @@ func _test_canonical_round_trip(plan: RefCounted) -> void:
     var facade: PackedByteArray = _codec_script.serialize(plan)
     _assert_equal(facade, direct, "direct and facade serialization agree")
     var text := direct.get_string_from_utf8()
-    _assert_true(text.begins_with("TWDE-WORLD,2\nseed,676f6c64656e2d616339\nstart,8,0\nboss,-8,0\nhabitat,main,main,goblin,8,0\n"), "canonical V2 header and first habitat")
+    _assert_true(text.begins_with("TWDE-WORLD,2\nseed,676f6c64656e2d616339\nstart,-8,0\nboss,8,0\nhabitat,main,main,goblin,-8,0\n"), "canonical V2 header and first habitat")
     _assert_true(not direct.is_empty() and direct[0] != 0xef, "no UTF-8 BOM")
     _assert_true(text.find("\r") == -1, "LF-only serialization")
     _assert_true(text.ends_with("\n") and not text.ends_with("\n\n"), "exactly one final LF")
@@ -257,7 +257,7 @@ func _test_byte_mutations(plan: RefCounted) -> void:
     mutations.append({"label": "wrong habitat anchor", "bytes": _replace_field_pair(lines, 4, 4, "7", "0")})
     mutations.append({"label": "wrong start origin", "bytes": _replace_line(lines, 2, "start,7,0")})
     mutations.append({"label": "wrong boss origin", "bytes": _replace_line(lines, 3, "boss,-7,0")})
-    mutations.append({"label": "conflicting cell habitat", "bytes": _replace_field(lines, 8, 6, "main")})
+    mutations.append({"label": "conflicting cell habitat", "bytes": _replace_field(lines, 8, 6, "enemy")})
     mutations.append({"label": "wrong town id", "bytes": _replace_field(lines, 225, 1, "main_town_9")})
     mutations.append({"label": "wrong town local index", "bytes": _replace_field(lines, 225, 3, "1")})
     mutations.append({"label": "wrong town owner", "bytes": _replace_field(lines, 225, 2, "ally_0")})

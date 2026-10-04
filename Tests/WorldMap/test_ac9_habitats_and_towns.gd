@@ -45,22 +45,22 @@ func _test_golden_topology() -> void:
     var plan: RefCounted = result["plan"]
     _assert_equal(plan.get_version(), VERSION, "golden version")
     _assert_equal(plan.get_cells().size(), 217, "golden cell count")
-    _assert_equal(plan.get_start_coord(), Vector2i(8, 0), "player starts east")
-    _assert_equal(plan.get_boss_coord(), Vector2i(-8, 0), "enemy starts west")
+    _assert_equal(plan.get_start_coord(), Vector2i(-8, 0), "player starts west")
+    _assert_equal(plan.get_boss_coord(), Vector2i(8, 0), "enemy starts east")
     var expected_enemy_footprint: Array[Vector2i] = _expected_enemy_footprint(
         DEFAULT_RADIUS,
         plan.get_boss_coord()
     )
     _assert_equal(expected_enemy_footprint, [
-        Vector2i(-8, 0),
-        Vector2i(-8, 1),
-        Vector2i(-8, 2),
-        Vector2i(-7, -1),
-        Vector2i(-7, 0),
-        Vector2i(-7, 1),
-        Vector2i(-6, -2),
-        Vector2i(-6, -1),
-        Vector2i(-6, 0),
+        Vector2i(6, 0),
+        Vector2i(6, 1),
+        Vector2i(6, 2),
+        Vector2i(7, -1),
+        Vector2i(7, 0),
+        Vector2i(7, 1),
+        Vector2i(8, -2),
+        Vector2i(8, -1),
+        Vector2i(8, 0),
     ], "independent radius-eight enemy footprint")
     _assert_equal(
         plan.get_habitat_cells("enemy"),

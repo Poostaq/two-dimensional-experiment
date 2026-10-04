@@ -77,8 +77,8 @@ func _test_v3_round_trip(
 		return
 	var value: Dictionary = decoded["value"]
 	_expect(value.plan.get_version() == 3, "decoded plan stays V3")
-	_expect(value.plan.get_start_coord() == Vector2i(8, 0), "decoded player remains east")
-	_expect(value.plan.get_boss_coord() == Vector2i(-8, 0), "decoded boss remains west")
+	_expect(value.plan.get_start_coord() == Vector2i(-8, 0), "decoded player remains west")
+	_expect(value.plan.get_boss_coord() == Vector2i(8, 0), "decoded boss remains east")
 	_expect(value.plan.get_habitats().size() == 4, "decoded habitats preserved")
 	_expect(value.plan.get_towns().size() == 9, "decoded towns preserved")
 	_expect(value.plan.get_roads().size() == 9, "decoded internal roads are preserved")

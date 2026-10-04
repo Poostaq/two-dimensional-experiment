@@ -71,13 +71,13 @@ func _test_default_v3_success(service_script: GDScript) -> void:
         return
     var plan: RefCounted = success["plan"]
     _assert_equal(plan.get_version(), 3, "default generator produces V3")
-    _assert_equal(plan.get_start_coord(), Vector2i(8, 0), "player starts at east extreme")
-    _assert_equal(plan.get_boss_coord(), Vector2i(-8, 0), "boss starts at west extreme")
+    _assert_equal(plan.get_start_coord(), Vector2i(-8, 0), "player starts at west extreme")
+    _assert_equal(plan.get_boss_coord(), Vector2i(8, 0), "boss starts at east extreme")
     _assert_equal(plan.get_habitats().size(), 4, "V3 plan has four habitats")
     _assert_equal(plan.get_towns().size(), 9, "V3 plan has nine towns")
     _assert_equal(plan.get_roads().size(), 9, "V3 plan has nine internal roads")
-    _assert_equal(success["run_state"].player_coord, plan.get_start_coord(), "state starts east")
-    _assert_equal(success["run_state"].boss_coord, plan.get_boss_coord(), "state boss is west")
+    _assert_equal(success["run_state"].player_coord, plan.get_start_coord(), "state starts west")
+    _assert_equal(success["run_state"].boss_coord, plan.get_boss_coord(), "state boss is east")
     _assert_true(success.has("coalition"), "new run returns allied coalition")
     _assert_true(success.has("enemy_boss_selection"), "new run returns enemy boss selection")
     _assert_equal(success["run_state"].get("gold"), 100, "new run wallet initialized")

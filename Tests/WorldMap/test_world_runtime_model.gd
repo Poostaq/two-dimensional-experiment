@@ -1,7 +1,7 @@
 class_name WorldRuntimeModelContractTests
 extends SceneTree
 
-const EXPECTED_TEST_COUNT := 81
+const EXPECTED_TEST_COUNT := 83
 
 var _failures: Array[String] = []
 var _assertions: int = 0
@@ -81,11 +81,15 @@ func _run_v2_contract(model_path: String) -> void:
     var model: RefCounted = load(model_path).new()
     _expect(model.configure(plan), "v2 plan configures runtime")
     var snapshot: WorldRuntimeSnapshot = model.get_snapshot()
-    _expect(snapshot.player_coord == Vector2i(8, 0), "v2 player starts east")
-    _expect(snapshot.boss_coord == Vector2i(-8, 0), "v2 boss starts west")
+    _expect(snapshot.player_coord == Vector2i(-8, 0), "v2 player starts west")
+    _expect(snapshot.boss_coord == Vector2i(8, 0), "v2 boss starts east")
     var habitat: Dictionary = model.get_habitat(plan.get_start_coord())
-    _expect(habitat.get("ok", false) and habitat.get("habitat_id", &"") == &"main",
-        "v2 runtime exposes generated habitat")
+    _expect(
+        habitat.get("ok", false)
+        and habitat.get("habitat_id", &"") == &"main"
+        and habitat.get("display_name", "") == "Goblin",
+        "v2 runtime exposes owning race habitat"
+    )
     var towns: Array = plan.get_towns()
     _expect(towns.size() == 9, "v2 runtime plan contains nine towns")
     var owner: Dictionary = model.get_town_ownership(towns[0].coord)
@@ -114,10 +118,15 @@ func _run_v3_contract(model_path: String) -> void:
     var plan: WorldPlan = generated.plan
     var model: RefCounted = load(model_path).new()
     _expect(model.configure(plan), "v3 plan configures runtime")
+    var snapshot: WorldRuntimeSnapshot = model.get_snapshot()
+    _expect(snapshot.player_coord == Vector2i(-8, 0), "v3 player starts west")
+    _expect(snapshot.boss_coord == Vector2i(8, 0), "v3 boss starts east")
     var habitat: Dictionary = model.get_habitat(plan.get_start_coord())
     _expect(
-        habitat.get("ok", false) and habitat.get("habitat_id", &"") == &"main",
-        "v3 runtime exposes generated habitat"
+        habitat.get("ok", false)
+        and habitat.get("habitat_id", &"") == &"main"
+        and habitat.get("display_name", "") == "Goblin",
+        "v3 runtime exposes owning race habitat"
     )
     var town: Dictionary = plan.get_towns()[0]
     var owner: Dictionary = model.get_town_ownership(town.coord)
