@@ -28,7 +28,7 @@ func _run() -> void:
         _finish()
         return
     _test_golden_topology()
-    _test_ordered_anchor_pair_regression()
+    _test_small_partition_capacity_failure()
     _test_determinism()
     _test_playable_clan_corpus()
     _test_identity_failures()
@@ -93,13 +93,14 @@ func _test_golden_topology() -> void:
             )
 
     _assert_complete_exclusive_connected_coverage(plan)
+    _assert_balanced_spacing_contract(plan, "golden")
     _assert_town_contract(plan)
     _assert_encounter_and_forest_contract(plan)
     _assert_equal(plan.get_roads(), [], "V2 roads remain empty")
 
 
-func _test_ordered_anchor_pair_regression() -> void:
-    var seed_text := "synthetic-ordered-2"
+func _test_small_partition_capacity_failure() -> void:
+    var seed_text := "synthetic-balanced-capacity"
     var start_coord := Vector2i(1, 0)
     var enemy_coord := Vector2i(-20, 0)
     var coords: Array[Vector2i] = [
@@ -115,34 +116,27 @@ func _test_ordered_anchor_pair_regression() -> void:
         Vector2i(1, 1),
         Vector2i(2, 0),
     ]
-    var expected: Array[Vector2i] = _expected_first_ordered_anchor_pair(
-        seed_text,
-        coords,
-        start_coord,
-        enemy_coord
-    )
-    _assert_equal(
-        expected,
-        [Vector2i(0, 1), Vector2i(-2, 0)],
-        "test-local first feasible ordered anchor pair"
-    )
-
     var habitat_solver_script: GDScript = load(
         "res://Scripts/WorldMap/world_habitat_solver_v2.gd"
     )
-    var habitat_solver: RefCounted = habitat_solver_script.new()
-    var result: Dictionary = habitat_solver.solve(
+    var result: Dictionary = habitat_solver_script.new().solve(
         seed_text,
         coords,
         start_coord,
         enemy_coord
     )
-    _assert_true(result.get("ok", false), "ordered reverse pair solves synthetic subset")
-    if not result.get("ok", false):
-        return
-    var habitats: Array = result["habitats"]
-    var actual: Array[Vector2i] = [habitats[1]["anchor"], habitats[2]["anchor"]]
-    _assert_equal(actual, expected, "solver uses first feasible ordered anchor pair")
+    _assert_true(not result.get("ok", true), "small partition rejects missing town capacity")
+    _assert_equal(result.get("habitat_by_coord", {}), {}, "small failure publishes no habitats")
+    _assert_equal(result.get("habitats", []), [], "small failure publishes no habitat records")
+    _assert_equal(result.get("towns", []), [], "small failure publishes no towns")
+    _assert_exact_error_record(
+        result,
+        seed_text,
+        "WORLD_CONSTRAINT_UNSATISFIABLE",
+        "habitat",
+        "balanced_partition_with_town_capacity",
+        "small balanced partition capacity"
+    )
 
 
 func _test_determinism() -> void:
@@ -189,6 +183,7 @@ func _test_playable_clan_corpus() -> void:
             continue
         var plan: RefCounted = result["plan"]
         _assert_complete_exclusive_connected_coverage(plan)
+        _assert_balanced_spacing_contract(plan, String(case["seed"]))
         _assert_town_contract(plan)
         _assert_encounter_and_forest_contract(plan)
 
@@ -324,6 +319,47 @@ func _assert_complete_exclusive_connected_coverage(plan: RefCounted) -> void:
     _assert_equal(String(cells[plan.get_boss_coord()].get("habitat_id", "")), "enemy", "enemy spawn in enemy")
 
 
+func _assert_balanced_spacing_contract(plan: RefCounted, label: String) -> void:
+    var allied_counts: Array[int] = [
+        plan.get_habitat_cells("main").size(),
+        plan.get_habitat_cells("ally_0").size(),
+        plan.get_habitat_cells("ally_1").size(),
+    ]
+    allied_counts.sort()
+    var expected_counts: Array[int] = [69, 69, 70]
+    _assert_equal(allied_counts, expected_counts, "%s balanced allied habitat sizes" % label)
+    _assert_equal(plan.get_habitat_cells("enemy").size(), 9, "%s enemy footprint size" % label)
+
+    var towns: Array = plan.get_towns()
+    for town_value: Variant in towns:
+        var town: Dictionary = town_value
+        var coord: Vector2i = town["coord"]
+        _assert_true(
+            _geometry_script.get_hex_distance(coord, plan.get_start_coord()) >= 2,
+            "%s town clears player start" % label
+        )
+        _assert_true(
+            _geometry_script.get_hex_distance(coord, plan.get_boss_coord()) >= 2,
+            "%s town clears enemy start" % label
+        )
+    _assert_equal(
+        _adjacent_town_pair_count(towns),
+        0,
+        "%s global town spacing" % label
+    )
+
+
+func _adjacent_town_pair_count(towns: Array) -> int:
+    var count: int = 0
+    for first_index: int in range(towns.size()):
+        for second_index: int in range(first_index + 1, towns.size()):
+            var first: Dictionary = towns[first_index]
+            var second: Dictionary = towns[second_index]
+            if _geometry_script.get_hex_distance(first["coord"], second["coord"]) < 2:
+                count += 1
+    return count
+
+
 func _assert_town_contract(plan: RefCounted) -> void:
     var towns: Array = plan.get_towns()
     var cells: Dictionary = plan.get_cells()
@@ -379,91 +415,6 @@ func _assert_encounter_and_forest_contract(plan: RefCounted) -> void:
             _assert_true(not occupied.has(coord), "forest clusters disjoint")
             occupied[coord] = true
             _assert_equal(String(cells[coord].get("terrain", "")), "forest", "forest terrain agrees")
-
-
-func _expected_first_ordered_anchor_pair(
-    seed_text: String,
-    coords: Array[Vector2i],
-    start_coord: Vector2i,
-    enemy_coord: Vector2i
-) -> Array[Vector2i]:
-    var allied_coords: Array[Vector2i] = []
-    for coord: Vector2i in coords:
-        if _geometry_script.get_hex_distance(coord, enemy_coord) > 2:
-            allied_coords.append(coord)
-    var candidates: Array[Vector2i] = []
-    for coord: Vector2i in allied_coords:
-        if coord != start_coord:
-            candidates.append(coord)
-    candidates = _priority_script.rank_coords(
-        candidates,
-        VERSION,
-        seed_text,
-        "habitat-anchor-v2"
-    )
-    for first_index: int in range(candidates.size()):
-        for second_index: int in range(candidates.size()):
-            if first_index == second_index:
-                continue
-            var anchors: Array[Vector2i] = [
-                start_coord,
-                candidates[first_index],
-                candidates[second_index],
-            ]
-            var ownership: Dictionary = _test_partition(allied_coords, anchors)
-            if (
-                ownership.size() == allied_coords.size()
-                and _test_has_town_capacity(ownership, start_coord, enemy_coord)
-            ):
-                return [anchors[1], anchors[2]]
-    return []
-
-
-func _test_partition(
-    allied_coords: Array[Vector2i],
-    anchors: Array[Vector2i]
-) -> Dictionary:
-    var traversable: Dictionary = {}
-    for coord: Vector2i in allied_coords:
-        traversable[coord] = true
-    var ownership: Dictionary = {}
-    var queue_coords: Array[Vector2i] = []
-    var queue_habitat_ids: Array[String] = []
-    for index: int in range(ALLIED_HABITAT_IDS.size()):
-        ownership[anchors[index]] = ALLIED_HABITAT_IDS[index]
-        queue_coords.append(anchors[index])
-        queue_habitat_ids.append(ALLIED_HABITAT_IDS[index])
-    var cursor: int = 0
-    while cursor < queue_coords.size():
-        var current: Vector2i = queue_coords[cursor]
-        var habitat_id: String = queue_habitat_ids[cursor]
-        cursor += 1
-        for offset: Vector2i in _geometry_script.NEIGHBOR_OFFSETS:
-            var neighbor: Vector2i = current + offset
-            if not traversable.has(neighbor) or ownership.has(neighbor):
-                continue
-            ownership[neighbor] = habitat_id
-            queue_coords.append(neighbor)
-            queue_habitat_ids.append(habitat_id)
-    return ownership
-
-
-func _test_has_town_capacity(
-    ownership: Dictionary,
-    start_coord: Vector2i,
-    enemy_coord: Vector2i
-) -> bool:
-    var counts: Dictionary = {"main": 0, "ally_0": 0, "ally_1": 0}
-    for coord_value: Variant in ownership.keys():
-        var coord: Vector2i = coord_value
-        if coord == start_coord or coord == enemy_coord:
-            continue
-        var habitat_id: String = String(ownership[coord])
-        counts[habitat_id] = int(counts.get(habitat_id, 0)) + 1
-    for habitat_id: String in ALLIED_HABITAT_IDS:
-        if int(counts[habitat_id]) < 3:
-            return false
-    return true
 
 
 func _expected_enemy_footprint(radius: int, enemy_coord: Vector2i) -> Array[Vector2i]:
